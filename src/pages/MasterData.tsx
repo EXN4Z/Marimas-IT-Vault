@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Building2, BriefcaseBusiness, Tags, Plus, Pencil, Trash2, X } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +14,12 @@ import {
 
 type TabKey = 'departemen' | 'jabatan' | 'kategori';
 type Item = { id: number; nama: string };
+
+const TAB_KEYS: TabKey[] = ['departemen', 'jabatan', 'kategori'];
+
+function isTabKey(value: string | null): value is TabKey {
+  return !!value && (TAB_KEYS as string[]).includes(value);
+}
 
 const STAFF_ROLES = ['admin', 'hr'];
 
@@ -61,7 +68,30 @@ export default function MasterData() {
   const { user } = useAuth();
   const isStaff = !!user && STAFF_ROLES.includes(user.role);
 
-  const [activeTab, setActiveTab] = useState<TabKey>('departemen');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTabState] = useState<TabKey>(() => {
+    const fromUrl = searchParams.get('tab');
+    return isTabKey(fromUrl) ? fromUrl : 'departemen';
+  });
+
+  // ganti tab sekaligus sinkronin ke query param "?tab=" biar link dari sidebar
+  // (dan tombol back/forward browser) nyambung ke tab yang bener.
+  const setActiveTab = (tab: TabKey) => {
+    setActiveTabState(tab);
+    setSearchParams({ tab }, { replace: true });
+  };
+
+  // kalau user klik link dropdown sidebar yang query-nya beda (mis. lagi di tab
+  // "departemen" terus klik "Jabatan"), pathname sama jadi gak remount komponen —
+  // effect ini yang nangkep perubahan query dan update activeTab-nya.
+  useEffect(() => {
+    const fromUrl = searchParams.get('tab');
+    if (isTabKey(fromUrl) && fromUrl !== activeTab) {
+      setActiveTabState(fromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
