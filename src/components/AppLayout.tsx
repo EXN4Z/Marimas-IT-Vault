@@ -50,6 +50,7 @@ interface NavItem {
   path: string | null; // null = belum ada halamannya (atau dropdown-only parent), tampil tapi non-aktif/non-navigable
   children?: NavChild[]; // kalau ada, item ini jadi dropdown di sidebar
   matchPrefix?: string; // dipakai buat nentuin dropdown auto-expand + highlight, termasuk buat route dinamis (mis. /karyawan/5/edit)
+  restricted?: boolean; // true = halaman khusus admin/staff, bukan buat karyawan biasa (dipakai buat naro garis pemisah di sidebar)
 }
 
 const navItems: NavItem[] = [
@@ -114,14 +115,15 @@ const navItems: NavItem[] = [
       { label: 'Tambah Agenda', icon: CalendarPlus, path: '/agenda?action=create', roles: ['admin', 'hr'] },
     ],
   },
-  { label: 'Dashboard Analytics', icon: BarChart3, path: '/dashboard-analytics' },
-  { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan' },
-  { label: 'Payroll', icon: Wallet, path: '/payroll' },
+  { label: 'Expense - Inventory Dashboard', icon: BarChart3, path: '/dashboard-analytics', restricted: true },
+  { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true },
+  { label: 'Payroll', icon: Wallet, path: '/payroll', restricted: true },
   {
     label: 'Master Data',
     icon: Database,
     path: null,
     matchPrefix: '/master-data',
+    restricted: true,
     children: [
       { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen' },
       { label: 'Jabatan', icon: BriefcaseBusiness, path: '/master-data?tab=jabatan' },
@@ -129,9 +131,31 @@ const navItems: NavItem[] = [
     ],
   },
   { label: 'AI Assistant', icon: Bot, path: '/ai-assistant' },
-  { label: 'Audit Log', icon: ScrollText, path: '/audit-log' },
+  { label: 'Audit Log', icon: ScrollText, path: '/audit-log', restricted: true },
   { label: 'Settings', icon: SettingsIcon, path: '/settings' },
 ];
+
+// selang-seling item tanpa children lalu item dengan children, ngikutin
+// urutan asli masing-masing (stable), gak peduli general atau restricted
+function interleaveByChildren(items: NavItem[]): NavItem[] {
+  const noChild = items.filter((i) => !i.children);
+  const withChild = items.filter((i) => i.children);
+  const merged: NavItem[] = [];
+  const maxLen = Math.max(noChild.length, withChild.length);
+  for (let i = 0; i < maxLen; i++) {
+    if (noChild[i]) merged.push(noChild[i]);
+    if (withChild[i]) merged.push(withChild[i]);
+  }
+  return merged;
+}
+
+// Audit Log & Settings ditarik keluar dari selang-seling -- posisinya dikunci
+// di paling bawah (Audit Log tepat di atas Settings, Settings paling akhir)
+const auditLogNavItem = navItems.find((i) => i.label === 'Audit Log');
+const settingsNavItem = navItems.find((i) => i.label === 'Settings');
+const otherNavItems = navItems.filter((i) => i.label !== 'Audit Log' && i.label !== 'Settings');
+
+const interleavedNavItems = interleaveByChildren(otherNavItems);
 
 function initials(name?: string) {
   if (!name) return '?';
@@ -159,25 +183,29 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
   const STAFF_ROLES = ['admin', 'hr'];
   const REVIEWER_ROLES = ['admin', 'hr', 'manajer', 'manager'];
 
-  const visibleNavItems = navItems.filter((item) => {
-  // Audit Log hanya untuk admin
-  if (item.label === 'Audit Log' && user?.role !== 'admin') {
-    return false;
-  }
-  else if (item.label === 'Dashboard Analytics' && user?.role === 'karyawan') {
-    return false;
-  }
-  // Payroll & Master Data hanya untuk admin/hr
-  else if ((item.label === 'Payroll' || item.label === 'Master Data') && !STAFF_ROLES.includes(user?.role ?? '')) {
-    return false;
-  }
-  // Laporan untuk admin/hr/manajer
-  else if (item.label === 'Laporan' && !REVIEWER_ROLES.includes(user?.role ?? '')) {
-    return false;
-  }
+  const roleFilter = (item: NavItem) => {
+    if (item.label === 'Expense - Inventory Dashboard' && user?.role === 'karyawan') {
+      return false;
+    }
+    // Payroll & Master Data hanya untuk admin/hr
+    if ((item.label === 'Payroll' || item.label === 'Master Data') && !STAFF_ROLES.includes(user?.role ?? '')) {
+      return false;
+    }
+    // Laporan untuk admin/hr/manajer
+    if (item.label === 'Laporan' && !REVIEWER_ROLES.includes(user?.role ?? '')) {
+      return false;
+    }
+    return true;
+  };
 
-  return true;
-  });
+  const visibleInterleaved = interleavedNavItems.filter(roleFilter);
+  const showAuditLog = auditLogNavItem && user?.role === 'admin'; // Audit Log hanya untuk admin
+
+  const visibleNavItems = [
+    ...visibleInterleaved,
+    ...(showAuditLog ? [auditLogNavItem!] : []),
+    ...(settingsNavItem ? [settingsNavItem] : []),
+  ];
 
   // dropdown parent dianggap "aktif" (dan auto-expand) kalau path sekarang cocok
   // salah satu child-nya, atau nempel di matchPrefix (buat nutup route dinamis
@@ -277,6 +305,13 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
 
+            // garis pemisah muncul tepat sebelum Audit Log (yang dikunci di
+            // atas Settings, paling bawah sidebar)
+            const showDivider = item.label === 'Audit Log';
+            const divider = showDivider && (
+              <div key={`divider-${item.label}`} className="my-3 border-t border-slate-200" />
+            );
+
             // ITEM DENGAN DROPDOWN (children)
             if (item.children) {
               const visibleChildren = item.children.filter(
@@ -285,45 +320,48 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
               const parentActive = isParentActive(item);
               const open = isDropdownOpen(item);
               return (
-                <div key={item.label} className="mb-1">
-                  <button
-                    onClick={() => handleNavClick(item)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
-                      parentActive
-                        ? 'bg-slate-900 text-white'
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    <Icon size={18} />
-                    <span className="flex-1 text-left">{item.label}</span>
-                    <ChevronDown
-                      size={16}
-                      className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-                    />
-                  </button>
+                <div key={item.label}>
+                  {divider}
+                  <div className="mb-1">
+                    <button
+                      onClick={() => handleNavClick(item)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+                        parentActive
+                          ? 'bg-slate-900 text-white'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Icon size={18} />
+                      <span className="flex-1 text-left">{item.label}</span>
+                      <ChevronDown
+                        size={16}
+                        className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+                      />
+                    </button>
 
-                  {open && (
-                    <div className="mt-1 ml-4 pl-3 border-l border-slate-200 flex flex-col gap-1">
-                      {visibleChildren.map((child, idx) => {
-                        const ChildIcon = child.icon;
-                        const active = isChildActive(child, idx === 0);
-                        return (
-                          <button
-                            key={child.path}
-                            onClick={() => handleChildClick(child.path)}
-                            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition ${
-                              active
-                                ? 'bg-slate-100 text-slate-900 font-medium'
-                                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-                            }`}
-                          >
-                            <ChildIcon size={15} />
-                            {child.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                    {open && (
+                      <div className="mt-1 ml-4 pl-3 border-l border-slate-200 flex flex-col gap-1">
+                        {visibleChildren.map((child, idx) => {
+                          const ChildIcon = child.icon;
+                          const active = isChildActive(child, idx === 0);
+                          return (
+                            <button
+                              key={child.path}
+                              onClick={() => handleChildClick(child.path)}
+                              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition ${
+                                active
+                                  ? 'bg-slate-100 text-slate-900 font-medium'
+                                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                              }`}
+                            >
+                              <ChildIcon size={15} />
+                              {child.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             }
@@ -332,22 +370,24 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
             const isActive = item.path === location.pathname;
             const isDisabled = !item.path;
             return (
-              <button
-                key={item.label}
-                onClick={() => handleNavClick(item)}
-                disabled={isDisabled}
-                title={isDisabled ? 'Segera hadir' : undefined}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition ${
-                  isActive
-                    ? 'bg-slate-900 text-white'
-                    : isDisabled
-                    ? 'text-slate-300 cursor-not-allowed'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <Icon size={18} />
-                {item.label}
-              </button>
+              <div key={item.label}>
+                {divider}
+                <button
+                  onClick={() => handleNavClick(item)}
+                  disabled={isDisabled}
+                  title={isDisabled ? 'Segera hadir' : undefined}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition ${
+                    isActive
+                      ? 'bg-slate-900 text-white'
+                      : isDisabled
+                      ? 'text-slate-300 cursor-not-allowed'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <Icon size={18} />
+                  {item.label}
+                </button>
+              </div>
             );
           })}
         </nav>
