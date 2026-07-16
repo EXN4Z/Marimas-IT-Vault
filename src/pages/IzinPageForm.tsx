@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import AppLayout from '../components/AppLayout';
 
-type JenisIzin = 'pribadi' | 'sakit' | 'terlambat' | 'pulang_cepat' | 'dinas' | 'lainnya';
+type JenisIzin = 'tahunan' | 'pribadi' | 'sakit' | 'terlambat' | 'pulang_cepat' | 'dinas' | 'lainnya';
 
 const jenisOptions: { value: JenisIzin; label: string }[] = [
+    { value: 'tahunan', label: 'Cuti Tahunan' },
     { value: 'pribadi', label: 'Izin Pribadi' },
     { value: 'sakit', label: 'Izin Sakit' },
     { value: 'terlambat', label: 'Izin Terlambat' },

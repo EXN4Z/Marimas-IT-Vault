@@ -147,6 +147,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!data?.id) return;
+    if (!echo) return; // echo can be null when Pusher key not configured
 
     const channel = echo.private(`App.Models.User.${data.id}`);
 
@@ -173,7 +174,9 @@ export default function Dashboard() {
     });
 
     return () => {
-      echo.leave(`App.Models.User.${data.id}`);
+      if (echo && typeof echo.leave === 'function') {
+        echo.leave(`App.Models.User.${data.id}`);
+      }
     };
   }, [data?.id, queryClient]);
 
