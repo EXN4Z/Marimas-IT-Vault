@@ -115,7 +115,7 @@ const navItems: NavItem[] = [
       { label: 'Tambah Agenda', icon: CalendarPlus, path: '/agenda?action=create', roles: ['admin', 'hr'] },
     ],
   },
-  { label: 'Expense - Inventory Dashboard', icon: BarChart3, path: '/dashboard-analytics', restricted: true },
+  { label: 'Expense - Inventory', icon: BarChart3, path: '/dashboard-analytics', restricted: true },
   { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true },
   { label: 'Payroll', icon: Wallet, path: '/payroll', restricted: true },
   {
