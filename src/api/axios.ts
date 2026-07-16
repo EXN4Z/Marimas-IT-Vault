@@ -16,4 +16,20 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// BARU: kalau server bilang token gak valid lagi (401) di request MANAPUN,
+// bersihkan token & paksa balik ke halaman login.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;
