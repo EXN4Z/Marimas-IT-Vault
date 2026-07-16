@@ -125,7 +125,7 @@ export default function DashboardAnalyticsPage() {
     const [currentRole, setCurrentRole] = useState<Role | null>(null);
     const [checkingAccess, setCheckingAccess] = useState<boolean>(true);
     const [mutasi, setMutasi] = useState<mutasiBarang[]>([]);
-    const [ringkasanCuti, setRingkasanCuti] = useState({
+    const [ringkasanIzin, setRingkasanIzin] = useState({
         total: 0,
         pending: 0,
         disetujui: 0,
@@ -161,9 +161,9 @@ export default function DashboardAnalyticsPage() {
            .catch((err) => {
             console.error(err)
            });
-        api.get('/dashboard-analytics/analisis-cuti')
+        api.get('/dashboard-analytics/analisis-izin')
            .then((res) => {
-            setRingkasanCuti(res.data);
+            setRingkasanIzin(res.data);
            })
            .catch((err) => {
                 console.error(err);
@@ -236,16 +236,16 @@ export default function DashboardAnalyticsPage() {
             <div className="max-w-6xl mx-auto">
                 <div className="mb-6">
                     <h1 className="text-xl font-bold text-gray-900">Dashboard Analytics</h1>
-                    <p className="text-sm text-gray-500 mt-1">Ringkasan cuti, inventaris, dan keuangan perusahaan.</p>
+                    <p className="text-sm text-gray-500 mt-1">Ringkasan izin, inventaris, dan keuangan perusahaan.</p>
                 </div>
 
-                {/* Ringkasan Cuti */}
-                <Section title="Ringkasan Cuti">
+                {/* Ringkasan Izin */}
+                <Section title="Ringkasan Izin">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <StatCard label="Total Pengajuan" value={`${ringkasanCuti.total}`} />
-                        <StatCard label="Menunggu" value={`${ringkasanCuti.pending}`} accent="yellow" />
-                        <StatCard label="Disetujui" value={`${ringkasanCuti.disetujui}`} accent="green" />
-                        <StatCard label="Ditolak" value={`${ringkasanCuti.ditolak}`} accent="red" />
+                        <StatCard label="Total Pengajuan" value={`${ringkasanIzin.total}`} />
+                        <StatCard label="Menunggu" value={`${ringkasanIzin.pending}`} accent="yellow" />
+                        <StatCard label="Disetujui" value={`${ringkasanIzin.disetujui}`} accent="green" />
+                        <StatCard label="Ditolak" value={`${ringkasanIzin.ditolak}`} accent="red" />
                     </div>
                 </Section>
 
@@ -281,8 +281,8 @@ export default function DashboardAnalyticsPage() {
                     </div>
                 </Section>
 
-                {/* Tren Pengajuan Cuti per Bulan */}
-                <Section title="Tren Pengajuan Cuti" description="Jumlah pengajuan cuti per bulan, 6 bulan terakhir.">
+                {/* Tren Pengajuan Izin per Bulan */}
+                <Section title="Tren Pengajuan Izin" description="Jumlah pengajuan izin per bulan, 6 bulan terakhir.">
                     <div className="bg-white border border-gray-200 rounded-xl p-4">
                         <ResponsiveContainer width="100%" height={260}>
                             <AreaChart data={grafikP} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
@@ -333,10 +333,10 @@ export default function DashboardAnalyticsPage() {
                         </div>
                     </div>
 
-                    {/* Top Karyawan Pengajuan Cuti */}
+                    {/* Top Karyawan Pengajuan Izin */}
                     <div>
                         <div className="mb-3">
-                            <h2 className="text-sm font-semibold text-gray-900">Karyawan Pengajuan Cuti Terbanyak</h2>
+                            <h2 className="text-sm font-semibold text-gray-900">Karyawan Pengajuan Izin Terbanyak</h2>
                             <p className="text-xs text-gray-500 mt-0.5">Top 5 karyawan berdasarkan jumlah pengajuan.</p>
                         </div>
                         <div className="bg-white border border-gray-200 rounded-xl p-4">

@@ -38,7 +38,7 @@ export default function Register() {
           <h1 className="text-5xl font-extrabold tracking-tight">MARIMAS ONE</h1>
           <p className="mt-6 text-slate-300 text-lg leading-relaxed max-w-md">
             Bergabung dan mulai kelola aktivitas kerja kamu lewat satu
-            platform terintegrasi — cuti, izin, ticketing, hingga absensi.
+            platform terintegrasi — izin, ticketing, hingga absensi.
           </p>
         </div>
 

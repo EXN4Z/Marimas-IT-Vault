@@ -25,29 +25,48 @@ import AppLayout from '../components/AppLayout';
 import api from '../api/axios';
 import { echo } from '../lib/echo';
 import type { User as UserType } from '../types/user';
+import { getAgendaMendatang, type AgendaItem } from '../api/agenda';
 
-const attendanceTrend = [
-  { day: 'Sen', hadir: 42, target: 45 },
-  { day: 'Sel', hadir: 44, target: 45 },
-  { day: 'Rab', hadir: 40, target: 45 },
-  { day: 'Kam', hadir: 43, target: 45 },
-  { day: 'Jum', hadir: 45, target: 45 },
-  { day: 'Sab', hadir: 12, target: 15 },
-  { day: 'Min', hadir: 5, target: 10 },
-];
+// TAMBAH: warna beban kerja berdasarkan tingkat keparahan
+function bebanColor(percent: number) {
+  if (percent >= 70) return 'bg-rose-500';
+  if (percent >= 30) return 'bg-amber-500';
+  return 'bg-emerald-500';
+}
 
-const divisiColors = ['bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500'];
+// TAMBAH: format tanggal agenda jadi "Senin, 09:00" (real data dari backend)
+function formatAgendaDate(dateString: string): string {
+  const date = new Date(dateString.replace(' ', 'T'));
+  if (isNaN(date.getTime())) return dateString;
 
-const upcomingEvents = [
-  { title: 'Meeting Mingguan Divisi IT', date: 'Senin, 09:00' },
-  { title: 'Batas akhir laporan absensi', date: 'Rabu, 17:00' },
-  { title: 'Training AI Assistant', date: 'Jumat, 13:00' },
-];
+  return date.toLocaleString('id-ID', {
+    weekday: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 interface departemenDistribusi {
   departemen: string;
   jumlah: number;
   percent: number;
+}
+
+// TAMBAH: tipe data kehadiran mingguan real
+interface KehadiranHarian {
+  day: string;
+  tanggal: string;
+  hadir: number;
+  target: number;
+}
+
+// TAMBAH: tipe data beban kerja per departemen
+interface BebanDepartemen {
+  departemen: string;
+  total: number;
+  hadir: number;
+  tidak_hadir: number;
+  beban_percent: number;
 }
 
 interface StatItem {
@@ -89,11 +108,28 @@ async function fetchStatsCard(): Promise<StatsCardResponse> {
   return res.data;
 }
 
+// TAMBAH: fetch kehadiran 7 hari terakhir (real)
+async function fetchKehadiranMingguan(): Promise<KehadiranHarian[]> {
+  const res = await api.get<KehadiranHarian[]>('/dashboard/kehadiran-mingguan');
+  return res.data;
+}
+
+// TAMBAH: fetch beban kerja per departemen (real, dari izin hari ini)
+async function fetchBebanKerja(): Promise<BebanDepartemen[]> {
+  const res = await api.get<BebanDepartemen[]>('/dashboard/beban-kerja');
+  return res.data;
+}
+
+// TAMBAH: fetch agenda mendatang (real, gantiin data statis)
+async function fetchAgenda(): Promise<AgendaItem[]> {
+  return getAgendaMendatang(5);
+}
+
 function buildStatCards(stats?: StatsCardResponse) {
   if (!stats) return [];
   return [
     { label: 'Kehadiran Bulan Ini', value: stats.kehadiran.value, trend: stats.kehadiran.trend, icon: QrCode },
-    { label: 'Cuti Tersisa', value: stats.izinAktif.value, trend: stats.izinAktif.trend, icon: CalendarDays },
+    { label: 'Izin Aktif', value: stats.izinAktif.value, trend: stats.izinAktif.trend, icon: CalendarDays },
     { label: 'Izin Pending', value: stats.izin.value, trend: stats.izin.trend, icon: FileText },
     { label: 'Ticket Aktif', value: stats.ticket.value, trend: stats.ticket.trend, icon: Ticket },
   ];
@@ -126,6 +162,27 @@ export default function Dashboard() {
     queryKey: ['notifications'],
     queryFn: fetchNotifications,
     staleTime: 60 * 1000,
+  });
+
+  // TAMBAH: kehadiran mingguan real, refresh tiap 5 menit
+  const { data: kehadiranMingguan } = useQuery({
+    queryKey: ['kehadiran-mingguan'],
+    queryFn: fetchKehadiranMingguan,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // TAMBAH: beban kerja per departemen, refresh tiap 5 menit (berubah kalau ada izin baru disetujui)
+  const { data: bebanKerja } = useQuery({
+    queryKey: ['beban-kerja'],
+    queryFn: fetchBebanKerja,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // TAMBAH: agenda mendatang real dari backend, refresh tiap 5 menit
+  const { data: agenda, isLoading: agendaLoading } = useQuery({
+    queryKey: ['agenda-mendatang'],
+    queryFn: fetchAgenda,
+    staleTime: 5 * 60 * 1000,
   });
 
   const notifications = notificationsRes?.data ?? [];
@@ -171,6 +228,9 @@ export default function Dashboard() {
       });
 
       queryClient.invalidateQueries({ queryKey: ['stats-card'] });
+      // TAMBAH: kalau ada izin baru disetujui, beban kerja & kehadiran ikut update real-time
+      queryClient.invalidateQueries({ queryKey: ['beban-kerja'] });
+      queryClient.invalidateQueries({ queryKey: ['kehadiran-mingguan'] });
     });
 
     return () => {
@@ -276,6 +336,10 @@ export default function Dashboard() {
         statCards={buildStatCards(statsCard)}
         notifications={notifications}
         onMarkAsRead={handleMarkAsRead}
+        kehadiranMingguan={kehadiranMingguan ?? []}
+        bebanKerja={bebanKerja ?? []}
+        agenda={agenda ?? []}
+        agendaLoading={agendaLoading}
       />
       <ChatWidget />
     </AppLayout>
@@ -289,6 +353,10 @@ function DashboardContent({
   statCards,
   notifications,
   onMarkAsRead,
+  kehadiranMingguan,
+  bebanKerja,
+  agenda,
+  agendaLoading,
 }: {
   error: string | null;
   getGreeting: () => string;
@@ -296,6 +364,10 @@ function DashboardContent({
   statCards: ReturnType<typeof buildStatCards>;
   notifications: NotificationItem[];
   onMarkAsRead: (id: string) => void;
+  kehadiranMingguan: KehadiranHarian[];
+  bebanKerja: BebanDepartemen[];
+  agenda: AgendaItem[];
+  agendaLoading: boolean;
 }) {
   const { user } = useAuth();
 
@@ -342,11 +414,11 @@ function DashboardContent({
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-semibold text-slate-900">Tren Kehadiran Mingguan</h3>
-            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">Contoh</span>
+            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">7 hari terakhir</span>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={attendanceTrend} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={kehadiranMingguan} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorHadir" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#0f172a" stopOpacity={0.4} />
@@ -386,19 +458,24 @@ function DashboardContent({
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
           <h3 className="text-base font-semibold text-slate-900 mb-4">Beban Kerja per Departemen</h3>
           <div className="flex flex-col gap-4">
-            {departemen.length === 0 ? (
+            {bebanKerja.length === 0 ? (
               <p className="text-sm text-slate-400">Belum ada data departemen</p>
             ) : (
-              departemen.map((d, i) => (
+              bebanKerja.map((d) => (
                 <div key={d.departemen}>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-slate-700 font-medium">{d.departemen}</span>
-                    <span className="text-slate-400">{d.percent}%</span>
+                    <span className="text-slate-400">
+                      {d.hadir}/{d.total} hadir
+                      {d.tidak_hadir > 0 && (
+                        <span className="text-rose-500 font-medium"> · +{d.beban_percent}%</span>
+                      )}
+                    </span>
                   </div>
                   <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className={`h-full ${divisiColors[i % divisiColors.length]}`}
-                      style={{ width: `${d.percent}%` }}
+                      className={`h-full ${bebanColor(d.beban_percent)}`}
+                      style={{ width: `${Math.min(d.beban_percent, 100)}%` }}
                     />
                   </div>
                 </div>
@@ -443,17 +520,23 @@ function DashboardContent({
 
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
           <h3 className="text-base font-semibold text-slate-900 mb-4">Agenda Mendatang</h3>
-          <ul className="flex flex-col gap-3">
-            {upcomingEvents.map((ev, i) => (
-              <li key={i} className="flex items-start gap-2">
-                <Clock size={14} className="text-slate-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm text-slate-700">{ev.title}</p>
-                  <p className="text-xs text-slate-400">{ev.date}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
+          {agendaLoading ? (
+            <p className="text-sm text-slate-400">Memuat agenda...</p>
+          ) : !agenda || agenda.length === 0 ? (
+            <p className="text-sm text-slate-400">Belum ada agenda mendatang.</p>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {agenda.map((ev) => (
+                <li key={ev.id} className="flex items-start gap-2">
+                  <Clock size={14} className="text-slate-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm text-slate-700">{ev.title}</p>
+                    <p className="text-xs text-slate-400">{formatAgendaDate(ev.start_at)}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </>
