@@ -15,7 +15,7 @@ const TRIGGER_WORDS = [
 const intents: ChatIntent[] = [
   { label: 'Absensi', path: '/absensi', keywords: ['absen', 'absensi', 'scan qr', 'check in', 'checkin', 'check-in'] },
   { label: 'Data Karyawan', path: '/karyawan', keywords: ['data karyawan', 'daftar karyawan', 'karyawan'] },
-  { label: 'Tambah Karyawan', path: '/karyawan/create', keywords: ['tambah karyawan', 'karyawan baru', 'daftarkan karyawan'] },
+  { label: 'Tambah Karyawan', path: '/karyawan/create', keywords: ['tambah karyawan', 'karyawan baru', 'daftarkan karyawan', 'daftar karyawan'] },
   { label: 'Pengajuan Izin', path: '/izin', keywords: ['izin', 'cuti'] },
   { label: 'Ajukan Izin', path: '/izin/create', keywords: ['ajukan izin', 'buat izin', 'mengajukan cuti', 'ajukan cuti'] },
   { label: 'Ticketing', path: '/ticketing', keywords: ['ticket', 'tiket', 'ticketing'] },
