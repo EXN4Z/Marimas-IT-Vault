@@ -5,7 +5,6 @@ import {
   Users,
   QrCode,
   Ticket,
-  BarChart3,
   Bot,
   ScrollText,
   Settings as SettingsIcon,
@@ -57,7 +56,6 @@ const navItems: NavItem[] = [
   { label: 'Ticketing', icon: Ticket, path: '/ticketing', matchPrefix: '/ticketing' },
   { label: 'Inventaris', icon: Package, path: '/inventaris', matchPrefix: '/inventaris' },
   { label: 'Agenda', icon: CalendarDays, path: '/agenda', matchPrefix: '/agenda' },
-  { label: 'Expense - Inventory', icon: BarChart3, path: '/dashboard-analytics', restricted: true },
   { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true },
   { label: 'Payroll', icon: Wallet, path: '/payroll', restricted: true },
   {
@@ -140,9 +138,6 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
   const REVIEWER_ROLES = ['admin', 'hr', 'manajer', 'manager'];
 
   const roleFilter = (item: NavItem) => {
-    if (item.label === 'Expense - Inventory Dashboard' && user?.role === 'karyawan') {
-      return false;
-    }
     // Payroll & Master Data hanya untuk admin/hr
     if ((item.label === 'Payroll' || item.label === 'Master Data') && !STAFF_ROLES.includes(user?.role ?? '')) {
       return false;

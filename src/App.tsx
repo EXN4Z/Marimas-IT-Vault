@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation, type Location } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, type Location } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ChatProvider } from './context/ChatContext';
 import AdminRoute from './components/AdminRoute';
@@ -17,7 +17,6 @@ import Settings from './pages/Settings';
 import AuditLog from './pages/AuditLog';
 import PengajuanIzin from './pages/PengajuanIzin';
 import IzinForm from './pages/IzinPageForm';
-import Analytics from './pages/DashboardAnalytics';
 import Agenda from './pages/Agenda';
 import Laporan from './pages/Laporan';
 import Payroll from './pages/Payroll';
@@ -47,7 +46,9 @@ function AppRoutes() {
         <Route path="/inventaris" element={<Inventaris />} />
         <Route path="/karyawan" element={<Karyawan />} />
         <Route path="/izin" element={<PengajuanIzin />} />
-        <Route path="/dashboard-analytics" element={<Analytics />} />
+        {/* Dashboard Analytics sekarang jadi tab di dalam /dashboard, bukan halaman sendiri.
+            Redirect ini cuma buat jaga-jaga kalau ada bookmark/link lama ke /dashboard-analytics. */}
+        <Route path="/dashboard-analytics" element={<Navigate to="/dashboard?tab=analytics" replace />} />
         <Route path="/absensi" element={<Absensi />} />
         <Route path="/ticketing" element={<Ticketing />} />
         <Route path="/settings" element={<Settings />} />

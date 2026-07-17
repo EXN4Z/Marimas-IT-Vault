@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   QrCode,
   CalendarDays,
@@ -6,6 +7,7 @@ import {
   Ticket,
   TrendingUp,
   Clock,
+  BarChart3,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -25,6 +27,11 @@ import api from '../api/axios';
 import { echo } from '../lib/echo';
 import type { User as UserType } from '../types/user';
 import { getAgendaMendatang, type AgendaItem } from '../api/agenda';
+import DashboardAnalyticsTab from './DashboardAnalytics';
+
+// Role yang boleh liat tab "Analytics" (izin, inventaris, keuangan) — samain
+// sama REVIEWER_ROLES di AppLayout.tsx & isApprover di DashboardAnalytics.tsx
+const REVIEWER_ROLES = ['admin', 'hr', 'manajer', 'manager'];
 
 // TAMBAH: warna beban kerja berdasarkan tingkat keparahan
 function bebanColor(percent: number) {
@@ -141,6 +148,21 @@ export default function Dashboard() {
   const { user: cachedUser, setUser } = useAuth();
   const [departemen, setDepartemen] = useState<departemenDistribusi[]>([]);
   const queryClient = useQueryClient();
+
+  // TAMBAH: dashboard "Ringkasan" & "Analytics" digabung jadi satu halaman,
+  // dipisah lewat tab (?tab=analytics) — data masing-masing tetap kefetch
+  // terpisah (lihat DashboardAnalyticsTab), gak dicampur di sini.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isApprover = REVIEWER_ROLES.includes(cachedUser?.role ?? '');
+  const activeTab = searchParams.get('tab') === 'analytics' && isApprover ? 'analytics' : 'ringkasan';
+
+  const goToTab = (tab: 'ringkasan' | 'analytics') => {
+    if (tab === 'ringkasan') {
+      setSearchParams({}, { replace: true });
+    } else {
+      setSearchParams({ tab: 'analytics' }, { replace: true });
+    }
+  };
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['user'],
@@ -337,18 +359,48 @@ export default function Dashboard() {
 
   return (
     <AppLayout title="Dashboard">
-      <DashboardContent
-        error={error}
-        getGreeting={getGreeting}
-        departemen={departemen}
-        statCards={buildStatCards(statsCard)}
-        notifications={notifications}
-        onMarkAsRead={handleMarkAsRead}
-        kehadiranMingguan={kehadiranMingguan ?? []}
-        bebanKerja={bebanKerja ?? []}
-        agenda={agenda ?? []}
-        agendaLoading={agendaLoading}
-      />
+      {isApprover && (
+        <div className="flex items-center gap-1 mb-6 bg-slate-100 rounded-lg p-1 w-fit">
+          <button
+            type="button"
+            onClick={() => goToTab('ringkasan')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'ringkasan' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <TrendingUp size={14} /> Ringkasan
+          </button>
+          <button
+            type="button"
+            onClick={() => goToTab('analytics')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'analytics' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <BarChart3 size={14} /> Analytics
+          </button>
+        </div>
+      )}
+
+      {activeTab === 'analytics' ? (
+        // TAMBAH: mount komponen ini cuma kalau tab-nya aktif, jadi fetch data
+        // izin/inventaris/keuangan cuma jalan pas dibuka, gak nyampur sama
+        // query di tab Ringkasan di atas.
+        <DashboardAnalyticsTab />
+      ) : (
+        <DashboardContent
+          error={error}
+          getGreeting={getGreeting}
+          departemen={departemen}
+          statCards={buildStatCards(statsCard)}
+          notifications={notifications}
+          onMarkAsRead={handleMarkAsRead}
+          kehadiranMingguan={kehadiranMingguan ?? []}
+          bebanKerja={bebanKerja ?? []}
+          agenda={agenda ?? []}
+          agendaLoading={agendaLoading}
+        />
+      )}
     </AppLayout>
   );
 }

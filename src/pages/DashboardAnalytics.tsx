@@ -14,7 +14,6 @@ import {
     Legend,
 } from 'recharts';
 import api from '../api/axios';
-import AppLayout from '../components/AppLayout';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
 
@@ -121,7 +120,11 @@ const chartTooltipStyle = {
     border: '1px solid #E5E7EB',
 };
 
-export default function DashboardAnalyticsPage() {
+// Isi tab "Analytics" di halaman Dashboard (bukan halaman/route sendiri lagi).
+// Data-nya sengaja dipisah total dari tab Ringkasan: semua fetch di sini pakai
+// endpoint /dashboard-analytics/* sendiri dan cuma jalan begitu tab ini dibuka,
+// gak nyampur sama query di Dashboard.tsx (endpoint /dashboard/*).
+export default function DashboardAnalyticsTab() {
     const [currentRole, setCurrentRole] = useState<Role | null>(null);
     const [checkingAccess, setCheckingAccess] = useState<boolean>(true);
     const [mutasi, setMutasi] = useState<mutasiBarang[]>([]);
@@ -206,23 +209,19 @@ export default function DashboardAnalyticsPage() {
     const isApprover = currentRole === 'admin' || currentRole === 'hr' || currentRole === 'manajer';
 
     if (checkingAccess) {
-        return (
-            <AppLayout title="Dashboard Analytics">
-                <p className="text-center text-sm text-gray-400 py-16">Memuat...</p>
-            </AppLayout>
-        );
+        return <p className="text-center text-sm text-gray-400 py-16">Memuat...</p>;
     }
 
     if (!isApprover) {
+        // Defense-in-depth: seharusnya tab ini sudah disembunyikan dari Dashboard.tsx
+        // buat role karyawan, tapi tetap dicek ulang di sini kalau-kalau tab dibuka manual.
         return (
-            <AppLayout title="Dashboard Analytics">
-                <div className="max-w-md mx-auto text-center py-16">
-                    <h1 className="text-base font-semibold text-gray-900 mb-1">Akses terbatas</h1>
-                    <p className="text-sm text-gray-500">
-                        Halaman ini hanya bisa diakses oleh admin, HR, atau manajer.
-                    </p>
-                </div>
-            </AppLayout>
+            <div className="max-w-md mx-auto text-center py-16">
+                <h1 className="text-base font-semibold text-gray-900 mb-1">Akses terbatas</h1>
+                <p className="text-sm text-gray-500">
+                    Halaman ini hanya bisa diakses oleh admin, HR, atau manajer.
+                </p>
+            </div>
         );
     }
 
@@ -232,13 +231,7 @@ export default function DashboardAnalyticsPage() {
     const saldoBersih = totalPemasukan - totalPengeluaran;
 
     return (
-        <AppLayout title="Dashboard Analytics">
-            <div className="max-w-6xl mx-auto">
-                <div className="mb-6">
-                    <h1 className="text-xl font-bold text-gray-900">Dashboard Analytics</h1>
-                    <p className="text-sm text-gray-500 mt-1">Ringkasan izin, inventaris, dan keuangan perusahaan.</p>
-                </div>
-
+        <div className="max-w-6xl mx-auto">
                 {/* Ringkasan Izin */}
                 <Section title="Ringkasan Izin">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -403,7 +396,6 @@ export default function DashboardAnalyticsPage() {
                         </ResponsiveContainer>
                     </div>
                 </Section>
-            </div>
-        </AppLayout>
+        </div>
     );
 }
