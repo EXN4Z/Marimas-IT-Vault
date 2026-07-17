@@ -1,9 +1,10 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { User } from '../types/user';
-import api from '../api/axios'; // BARU: sesuaikan path kalau instance axios kamu ada di tempat lain
+import api from '../api/axios';
 
 interface AuthContextType {
   user: User | null;
+  isLoading: boolean;
   setUser: (user: User | null) => void;
   logout: () => Promise<void>;
 }
@@ -11,10 +12,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem('user');
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleSetUser = (u: User | null) => {
     setUser(u);
@@ -25,24 +24,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // UBAH: logout sekarang beneran manggil backend dulu (biar token dicabut &
-  // password di-reset di server sesuai kebijakan lockout), baru bersihin localStorage.
-  // Kalau API call gagal (misal koneksi putus), tetap lanjut bersihin sisi client
-  // supaya user nggak nyangkut logged-in secara visual.
   const logout = async () => {
-    try {
-      await api.post('/logout');
-    } catch (err) {
-      console.error('Gagal memanggil endpoint logout, tetap logout di sisi client:', err);
-    } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setUser(null);
-    }
+    // best-effort revoke token di server, gak perlu nunggu hasilnya
+    api.post('/logout').catch(() => {});
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
   };
 
+  // Validasi token ke backend setiap kali app dibuka/refresh
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+
+    api
+      .get('/user')
+      .then((res) => {
+        handleSetUser(res.data);
+      })
+      .catch(() => {
+        // token invalid/expired di server -> bersihkan
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, setUser: handleSetUser, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, setUser: handleSetUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

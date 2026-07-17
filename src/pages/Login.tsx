@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Lock } from 'lucide-react';
 import { login } from '../api/auth';
@@ -9,8 +9,17 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { setUser } = useAuth();
+  const { user, isLoading, setUser } = useAuth();
   const navigate = useNavigate();
+
+  // BARU: kalau AuthContext sudah selesai validasi token dan ternyata user
+  // masih login (token valid), langsung lempar ke dashboard tanpa nampilin
+  // form login lagi.
+  useEffect(() => {
+    if (!isLoading && user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isLoading, user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +36,17 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+  // BARU: selama AuthContext masih validasi token ke backend, jangan
+  // tampilkan form login dulu — mencegah "kelip" form login sebelum
+  // ke-redirect ke dashboard kalau ternyata user masih login.
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <p className="text-slate-500 text-sm">Memuat...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">

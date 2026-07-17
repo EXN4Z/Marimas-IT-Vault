@@ -12,33 +12,150 @@ import {
   FileText,
   LogOut,
   Search,
-  Bell,
   Menu,
   X,
   Package,
+  CalendarDays,
+  Wallet,
+  FileSpreadsheet,
+  Database,
+  ChevronDown,
+  UserPlus,
+  List,
+  FilePlus,
+  Building2,
+  BriefcaseBusiness,
+  Tags,
+  History,
+  ScanLine,
+  TicketPlus,
+  PackagePlus,
+  CalendarPlus,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import api from '../api/axios';
+import NotificationDropdown from './NotificationDropDown';
+
+interface NavChild {
+  label: string;
+  icon: typeof LayoutDashboard;
+  path: string;
+  roles?: string[]; // kalau diisi, child ini cuma muncul buat role yang disebut (mis. aksi create yang dibatasi backend)
+}
 
 interface NavItem {
   label: string;
   icon: typeof LayoutDashboard;
-  path: string | null; // null = belum ada halamannya, tampil tapi non-aktif
+  path: string | null; // null = belum ada halamannya (atau dropdown-only parent), tampil tapi non-aktif/non-navigable
+  children?: NavChild[]; // kalau ada, item ini jadi dropdown di sidebar
+  matchPrefix?: string; // dipakai buat nentuin dropdown auto-expand + highlight, termasuk buat route dinamis (mis. /karyawan/5/edit)
+  restricted?: boolean; // true = halaman khusus admin/staff, bukan buat karyawan biasa (dipakai buat naro garis pemisah di sidebar)
 }
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { label: 'Data Karyawan', icon: Users, path: '/karyawan' },
-  { label: 'Absensi QR', icon: QrCode, path: '/absensi' },
-  { label: 'Pengajuan Izin', icon: FileText, path: '/izin' },
-  { label: 'Ticketing', icon: Ticket, path: '/ticketing' },
-  { label: 'Inventaris', icon: Package, path: '/inventaris' },
-  { label: 'Dashboard Analytics', icon: BarChart3, path: '/dashboard-analytics' },
+  {
+    label: 'Data Karyawan',
+    icon: Users,
+    path: null,
+    matchPrefix: '/karyawan',
+    children: [
+      { label: 'Semua Karyawan', icon: List, path: '/karyawan' },
+      { label: 'Tambah Karyawan', icon: UserPlus, path: '/karyawan/create' },
+    ],
+  },
+  {
+    label: 'Absensi QR',
+    icon: QrCode,
+    path: null,
+    matchPrefix: '/absensi',
+    children: [
+      { label: 'Riwayat Absensi', icon: History, path: '/absensi' },
+      { label: 'Scan Absensi', icon: ScanLine, path: '/absensi?action=scan' },
+    ],
+  },
+  {
+    label: 'Pengajuan Izin',
+    icon: FileText,
+    path: null,
+    matchPrefix: '/izin',
+    children: [
+      { label: 'Daftar Izin', icon: List, path: '/izin' },
+      { label: 'Ajukan Izin', icon: FilePlus, path: '/izin/create' },
+    ],
+  },
+  {
+    label: 'Ticketing',
+    icon: Ticket,
+    path: null,
+    matchPrefix: '/ticketing',
+    children: [
+      { label: 'Semua Tiket', icon: List, path: '/ticketing' },
+      { label: 'Buat Tiket', icon: TicketPlus, path: '/ticketing?action=create' },
+    ],
+  },
+  {
+    label: 'Inventaris',
+    icon: Package,
+    path: null,
+    matchPrefix: '/inventaris',
+    children: [
+      { label: 'Semua Barang', icon: List, path: '/inventaris' },
+      { label: 'Tambah Barang', icon: PackagePlus, path: '/inventaris?action=create', roles: ['admin'] },
+    ],
+  },
+  {
+    label: 'Agenda',
+    icon: CalendarDays,
+    path: null,
+    matchPrefix: '/agenda',
+    children: [
+      { label: 'Semua Agenda', icon: List, path: '/agenda' },
+      { label: 'Tambah Agenda', icon: CalendarPlus, path: '/agenda?action=create', roles: ['admin', 'hr'] },
+    ],
+  },
+  { label: 'Expense - Inventory', icon: BarChart3, path: '/dashboard-analytics', restricted: true },
+  { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true },
+  { label: 'Payroll', icon: Wallet, path: '/payroll', restricted: true },
+  {
+    label: 'Master Data',
+    icon: Database,
+    path: null,
+    matchPrefix: '/master-data',
+    restricted: true,
+    children: [
+      { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen' },
+      { label: 'Jabatan', icon: BriefcaseBusiness, path: '/master-data?tab=jabatan' },
+      { label: 'Kategori Barang', icon: Tags, path: '/master-data?tab=kategori' },
+    ],
+  },
   { label: 'AI Assistant', icon: Bot, path: '/ai-assistant' },
-  { label: 'Audit Log', icon: ScrollText, path: '/audit-log' },
+  { label: 'Audit Log', icon: ScrollText, path: '/audit-log', restricted: true },
   { label: 'Settings', icon: SettingsIcon, path: '/settings' },
 ];
+
+// selang-seling item tanpa children lalu item dengan children, ngikutin
+// urutan asli masing-masing (stable), gak peduli general atau restricted
+function interleaveByChildren(items: NavItem[]): NavItem[] {
+  const noChild = items.filter((i) => !i.children);
+  const withChild = items.filter((i) => i.children);
+  const merged: NavItem[] = [];
+  const maxLen = Math.max(noChild.length, withChild.length);
+  for (let i = 0; i < maxLen; i++) {
+    if (noChild[i]) merged.push(noChild[i]);
+    if (withChild[i]) merged.push(withChild[i]);
+  }
+  return merged;
+}
+
+// Audit Log & Settings ditarik keluar dari selang-seling -- posisinya dikunci
+// di paling bawah (Audit Log tepat di atas Settings, Settings paling akhir)
+const auditLogNavItem = navItems.find((i) => i.label === 'Audit Log');
+const settingsNavItem = navItems.find((i) => i.label === 'Settings');
+const otherNavItems = navItems.filter((i) => i.label !== 'Audit Log' && i.label !== 'Settings');
+
+const interleavedNavItems = interleaveByChildren(otherNavItems);
 
 function initials(name?: string) {
   if (!name) return '?';
@@ -59,20 +176,77 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
   const { user, logout } = useAuth();
   const { resetChat } = useChat();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const location = useLocation();
 
-  const visibleNavItems = navItems.filter((item) => {
-  // Audit Log hanya untuk admin
-  if (item.label === 'Audit Log' && user?.role !== 'admin') {
-    return false;
-  }
-  else if (item.label === 'Dashboard Analytics' && user?.role === 'karyawan') {
-    return false;
-  }
+  const STAFF_ROLES = ['admin', 'hr'];
+  const REVIEWER_ROLES = ['admin', 'hr', 'manajer', 'manager'];
 
-  return true;
-  });
+  const roleFilter = (item: NavItem) => {
+    if (item.label === 'Expense - Inventory Dashboard' && user?.role === 'karyawan') {
+      return false;
+    }
+    // Payroll & Master Data hanya untuk admin/hr
+    if ((item.label === 'Payroll' || item.label === 'Master Data') && !STAFF_ROLES.includes(user?.role ?? '')) {
+      return false;
+    }
+    // Laporan untuk admin/hr/manajer
+    if (item.label === 'Laporan' && !REVIEWER_ROLES.includes(user?.role ?? '')) {
+      return false;
+    }
+    return true;
+  };
+
+  const visibleInterleaved = interleavedNavItems.filter(roleFilter);
+  const showAuditLog = auditLogNavItem && user?.role === 'admin'; // Audit Log hanya untuk admin
+
+  const visibleNavItems = [
+    ...visibleInterleaved,
+    ...(showAuditLog ? [auditLogNavItem!] : []),
+    ...(settingsNavItem ? [settingsNavItem] : []),
+  ];
+
+  // dropdown parent dianggap "aktif" (dan auto-expand) kalau path sekarang cocok
+  // salah satu child-nya, atau nempel di matchPrefix (buat nutup route dinamis
+  // kayak /karyawan/5/edit yang gak ada tombol nav-nya sendiri)
+  const isParentActive = (item: NavItem): boolean => {
+    if (!item.children) return false;
+    if (item.matchPrefix && location.pathname.startsWith(item.matchPrefix)) return true;
+    return item.children.some((child) => location.pathname === child.path);
+  };
+
+  const isDropdownOpen = (item: NavItem): boolean => {
+    return isParentActive(item) || openDropdowns.has(item.label);
+  };
+
+  // support 2 pola child path: polos ("/izin/create") atau pakai query tab
+  // ("/master-data?tab=jabatan"). Kalau child gak punya query dan URL sekarang
+  // juga gak punya query, cocok berdasarkan pathname doang. Kalau child pakai
+  // query "tab", cocokin nilai tab-nya; kalau URL sekarang belum punya "tab"
+  // sama sekali, anggap child pertama di grup itu sebagai default aktif.
+  const isChildActive = (child: NavChild, isFirstChild: boolean): boolean => {
+    const [childPath, childQuery] = child.path.split('?');
+    if (location.pathname !== childPath) return false;
+    if (!childQuery) return location.search === '';
+
+    const currentTab = new URLSearchParams(location.search).get('tab');
+    const childTab = new URLSearchParams(childQuery).get('tab');
+    if (!currentTab) return isFirstChild;
+    return currentTab === childTab;
+  };
+
+  const toggleDropdown = (label: string) => {
+    setOpenDropdowns((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) {
+        next.delete(label);
+      } else {
+        next.add(label);
+      }
+      return next;
+    });
+  };
 
   const handleLogout = async () => {
     try {
@@ -87,10 +261,19 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
   };
 
   const handleNavClick = (item: NavItem) => {
+    if (item.children) {
+      toggleDropdown(item.label);
+      return;
+    }
     if (item.path) {
       navigate(item.path);
       setSidebarOpen(false);
     }
+  };
+
+  const handleChildClick = (path: string) => {
+    navigate(path);
+    setSidebarOpen(false);
   };
 
   return (
@@ -121,25 +304,90 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
+
+            // garis pemisah muncul tepat sebelum Audit Log (yang dikunci di
+            // atas Settings, paling bawah sidebar)
+            const showDivider = item.label === 'Audit Log';
+            const divider = showDivider && (
+              <div key={`divider-${item.label}`} className="my-3 border-t border-slate-200" />
+            );
+
+            // ITEM DENGAN DROPDOWN (children)
+            if (item.children) {
+              const visibleChildren = item.children.filter(
+                (child) => !child.roles || child.roles.includes(user?.role ?? '')
+              );
+              const parentActive = isParentActive(item);
+              const open = isDropdownOpen(item);
+              return (
+                <div key={item.label}>
+                  {divider}
+                  <div className="mb-1">
+                    <button
+                      onClick={() => handleNavClick(item)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+                        parentActive
+                          ? 'bg-slate-900 text-white'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Icon size={18} />
+                      <span className="flex-1 text-left">{item.label}</span>
+                      <ChevronDown
+                        size={16}
+                        className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+
+                    {open && (
+                      <div className="mt-1 ml-4 pl-3 border-l border-slate-200 flex flex-col gap-1">
+                        {visibleChildren.map((child, idx) => {
+                          const ChildIcon = child.icon;
+                          const active = isChildActive(child, idx === 0);
+                          return (
+                            <button
+                              key={child.path}
+                              onClick={() => handleChildClick(child.path)}
+                              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition ${
+                                active
+                                  ? 'bg-slate-100 text-slate-900 font-medium'
+                                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                              }`}
+                            >
+                              <ChildIcon size={15} />
+                              {child.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+
+            // ITEM BIASA (tanpa dropdown)
             const isActive = item.path === location.pathname;
             const isDisabled = !item.path;
             return (
-              <button
-                key={item.label}
-                onClick={() => handleNavClick(item)}
-                disabled={isDisabled}
-                title={isDisabled ? 'Segera hadir' : undefined}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition ${
-                  isActive
-                    ? 'bg-slate-900 text-white'
-                    : isDisabled
-                    ? 'text-slate-300 cursor-not-allowed'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <Icon size={18} />
-                {item.label}
-              </button>
+              <div key={item.label}>
+                {divider}
+                <button
+                  onClick={() => handleNavClick(item)}
+                  disabled={isDisabled}
+                  title={isDisabled ? 'Segera hadir' : undefined}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition ${
+                    isActive
+                      ? 'bg-slate-900 text-white'
+                      : isDisabled
+                      ? 'text-slate-300 cursor-not-allowed'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <Icon size={18} />
+                  {item.label}
+                </button>
+              </div>
             );
           })}
         </nav>
@@ -175,12 +423,7 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="relative w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
-              <Bell size={16} />
-              <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-red-500 rounded-full text-[9px] text-white flex items-center justify-center">
-                2
-              </span>
-            </button>
+            <NotificationDropdown />
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center">
                 {initials(user?.name)}

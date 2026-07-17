@@ -6,7 +6,7 @@ import AppLayout from '../components/AppLayout';
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
 type Status = 'pending' | 'disetujui' | 'ditolak' | 'revisi' | 'selesai' | 'draft';
 type TabKey = 'semua' | 'pending' | 'disetujui' | 'ditolak';
-type JenisIzin = 'pribadi' | 'sakit' | 'terlambat' | 'pulang_cepat' | 'dinas' | 'lainnya';
+type JenisIzin = 'tahunan' | 'pribadi' | 'sakit' | 'terlambat' | 'pulang_cepat' | 'dinas' | 'lainnya';
 
 // Backend hardcode base URL yang sama dengan axios.ts, dipakai buat link bukti izin
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
@@ -66,6 +66,7 @@ const statusLabels: Record<Status, string> = {
 };
 
 const jenisLabels: Record<JenisIzin, string> = {
+    tahunan: 'Cuti Tahunan',
     pribadi: 'Izin Pribadi',
     sakit: 'Izin Sakit',
     terlambat: 'Izin Terlambat',

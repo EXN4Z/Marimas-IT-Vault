@@ -18,6 +18,10 @@ import AuditLog from './pages/AuditLog';
 import PengajuanIzin from './pages/PengajuanIzin';
 import IzinForm from './pages/IzinPageForm';
 import Analytics from './pages/DashboardAnalytics';
+import Agenda from './pages/Agenda';
+import Laporan from './pages/Laporan';
+import Payroll from './pages/Payroll';
+import MasterData from './pages/MasterData';
 
 
 function App() {
@@ -56,6 +60,10 @@ function App() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/ai-assistant" element={<AiAssistant />} />
             <Route path="/audit-log" element={<AuditLog />} />
+            <Route path="/agenda" element={<Agenda />} />
+            <Route path="/laporan" element={<Laporan />} />
+            <Route path="/payroll" element={<Payroll />} />
+            <Route path="/master-data" element={<MasterData />} />
             <Route path="/" element={<Login />} />
           </Routes>
         </BrowserRouter>
