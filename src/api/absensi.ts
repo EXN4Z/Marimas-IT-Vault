@@ -5,6 +5,7 @@ export type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
 export interface Karyawan {
   id: number; // pekerja id
   nip: string;
+  qr_code: string;
   face_descriptor: number[] | null;
   user: {
     id: number;
@@ -57,9 +58,15 @@ export async function getAbsensiSaya(): Promise<{ pekerja: Karyawan; absensi_har
   return res.data;
 }
 
-// UBAH: qr_code DIHAPUS. karyawanId opsional, cuma dipakai kalau requester Admin (override absen orang lain).
-// Kalau bukan admin, backend otomatis pakai akun yang sedang login, parameter ini diabaikan.
-export async function scanAbsen(
+// Mode QR — dipakai sebelum jam cutoff (config di backend: ABSENSI_QR_CUTOFF)
+export async function scanAbsenQr(qrCode: string): Promise<ScanResult> {
+  const res = await api.post<ScanResult>('/absensi/scan', { qr_code: qrCode });
+  return res.data;
+}
+
+// Mode Face + GPS — dipakai setelah jam cutoff.
+// karyawanId opsional, cuma dipakai kalau requester Admin (override absen orang lain).
+export async function scanAbsenFace(
   photo: Blob,
   latitude: number,
   longitude: number,
@@ -81,7 +88,7 @@ export async function scanAbsen(
   return res.data;
 }
 
-// UBAH: kode/qr_code dihapus. karyawanId opsional (admin override), default self.
+// karyawanId opsional (admin override), default self.
 export async function daftarWajah(descriptor: number[], karyawanId?: number): Promise<Karyawan> {
   const res = await api.post('/absensi/daftar-wajah', {
     descriptor,

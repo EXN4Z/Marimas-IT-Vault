@@ -15,7 +15,7 @@ import AppLayout from '../components/AppLayout';
 import FaceCapture from '../components/FaceCapture';
 import DaftarWajahModal from '../components/DaftarWajahModal';
 import {
-  scanAbsen,
+  scanAbsenFace,
   type Karyawan,
   type Absensi,
   type Role,
@@ -142,7 +142,7 @@ export default function AbsensiPage() {
     setModalError('');
     try {
       // BARU: override eksplisit lewat karyawan_id (khusus admin, sesuai kebijakan backend)
-      const result = await scanAbsen(
+      const result = await scanAbsenFace(
         capturedPhoto,
         gps.lat,
         gps.lng,
