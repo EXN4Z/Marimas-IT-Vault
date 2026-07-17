@@ -10,6 +10,7 @@ import {
   Fingerprint,
   AlertCircle,
   CheckCircle2,
+  MapPin,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import FaceCapture from '../components/FaceCapture';
@@ -26,6 +27,12 @@ import { useKaryawanAktif, useAbsensiHariIni, useRiwayatAbsensi } from '../hooks
 // CATATAN: Halaman ini KHUSUS ADMIN. Ini satu-satunya tempat yang boleh
 // menandai absen ATAS NAMA orang lain (override lewat karyawan_id).
 // Role lain (hr/manajer/karyawan) diarahkan ke AbsensiSayaPage (self-service saja).
+
+// CATATAN LOKASI: field `latitude` / `longitude` pada tipe `Absensi` hanya
+// akan terisi kalau endpoint backend /absensi/hari-ini dan /absensi/riwayat
+// benar-benar mengembalikan kolom tersebut di response JSON-nya. Kalau kolom
+// itu belum di-select di query backend, icon lokasi tidak akan pernah muncul
+// meskipun data GPS-nya sudah tersimpan di database saat proses scan absen.
 
 type TabKey = 'semua' | 'sudah_absen' | 'belum_absen';
 
@@ -87,6 +94,9 @@ export default function AbsensiPage() {
   const [faceResult, setFaceResult] = useState<{ verified: boolean; distance: number } | null>(null);
 
   const [wajahKaryawan, setWajahKaryawan] = useState<Karyawan | null>(null);
+
+  // BARU: state untuk modal preview lokasi absen
+  const [modalLokasi, setModalLokasi] = useState<Absensi | null>(null);
 
   const findAbsensi = (pekerjaId: number) =>
     absensiHariIni.find((a) => a.karyawan_id === pekerjaId) || null;
@@ -261,6 +271,7 @@ export default function AbsensiPage() {
                   const sudahMasuk = !!rec?.jam_masuk;
                   const sudahPulang = !!rec?.jam_pulang;
                   const belumDaftarWajah = !item.face_descriptor;
+                  const adaLokasi = rec?.latitude != null && rec?.longitude != null;
 
                   return (
                     <div key={item.id} className="flex items-center justify-between border border-slate-200 rounded-lg p-3 hover:bg-slate-50 transition">
@@ -306,6 +317,15 @@ export default function AbsensiPage() {
                           </p>
                         </div>
                         <div className="flex gap-1.5">
+                          {adaLokasi && (
+                            <button
+                              onClick={() => setModalLokasi(rec)}
+                              title="Lihat Lokasi Absen"
+                              className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center hover:bg-sky-100 transition"
+                            >
+                              <MapPin size={16} />
+                            </button>
+                          )}
                           <button
                             onClick={() => setWajahKaryawan(item)}
                             title={belumDaftarWajah ? 'Daftarkan Wajah' : 'Perbarui Wajah'}
@@ -360,26 +380,40 @@ export default function AbsensiPage() {
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
           <h3 className="text-base font-semibold text-slate-900 mb-4">Riwayat Absensi</h3>
           <ul className="flex flex-col gap-4">
-            {riwayat.map((r) => (
-              <li key={r.id} className="flex items-start gap-3">
-                <span
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    r.jam_pulang ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
-                  }`}
-                >
-                  {r.jam_pulang ? <ArrowUpCircle size={16} /> : <ArrowDownCircle size={16} />}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm text-slate-800">
-                    <span className="font-medium">{r.pekerja?.user.name ?? '-'}</span>{' '}
-                    {r.jam_pulang ? 'absen pulang' : 'absen masuk'}
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    {formatJam(r.jam_pulang ?? r.jam_masuk)} · {formatWaktu(r.tanggal)}
-                  </p>
-                </div>
-              </li>
-            ))}
+            {riwayat.map((r) => {
+              const adaLokasi = r.latitude != null && r.longitude != null;
+              return (
+                <li key={r.id} className="flex items-start gap-3">
+                  <span
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      r.jam_pulang ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
+                    }`}
+                  >
+                    {r.jam_pulang ? <ArrowUpCircle size={16} /> : <ArrowDownCircle size={16} />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-slate-800 min-w-0">
+                        <span className="font-medium">{r.pekerja?.user.name ?? '-'}</span>{' '}
+                        {r.jam_pulang ? 'absen pulang' : 'absen masuk'}
+                      </p>
+                      {adaLokasi && (
+                        <button
+                          onClick={() => setModalLokasi(r)}
+                          title="Lihat Lokasi Absen"
+                          className="w-6 h-6 rounded-md bg-sky-50 text-sky-600 flex items-center justify-center hover:bg-sky-100 transition flex-shrink-0"
+                        >
+                          <MapPin size={12} />
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      {formatJam(r.jam_pulang ?? r.jam_masuk)} · {formatWaktu(r.tanggal)}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
 
             {riwayat.length === 0 && (
               <p className="text-sm text-slate-400 text-center py-6">Belum ada riwayat absensi.</p>
@@ -454,6 +488,53 @@ export default function AbsensiPage() {
                 </button>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* BARU: MODAL PREVIEW LOKASI ABSEN */}
+      {modalLokasi && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                <MapPin size={18} className="text-sky-600" />
+                Lokasi Absen
+              </h3>
+              <button onClick={() => setModalLokasi(null)} className="text-slate-400 hover:text-slate-600">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="bg-slate-50 rounded-lg p-3 mb-4 text-sm text-slate-600">
+              <p>
+                Latitude: <span className="font-medium text-slate-800">{modalLokasi.latitude}</span>
+              </p>
+              <p>
+                Longitude: <span className="font-medium text-slate-800">{modalLokasi.longitude}</span>
+              </p>
+            </div>
+
+            {/* Preview peta pakai embed Google Maps, tanpa perlu API key */}
+            <div className="rounded-lg overflow-hidden border border-slate-200 mb-4">
+              <iframe
+                title="Lokasi Absen"
+                width="100%"
+                height="200"
+                style={{ border: 0 }}
+                loading="lazy"
+                src={`https://maps.google.com/maps?q=${modalLokasi.latitude},${modalLokasi.longitude}&z=16&output=embed`}
+              />
+            </div>
+
+            <a
+              href={`https://www.google.com/maps?q=${modalLokasi.latitude},${modalLokasi.longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full text-center bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold py-3 rounded-lg transition"
+            >
+              Buka di Google Maps
+            </a>
           </div>
         </div>
       )}

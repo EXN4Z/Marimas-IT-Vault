@@ -24,6 +24,11 @@ export interface Absensi {
   jam_pulang: string | null;
   status: 'tepat_waktu' | 'telat' | null;
   status_pulang: 'pulang_cepat' | 'pulang_normal' | null;
+  // BARU: koordinat GPS saat absen (bisa null untuk data lama / absen via QR tanpa GPS).
+  // PENTING: field ini hanya akan terisi kalau endpoint backend /absensi/hari-ini
+  // dan /absensi/riwayat benar-benar mengembalikan kolom latitude/longitude ini.
+  latitude?: number | null;
+  longitude?: number | null;
   pekerja?: Karyawan;
 }
 
