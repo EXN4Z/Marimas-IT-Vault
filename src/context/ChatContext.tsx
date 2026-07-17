@@ -40,6 +40,8 @@ interface ChatContextType {
   messages: ChatMessage[];
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   resetChat: () => void;
+  isOpen: boolean; // TAMBAH: status buka/tutup panel, biar gak balik ketutup pas pindah halaman
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -50,6 +52,7 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 // tombol "Bersihkan" (resetChat) atau saat logout.
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<ChatMessage[]>(loadInitialMessages);
+  const [isOpen, setIsOpen] = useState(false); // TAMBAH
 
   useEffect(() => {
     try {
@@ -71,7 +74,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ChatContext.Provider value={{ messages, setMessages, resetChat }}>
+    <ChatContext.Provider value={{ messages, setMessages, resetChat, isOpen, setIsOpen }}>
       {children}
     </ChatContext.Provider>
   );

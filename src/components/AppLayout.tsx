@@ -36,6 +36,7 @@ import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import api from '../api/axios';
 import NotificationDropdown from './NotificationDropDown';
+import ChatWidget from './Chatwidget';
 
 interface NavChild {
   label: string;
@@ -543,6 +544,7 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
         {/* CONTENT */}
         <main className="p-4 md:p-8">{children}</main>
       </div>
+      {location.pathname !== '/ai-assistant' && <ChatWidget />}
     </div>
   );
 }
