@@ -20,7 +20,6 @@ import {
 } from 'recharts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
-import ChatWidget from '../components/Chatwidget';
 import AppLayout from '../components/AppLayout';
 import api from '../api/axios';
 import { echo } from '../lib/echo';
@@ -341,7 +340,6 @@ export default function Dashboard() {
         agenda={agenda ?? []}
         agendaLoading={agendaLoading}
       />
-      <ChatWidget />
     </AppLayout>
   );
 }

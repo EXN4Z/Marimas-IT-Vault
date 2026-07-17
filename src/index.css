@@ -8,3 +8,23 @@
 *::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Edge Chromium */
 }
+
+/* Route modal overlay (dipakai RouteModal.tsx untuk create/edit yang tampil di atas
+   halaman sebelumnya tanpa nge-unmount halaman di belakangnya, mirip ScanQrModal) */
+@keyframes route-modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes route-modal-panel-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.route-modal-backdrop {
+  animation: route-modal-backdrop-in 0.15s ease-out;
+}
+
+.route-modal-panel {
+  animation: route-modal-panel-in 0.18s ease-out;
+}

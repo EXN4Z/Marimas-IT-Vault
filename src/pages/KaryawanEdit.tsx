@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api/axios';
-import AppLayout from '../components/AppLayout';
+import RouteModal from '../components/RouteModal';
 import { getDepartemen } from '../api/departemen';
 import { getJabatan, type Jabatan } from '../api/jabatan';
 import type { Departemen } from '../api/departemen';
@@ -88,6 +88,14 @@ export default function EditKaryawanPage() {
             .finally(() => setLoading(false));
     }, [id]);
 
+    function closeModal() {
+        if (window.history.state && window.history.state.idx > 0) {
+            navigate(-1);
+        } else {
+            navigate('/karyawan', { replace: true });
+        }
+    }
+
     function handleChange<K extends keyof FormState>(key: K, value: FormState[K]) {
         setForm((prev) => ({ ...prev, [key]: value }));
         if (errors[key]) {
@@ -140,33 +148,25 @@ export default function EditKaryawanPage() {
 
     if (loading) {
         return (
-            <AppLayout title="Edit Karyawan">
+            <RouteModal title="Edit Karyawan" fallbackPath="/karyawan" onClose={closeModal}>
                 <p className="text-center text-sm text-gray-400 py-16">Memuat data...</p>
-            </AppLayout>
+            </RouteModal>
         );
     }
 
     return (
-        <AppLayout title="Edit Karyawan">
-            <div className="max-w-xl mx-auto">
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-xl font-bold text-gray-900">Edit Karyawan</h1>
-                        <p className="text-sm text-gray-500 mt-1">Perbarui data pengguna ini.</p>
-                    </div>
-                    <button
-                        onClick={() => navigate('/karyawan')}
-                        className="text-sm text-gray-500 hover:text-black"
-                    >
-                        Kembali
-                    </button>
-                </div>
-
+        <RouteModal
+            title="Edit Karyawan"
+            description="Perbarui data pengguna ini."
+            fallbackPath="/karyawan"
+            onClose={closeModal}
+        >
+            <>
                 {errorMsg && (
                     <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">{errorMsg}</div>
                 )}
 
-                <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                     <Field label="Nama" error={errors.name?.[0]}>
                         <input
                             type="text"
@@ -271,7 +271,7 @@ export default function EditKaryawanPage() {
                         <div className="flex gap-2">
                             <button
                                 type="button"
-                                onClick={() => navigate('/karyawan')}
+                                onClick={closeModal}
                                 className="text-sm px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50"
                             >
                                 Batal
@@ -286,8 +286,8 @@ export default function EditKaryawanPage() {
                         </div>
                     </div>
                 </form>
-            </div>
-        </AppLayout>
+            </>
+        </RouteModal>
     );
 }
 

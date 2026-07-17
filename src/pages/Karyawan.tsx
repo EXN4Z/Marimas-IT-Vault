@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import AppLayout from '../components/AppLayout';
 
@@ -84,6 +84,7 @@ function initials(name: string): string {
 
 export default function KaryawanPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [errorMsg, setErrorMsg] = useState<string>('');
@@ -195,7 +196,7 @@ export default function KaryawanPage() {
                         </div>
                             {isAdmin && (
                                 <button
-                                    onClick={() => navigate('/karyawan/create')}
+                                    onClick={() => navigate('/karyawan/create', { state: { backgroundLocation: location } })}
                                     className="flex items-center justify-center gap-2 bg-black text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800 whitespace-nowrap"
                                 >
                                     + Tambah Karyawan
@@ -223,7 +224,7 @@ export default function KaryawanPage() {
                                     user={user}
                                     isAdmin={isAdmin}
                                     onDelete={() => setUserToDelete(user)}
-                                    onEdit={() => navigate(`/karyawan/${user.id}/edit`)}
+                                    onEdit={() => navigate(`/karyawan/${user.id}/edit`, { state: { backgroundLocation: location } })}
                                 />
                             ))}
                         </div>

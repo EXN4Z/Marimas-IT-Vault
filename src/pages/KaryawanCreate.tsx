@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
-import AppLayout from '../components/AppLayout';
+import RouteModal from '../components/RouteModal';
 import { getDepartemen, type Departemen } from '../api/departemen';
 import { getJabatan, type Jabatan } from '../api/jabatan';
 
@@ -51,6 +51,14 @@ export default function CreateKaryawanPage() {
         getJabatan().then(setJabatanList).catch(() => {});
     }, []);
 
+    function closeModal() {
+        if (window.history.state && window.history.state.idx > 0) {
+            navigate(-1);
+        } else {
+            navigate('/karyawan', { replace: true });
+        }
+    }
+
     function handleChange<K extends keyof FormState>(key: K, value: FormState[K]) {
         setForm((prev) => ({ ...prev, [key]: value }));
         if (errors[key]) {
@@ -93,52 +101,41 @@ export default function CreateKaryawanPage() {
 
     if (generatedPassword) {
         return (
-            <AppLayout title="Tambah Karyawan">
-                <div className="max-w-xl mx-auto">
-                    <div className="bg-white border border-gray-200 rounded-xl p-6 text-center">
-                        <h2 className="text-lg font-bold text-gray-900 mb-2">Karyawan Berhasil Dibuat</h2>
-                        <p className="text-sm text-gray-500 mb-4">
-                            Catat atau kirim password ini ke <span className="font-medium">{createdName}</span>.
-                            Password hanya ditampilkan sekali dan tidak bisa dilihat lagi.
+            <RouteModal title="Karyawan Berhasil Dibuat" fallbackPath="/karyawan">
+                <div className="text-center">
+                    <p className="text-sm text-gray-500 mb-4">
+                        Catat atau kirim password ini ke <span className="font-medium">{createdName}</span>.
+                        Password hanya ditampilkan sekali dan tidak bisa dilihat lagi.
+                    </p>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg py-3 px-4 mb-6">
+                        <p className="text-2xl font-mono font-bold tracking-wider text-gray-900">
+                            {generatedPassword}
                         </p>
-                        <div className="bg-gray-50 border border-gray-200 rounded-lg py-3 px-4 mb-6">
-                            <p className="text-2xl font-mono font-bold tracking-wider text-gray-900">
-                                {generatedPassword}
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => navigate('/karyawan')}
-                            className="w-full text-sm px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
-                        >
-                            Selesai
-                        </button>
                     </div>
+                    <button
+                        onClick={() => navigate('/karyawan')}
+                        className="w-full text-sm px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
+                    >
+                        Selesai
+                    </button>
                 </div>
-            </AppLayout>
+            </RouteModal>
         );
     }
 
     return (
-        <AppLayout title="Tambah Karyawan">
-            <div className="max-w-xl mx-auto">
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-xl font-bold text-gray-900">Tambah Karyawan</h1>
-                        <p className="text-sm text-gray-500 mt-1">Buat akun & data kepegawaian baru.</p>
-                    </div>
-                    <button
-                        onClick={() => navigate('/karyawan')}
-                        className="text-sm text-gray-500 hover:text-black"
-                    >
-                        Kembali
-                    </button>
-                </div>
-
+        <RouteModal
+            title="Tambah Karyawan"
+            description="Buat akun & data kepegawaian baru."
+            fallbackPath="/karyawan"
+            onClose={closeModal}
+        >
+            <>
                 {errorMsg && (
                     <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">{errorMsg}</div>
                 )}
 
-                <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                     <Field label="Nama" error={errors.name?.[0]}>
                         <input
                             type="text"
@@ -234,7 +231,7 @@ export default function CreateKaryawanPage() {
                     <div className="flex justify-end gap-2 pt-2">
                         <button
                             type="button"
-                            onClick={() => navigate('/karyawan')}
+                            onClick={closeModal}
                             className="text-sm px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50"
                         >
                             Batal
@@ -248,8 +245,8 @@ export default function CreateKaryawanPage() {
                         </button>
                     </div>
                 </form>
-            </div>
-        </AppLayout>
+            </>
+        </RouteModal>
     );
 }
 

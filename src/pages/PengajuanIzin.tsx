@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import AppLayout from '../components/AppLayout';
 
@@ -92,6 +92,7 @@ function formatTanggal(tanggal: string): string {
 
 export default function PengajuanIzinPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [dashboard, setDashboard] = useState<DashboardData | null>(null);
     const [izinList, setIzinList] = useState<Izin[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -221,7 +222,7 @@ export default function PengajuanIzinPage() {
                         <p className="text-sm text-gray-500 mt-1">Kelola dan pantau seluruh pengajuan izin karyawan.</p>
                     </div>
                     <button
-                        onClick={() => navigate('/izin/create')}
+                        onClick={() => navigate('/izin/create', { state: { backgroundLocation: location } })}
                         className="flex items-center justify-center gap-2 bg-black text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800 whitespace-nowrap"
                     >
                         + Ajukan Izin
