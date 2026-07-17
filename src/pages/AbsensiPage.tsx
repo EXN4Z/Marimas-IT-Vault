@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import {
   Users,
   UserCheck,
@@ -11,6 +12,8 @@ import {
   AlertCircle,
   CheckCircle2,
   MapPin,
+  QrCode,
+  Printer,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import FaceCapture from '../components/FaceCapture';
@@ -98,6 +101,10 @@ export default function AbsensiPage() {
   // BARU: state untuk modal preview lokasi absen
   const [modalLokasi, setModalLokasi] = useState<Absensi | null>(null);
 
+  // BARU: state & ref untuk modal cetak QR
+  const [qrKaryawan, setQrKaryawan] = useState<Karyawan | null>(null);
+  const qrPrintRef = useRef<HTMLDivElement>(null);
+
   const findAbsensi = (pekerjaId: number) =>
     absensiHariIni.find((a) => a.karyawan_id === pekerjaId) || null;
 
@@ -133,6 +140,50 @@ export default function AbsensiPage() {
     setCapturedPhoto(null);
     setGps(null);
     setFaceResult(null);
+  };
+
+  // BARU: buka window baru berisi QR + info karyawan, lalu langsung trigger print.
+  // Dibuat di window terpisah supaya hasil cetak cuma QR-nya saja, bukan seluruh halaman admin.
+  const handlePrintQr = () => {
+    if (!qrKaryawan || !qrPrintRef.current) return;
+
+    const printWindow = window.open('', '_blank', 'width=420,height=560');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>QR Absen - ${qrKaryawan.nip}</title>
+          <style>
+            body {
+              font-family: -apple-system, Arial, sans-serif;
+              text-align: center;
+              padding: 32px 16px;
+              margin: 0;
+            }
+            h2 { margin: 0 0 4px; font-size: 18px; }
+            p { margin: 0 0 24px; font-size: 13px; color: #64748b; }
+            .qr-box { display: flex; justify-content: center; }
+            @media print {
+              body { padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <h2>${qrKaryawan.user.name}</h2>
+          <p>${qrKaryawan.nip} · ${roleLabels[qrKaryawan.user.role]}</p>
+          <div class="qr-box">${qrPrintRef.current.innerHTML}</div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+
+    // Tunggu render QR selesai sebelum trigger print dialog
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
   };
 
   const closeModal = () => {
@@ -324,6 +375,15 @@ export default function AbsensiPage() {
                               className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center hover:bg-sky-100 transition"
                             >
                               <MapPin size={16} />
+                            </button>
+                          )}
+                          {item.qr_code && (
+                            <button
+                              onClick={() => setQrKaryawan(item)}
+                              title="Cetak QR Absen"
+                              className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-100 transition"
+                            >
+                              <QrCode size={16} />
                             </button>
                           )}
                           <button
@@ -535,6 +595,42 @@ export default function AbsensiPage() {
             >
               Buka di Google Maps
             </a>
+          </div>
+        </div>
+      )}
+
+      {/* BARU: MODAL PREVIEW & CETAK QR ABSEN */}
+      {qrKaryawan && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                <QrCode size={18} className="text-indigo-600" />
+                QR Absen Karyawan
+              </h3>
+              <button onClick={() => setQrKaryawan(null)} className="text-slate-400 hover:text-slate-600">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="bg-slate-50 rounded-lg p-3 mb-4 text-center">
+              <p className="text-sm font-medium text-slate-800">{qrKaryawan.user.name}</p>
+              <p className="text-xs text-slate-400">
+                {qrKaryawan.nip} · {roleLabels[qrKaryawan.user.role]}
+              </p>
+            </div>
+
+            <div ref={qrPrintRef} className="flex justify-center py-4">
+              <QRCodeSVG value={qrKaryawan.qr_code} size={200} />
+            </div>
+
+            <button
+              onClick={handlePrintQr}
+              className="w-full mt-2 flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold py-3 rounded-lg transition"
+            >
+              <Printer size={16} />
+              Cetak QR
+            </button>
           </div>
         </div>
       )}
