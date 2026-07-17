@@ -20,17 +20,9 @@ import {
   FileSpreadsheet,
   Database,
   ChevronDown,
-  UserPlus,
-  List,
-  FilePlus,
   Building2,
   BriefcaseBusiness,
   Tags,
-  History,
-  ScanLine,
-  TicketPlus,
-  PackagePlus,
-  CalendarPlus,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
@@ -56,66 +48,15 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  {
-    label: 'Data Karyawan',
-    icon: Users,
-    path: null,
-    matchPrefix: '/karyawan',
-    children: [
-      { label: 'Semua Karyawan', icon: List, path: '/karyawan' },
-      { label: 'Tambah Karyawan', icon: UserPlus, path: '/karyawan/create' },
-    ],
-  },
-  {
-    label: 'Absensi QR',
-    icon: QrCode,
-    path: null,
-    matchPrefix: '/absensi',
-    children: [
-      { label: 'Riwayat Absensi', icon: History, path: '/absensi' },
-      { label: 'Scan Absensi', icon: ScanLine, path: '/absensi?action=scan' },
-    ],
-  },
-  {
-    label: 'Pengajuan Izin',
-    icon: FileText,
-    path: null,
-    matchPrefix: '/izin',
-    children: [
-      { label: 'Daftar Izin', icon: List, path: '/izin' },
-      { label: 'Ajukan Izin', icon: FilePlus, path: '/izin/create' },
-    ],
-  },
-  {
-    label: 'Ticketing',
-    icon: Ticket,
-    path: null,
-    matchPrefix: '/ticketing',
-    children: [
-      { label: 'Semua Tiket', icon: List, path: '/ticketing' },
-      { label: 'Buat Tiket', icon: TicketPlus, path: '/ticketing?action=create' },
-    ],
-  },
-  {
-    label: 'Inventaris',
-    icon: Package,
-    path: null,
-    matchPrefix: '/inventaris',
-    children: [
-      { label: 'Semua Barang', icon: List, path: '/inventaris' },
-      { label: 'Tambah Barang', icon: PackagePlus, path: '/inventaris?action=create', roles: ['admin'] },
-    ],
-  },
-  {
-    label: 'Agenda',
-    icon: CalendarDays,
-    path: null,
-    matchPrefix: '/agenda',
-    children: [
-      { label: 'Semua Agenda', icon: List, path: '/agenda' },
-      { label: 'Tambah Agenda', icon: CalendarPlus, path: '/agenda?action=create', roles: ['admin', 'hr'] },
-    ],
-  },
+  // Semua menu di bawah ini sengaja BUKAN dropdown — aksi "Tambah/Buat/Scan"-nya
+  // udah ada di dalam halaman list-nya sendiri (tombol di header / query ?action=),
+  // jadi gak perlu link duplikat di sidebar.
+  { label: 'Data Karyawan', icon: Users, path: '/karyawan', matchPrefix: '/karyawan' },
+  { label: 'Absensi QR', icon: QrCode, path: '/absensi', matchPrefix: '/absensi' },
+  { label: 'Pengajuan Izin', icon: FileText, path: '/izin', matchPrefix: '/izin' },
+  { label: 'Ticketing', icon: Ticket, path: '/ticketing', matchPrefix: '/ticketing' },
+  { label: 'Inventaris', icon: Package, path: '/inventaris', matchPrefix: '/inventaris' },
+  { label: 'Agenda', icon: CalendarDays, path: '/agenda', matchPrefix: '/agenda' },
   { label: 'Expense - Inventory', icon: BarChart3, path: '/dashboard-analytics', restricted: true },
   { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true },
   { label: 'Payroll', icon: Wallet, path: '/payroll', restricted: true },
@@ -272,7 +213,11 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
   }, []);
 
   const handleSearchResultClick = (path: string) => {
-    navigate(path);
+    if (OVERLAY_PATHS.includes(path)) {
+      navigate(path, { state: { backgroundLocation: location } });
+    } else {
+      navigate(path);
+    }
     setSearchOpen(false);
     setSearchQuery('');
     setSidebarOpen(false);
@@ -331,19 +276,33 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
     }
   };
 
+  // Route yang sekarang dirender sebagai overlay absolute (RouteModal) di App.tsx,
+  // bukan halaman penuh lagi — jadi navigasi ke sini WAJIB bawa state.backgroundLocation
+  // supaya halaman yang lagi kebuka tetap mounted & kelihatan di belakangnya, gak
+  // reload/hilang. Kalau path-nya gak ada di daftar ini, navigasi biasa aja.
+  const OVERLAY_PATHS = ['/karyawan/create', '/izin/create'];
+
   const handleNavClick = (item: NavItem) => {
     if (item.children) {
       toggleDropdown(item.label);
       return;
     }
     if (item.path) {
-      navigate(item.path);
+      if (OVERLAY_PATHS.includes(item.path)) {
+        navigate(item.path, { state: { backgroundLocation: location } });
+      } else {
+        navigate(item.path);
+      }
       setSidebarOpen(false);
     }
   };
 
   const handleChildClick = (path: string) => {
-    navigate(path);
+    if (OVERLAY_PATHS.includes(path)) {
+      navigate(path, { state: { backgroundLocation: location } });
+    } else {
+      navigate(path);
+    }
     setSidebarOpen(false);
   };
 
@@ -438,7 +397,9 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
             }
 
             // ITEM BIASA (tanpa dropdown)
-            const isActive = item.path === location.pathname;
+            const isActive = item.matchPrefix
+              ? location.pathname.startsWith(item.matchPrefix)
+              : item.path === location.pathname;
             const isDisabled = !item.path;
             return (
               <div key={item.label}>
