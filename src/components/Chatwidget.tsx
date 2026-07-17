@@ -1,31 +1,68 @@
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { MessageCircle, X, Send } from 'lucide-react';
 import { sendChatMessage } from '../api/chat';
+import { useChat, type ChatMessage } from '../context/ChatContext';
+import { detectIntent } from '../lib/chatIntent';
 
-interface Message {
-  role: 'user' | 'assistant';
-  text: string;
+function timeNow() {
+  return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 }
 
 export default function ChatWidget() {
-  const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', text: 'Halo! Ada yang bisa saya bantu?' },
-  ]);
+  const { messages, setMessages, isOpen, setIsOpen } = useChat();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSend = async () => {
     if (!input.trim()) return;
-    const userMsg = input;
-    setMessages((prev) => [...prev, { role: 'user', text: userMsg }]);
+    const userText = input;
+    const userMsg: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      text: userText,
+      time: timeNow(),
+    };
+    setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setLoading(true);
+
+    // TAMBAH: deteksi apakah user minta tutorial ke fitur tertentu
+    const intent = detectIntent(userText);
+
     try {
-      const reply = await sendChatMessage(userMsg);
-      setMessages((prev) => [...prev, { role: 'assistant', text: reply }]);
+      const reply = await sendChatMessage(userText);
+      setMessages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: 'assistant', text: reply, time: timeNow() },
+      ]);
+
+      // TAMBAH: kalau ketemu & bukan udah di halaman itu, redirect + kasih catatan
+      if (intent && location.pathname !== intent.path) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            text: `Saya arahkan kamu ke halaman ${intent.label} ya.`,
+            time: timeNow(),
+          },
+        ]);
+        navigate(intent.path);
+      }
     } catch {
-      setMessages((prev) => [...prev, { role: 'assistant', text: 'Maaf, terjadi kesalahan.' }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          text: 'Maaf, terjadi kesalahan.',
+          time: timeNow(),
+          error: true,
+        },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -33,22 +70,24 @@ export default function ChatWidget() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      {open ? (
+      {isOpen ? (
         <div className="w-80 h-96 bg-white rounded-xl shadow-xl border border-slate-200 flex flex-col overflow-hidden">
           <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
             <span className="text-sm font-semibold">AI Assistant</span>
-            <button onClick={() => setOpen(false)}>
+            <button onClick={() => setIsOpen(false)}>
               <X className="w-4 h-4" />
             </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {messages.map((m, i) => (
+            {messages.map((m) => (
               <div
-                key={i}
+                key={m.id}
                 className={`text-sm px-3 py-2 rounded-lg max-w-[85%] ${
                   m.role === 'user'
                     ? 'bg-slate-900 text-white ml-auto'
+                    : m.error
+                    ? 'bg-red-50 text-red-600'
                     : 'bg-slate-100 text-slate-800'
                 }`}
               >
@@ -80,7 +119,7 @@ export default function ChatWidget() {
         </div>
       ) : (
         <button
-          onClick={() => setOpen(true)}
+          onClick={() => setIsOpen(true)}
           className="bg-slate-900 text-white p-4 rounded-full shadow-lg hover:bg-slate-800"
         >
           <MessageCircle className="w-6 h-6" />

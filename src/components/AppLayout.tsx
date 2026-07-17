@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -36,6 +36,7 @@ import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import api from '../api/axios';
 import NotificationDropdown from './NotificationDropDown';
+import ChatWidget from './Chatwidget';
 
 interface NavChild {
   label: string;
@@ -167,6 +168,17 @@ function initials(name?: string) {
     .toUpperCase();
 }
 
+// satu entri hasil pencarian: bisa halaman utama (tanpa parent) atau
+// sub-halaman (child dropdown), makanya ada field parentLabel opsional
+// buat ditampilin sebagai breadcrumb kecil di hasil search
+interface SearchEntry {
+  key: string;
+  label: string;
+  parentLabel?: string;
+  icon: typeof LayoutDashboard;
+  path: string;
+}
+
 interface AppLayoutProps {
   title: string;
   children: ReactNode;
@@ -177,6 +189,9 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
   const { resetChat } = useChat();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchBoxRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -206,6 +221,62 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
     ...(showAuditLog ? [auditLogNavItem!] : []),
     ...(settingsNavItem ? [settingsNavItem] : []),
   ];
+
+  // ratain semua halaman sidebar (termasuk sub-menu dropdown) jadi satu daftar
+  // flat buat kebutuhan search -- ikut role filter yang sama kayak sidebar,
+  // biar user gak liat halaman yang sebenernya gak bisa dia akses
+  const searchEntries: SearchEntry[] = visibleNavItems.flatMap((item) => {
+    if (item.children) {
+      const visibleChildren = item.children.filter(
+        (child) => !child.roles || child.roles.includes(user?.role ?? '')
+      );
+      return visibleChildren.map((child) => ({
+        key: `${item.label}-${child.label}`,
+        label: child.label,
+        parentLabel: item.label,
+        icon: child.icon,
+        path: child.path,
+      }));
+    }
+    if (!item.path) return [];
+    return [
+      {
+        key: item.label,
+        label: item.label,
+        icon: item.icon,
+        path: item.path,
+      },
+    ];
+  });
+
+  const filteredSearchEntries =
+    searchQuery.trim() === ''
+      ? searchEntries
+      : searchEntries.filter((entry) => {
+          const q = searchQuery.toLowerCase();
+          return (
+            entry.label.toLowerCase().includes(q) ||
+            (entry.parentLabel ? entry.parentLabel.toLowerCase().includes(q) : false)
+          );
+        });
+
+  // klik di luar kotak search (input + dropdown) nutup dropdown-nya
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearchResultClick = (path: string) => {
+    navigate(path);
+    setSearchOpen(false);
+    setSearchQuery('');
+    setSidebarOpen(false);
+  };
 
   // dropdown parent dianggap "aktif" (dan auto-expand) kalau path sekarang cocok
   // salah satu child-nya, atau nempel di matchPrefix (buat nutup route dinamis
@@ -414,12 +485,46 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
             <h1 className="text-xl font-bold text-slate-900 hidden sm:block">{title}</h1>
           </div>
 
-          <div className="hidden md:flex items-center flex-1 max-w-sm mx-6 relative">
+          <div ref={searchBoxRef} className="hidden md:flex items-center flex-1 max-w-sm mx-6 relative">
             <Search className="absolute left-3 w-4 h-4 text-slate-400" />
             <input
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setSearchOpen(true);
+              }}
+              onClick={() => setSearchOpen(true)}
+              onFocus={() => setSearchOpen(true)}
               placeholder="Cari sesuatu..."
               className="w-full pl-9 pr-4 py-2 bg-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
             />
+
+            {searchOpen && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-lg max-h-80 overflow-y-auto z-40">
+                {filteredSearchEntries.length === 0 ? (
+                  <p className="px-4 py-3 text-sm text-slate-400">Halaman tidak ditemukan.</p>
+                ) : (
+                  filteredSearchEntries.map((entry) => {
+                    const EntryIcon = entry.icon;
+                    return (
+                      <button
+                        key={entry.key}
+                        onClick={() => handleSearchResultClick(entry.path)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-600 hover:bg-slate-100 transition"
+                      >
+                        <EntryIcon size={16} className="text-slate-400 shrink-0" />
+                        <span className="flex-1 truncate">
+                          {entry.parentLabel && (
+                            <span className="text-slate-400">{entry.parentLabel} / </span>
+                          )}
+                          {entry.label}
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -439,6 +544,7 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
         {/* CONTENT */}
         <main className="p-4 md:p-8">{children}</main>
       </div>
+      {location.pathname !== '/ai-assistant' && <ChatWidget />}
     </div>
   );
 }
