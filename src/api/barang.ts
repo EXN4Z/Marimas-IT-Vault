@@ -17,6 +17,8 @@ export interface Barang {
   satuan: string;
   stok: number;
   stok_minimum: number;
+  stok_dipinjam: number;
+  stok_tersedia: number;
   created_at: string | null;
   updated_at: string | null;
 }
