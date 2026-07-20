@@ -6,10 +6,23 @@ export interface PayrollRow {
   nama: string;
   jabatan: string;
   departemen: string;
-  gaji_pokok: number;
+
+  hari_kerja: number;
   hari_hadir: number;
   hari_telat: number;
+  hari_izin: number;
+  hari_izin_tanpa_gaji: number;
+  hari_alpa: number;
+
+  gaji_pokok: number;
+  tunjangan: number;
+  gaji_kotor: number;
+
   potongan_telat: number;
+  potongan_izin_tanpa_gaji: number;
+  potongan_alpa: number;
+  total_potongan: number;
+
   gaji_bersih: number;
 }
 
