@@ -421,8 +421,8 @@ export default function Ticketing() {
               )}
             </div>
 
-            <h4 className="text-sm font-semibold text-slate-900 mb-1">{detailTicket.judul}</h4>
-            <p className="text-sm text-slate-600 whitespace-pre-line mb-4">{detailTicket.deskripsi}</p>
+            <h4 className="text-sm font-semibold text-slate-900 mb-1 break-words">{detailTicket.judul}</h4>
+            <p className="text-sm text-slate-600 whitespace-pre-line break-words mb-4">{detailTicket.deskripsi}</p>
 
             <div className="flex items-center gap-3 bg-slate-50 rounded-lg p-3 mb-4">
               <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-medium text-slate-700 flex-shrink-0">

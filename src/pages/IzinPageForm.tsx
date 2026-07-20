@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import RouteModal from '../components/RouteModal';
 
-type JenisIzin = 'tahunan' | 'pribadi' | 'sakit' | 'terlambat' | 'pulang_cepat' | 'dinas' | 'lahiran' | 'pendamping_lahiran' | 'lainnya';
+type JenisIzin = 'tahunan' | 'pribadi' | 'sakit' | 'terlambat' | 'pulang_cepat' | 'dinas' | 'lahiran' | 'pendamping_lahiran' | 'duka_serumah' | 'duka_keluarga_inti' | 'lainnya';
 
 const jenisOptions: { value: JenisIzin; label: string }[] = [
     { value: 'tahunan', label: 'Cuti Tahunan' },
@@ -14,13 +14,18 @@ const jenisOptions: { value: JenisIzin; label: string }[] = [
     { value: 'dinas', label: 'Izin Dinas' },
     { value: 'lahiran', label: 'Cuti Lahiran' },
     { value: 'pendamping_lahiran', label: 'Cuti Mendampingi Istri Lahiran' },
+    { value: 'duka_serumah', label: 'Izin Duka - Anggota Serumah Meninggal' },
+    { value: 'duka_keluarga_inti', label: 'Izin Duka - Pasangan/Anak/Orang Tua Meninggal' },
     { value: 'lainnya', label: 'Izin Lainnya' },
 ];
 
 // Durasi default per jenis izin yang punya aturan tetap: lahiran 3 bulan,
-// mendampingi istri lahiran 2 hari. Jenis lain nggak di-auto-fill.
+// mendampingi istri lahiran 2 hari, duka serumah 1 hari, duka keluarga inti
+// (pasangan/anak/orang tua) 2 hari. Jenis lain nggak di-auto-fill.
 const DURASI_HARI: Partial<Record<JenisIzin, number>> = {
     pendamping_lahiran: 2,
+    duka_serumah: 1,
+    duka_keluarga_inti: 2,
 };
 
 // Cuti lahiran defaultnya berdurasi 3 bulan penuh dari tanggal mulai.
@@ -262,9 +267,9 @@ export default function IzinFormPage() {
                                     Tanggal selesai otomatis dihitung 3 bulan dari tanggal mulai — bisa diubah manual kalau perlu.
                                 </p>
                             )}
-                            {form.jenis_izin === 'pendamping_lahiran' && (
+                            {DURASI_HARI[form.jenis_izin as JenisIzin] && (
                                 <p className="text-xs text-gray-400 mt-1">
-                                    Tanggal selesai otomatis dihitung 2 hari dari tanggal mulai — bisa diubah manual kalau perlu.
+                                    Tanggal selesai otomatis dihitung {DURASI_HARI[form.jenis_izin as JenisIzin]} hari dari tanggal mulai — bisa diubah manual kalau perlu.
                                 </p>
                             )}
                         </div>

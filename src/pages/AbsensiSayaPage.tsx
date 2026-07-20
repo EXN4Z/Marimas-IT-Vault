@@ -7,7 +7,7 @@ import DaftarWajahModal from '../components/DaftarWajahModal';
 import { getAbsensiSaya, scanAbsenQr, scanAbsenFace, type Karyawan, type Absensi } from '../api/absensi';
 
 // Harus sinkron sama ABSENSI_QR_CUTOFF di backend .env
-const QR_CUTOFF = '10:00';
+const QR_CUTOFF = '08:00';
 
 function formatJam(time: string | null | undefined): string {
   if (!time) return '-';

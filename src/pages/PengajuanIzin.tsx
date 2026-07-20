@@ -6,7 +6,7 @@ import AppLayout from '../components/AppLayout';
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
 type Status = 'pending' | 'disetujui' | 'ditolak' | 'revisi' | 'selesai' | 'draft';
 type TabKey = 'semua' | 'pending' | 'disetujui' | 'ditolak';
-type JenisIzin = 'tahunan' | 'pribadi' | 'sakit' | 'terlambat' | 'pulang_cepat' | 'dinas' | 'lahiran' | 'pendamping_lahiran' | 'lainnya';
+type JenisIzin = 'tahunan' | 'pribadi' | 'sakit' | 'terlambat' | 'pulang_cepat' | 'dinas' | 'lahiran' | 'pendamping_lahiran' | 'duka_serumah' | 'duka_keluarga_inti' | 'lainnya';
 
 // Backend hardcode base URL yang sama dengan axios.ts, dipakai buat link bukti izin
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
@@ -74,6 +74,8 @@ const jenisLabels: Record<JenisIzin, string> = {
     dinas: 'Izin Dinas',
     lahiran: 'Cuti Lahiran',
     pendamping_lahiran: 'Cuti Mendampingi Istri Lahiran',
+    duka_serumah: 'Izin Duka (Serumah)',
+    duka_keluarga_inti: 'Izin Duka (Pasangan/Anak/Orang Tua)',
     lainnya: 'Izin Lainnya',
 };
 
