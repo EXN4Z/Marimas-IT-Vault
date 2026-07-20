@@ -527,7 +527,6 @@ function LegendDot({ color, label, value }: { color: string; label: string; valu
 
 function DashboardContent({
   error,
-  getGreeting,
   isApprover,
   departemen,
   statCards,
@@ -562,7 +561,7 @@ function DashboardContent({
   mutasiBarang: MutasiBulanan[];
   totalBarang?: TotalBarang;
 }) {
-  const { user } = useAuth();
+  useAuth();
 
   // ==== Hero chart "Pengajuan Izin Tahun Ini" — 1 bar disorot (nilai tertinggi)
   // + garis rata-rata putus-putus, gaya kartu fintech (bar polos vs bar disorot).
