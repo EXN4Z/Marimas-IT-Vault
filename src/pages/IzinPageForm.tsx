@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import RouteModal from '../components/RouteModal';
 
-type JenisIzin = 'tahunan' | 'pribadi' | 'sakit' | 'terlambat' | 'pulang_cepat' | 'dinas' | 'lahiran' | 'lainnya';
+type JenisIzin = 'tahunan' | 'pribadi' | 'sakit' | 'terlambat' | 'pulang_cepat' | 'dinas' | 'lahiran' | 'pendamping_lahiran' | 'lainnya';
 
 const jenisOptions: { value: JenisIzin; label: string }[] = [
     { value: 'tahunan', label: 'Cuti Tahunan' },
@@ -13,14 +13,28 @@ const jenisOptions: { value: JenisIzin; label: string }[] = [
     { value: 'pulang_cepat', label: 'Izin Pulang Cepat' },
     { value: 'dinas', label: 'Izin Dinas' },
     { value: 'lahiran', label: 'Cuti Lahiran' },
+    { value: 'pendamping_lahiran', label: 'Cuti Mendampingi Istri Lahiran' },
     { value: 'lainnya', label: 'Izin Lainnya' },
 ];
+
+// Durasi default per jenis izin yang punya aturan tetap: lahiran 3 bulan,
+// mendampingi istri lahiran 2 hari. Jenis lain nggak di-auto-fill.
+const DURASI_HARI: Partial<Record<JenisIzin, number>> = {
+    pendamping_lahiran: 2,
+};
 
 // Cuti lahiran defaultnya berdurasi 3 bulan penuh dari tanggal mulai.
 function tambahBulan(tanggalMulai: string, jumlahBulan: number): string {
     const d = new Date(tanggalMulai);
     d.setMonth(d.getMonth() + jumlahBulan);
     d.setDate(d.getDate() - 1); // inklusif: 3 bulan dihitung dari tanggal mulai
+    return d.toISOString().split('T')[0];
+}
+
+// Buat izin dengan durasi tetap dalam hari (mis. 2 hari), dihitung inklusif.
+function tambahHari(tanggalMulai: string, jumlahHari: number): string {
+    const d = new Date(tanggalMulai);
+    d.setDate(d.getDate() + jumlahHari - 1); // inklusif: tanggal mulai dihitung hari ke-1
     return d.toISOString().split('T')[0];
 }
 
@@ -181,8 +195,10 @@ export default function IzinFormPage() {
                                     onChange={(e) => {
                                         const value = e.target.value;
                                         updateField('tanggal_mulai', value);
-                                        if (form.jenis_izin === 'lahiran' && value) {
+                                        if (value && form.jenis_izin === 'lahiran') {
                                             updateField('tanggal_selesai', tambahBulan(value, 3));
+                                        } else if (value && DURASI_HARI[form.jenis_izin as JenisIzin]) {
+                                            updateField('tanggal_selesai', tambahHari(value, DURASI_HARI[form.jenis_izin as JenisIzin]!));
                                         }
                                     }}
                                     className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10 ${
@@ -220,8 +236,11 @@ export default function IzinFormPage() {
                                 onChange={(e) => {
                                     const value = e.target.value as JenisIzin;
                                     updateField('jenis_izin', value);
-                                    if (value === 'lahiran' && form.tanggal_mulai) {
+                                    if (!form.tanggal_mulai) return;
+                                    if (value === 'lahiran') {
                                         updateField('tanggal_selesai', tambahBulan(form.tanggal_mulai, 3));
+                                    } else if (DURASI_HARI[value]) {
+                                        updateField('tanggal_selesai', tambahHari(form.tanggal_mulai, DURASI_HARI[value]!));
                                     }
                                 }}
                                 className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10 bg-white ${
@@ -241,6 +260,11 @@ export default function IzinFormPage() {
                             {form.jenis_izin === 'lahiran' && (
                                 <p className="text-xs text-gray-400 mt-1">
                                     Tanggal selesai otomatis dihitung 3 bulan dari tanggal mulai — bisa diubah manual kalau perlu.
+                                </p>
+                            )}
+                            {form.jenis_izin === 'pendamping_lahiran' && (
+                                <p className="text-xs text-gray-400 mt-1">
+                                    Tanggal selesai otomatis dihitung 2 hari dari tanggal mulai — bisa diubah manual kalau perlu.
                                 </p>
                             )}
                         </div>
