@@ -1,33 +1,58 @@
 import api from './axios';
+import { printCsvAsReport } from '../utils/printCsvReport';
 
 type JenisLaporan = 'absensi' | 'izin' | 'inventaris';
 
-// Helper generik: hit endpoint /laporan/{jenis}?bulan=&tahun= sebagai blob lalu
-// trigger download di browser. Semua endpoint dibatasi backend ke role admin/hr/manajer.
-async function downloadLaporan(jenis: JenisLaporan, bulan: number, tahun: number): Promise<void> {
-  const res = await api.get(`/laporan/${jenis}`, {
-    params: { bulan, tahun },
-    responseType: 'blob',
-  });
+const bulanLabel = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
 
-  const url = window.URL.createObjectURL(new Blob([res.data]));
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', `laporan-${jenis}-${tahun}-${bulan}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(url);
+const laporanTitle: Record<JenisLaporan, string> = {
+  absensi: 'Laporan Absensi',
+  izin: 'Laporan Pengajuan Izin',
+  inventaris: 'Laporan Mutasi Inventaris',
+};
+
+// Helper generik: hit endpoint /laporan/{jenis}?bulan=&tahun= sebagai blob, parse
+// hasilnya, lalu render sebagai tabel HTML rapi yang ditulis ke jendela print yang
+// SUDAH dibuka (lihat printCsvReport.ts untuk alasan kenapa window-nya harus dibuka
+// duluan, sebelum fetch data). Semua endpoint dibatasi backend ke role admin/hr/manajer.
+async function printLaporan(
+  jenis: JenisLaporan,
+  bulan: number,
+  tahun: number,
+  targetWindow: Window
+): Promise<void> {
+  try {
+    const res = await api.get(`/laporan/${jenis}`, {
+      params: { bulan, tahun },
+      responseType: 'blob',
+    });
+
+    const csvText = await (res.data as Blob).text();
+    printCsvAsReport(
+      csvText,
+      {
+        title: laporanTitle[jenis],
+        periodLabel: `${bulanLabel[bulan - 1]} ${tahun}`,
+      },
+      targetWindow
+    );
+  } catch (err) {
+    targetWindow.close();
+    throw err;
+  }
 }
 
-export function downloadLaporanAbsensi(bulan: number, tahun: number): Promise<void> {
-  return downloadLaporan('absensi', bulan, tahun);
+export function printLaporanAbsensi(bulan: number, tahun: number, targetWindow: Window): Promise<void> {
+  return printLaporan('absensi', bulan, tahun, targetWindow);
 }
 
-export function downloadLaporanIzin(bulan: number, tahun: number): Promise<void> {
-  return downloadLaporan('izin', bulan, tahun);
+export function printLaporanIzin(bulan: number, tahun: number, targetWindow: Window): Promise<void> {
+  return printLaporan('izin', bulan, tahun, targetWindow);
 }
 
-export function downloadLaporanInventaris(bulan: number, tahun: number): Promise<void> {
-  return downloadLaporan('inventaris', bulan, tahun);
+export function printLaporanInventaris(bulan: number, tahun: number, targetWindow: Window): Promise<void> {
+  return printLaporan('inventaris', bulan, tahun, targetWindow);
 }

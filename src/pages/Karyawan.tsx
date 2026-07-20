@@ -253,17 +253,17 @@ interface UserRowProps {
 
 function UserRow({ user, isAdmin, onDelete, onEdit }: UserRowProps) {
     return (
-        <div className="flex items-center justify-between py-3">
-            <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-700">
+        <div className="flex items-center justify-between py-3 gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-700 flex-shrink-0">
                     {initials(user.name)}
                 </div>
-                <div>
-                    <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                    <p className="text-xs text-gray-500">{user.email}</p>
+                <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
                 </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-shrink-0">
                 <span className={`text-xs px-3 py-1 rounded-full ${roleStyles[user.role]}`}>
                     {roleLabels[user.role]}
                 </span>
