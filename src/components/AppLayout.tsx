@@ -300,7 +300,12 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    // Chrome (sidebar + topbar) dan area dashboard sekarang punya 2 warna
+    // yang beda secara sengaja: root ini "bg-white" dipakai bareng sama
+    // sidebar & topbar biar nyatu tanpa garis, sedangkan panel dashboard
+    // di bawah dikasih "bg-slate-50" + rounded biar keliatan sebagai
+    // panel/card sendiri yang mengambang di atas chrome putih.
+    <div className="min-h-screen bg-white flex">
       {/* ===== MOBILE OVERLAY ===== */}
       {sidebarOpen && (
         <div
@@ -311,11 +316,11 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
 
       {/* ===== SIDEBAR ===== */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-white border-r border-slate-200 flex flex-col z-50 transition-transform duration-300 ${
+        className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-white flex flex-col z-50 transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
       >
-        <div className="flex items-center justify-between px-6 h-20 border-b border-slate-100">
+        <div className="flex items-center justify-between px-6 h-20">
           <div className="flex p-1 items-center mx-auto gap-2">
             <img src="/logo.png" alt="Marimas One" className="h-18 w-auto p-1" />
           </div>
@@ -429,9 +434,11 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
       </aside>
 
       {/* ===== MAIN AREA ===== */}
-      <div className="flex-1 min-w-0">
-        {/* TOPBAR */}
-        <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
+      <div className="flex-1 min-w-0 flex flex-col">
+        {/* TOPBAR — bg sama kayak sidebar (bg-white), garis pemisah (border-b)
+            sengaja dihilangin biar sidebar & topbar keliatan nyatu jadi satu
+            panel chrome tanpa garis */}
+        <header className="h-20 bg-white/70 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-600">
               <Menu size={22} />
@@ -495,8 +502,14 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
           </div>
         </header>
 
-        {/* CONTENT */}
-        <main className="p-4 md:p-8">{children}</main>
+        {/* CONTENT — panel dashboard sendiri: bg-slate-50 + rounded-3xl,
+            dikasih margin (p-3/p-6) biar keliatan "mengambang" terpisah
+            dari chrome putih di sidebar & topbar */}
+        <main className="flex-1 p-3 md:p-6">
+          <div className="bg-zinc-100 rounded-3xl min-h-[calc(100vh-6.5rem)] p-4 md:p-8">
+            {children}
+          </div>
+        </main>
       </div>
       {location.pathname !== '/ai-assistant' && <ChatWidget />}
     </div>
