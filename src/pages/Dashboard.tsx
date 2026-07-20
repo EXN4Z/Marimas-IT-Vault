@@ -679,7 +679,7 @@ function DashboardContent({
                     contentStyle={{ borderRadius: 10, border: '1px solid #E2E8F0', fontSize: 12 }}
                   />
                   <Bar dataKey="pengajuan" name="Pengajuan" radius={[8, 8, 0, 0]} barSize={26} label={renderPeakLabel}>
-                    {grafikPengajuan.map((entry, idx) => (
+                    {grafikPengajuan.map((_entry, idx) => (
                       <Cell key={idx} fill={idx === peakIndex ? THEME.violet : 'url(#barHatch)'} />
                     ))}
                   </Bar>
