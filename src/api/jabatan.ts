@@ -3,14 +3,10 @@ import api from './axios';
 export interface Jabatan {
   id: number;
   nama: string;
-  gaji_pokok: number;
-  tunjangan: number;
 }
 
 export interface JabatanInput {
   nama: string;
-  gaji_pokok?: number;
-  tunjangan?: number;
 }
 
 export async function getJabatan(): Promise<Jabatan[]> {

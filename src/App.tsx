@@ -19,7 +19,6 @@ import PengajuanIzin from './pages/PengajuanIzin';
 import IzinForm from './pages/IzinPageForm';
 import Agenda from './pages/Agenda';
 import Laporan from './pages/Laporan';
-import Payroll from './pages/Payroll';
 import MasterData from './pages/MasterData';
 
 interface LocationState {
@@ -56,7 +55,6 @@ function AppRoutes() {
         <Route path="/audit-log" element={<AuditLog />} />
         <Route path="/agenda" element={<Agenda />} />
         <Route path="/laporan" element={<Laporan />} />
-        <Route path="/payroll" element={<Payroll />} />
         <Route path="/master-data" element={<MasterData />} />
 
         {/* Fallback: kalau /karyawan/create atau /karyawan/:id/edit diakses langsung

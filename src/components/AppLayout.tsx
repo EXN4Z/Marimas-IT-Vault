@@ -15,7 +15,6 @@ import {
   X,
   Package,
   CalendarDays,
-  Wallet,
   FileSpreadsheet,
   Database,
   ChevronDown,
@@ -57,7 +56,6 @@ const navItems: NavItem[] = [
   { label: 'Inventaris', icon: Package, path: '/inventaris', matchPrefix: '/inventaris' },
   { label: 'Agenda', icon: CalendarDays, path: '/agenda', matchPrefix: '/agenda' },
   { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true },
-  { label: 'Payroll', icon: Wallet, path: '/payroll', restricted: true },
   {
     label: 'Master Data',
     icon: Database,
@@ -138,8 +136,8 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
   const REVIEWER_ROLES = ['admin', 'hr', 'manajer', 'manager'];
 
   const roleFilter = (item: NavItem) => {
-    // Payroll & Master Data hanya untuk admin/hr
-    if ((item.label === 'Payroll' || item.label === 'Master Data') && !STAFF_ROLES.includes(user?.role ?? '')) {
+    // Master Data hanya untuk admin/hr
+    if (item.label === 'Master Data' && !STAFF_ROLES.includes(user?.role ?? '')) {
       return false;
     }
     // Laporan untuk admin/hr/manajer

@@ -13,8 +13,8 @@ import {
 } from '../api/kategoriBarang';
 
 type TabKey = 'departemen' | 'jabatan' | 'kategori';
-type Item = { id: number; nama: string; gaji_pokok?: number; tunjangan?: number };
-type FormPayload = { nama: string; gaji_pokok?: number; tunjangan?: number };
+type Item = { id: number; nama: string };
+type FormPayload = { nama: string };
 
 const TAB_KEYS: TabKey[] = ['departemen', 'jabatan', 'kategori'];
 
@@ -24,19 +24,12 @@ function isTabKey(value: string | null): value is TabKey {
 
 const STAFF_ROLES = ['admin', 'hr'];
 
-function formatRupiah(value: number): string {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(
-    value
-  );
-}
-
 const tabConfig: Record<
   TabKey,
   {
     label: string;
     icon: typeof Building2;
     singular: string;
-    hasGaji?: boolean; // kalau true, tampilkan field gaji pokok & tunjangan di form + tabel
     get: () => Promise<Item[]>;
     create: (payload: FormPayload) => Promise<Item>;
     update: (id: number, payload: FormPayload) => Promise<Item>;
@@ -56,7 +49,6 @@ const tabConfig: Record<
     label: 'Jabatan',
     icon: BriefcaseBusiness,
     singular: 'Jabatan',
-    hasGaji: true,
     get: getJabatan as () => Promise<Item[]>,
     create: createJabatan,
     update: updateJabatan,
@@ -108,8 +100,6 @@ export default function MasterData() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Item | null>(null);
   const [formNama, setFormNama] = useState('');
-  const [formGajiPokok, setFormGajiPokok] = useState('');
-  const [formTunjangan, setFormTunjangan] = useState('');
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -142,8 +132,6 @@ export default function MasterData() {
   const openCreateModal = () => {
     setEditing(null);
     setFormNama('');
-    setFormGajiPokok('');
-    setFormTunjangan('');
     setFormError('');
     setModalOpen(true);
   };
@@ -151,8 +139,6 @@ export default function MasterData() {
   const openEditModal = (item: Item) => {
     setEditing(item);
     setFormNama(item.nama);
-    setFormGajiPokok(item.gaji_pokok != null ? String(item.gaji_pokok) : '');
-    setFormTunjangan(item.tunjangan != null ? String(item.tunjangan) : '');
     setFormError('');
     setModalOpen(true);
   };
@@ -171,10 +157,6 @@ export default function MasterData() {
     setFormError('');
     try {
       const payload: FormPayload = { nama: formNama.trim() };
-      if (cfg.hasGaji) {
-        payload.gaji_pokok = formGajiPokok ? Number(formGajiPokok) : 0;
-        payload.tunjangan = formTunjangan ? Number(formTunjangan) : 0;
-      }
       if (editing) {
         await cfg.update(editing.id, payload);
       } else {
@@ -271,8 +253,6 @@ export default function MasterData() {
             <thead>
               <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
                 <th className="px-6 py-3 font-medium">Nama</th>
-                {cfg.hasGaji && <th className="px-6 py-3 font-medium text-right">Gaji Pokok</th>}
-                {cfg.hasGaji && <th className="px-6 py-3 font-medium text-right">Tunjangan</th>}
                 <th className="px-6 py-3 font-medium text-right">Aksi</th>
               </tr>
             </thead>
@@ -280,12 +260,6 @@ export default function MasterData() {
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                   <td className="px-6 py-3 text-slate-800">{item.nama}</td>
-                  {cfg.hasGaji && (
-                    <td className="px-6 py-3 text-slate-600 text-right">{formatRupiah(item.gaji_pokok ?? 0)}</td>
-                  )}
-                  {cfg.hasGaji && (
-                    <td className="px-6 py-3 text-slate-600 text-right">{formatRupiah(item.tunjangan ?? 0)}</td>
-                  )}
                   <td className="px-6 py-3">
                     <div className="flex items-center justify-end gap-1">
                       <button
@@ -336,33 +310,6 @@ export default function MasterData() {
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
-
-              {cfg.hasGaji && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 mb-1 block">Gaji Pokok / Bulan</label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={formGajiPokok}
-                      onChange={(e) => setFormGajiPokok(e.target.value)}
-                      placeholder="0"
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 mb-1 block">Tunjangan / Bulan</label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={formTunjangan}
-                      onChange={(e) => setFormTunjangan(e.target.value)}
-                      placeholder="0"
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                    />
-                  </div>
-                </div>
-              )}
 
               {formError && (
                 <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">

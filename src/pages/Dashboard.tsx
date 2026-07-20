@@ -29,7 +29,7 @@ import type { User as UserType } from '../types/user';
 import { getAgendaMendatang, type AgendaItem } from '../api/agenda';
 import DashboardAnalyticsTab from './DashboardAnalytics';
 
-// Role yang boleh liat tab "Analytics" (izin, inventaris, keuangan) — samain
+// Role yang boleh liat tab "Analytics" (izin, inventaris) — samain
 // sama REVIEWER_ROLES di AppLayout.tsx & isApprover di DashboardAnalytics.tsx
 const REVIEWER_ROLES = ['admin', 'hr', 'manajer', 'manager'];
 
@@ -384,7 +384,7 @@ export default function Dashboard() {
 
       {activeTab === 'analytics' ? (
         // TAMBAH: mount komponen ini cuma kalau tab-nya aktif, jadi fetch data
-        // izin/inventaris/keuangan cuma jalan pas dibuka, gak nyampur sama
+        // izin/inventaris cuma jalan pas dibuka, gak nyampur sama
         // query di tab Ringkasan di atas.
         <DashboardAnalyticsTab />
       ) : (

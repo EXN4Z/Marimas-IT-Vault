@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
     ResponsiveContainer,
-    LineChart,
-    Line,
     AreaChart,
     Area,
     BarChart,
@@ -13,21 +11,15 @@ import {
     Tooltip,
     Legend,
 } from 'recharts';
-import { FileText, Package, Wallet } from 'lucide-react';
+import { FileText, Package } from 'lucide-react';
 import api from '../api/axios';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
-type SectionKey = 'kepegawaian' | 'inventaris' | 'keuangan';
+type SectionKey = 'kepegawaian' | 'inventaris';
 
 interface TopKaryawan {
     nama: string;
     jumlah: number;
-}
-
-interface KeuanganBulanan {
-    bulan: string;
-    pemasukan: number;
-    pengeluaran: number;
 }
 
 interface TrenPengajuan {
@@ -53,21 +45,6 @@ const COLOR = {
     axis: '#64748B', // slate-500
     tickLabel: '#334155', // slate-700
 };
-
-function formatRupiah(value: number): string {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        maximumFractionDigits: 0,
-    }).format(value);
-}
-
-function formatRupiahSingkat(value: number): string {
-    if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}M`;
-    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(0)}jt`;
-    if (value >= 1_000) return `${(value / 1_000).toFixed(0)}rb`;
-    return `${value}`;
-}
 
 interface StatCardProps {
     label: string;
@@ -137,12 +114,11 @@ const chartTooltipStyle = {
 const sections: { key: SectionKey; label: string; icon: typeof FileText }[] = [
     { key: 'kepegawaian', label: 'Kepegawaian', icon: FileText },
     { key: 'inventaris', label: 'Inventaris', icon: Package },
-    { key: 'keuangan', label: 'Keuangan', icon: Wallet },
 ];
 
 // Isi tab "Analytics" di halaman Dashboard (bukan halaman/route sendiri lagi).
 // UBAH: sebelumnya semua kartu & chart ditumpuk vertikal jadi satu wall-of-cards.
-// Sekarang dipecah jadi sub-tab (Kepegawaian / Inventaris / Keuangan) biar tiap
+// Sekarang dipecah jadi sub-tab (Kepegawaian / Inventaris) biar tiap
 // section fokus & gak numpuk, dan palet warnanya disamain sama halaman lain
 // (slate/emerald/amber/red) -- lihat konstanta COLOR di atas.
 export default function DashboardAnalyticsTab() {
@@ -165,8 +141,6 @@ export default function DashboardAnalyticsTab() {
     const [topKaryawan, setTopKaryawan] = useState<TopKaryawan[]>([]);
     const [topKehadiran, setTopKehadiran] = useState<TopKaryawan[]>([]);
     const [grafikP, setGrafikP] = useState<TrenPengajuan[]>([]);
-    // UBAH: sekarang array per-bulan (6 bulan terakhir), bukan objek total tunggal
-    const [keuangan, setKeuangan] = useState<KeuanganBulanan[]>([]);
 
     // re-render tiap 30 detik biar teks "X menit yang lalu" ikut jalan tanpa refresh manual
     const [, forceTick] = useState(0);
@@ -214,13 +188,6 @@ export default function DashboardAnalyticsTab() {
            .catch((err) => {
             console.error(err)
            })
-        api.get('/dashboard-analytics/total-keuangan')
-           .then((res) => {
-            setKeuangan(res.data)
-           })
-           .catch((err) => {
-            console.error(err);
-           })
         api
             .get<{ role: Role }>('/user')
             .then((res) => setCurrentRole(res.data.role))
@@ -246,11 +213,6 @@ export default function DashboardAnalyticsTab() {
             </div>
         );
     }
-
-    // UBAH: total pemasukan/pengeluaran dijumlah dari data 6 bulan, bukan dummy lagi
-    const totalPemasukan = keuangan.reduce((sum, k) => sum + k.pemasukan, 0);
-    const totalPengeluaran = keuangan.reduce((sum, k) => sum + k.pengeluaran, 0);
-    const saldoBersih = totalPemasukan - totalPengeluaran;
 
     return (
         <div className="max-w-6xl mx-auto">
@@ -405,44 +367,6 @@ export default function DashboardAnalyticsTab() {
                 </>
             )}
 
-            {activeSection === 'keuangan' && (
-                <>
-                    <Section title="Ringkasan Keuangan">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            <StatCard label="Total Pemasukan" value={formatRupiah(totalPemasukan)} hint="6 bulan terakhir" accent="green" />
-                            <StatCard label="Total Pengeluaran" value={formatRupiah(totalPengeluaran)} hint="6 bulan terakhir" accent="red" />
-                            <StatCard
-                                label="Saldo Bersih"
-                                value={formatRupiah(saldoBersih)}
-                                hint="6 bulan terakhir"
-                                accent={saldoBersih >= 0 ? 'green' : 'red'}
-                            />
-                        </div>
-                    </Section>
-
-                    <Section title="Pemasukan vs Pengeluaran" description="Arus keuangan per bulan, 6 bulan terakhir.">
-                        <div className="bg-white border border-slate-200 rounded-xl p-4">
-                            <ResponsiveContainer width="100%" height={280}>
-                                <LineChart data={keuangan} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={COLOR.grid} />
-                                    <XAxis dataKey="bulan" tick={{ fontSize: 12, fill: COLOR.axis }} axisLine={false} tickLine={false} />
-                                    <YAxis
-                                        tick={{ fontSize: 12, fill: COLOR.axis }}
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tickFormatter={(v: number) => formatRupiahSingkat(v)}
-                                        width={48}
-                                    />
-                                    <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => formatRupiah(Number(value ?? 0))} />
-                                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                                    <Line type="monotone" dataKey="pemasukan" name="Pemasukan" stroke={COLOR.emerald} strokeWidth={2} dot={{ r: 3 }} />
-                                    <Line type="monotone" dataKey="pengeluaran" name="Pengeluaran" stroke={COLOR.red} strokeWidth={2} dot={{ r: 3 }} />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </Section>
-                </>
-            )}
         </div>
     );
 }
