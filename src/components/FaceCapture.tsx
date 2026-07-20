@@ -26,8 +26,14 @@ const DIRECTION_LABEL: Record<Direction, string> = {
 
 // "Kiri/kanan/atas/bawah" di sini merujuk ke arah FISIK badan user (kayak lagi diajak
 // ngomong langsung: "noleh kiri" = noleh ke kiri badan sendiri), BUKAN sisi layar.
-// Video-nya sendiri ditampilkan apa adanya tanpa mirror, jadi secara koordinat gambar
-// arahnya kebalik dari arah fisik — itu udah dikompensasi di logic pengecekan dx di bawah.
+// Video-nya DITAMPILKAN di-mirror pakai CSS (scaleX(-1)) biar enak dilihat kayak cermin
+// biasa — tapi ini CUMA visual. Frame mentah yang dipakai faceapi buat deteksi (lewat
+// videoRef.current langsung, dan ctx.drawImage ke canvas) TETAP data asli kamera yang
+// TIDAK ter-mirror, karena CSS transform di elemen <video> gak ngubah data pixel yang
+// dibaca API — cuma ngubah tampilannya doang. Makanya logic pengecekan dx di bawah masih
+// harus "ditukar" biar instruksi kiri/kanan cocok sama arah fisik badan user: itu tetep
+// perlu ada meskipun tampilannya sekarang udah di-mirror, soalnya datanya sendiri gak ikut
+// ke-mirror.
 
 // Toleransi pergeseran hidung relatif terhadap ukuran wajah, dipakai buat nentuin
 // user sudah "cukup nengok" ke arah yang diminta. Kalau kerasa kegampangan atau
@@ -47,6 +53,32 @@ const MISS_TOLERANCE_FRAMES = 6; // toleransi berapa frame BERTURUT-TURUT boleh 
 // sebelum dianggap "wajah hilang" dan reset ke positioning. Tanpa ini, 1 frame gagal
 // (wajar terjadi pas kepala lagi bergerak/menunduk) langsung nge-reset semua progress.
 const DETECT_INTERVAL_MS = 220; // jeda antar frame yang dianalisis (bukan realtime tiap frame, biar hemat CPU)
+
+// Lingkaran panduan (kayak di reference image) — koordinat dalam "ruang tampilan" 400x300
+// yang match sama aspect-ratio container video (4/3). User diminta pasin wajahnya ke
+// dalam bundaran ini; progres "wajah stabil" di stage 'positioning' cuma jalan kalau
+// wajah beneran ada di dalam bundaran (bukan cuma "wajah kedetect" doang di mana pun).
+const GUIDE_VIEW_W = 400;
+const GUIDE_VIEW_H = 300;
+const GUIDE_CX = 200;
+const GUIDE_CY = 145;
+const GUIDE_R = 100;
+const GUIDE_CENTER_TOLERANCE = 0.45; // seberapa jauh titik tengah wajah boleh meleset dari
+// titik tengah bundaran, sebagai fraksi dari GUIDE_R, sebelum dianggap "belum pas"
+const GUIDE_SIZE_MIN_RATIO = 0.55; // wajah dianggap "kejauhan" kalau ukurannya di bawah ini
+const GUIDE_SIZE_MAX_RATIO = 1.55; // wajah dianggap "kedekatan" kalau ukurannya di atas ini
+// (rasio dihitung dari ukuran box wajah dibanding diameter bundaran)
+
+// Video ditampilkan pakai CSS object-cover di dalam container, jadi koordinat px dari
+// faceapi (yang dalam skala resolusi ASLI kamera, video.videoWidth/Height) TIDAK sama
+// dengan posisi visual di layar — perlu di-mapping dulu ke ruang 400x300 di atas biar
+// bisa dibandingkan apple-to-apple sama posisi bundaran panduan.
+function mapVideoPointToGuideSpace(px: number, py: number, videoWidth: number, videoHeight: number) {
+  const scale = Math.max(GUIDE_VIEW_W / videoWidth, GUIDE_VIEW_H / videoHeight);
+  const offsetX = (GUIDE_VIEW_W - videoWidth * scale) / 2;
+  const offsetY = (GUIDE_VIEW_H - videoHeight * scale) / 2;
+  return { x: px * scale + offsetX, y: py * scale + offsetY, scale };
+}
 
 // PENTING: kode di bawah pakai faceapi.detectSingleFace(...).withFaceLandmarks() langsung
 // dari video stream (live, tanpa jepret foto) untuk menghitung arah hadap. Ini butuh model
@@ -69,6 +101,9 @@ export default function FaceCapture({ referenceDescriptor, onCapture, onReset }:
   const [stage, setStage] = useState<Stage>('loading');
   const [direction, setDirection] = useState<Direction | null>(null);
   const [debugInfo, setDebugInfo] = useState(''); // DEBUG ONLY — bisa dihapus kalau sudah stabil
+  // Warna lingkaran panduan: 'idle' = belum pas/netral, 'fit' = wajah udah pas di
+  // dalam bundaran, 'error' = verifikasi identitas gagal (stage 'failed')
+  const [ringState, setRingState] = useState<'idle' | 'fit' | 'error'>('idle');
 
   // Baseline posisi hidung saat wajah pertama kali terdeteksi lurus ke depan —
   // dipakai sebagai acuan buat ngukur seberapa jauh user udah nengok.
@@ -128,6 +163,7 @@ export default function FaceCapture({ referenceDescriptor, onCapture, onReset }:
       const descriptor = await getFaceDescriptor(canvasRef.current);
       if (!descriptor) {
         setError('Wajah tidak terdeteksi saat verifikasi. Coba ulangi.');
+        setRingState('error');
         setStage('failed');
         return;
       }
@@ -137,6 +173,7 @@ export default function FaceCapture({ referenceDescriptor, onCapture, onReset }:
 
       if (!verified) {
         setError('Wajah tidak cocok dengan data terdaftar. Coba lagi dengan pencahayaan lebih baik.');
+        setRingState('error');
         setStage('failed');
         return;
       }
@@ -149,6 +186,7 @@ export default function FaceCapture({ referenceDescriptor, onCapture, onReset }:
       setStage('challenge');
     } catch {
       setError('Gagal memproses deteksi wajah. Coba lagi.');
+      setRingState('error');
       setStage('failed');
     }
   }, [referenceDescriptor]);
@@ -252,25 +290,49 @@ export default function FaceCapture({ referenceDescriptor, onCapture, onReset }:
           const box = detection.detection.box;
           const boxSize = (box.width + box.height) / 2;
 
+          // Cek apakah wajah lagi "pas" di dalam bundaran panduan: mapping posisi & ukuran
+          // box wajah (dalam skala native video) ke ruang tampilan 400x300 yang sama dengan
+          // bundaran, baru dibandingin jaraknya ke titik tengah bundaran + rasio ukurannya.
+          const boxCenterMapped = mapVideoPointToGuideSpace(
+            box.x + box.width / 2,
+            box.y + box.height / 2,
+            video.videoWidth,
+            video.videoHeight
+          );
+          const displayBoxSize = boxSize * boxCenterMapped.scale;
+          const distFromGuideCenter = Math.hypot(boxCenterMapped.x - GUIDE_CX, boxCenterMapped.y - GUIDE_CY);
+          const sizeRatio = displayBoxSize / (GUIDE_R * 2);
+          const isFit =
+            distFromGuideCenter < GUIDE_R * GUIDE_CENTER_TOLERANCE &&
+            sizeRatio > GUIDE_SIZE_MIN_RATIO &&
+            sizeRatio < GUIDE_SIZE_MAX_RATIO;
+          setRingState(isFit ? 'fit' : 'idle');
+
           if (stage === 'positioning') {
-            stableCountRef.current += 1;
+            if (!isFit) {
+              // Wajah kedetect tapi belum pas di dalam bundaran (kejauhan/kedekatan/geser
+              // dari tengah) — jangan dihitung sebagai "stabil", user harus geser dulu.
+              stableCountRef.current = 0;
+            } else {
+              stableCountRef.current += 1;
 
-            // Fire-and-forget: kompilasi model FaceRecognitionNet (dipakai getFaceDescriptor
-            // pas verifikasi identitas nanti) lebih awal, mumpung ada wajah nyata di kamera.
-            // Tanpa ini, panggilan getFaceDescriptor() PERTAMA (baru kejadian pas verifikasi
-            // identitas) yang nanggung beban compile shader WebGL-nya, jadi kerasa lambat
-            // sekali doang. Hasilnya dibuang, cuma butuh efek sampingnya (model jadi "anget").
-            if (!warmedUpRef.current && stableCountRef.current === 1) {
-              warmedUpRef.current = true;
-              getFaceDescriptor(video).catch(() => {});
-            }
+              // Fire-and-forget: kompilasi model FaceRecognitionNet (dipakai getFaceDescriptor
+              // pas verifikasi identitas nanti) lebih awal, mumpung ada wajah nyata di kamera.
+              // Tanpa ini, panggilan getFaceDescriptor() PERTAMA (baru kejadian pas verifikasi
+              // identitas) yang nanggung beban compile shader WebGL-nya, jadi kerasa lambat
+              // sekali doang. Hasilnya dibuang, cuma butuh efek sampingnya (model jadi "anget").
+              if (!warmedUpRef.current && stableCountRef.current === 1) {
+                warmedUpRef.current = true;
+                getFaceDescriptor(video).catch(() => {});
+              }
 
-            if (stableCountRef.current >= POSITION_STABLE_FRAMES) {
-              // Simpan posisi hidung saat ini sebagai acuan "lurus ke depan", lalu
-              // langsung verifikasi identitas SEBELUM masuk challenge arah.
-              baselineRef.current = { x: noseTip.x, y: noseTip.y, boxSize };
-              await verifikasiIdentitas();
-              return; // stage sudah dialihkan (verifying -> challenge/positioning) di dalamnya
+              if (stableCountRef.current >= POSITION_STABLE_FRAMES) {
+                // Simpan posisi hidung saat ini sebagai acuan "lurus ke depan", lalu
+                // langsung verifikasi identitas SEBELUM masuk challenge arah.
+                baselineRef.current = { x: noseTip.x, y: noseTip.y, boxSize };
+                await verifikasiIdentitas();
+                return; // stage sudah dialihkan (verifying -> challenge/positioning) di dalamnya
+              }
             }
           } else if (stage === 'challenge' && baselineRef.current && direction) {
             const dx = (noseTip.x - baselineRef.current.x) / baselineRef.current.boxSize;
@@ -357,6 +419,7 @@ export default function FaceCapture({ referenceDescriptor, onCapture, onReset }:
     matchDistanceRef.current = 0;
     tickErrorLoggedRef.current = false;
     setDirection(null);
+    setRingState('idle');
     setStage('positioning');
     onReset?.();
   };
@@ -377,9 +440,38 @@ export default function FaceCapture({ referenceDescriptor, onCapture, onReset }:
           autoPlay
           playsInline
           muted
-          className={`w-full h-full object-cover ${captured ? 'hidden' : ''}`}
+          className={`w-full h-full object-cover -scale-x-100 ${captured ? 'hidden' : ''}`}
         />
-        {captured && <img src={captured} alt="Foto absen" className="w-full h-full object-cover" />}
+        {captured && <img src={captured} alt="Foto absen" className="w-full h-full object-cover -scale-x-100" />}
+
+        {/* Lingkaran panduan: user pasin wajahnya ke sini biar bisa dideteksi. Warnanya
+            berubah — abu-abu netral (belum pas), hijau (wajah udah pas di dalam bundaran),
+            merah (verifikasi identitas gagal) — mirip pola di app-app KYC/selfie check. */}
+        {!captured && modelsReady && stage !== 'loading' && (
+          <svg
+            viewBox={`0 0 ${GUIDE_VIEW_W} ${GUIDE_VIEW_H}`}
+            className="absolute inset-0 w-full h-full pointer-events-none"
+          >
+            <defs>
+              <mask id="faceGuideMask">
+                <rect width={GUIDE_VIEW_W} height={GUIDE_VIEW_H} fill="white" />
+                <circle cx={GUIDE_CX} cy={GUIDE_CY} r={GUIDE_R} fill="black" />
+              </mask>
+            </defs>
+            {/* Vignette tipis di luar bundaran biar fokus mata tertarik ke tengah */}
+            <rect width={GUIDE_VIEW_W} height={GUIDE_VIEW_H} fill="black" fillOpacity={0.35} mask="url(#faceGuideMask)" />
+            <circle
+              cx={GUIDE_CX}
+              cy={GUIDE_CY}
+              r={GUIDE_R}
+              fill="none"
+              stroke={ringState === 'fit' ? '#22c55e' : ringState === 'error' ? '#f43f5e' : '#e2e8f0'}
+              strokeWidth={5}
+              strokeLinecap="round"
+              style={{ transition: 'stroke 150ms ease-out' }}
+            />
+          </svg>
+        )}
 
         {!captured && stage === 'challenge' && direction && (
           <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm text-white text-center py-3 px-4">
@@ -399,7 +491,9 @@ export default function FaceCapture({ referenceDescriptor, onCapture, onReset }:
 
         {!captured && stage === 'positioning' && modelsReady && (
           <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm text-white text-center py-3 px-4">
-            <p className="text-sm">Posisikan wajah di tengah kamera...</p>
+            <p className="text-sm">
+              {ringState === 'fit' ? 'Pas! Tahan sebentar...' : 'Posisikan wajah di dalam bundaran'}
+            </p>
           </div>
         )}
       </div>
