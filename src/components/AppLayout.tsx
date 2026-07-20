@@ -318,8 +318,8 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
         } lg:translate-x-0`}
       >
         <div className="flex items-center justify-between px-6 h-20 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-900 tracking-tight">MARIMAS ONE</span>
+          <div className="flex p-1 items-center mx-auto gap-2">
+            <img src="/logo.png" alt="Marimas One" className="h-18 w-auto p-1" />
           </div>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400">
             <X size={20} />
