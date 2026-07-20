@@ -75,21 +75,6 @@ function formatAgendaDate(dateString: string): string {
   });
 }
 
-function formatRelativeTime(dateString: string): string {
-  const date = new Date(dateString.replace(' ', 'T'));
-  if (isNaN(date.getTime())) return '-';
-
-  const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (diffSec < 60) return 'baru saja';
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} menit yang lalu`;
-  const diffHour = Math.floor(diffMin / 60);
-  if (diffHour < 24) return `${diffHour} jam yang lalu`;
-  const diffDay = Math.floor(diffHour / 24);
-  if (diffDay < 30) return `${diffDay} hari yang lalu`;
-  const diffMonth = Math.floor(diffDay / 30);
-  return `${diffMonth} bulan yang lalu`;
-}
 
 interface departemenDistribusi {
   departemen: string;
