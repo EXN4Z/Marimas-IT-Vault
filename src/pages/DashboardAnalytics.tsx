@@ -13,9 +13,11 @@ import {
     Tooltip,
     Legend,
 } from 'recharts';
+import { FileText, Package, Wallet } from 'lucide-react';
 import api from '../api/axios';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
+type SectionKey = 'kepegawaian' | 'inventaris' | 'keuangan';
 
 interface TopKaryawan {
     nama: string;
@@ -40,6 +42,17 @@ interface mutasiBarang {
 }
 
 /* ========================================================================= */
+// Palet warna disamain sama sisa halaman lain di aplikasi (slate/emerald/amber/red),
+// bukan gray/green/yellow generik recharts lagi.
+const COLOR = {
+    primary: '#0F172A', // slate-900 -- dipakai buat metrik netral/utama
+    emerald: '#059669', // slate emerald-600 -- positif (masuk, pemasukan, disetujui)
+    red: '#DC2626', // red-600 -- negatif (keluar, pengeluaran, ditolak)
+    amber: '#D97706', // amber-600 -- pending/menunggu
+    grid: '#F1F5F9', // slate-100
+    axis: '#64748B', // slate-500
+    tickLabel: '#334155', // slate-700
+};
 
 function formatRupiah(value: number): string {
     return new Intl.NumberFormat('id-ID', {
@@ -63,19 +76,20 @@ interface StatCardProps {
     accent?: 'default' | 'green' | 'red' | 'yellow';
 }
 
-const accentStyles: Record<NonNullable<StatCardProps['accent']>, string> = {
-    default: 'text-gray-900',
-    green: 'text-green-600',
-    red: 'text-red-600',
-    yellow: 'text-yellow-600',
+const accentStyles: Record<NonNullable<StatCardProps['accent']>, { text: string; bg: string }> = {
+    default: { text: 'text-slate-900', bg: 'bg-slate-100' },
+    green: { text: 'text-emerald-600', bg: 'bg-emerald-50' },
+    red: { text: 'text-red-600', bg: 'bg-red-50' },
+    yellow: { text: 'text-amber-600', bg: 'bg-amber-50' },
 };
 
 function StatCard({ label, value, hint, accent = 'default' }: StatCardProps) {
+    const style = accentStyles[accent];
     return (
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs text-gray-500">{label}</p>
-            <p className={`text-2xl font-bold mt-1 ${accentStyles[accent]}`}>{value}</p>
-            {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+        <div className="bg-white border border-slate-200 rounded-xl p-4">
+            <p className="text-xs text-slate-400">{label}</p>
+            <p className={`text-2xl font-bold mt-1 ${style.text}`}>{value}</p>
+            {hint && <p className="text-xs text-slate-400 mt-1">{hint}</p>}
         </div>
     );
 }
@@ -106,8 +120,8 @@ function Section({ title, description, children }: SectionProps) {
     return (
         <div className="mb-8">
             <div className="mb-3">
-                <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
-                {description && <p className="text-xs text-gray-500 mt-0.5">{description}</p>}
+                <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+                {description && <p className="text-xs text-slate-400 mt-0.5">{description}</p>}
             </div>
             {children}
         </div>
@@ -117,16 +131,24 @@ function Section({ title, description, children }: SectionProps) {
 const chartTooltipStyle = {
     fontSize: 12,
     borderRadius: 8,
-    border: '1px solid #E5E7EB',
+    border: '1px solid #E2E8F0',
 };
 
+const sections: { key: SectionKey; label: string; icon: typeof FileText }[] = [
+    { key: 'kepegawaian', label: 'Kepegawaian', icon: FileText },
+    { key: 'inventaris', label: 'Inventaris', icon: Package },
+    { key: 'keuangan', label: 'Keuangan', icon: Wallet },
+];
+
 // Isi tab "Analytics" di halaman Dashboard (bukan halaman/route sendiri lagi).
-// Data-nya sengaja dipisah total dari tab Ringkasan: semua fetch di sini pakai
-// endpoint /dashboard-analytics/* sendiri dan cuma jalan begitu tab ini dibuka,
-// gak nyampur sama query di Dashboard.tsx (endpoint /dashboard/*).
+// UBAH: sebelumnya semua kartu & chart ditumpuk vertikal jadi satu wall-of-cards.
+// Sekarang dipecah jadi sub-tab (Kepegawaian / Inventaris / Keuangan) biar tiap
+// section fokus & gak numpuk, dan palet warnanya disamain sama halaman lain
+// (slate/emerald/amber/red) -- lihat konstanta COLOR di atas.
 export default function DashboardAnalyticsTab() {
     const [currentRole, setCurrentRole] = useState<Role | null>(null);
     const [checkingAccess, setCheckingAccess] = useState<boolean>(true);
+    const [activeSection, setActiveSection] = useState<SectionKey>('kepegawaian');
     const [mutasi, setMutasi] = useState<mutasiBarang[]>([]);
     const [ringkasanIzin, setRingkasanIzin] = useState({
         total: 0,
@@ -209,7 +231,7 @@ export default function DashboardAnalyticsTab() {
     const isApprover = currentRole === 'admin' || currentRole === 'hr' || currentRole === 'manajer';
 
     if (checkingAccess) {
-        return <p className="text-center text-sm text-gray-400 py-16">Memuat...</p>;
+        return <p className="text-center text-sm text-slate-400 py-16">Memuat...</p>;
     }
 
     if (!isApprover) {
@@ -217,8 +239,8 @@ export default function DashboardAnalyticsTab() {
         // buat role karyawan, tapi tetap dicek ulang di sini kalau-kalau tab dibuka manual.
         return (
             <div className="max-w-md mx-auto text-center py-16">
-                <h1 className="text-base font-semibold text-gray-900 mb-1">Akses terbatas</h1>
-                <p className="text-sm text-gray-500">
+                <h1 className="text-base font-semibold text-slate-900 mb-1">Akses terbatas</h1>
+                <p className="text-sm text-slate-500">
                     Halaman ini hanya bisa diakses oleh admin, HR, atau manajer.
                 </p>
             </div>
@@ -232,170 +254,195 @@ export default function DashboardAnalyticsTab() {
 
     return (
         <div className="max-w-6xl mx-auto">
-                {/* Ringkasan Izin */}
-                <Section title="Ringkasan Izin">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <StatCard label="Total Pengajuan" value={`${ringkasanIzin.total}`} />
-                        <StatCard label="Menunggu" value={`${ringkasanIzin.pending}`} accent="yellow" />
-                        <StatCard label="Disetujui" value={`${ringkasanIzin.disetujui}`} accent="green" />
-                        <StatCard label="Ditolak" value={`${ringkasanIzin.ditolak}`} accent="red" />
-                    </div>
-                </Section>
+            {/* Sub-nav section, gaya sama kayak tab di halaman Karyawan / Master Data */}
+            <nav className="mb-6">
+                <ul className="flex items-center gap-6 border-b border-slate-200 overflow-x-auto">
+                    {sections.map(({ key, label, icon: Icon }) => (
+                        <li key={key}>
+                            <button
+                                onClick={() => setActiveSection(key)}
+                                className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
+                                    activeSection === key
+                                        ? 'border-slate-900 text-slate-900 font-medium'
+                                        : 'border-transparent text-slate-500 hover:text-slate-700'
+                                }`}
+                            >
+                                <Icon size={16} />
+                                {label}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </nav>
 
-                {/* Ringkasan Barang */}
-                <Section title="Ringkasan Inventaris">
-                    <div className="grid grid-cols-2 gap-3">
-                        <StatCard
-                            label="Total Barang Masuk"
-                            value={`${totalBarang.jumlah_masuk.toLocaleString('id-ID')}`}
-                            hint={totalBarang.update_masuk ? `Update ${formatRelativeTime(totalBarang.update_masuk)}` : '6 bulan terakhir'}
-                            accent="green"
-                        />
-                        <StatCard
-                            label="Total Barang Keluar"
-                            value={`${totalBarang.jumlah_keluar.toLocaleString('id-ID')}`}
-                            hint={totalBarang.update_keluar ? `Update ${formatRelativeTime(totalBarang.update_keluar)}` : '6 bulan terakhir'}
-                            accent="red"
-                        />
-                    </div>
-                </Section>
-
-                {/* Ringkasan Keuangan */}
-                <Section title="Ringkasan Keuangan">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        <StatCard label="Total Pemasukan" value={formatRupiah(totalPemasukan)} hint="6 bulan terakhir" accent="green" />
-                        <StatCard label="Total Pengeluaran" value={formatRupiah(totalPengeluaran)} hint="6 bulan terakhir" accent="red" />
-                        <StatCard
-                            label="Saldo Bersih"
-                            value={formatRupiah(saldoBersih)}
-                            hint="6 bulan terakhir"
-                            accent={saldoBersih >= 0 ? 'green' : 'red'}
-                        />
-                    </div>
-                </Section>
-
-                {/* Tren Pengajuan Izin per Bulan */}
-                <Section title="Tren Pengajuan Izin" description="Jumlah pengajuan izin per bulan, 6 bulan terakhir.">
-                    <div className="bg-white border border-gray-200 rounded-xl p-4">
-                        <ResponsiveContainer width="100%" height={260}>
-                            <AreaChart data={grafikP} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="pengajuanGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#111827" stopOpacity={0.18} />
-                                        <stop offset="100%" stopColor="#111827" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
-                                <XAxis dataKey="bulan" tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-                                <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                                <Tooltip contentStyle={chartTooltipStyle} />
-                                <Area type="monotone" dataKey="pengajuan" name="Pengajuan" stroke="#111827" strokeWidth={2} fill="url(#pengajuanGradient)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                </Section>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    {/* Top Karyawan Hadir */}
-                    <div>
-                        <div className="mb-3">
-                            <h2 className="text-sm font-semibold text-gray-900">Karyawan Kehadiran Terbanyak</h2>
-                            <p className="text-xs text-gray-500 mt-0.5">Top 5 karyawan berdasarkan jumlah absensi hadir.</p>
+            {activeSection === 'kepegawaian' && (
+                <>
+                    <Section title="Ringkasan Izin">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <StatCard label="Total Pengajuan" value={`${ringkasanIzin.total}`} />
+                            <StatCard label="Menunggu" value={`${ringkasanIzin.pending}`} accent="yellow" />
+                            <StatCard label="Disetujui" value={`${ringkasanIzin.disetujui}`} accent="green" />
+                            <StatCard label="Ditolak" value={`${ringkasanIzin.ditolak}`} accent="red" />
                         </div>
-                        <div className="bg-white border border-gray-200 rounded-xl p-4">
-                            <ResponsiveContainer width="100%" height={240}>
-                                <BarChart
-                                    data={topKehadiran}
-                                    layout="vertical"
-                                    margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F3F4F6" />
-                                    <XAxis type="number" tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                                    <YAxis
-                                        type="category"
-                                        dataKey="nama"
-                                        tick={{ fontSize: 12, fill: '#374151' }}
-                                        axisLine={false}
-                                        tickLine={false}
-                                        width={110}
-                                    />
+                    </Section>
+
+                    <Section title="Tren Pengajuan Izin" description="Jumlah pengajuan izin per bulan, 6 bulan terakhir.">
+                        <div className="bg-white border border-slate-200 rounded-xl p-4">
+                            <ResponsiveContainer width="100%" height={260}>
+                                <AreaChart data={grafikP} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="pengajuanGradient" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor={COLOR.primary} stopOpacity={0.18} />
+                                            <stop offset="100%" stopColor={COLOR.primary} stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={COLOR.grid} />
+                                    <XAxis dataKey="bulan" tick={{ fontSize: 12, fill: COLOR.axis }} axisLine={false} tickLine={false} />
+                                    <YAxis tick={{ fontSize: 12, fill: COLOR.axis }} axisLine={false} tickLine={false} allowDecimals={false} />
                                     <Tooltip contentStyle={chartTooltipStyle} />
-                                    <Bar dataKey="jumlah" name="Hadir" fill="#16A34A" radius={[0, 4, 4, 0]} barSize={16} />
+                                    <Area type="monotone" dataKey="pengajuan" name="Pengajuan" stroke={COLOR.primary} strokeWidth={2} fill="url(#pengajuanGradient)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </Section>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div>
+                            <div className="mb-3">
+                                <h2 className="text-sm font-semibold text-slate-900">Karyawan Kehadiran Terbanyak</h2>
+                                <p className="text-xs text-slate-400 mt-0.5">Top 5 karyawan berdasarkan jumlah absensi hadir.</p>
+                            </div>
+                            <div className="bg-white border border-slate-200 rounded-xl p-4">
+                                <ResponsiveContainer width="100%" height={240}>
+                                    <BarChart
+                                        data={topKehadiran}
+                                        layout="vertical"
+                                        margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
+                                    >
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={COLOR.grid} />
+                                        <XAxis type="number" tick={{ fontSize: 12, fill: COLOR.axis }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                        <YAxis
+                                            type="category"
+                                            dataKey="nama"
+                                            tick={{ fontSize: 12, fill: COLOR.tickLabel }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            width={110}
+                                        />
+                                        <Tooltip contentStyle={chartTooltipStyle} />
+                                        <Bar dataKey="jumlah" name="Hadir" fill={COLOR.emerald} radius={[0, 4, 4, 0]} barSize={16} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="mb-3">
+                                <h2 className="text-sm font-semibold text-slate-900">Karyawan Pengajuan Izin Terbanyak</h2>
+                                <p className="text-xs text-slate-400 mt-0.5">Top 5 karyawan berdasarkan jumlah pengajuan.</p>
+                            </div>
+                            <div className="bg-white border border-slate-200 rounded-xl p-4">
+                                <ResponsiveContainer width="100%" height={240}>
+                                    <BarChart
+                                        data={topKaryawan}
+                                        layout="vertical"
+                                        margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
+                                    >
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={COLOR.grid} />
+                                        <XAxis type="number" tick={{ fontSize: 12, fill: COLOR.axis }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                        <YAxis
+                                            type="category"
+                                            dataKey="nama"
+                                            tick={{ fontSize: 12, fill: COLOR.tickLabel }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            width={110}
+                                        />
+                                        <Tooltip contentStyle={chartTooltipStyle} />
+                                        <Bar dataKey="jumlah" name="Pengajuan" fill={COLOR.primary} radius={[0, 4, 4, 0]} barSize={16} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {activeSection === 'inventaris' && (
+                <>
+                    <Section title="Ringkasan Inventaris">
+                        <div className="grid grid-cols-2 gap-3">
+                            <StatCard
+                                label="Total Barang Masuk"
+                                value={`${totalBarang.jumlah_masuk.toLocaleString('id-ID')}`}
+                                hint={totalBarang.update_masuk ? `Update ${formatRelativeTime(totalBarang.update_masuk)}` : '6 bulan terakhir'}
+                                accent="green"
+                            />
+                            <StatCard
+                                label="Total Barang Keluar"
+                                value={`${totalBarang.jumlah_keluar.toLocaleString('id-ID')}`}
+                                hint={totalBarang.update_keluar ? `Update ${formatRelativeTime(totalBarang.update_keluar)}` : '6 bulan terakhir'}
+                                accent="red"
+                            />
+                        </div>
+                    </Section>
+
+                    <Section title="Barang Masuk vs Keluar" description="Perbandingan jumlah barang masuk dan keluar per bulan.">
+                        <div className="bg-white border border-slate-200 rounded-xl p-4">
+                            <ResponsiveContainer width="100%" height={280}>
+                                <BarChart data={mutasi} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={COLOR.grid} />
+                                    <XAxis dataKey="bulan" tick={{ fontSize: 12, fill: COLOR.axis }} axisLine={false} tickLine={false} />
+                                    <YAxis tick={{ fontSize: 12, fill: COLOR.axis }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                    <Tooltip contentStyle={chartTooltipStyle} />
+                                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                                    <Bar dataKey="jumlah_masuk" name="Barang Masuk" fill={COLOR.emerald} radius={[4, 4, 0, 0]} barSize={18} />
+                                    <Bar dataKey="jumlah_keluar" name="Barang Keluar" fill={COLOR.red} radius={[4, 4, 0, 0]} barSize={18} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
-                    </div>
+                    </Section>
+                </>
+            )}
 
-                    {/* Top Karyawan Pengajuan Izin */}
-                    <div>
-                        <div className="mb-3">
-                            <h2 className="text-sm font-semibold text-gray-900">Karyawan Pengajuan Izin Terbanyak</h2>
-                            <p className="text-xs text-gray-500 mt-0.5">Top 5 karyawan berdasarkan jumlah pengajuan.</p>
+            {activeSection === 'keuangan' && (
+                <>
+                    <Section title="Ringkasan Keuangan">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <StatCard label="Total Pemasukan" value={formatRupiah(totalPemasukan)} hint="6 bulan terakhir" accent="green" />
+                            <StatCard label="Total Pengeluaran" value={formatRupiah(totalPengeluaran)} hint="6 bulan terakhir" accent="red" />
+                            <StatCard
+                                label="Saldo Bersih"
+                                value={formatRupiah(saldoBersih)}
+                                hint="6 bulan terakhir"
+                                accent={saldoBersih >= 0 ? 'green' : 'red'}
+                            />
                         </div>
-                        <div className="bg-white border border-gray-200 rounded-xl p-4">
-                            <ResponsiveContainer width="100%" height={240}>
-                                <BarChart
-                                    data={topKaryawan}
-                                    layout="vertical"
-                                    margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F3F4F6" />
-                                    <XAxis type="number" tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    </Section>
+
+                    <Section title="Pemasukan vs Pengeluaran" description="Arus keuangan per bulan, 6 bulan terakhir.">
+                        <div className="bg-white border border-slate-200 rounded-xl p-4">
+                            <ResponsiveContainer width="100%" height={280}>
+                                <LineChart data={keuangan} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={COLOR.grid} />
+                                    <XAxis dataKey="bulan" tick={{ fontSize: 12, fill: COLOR.axis }} axisLine={false} tickLine={false} />
                                     <YAxis
-                                        type="category"
-                                        dataKey="nama"
-                                        tick={{ fontSize: 12, fill: '#374151' }}
+                                        tick={{ fontSize: 12, fill: COLOR.axis }}
                                         axisLine={false}
                                         tickLine={false}
-                                        width={110}
+                                        tickFormatter={(v: number) => formatRupiahSingkat(v)}
+                                        width={48}
                                     />
-                                    <Tooltip contentStyle={chartTooltipStyle} />
-                                    <Bar dataKey="jumlah" name="Pengajuan" fill="#111827" radius={[0, 4, 4, 0]} barSize={16} />
-                                </BarChart>
+                                    <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => formatRupiah(Number(value ?? 0))} />
+                                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                                    <Line type="monotone" dataKey="pemasukan" name="Pemasukan" stroke={COLOR.emerald} strokeWidth={2} dot={{ r: 3 }} />
+                                    <Line type="monotone" dataKey="pengeluaran" name="Pengeluaran" stroke={COLOR.red} strokeWidth={2} dot={{ r: 3 }} />
+                                </LineChart>
                             </ResponsiveContainer>
                         </div>
-                    </div>
-                </div>
-
-                {/* Barang Masuk vs Keluar */}
-                <Section title="Barang Masuk vs Keluar" description="Perbandingan jumlah barang masuk dan keluar per bulan.">
-                    <div className="bg-white border border-gray-200 rounded-xl p-4">
-                        <ResponsiveContainer width="100%" height={260}>
-                            <BarChart data={mutasi} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
-                                <XAxis dataKey="bulan" tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-                                <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                                <Tooltip contentStyle={chartTooltipStyle} />
-                                <Legend wrapperStyle={{ fontSize: 12 }} />
-                                <Bar dataKey="jumlah_masuk" name="Barang Masuk" fill="#16A34A" radius={[4, 4, 0, 0]} barSize={18} />
-                                <Bar dataKey="jumlah_keluar" name="Barang Keluar" fill="#DC2626" radius={[4, 4, 0, 0]} barSize={18} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </Section>
-
-                {/* Pemasukan vs Pengeluaran */}
-                <Section title="Pemasukan vs Pengeluaran" description="Arus keuangan per bulan, 6 bulan terakhir.">
-                    <div className="bg-white border border-gray-200 rounded-xl p-4">
-                        <ResponsiveContainer width="100%" height={260}>
-                            <LineChart data={keuangan} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
-                                <XAxis dataKey="bulan" tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-                                <YAxis
-                                    tick={{ fontSize: 12, fill: '#6B7280' }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tickFormatter={(v: number) => formatRupiahSingkat(v)}
-                                    width={48}
-                                />
-                                <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => formatRupiah(Number(value ?? 0))} />
-                                <Legend wrapperStyle={{ fontSize: 12 }} />
-                                <Line type="monotone" dataKey="pemasukan" name="Pemasukan" stroke="#16A34A" strokeWidth={2} dot={{ r: 3 }} />
-                                <Line type="monotone" dataKey="pengeluaran" name="Pengeluaran" stroke="#DC2626" strokeWidth={2} dot={{ r: 3 }} />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
-                </Section>
+                    </Section>
+                </>
+            )}
         </div>
     );
 }
