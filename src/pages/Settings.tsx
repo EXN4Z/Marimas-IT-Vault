@@ -77,8 +77,8 @@ export default function Settings() {
           <div className="w-20 h-20 rounded-full bg-slate-900 text-white text-2xl font-bold flex items-center justify-center mb-4">
             {initials(user?.name)}
           </div>
-          <p className="text-base font-semibold text-slate-900">{user?.name}</p>
-          <p className="text-sm text-slate-400 mb-3">{user?.email}</p>
+          <p className="text-base font-semibold text-slate-900 break-words">{user?.name}</p>
+          <p className="text-sm text-slate-400 mb-3 break-all">{user?.email}</p>
           {user?.role && (
             <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
               {roleLabels[user.role] ?? user.role}

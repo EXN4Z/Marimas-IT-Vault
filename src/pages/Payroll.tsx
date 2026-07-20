@@ -164,7 +164,7 @@ export default function Payroll() {
 
         {!loading && !error && rows.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[720px]">
               <thead>
                 <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
                   <th className="px-6 py-3 font-medium">Nama</th>
