@@ -5,7 +5,7 @@ import AppLayout from '../components/AppLayout';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
 type Status = 'pending' | 'disetujui' | 'ditolak' | 'revisi' | 'selesai' | 'draft';
-type TabKey = 'semua' | 'pending' | 'disetujui' | 'ditolak';
+type TabKey = 'semua' | 'pending' | 'disetujui' | 'ditolak' | 'hari_ini';
 type JenisIzin = 'tahunan' | 'pribadi' | 'sakit' | 'terlambat' | 'pulang_cepat' | 'dinas' | 'lahiran' | 'pendamping_lahiran' | 'duka_serumah' | 'duka_keluarga_inti' | 'lainnya';
 
 // Backend hardcode base URL yang sama dengan axios.ts, dipakai buat link bukti izin
@@ -84,6 +84,7 @@ const tabs: { key: TabKey; label: string }[] = [
     { key: 'pending', label: 'Menunggu' },
     { key: 'disetujui', label: 'Disetujui' },
     { key: 'ditolak', label: 'Ditolak' },
+    { key: 'hari_ini', label: 'Hari Ini' },
 ];
 
 function initials(name: string): string {
@@ -94,10 +95,22 @@ function formatTanggal(tanggal: string): string {
     return new Date(tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+// cek apakah hari ini ada di antara tanggal_mulai - tanggal_selesai izin (inklusif),
+// dipakai buat tab "Izin Hari Ini"
+function isIzinHariIni(izin: Izin): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const mulai = new Date(izin.tanggal_mulai);
+    mulai.setHours(0, 0, 0, 0);
+    const selesai = new Date(izin.tanggal_selesai);
+    selesai.setHours(0, 0, 0, 0);
+    return today >= mulai && today <= selesai;
+}
+
 export default function PengajuanIzinPage() {
     const navigate = useNavigate();
     const location = useLocation();
-    const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+    const [, setDashboard] = useState<DashboardData | null>(null);
     const [izinList, setIzinList] = useState<Izin[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [errorMsg, setErrorMsg] = useState<string>('');
@@ -122,7 +135,7 @@ export default function PengajuanIzinPage() {
         api
             .get('/izin', {
                 params: {
-                    status: activeTab === 'semua' ? undefined : activeTab,
+                    status: activeTab === 'semua' || activeTab === 'hari_ini' ? undefined : activeTab,
                     search: search || undefined,
                     per_page: 50,
                 },
@@ -161,14 +174,20 @@ export default function PengajuanIzinPage() {
 
     const filtered = useMemo<Izin[]>(() => {
         const q = search.toLowerCase().trim();
-        if (!q) return izinList;
-        return izinList.filter(
+        let result = izinList;
+    
+        if (activeTab === 'hari_ini') {
+            result = result.filter(isIzinHariIni);
+        }
+    
+        if (!q) return result;
+        return result.filter(
             (i) =>
                 i.nomor_izin.toLowerCase().includes(q) ||
                 (i.karyawan?.name ?? '').toLowerCase().includes(q) ||
                 i.alasan.toLowerCase().includes(q)
         );
-    }, [izinList, search]);
+    }, [izinList, search, activeTab]);
 
     function openDetail(id: number) {
         setDetailId(id);
@@ -232,8 +251,6 @@ export default function PengajuanIzinPage() {
                         + Ajukan Izin
                     </button>
                 </div>
-
-                {dashboard && <DashboardCards data={dashboard} />}
 
                 <div className="bg-white border border-gray-200 rounded-xl p-4 mt-6">
                     <nav className="mb-4">
@@ -373,27 +390,6 @@ export default function PengajuanIzinPage() {
     );
 }
 
-function DashboardCards({ data }: { data: DashboardData }) {
-    const cards: { label: string; value: number; className: string }[] = [
-        { label: 'Total Pengajuan', value: data.total_pengajuan, className: 'text-gray-900' },
-        { label: 'Menunggu Persetujuan', value: data.menunggu_persetujuan, className: 'text-yellow-700' },
-        { label: 'Disetujui', value: data.disetujui, className: 'text-green-700' },
-        { label: 'Ditolak', value: data.ditolak, className: 'text-red-700' },
-        { label: 'Izin Hari Ini', value: data.izin_hari_ini, className: 'text-blue-700' },
-    ];
-
-    return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {cards.map((c) => (
-                <div key={c.label} className="bg-white border border-gray-200 rounded-xl p-4">
-                    <p className="text-xs text-gray-500 mb-1">{c.label}</p>
-                    <p className={`text-2xl font-bold ${c.className}`}>{c.value}</p>
-                </div>
-            ))}
-        </div>
-    );
-}
-
 interface DetailModalProps {
     data: Izin | null;
     loading: boolean;
@@ -510,14 +506,14 @@ function DetailModal({ data, loading, processing, isApprover, isOwner, catatan, 
                                         disabled={processing}
                                         className="text-sm px-4 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
                                     >
-                                        {processing ? 'Memproses...' : '❌ Reject'}
+                                        {processing ? 'Memproses...' : 'Tolak'}
                                     </button>
                                     <button
                                         onClick={onSetujui}
                                         disabled={processing}
                                         className="text-sm px-4 py-2 rounded-lg text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
                                     >
-                                        {processing ? 'Memproses...' : '✅ Approve'}
+                                        {processing ? 'Memproses...' : 'Setujui'}
                                     </button>
                                 </>
                             )}
