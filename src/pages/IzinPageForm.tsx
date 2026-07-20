@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import RouteModal from '../components/RouteModal';
 
-type JenisIzin = 'tahunan' | 'pribadi' | 'sakit' | 'terlambat' | 'pulang_cepat' | 'dinas' | 'lainnya';
+type JenisIzin = 'tahunan' | 'pribadi' | 'sakit' | 'terlambat' | 'pulang_cepat' | 'dinas' | 'lahiran' | 'lainnya';
 
 const jenisOptions: { value: JenisIzin; label: string }[] = [
     { value: 'tahunan', label: 'Cuti Tahunan' },
@@ -12,8 +12,17 @@ const jenisOptions: { value: JenisIzin; label: string }[] = [
     { value: 'terlambat', label: 'Izin Terlambat' },
     { value: 'pulang_cepat', label: 'Izin Pulang Cepat' },
     { value: 'dinas', label: 'Izin Dinas' },
+    { value: 'lahiran', label: 'Cuti Lahiran' },
     { value: 'lainnya', label: 'Izin Lainnya' },
 ];
+
+// Cuti lahiran defaultnya berdurasi 3 bulan penuh dari tanggal mulai.
+function tambahBulan(tanggalMulai: string, jumlahBulan: number): string {
+    const d = new Date(tanggalMulai);
+    d.setMonth(d.getMonth() + jumlahBulan);
+    d.setDate(d.getDate() - 1); // inklusif: 3 bulan dihitung dari tanggal mulai
+    return d.toISOString().split('T')[0];
+}
 
 interface FormState {
     tanggal_mulai: string;
@@ -169,7 +178,13 @@ export default function IzinFormPage() {
                                     type="date"
                                     min={todayISO()}
                                     value={form.tanggal_mulai}
-                                    onChange={(e) => updateField('tanggal_mulai', e.target.value)}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        updateField('tanggal_mulai', value);
+                                        if (form.jenis_izin === 'lahiran' && value) {
+                                            updateField('tanggal_selesai', tambahBulan(value, 3));
+                                        }
+                                    }}
                                     className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10 ${
                                         errors.tanggal_mulai ? 'border-red-300' : 'border-gray-200'
                                     }`}
@@ -202,7 +217,13 @@ export default function IzinFormPage() {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Jenis Izin</label>
                             <select
                                 value={form.jenis_izin}
-                                onChange={(e) => updateField('jenis_izin', e.target.value as JenisIzin)}
+                                onChange={(e) => {
+                                    const value = e.target.value as JenisIzin;
+                                    updateField('jenis_izin', value);
+                                    if (value === 'lahiran' && form.tanggal_mulai) {
+                                        updateField('tanggal_selesai', tambahBulan(form.tanggal_mulai, 3));
+                                    }
+                                }}
                                 className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10 bg-white ${
                                     errors.jenis_izin ? 'border-red-300' : 'border-gray-200'
                                 }`}
@@ -217,6 +238,11 @@ export default function IzinFormPage() {
                                 ))}
                             </select>
                             {errors.jenis_izin && <p className="text-xs text-red-600 mt-1">{errors.jenis_izin}</p>}
+                            {form.jenis_izin === 'lahiran' && (
+                                <p className="text-xs text-gray-400 mt-1">
+                                    Tanggal selesai otomatis dihitung 3 bulan dari tanggal mulai — bisa diubah manual kalau perlu.
+                                </p>
+                            )}
                         </div>
 
                         <div>
