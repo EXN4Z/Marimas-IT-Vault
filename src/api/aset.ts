@@ -181,3 +181,53 @@ export async function kembalikanAset(
   const res = await api.post<AsetPemakai>(`/aset-pemakai/${asetPemakaiId}/kembalikan`, payload);
   return res.data;
 }
+
+// POST /aset/{aset}/perbaikan — lapor kerusakan / mulai perbaikan. Aset otomatis
+// jadi status 'rusak' di backend. Dibatasi backend ke role admin.
+export async function laporPerbaikanAset(
+  asetId: number,
+  payload: {
+    tanggal_perbaikan: string;
+    keterangan_kerusakan: string;
+    teknisi_vendor?: string;
+    biaya?: number;
+  }
+): Promise<AsetPerbaikan> {
+  const res = await api.post<AsetPerbaikan>(`/aset/${asetId}/perbaikan`, payload);
+  return res.data;
+}
+
+// PATCH /aset-perbaikan/{id}/selesai — tandai perbaikan selesai, aset balik 'tersedia'.
+export async function selesaikanPerbaikanAset(
+  asetPerbaikanId: number,
+  payload: { tanggal_selesai: string; biaya?: number }
+): Promise<AsetPerbaikan> {
+  const res = await api.patch<AsetPerbaikan>(`/aset-perbaikan/${asetPerbaikanId}/selesai`, payload);
+  return res.data;
+}
+
+// DELETE /aset-perbaikan/{id} — dibatasi backend ke role admin.
+export async function deletePerbaikanAset(asetPerbaikanId: number): Promise<{ message: string }> {
+  const res = await api.delete<{ message: string }>(`/aset-perbaikan/${asetPerbaikanId}`);
+  return res.data;
+}
+
+// POST /aset/{aset}/penggantian-sparepart — dibatasi backend ke role admin.
+export async function tambahPenggantianSparepart(
+  asetId: number,
+  payload: {
+    tanggal: string;
+    nama_sparepart: string;
+    keterangan?: string;
+    biaya?: number;
+  }
+): Promise<AsetPenggantianSparepart> {
+  const res = await api.post<AsetPenggantianSparepart>(`/aset/${asetId}/penggantian-sparepart`, payload);
+  return res.data;
+}
+
+// DELETE /aset-penggantian-sparepart/{id} — dibatasi backend ke role admin.
+export async function deletePenggantianSparepart(id: number): Promise<{ message: string }> {
+  const res = await api.delete<{ message: string }>(`/aset-penggantian-sparepart/${id}`);
+  return res.data;
+}

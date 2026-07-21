@@ -1,11 +1,24 @@
 import { useEffect, useState } from 'react';
-import { Boxes, Plus, Search, X, Pencil, Trash2, HandCoins, Undo2, ImageOff } from 'lucide-react';
+import { Boxes, Plus, Search, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, Cog } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import AsetFormModal from '../components/AsetFormModal';
 import AsetSerahTerimaModal from '../components/AsetSerahTerimaModal';
 import AsetPengembalianModal from '../components/AsetPengembalianModal';
+import AsetPerbaikanModal from '../components/AsetPerbaikanModal';
+import AsetPerbaikanSelesaiModal from '../components/AsetPerbaikanSelesaiModal';
+import AsetSparepartModal from '../components/AsetSparepartModal';
 import { useAuth } from '../context/AuthContext';
-import { getAset, getAsetById, deleteAset, type Aset, type AsetStatus, type AsetPemakai } from '../api/aset';
+import {
+  getAset,
+  getAsetById,
+  deleteAset,
+  deletePerbaikanAset,
+  deletePenggantianSparepart,
+  type Aset,
+  type AsetStatus,
+  type AsetPemakai,
+  type AsetPerbaikan,
+} from '../api/aset';
 import { getJenisAset, type JenisAset } from '../api/jenisAset';
 import { getSupplier, type Supplier } from '../api/supplier';
 import { getKelengkapanMaster, type KelengkapanMaster } from '../api/kelengkapanMaster';
@@ -29,6 +42,11 @@ const STATUS_STYLE: Record<AsetStatus, string> = {
 function formatTanggalId(iso: string | null): string {
   if (!iso) return '-';
   return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function formatRupiah(n: number | null): string {
+  if (n == null) return '-';
+  return 'Rp ' + n.toLocaleString('id-ID');
 }
 
 export default function AsetPage() {
@@ -56,6 +74,11 @@ export default function AsetPage() {
 
   const [serahTerimaAset, setSerahTerimaAset] = useState<Aset | null>(null);
   const [pengembalianTarget, setPengembalianTarget] = useState<{ aset: Aset; pemakai: AsetPemakai } | null>(null);
+
+  const [perbaikanAsetTarget, setPerbaikanAsetTarget] = useState<Aset | null>(null);
+  const [perbaikanSelesaiTarget, setPerbaikanSelesaiTarget] = useState<{ aset: Aset; perbaikan: AsetPerbaikan } | null>(null);
+  const [sparepartAsetTarget, setSparepartAsetTarget] = useState<Aset | null>(null);
+  const [historyActionError, setHistoryActionError] = useState('');
 
   const loadList = async () => {
     setLoading(true);
@@ -116,6 +139,28 @@ export default function AsetPage() {
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleDeletePerbaikan = async (id: number) => {
+    if (!confirm('Hapus riwayat perbaikan ini?')) return;
+    setHistoryActionError('');
+    try {
+      await deletePerbaikanAset(id);
+      await refreshDetail();
+    } catch (err: any) {
+      setHistoryActionError(err.response?.data?.message || 'Gagal menghapus riwayat perbaikan.');
+    }
+  };
+
+  const handleDeleteSparepart = async (id: number) => {
+    if (!confirm('Hapus riwayat penggantian sparepart ini?')) return;
+    setHistoryActionError('');
+    try {
+      await deletePenggantianSparepart(id);
+      await refreshDetail();
+    } catch (err: any) {
+      setHistoryActionError(err.response?.data?.message || 'Gagal menghapus riwayat sparepart.');
     }
   };
 
@@ -376,6 +421,22 @@ export default function AsetPage() {
                         Terima Kembali
                       </button>
                     )}
+                    {(detail.status === 'tersedia' || detail.status === 'dipakai') && (
+                      <button
+                        onClick={() => setPerbaikanAsetTarget(detail)}
+                        className="flex items-center gap-1.5 bg-red-50 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-red-100 transition"
+                      >
+                        <Wrench size={14} />
+                        Lapor Kerusakan
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setSparepartAsetTarget(detail)}
+                      className="flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-200 transition"
+                    >
+                      <Cog size={14} />
+                      Catat Sparepart
+                    </button>
                   </div>
                 )}
 
@@ -420,9 +481,92 @@ export default function AsetPage() {
                   </ul>
                 </div>
 
-                <p className="text-xs text-slate-400 border-t border-slate-100 pt-3">
-                  Riwayat perbaikan &amp; penggantian sparepart akan ditambahkan di update berikutnya.
-                </p>
+                {historyActionError && (
+                  <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                    {historyActionError}
+                  </p>
+                )}
+
+                {/* RIWAYAT PERBAIKAN / PENANGANAN KERUSAKAN */}
+                <div className="border-t border-slate-100 pt-4">
+                  <p className="text-sm font-semibold text-slate-900 mb-2">Riwayat Perbaikan</p>
+                  <ul className="flex flex-col gap-2">
+                    {(detail.perbaikan || []).map((p) => (
+                      <li key={p.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <span
+                              className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium mb-1 ${
+                                p.status === 'selesai' ? 'bg-emerald-50 text-emerald-700' : 'bg-orange-50 text-orange-700'
+                              }`}
+                            >
+                              {p.status === 'selesai' ? 'Selesai' : 'Proses'}
+                            </span>
+                            <p className="text-slate-700">{p.keterangan_kerusakan}</p>
+                            <p className="text-slate-400 mt-0.5">
+                              {formatTanggalId(p.tanggal_perbaikan)}
+                              {p.tanggal_selesai ? ` s/d ${formatTanggalId(p.tanggal_selesai)}` : ''}
+                              {p.teknisi_vendor ? ` · ${p.teknisi_vendor}` : ''}
+                              {p.biaya != null ? ` · ${formatRupiah(p.biaya)}` : ''}
+                            </p>
+                          </div>
+                          {isAdmin && (
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              {p.status === 'proses' && (
+                                <button
+                                  onClick={() => setPerbaikanSelesaiTarget({ aset: detail, perbaikan: p })}
+                                  title="Tandai selesai"
+                                  className="p-1.5 rounded-md text-emerald-600 hover:bg-emerald-100 transition"
+                                >
+                                  <CheckCircle2 size={14} />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleDeletePerbaikan(p.id)}
+                                title="Hapus"
+                                className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                    {!detail.perbaikan?.length && (
+                      <p className="text-xs text-slate-400">Belum ada riwayat perbaikan.</p>
+                    )}
+                  </ul>
+                </div>
+
+                {/* RIWAYAT PENGGANTIAN SPAREPART */}
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 mb-2">Riwayat Penggantian Sparepart</p>
+                  <ul className="flex flex-col gap-2">
+                    {(detail.penggantianSparepart || []).map((s) => (
+                      <li key={s.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2 flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="font-medium text-slate-800">{s.nama_sparepart}</span>{' '}
+                          <span className="text-slate-500">— {formatTanggalId(s.tanggal)}</span>
+                          {s.keterangan && <p className="text-slate-400 mt-0.5">{s.keterangan}</p>}
+                          {s.biaya != null && <p className="text-slate-400 mt-0.5">{formatRupiah(s.biaya)}</p>}
+                        </div>
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleDeleteSparepart(s.id)}
+                            title="Hapus"
+                            className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition flex-shrink-0"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                    {!detail.penggantianSparepart?.length && (
+                      <p className="text-xs text-slate-400">Belum ada riwayat penggantian sparepart.</p>
+                    )}
+                  </ul>
+                </div>
               </div>
             )}
           </div>
@@ -448,6 +592,43 @@ export default function AsetPage() {
           onClose={() => setPengembalianTarget(null)}
           onSuccess={() => {
             setPengembalianTarget(null);
+            loadList();
+            if (detailId) refreshDetail();
+          }}
+        />
+      )}
+
+      {perbaikanAsetTarget && (
+        <AsetPerbaikanModal
+          aset={perbaikanAsetTarget}
+          onClose={() => setPerbaikanAsetTarget(null)}
+          onSuccess={() => {
+            setPerbaikanAsetTarget(null);
+            loadList();
+            if (detailId) refreshDetail();
+          }}
+        />
+      )}
+
+      {perbaikanSelesaiTarget && (
+        <AsetPerbaikanSelesaiModal
+          aset={perbaikanSelesaiTarget.aset}
+          perbaikan={perbaikanSelesaiTarget.perbaikan}
+          onClose={() => setPerbaikanSelesaiTarget(null)}
+          onSuccess={() => {
+            setPerbaikanSelesaiTarget(null);
+            loadList();
+            if (detailId) refreshDetail();
+          }}
+        />
+      )}
+
+      {sparepartAsetTarget && (
+        <AsetSparepartModal
+          aset={sparepartAsetTarget}
+          onClose={() => setSparepartAsetTarget(null)}
+          onSuccess={() => {
+            setSparepartAsetTarget(null);
             loadList();
             if (detailId) refreshDetail();
           }}
