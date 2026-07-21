@@ -256,7 +256,7 @@ export default function AsetPage() {
                         {STATUS_LABEL[a.status]}
                       </span>
                     </td>
-                    <td className="px-6 py-3 text-slate-600">{a.pemakaiSaatIni?.pekerja?.user?.name || '-'}</td>
+                    <td className="px-6 py-3 text-slate-600">{a.pemakai_saat_ini?.pekerja?.user?.name || '-'}</td>
                     <td className="px-6 py-3">
                       <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                         {isAdmin && (
@@ -412,9 +412,9 @@ export default function AsetPage() {
                         Serahkan ke Karyawan
                       </button>
                     )}
-                    {detail.status === 'dipakai' && detail.pemakaiSaatIni && (
+                    {detail.status === 'dipakai' && detail.pemakai_saat_ini && (
                       <button
-                        onClick={() => setPengembalianTarget({ aset: detail, pemakai: detail.pemakaiSaatIni! })}
+                        onClick={() => setPengembalianTarget({ aset: detail, pemakai: detail.pemakai_saat_ini! })}
                         className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
                       >
                         <Undo2 size={14} />
@@ -543,7 +543,7 @@ export default function AsetPage() {
                 <div>
                   <p className="text-sm font-semibold text-slate-900 mb-2">Riwayat Penggantian Sparepart</p>
                   <ul className="flex flex-col gap-2">
-                    {(detail.penggantianSparepart || []).map((s) => (
+                    {(detail.penggantian_sparepart || []).map((s) => (
                       <li key={s.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2 flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <span className="font-medium text-slate-800">{s.nama_sparepart}</span>{' '}
@@ -562,7 +562,7 @@ export default function AsetPage() {
                         )}
                       </li>
                     ))}
-                    {!detail.penggantianSparepart?.length && (
+                    {!detail.penggantian_sparepart?.length && (
                       <p className="text-xs text-slate-400">Belum ada riwayat penggantian sparepart.</p>
                     )}
                   </ul>

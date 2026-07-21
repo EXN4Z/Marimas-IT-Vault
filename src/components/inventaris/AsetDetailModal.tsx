@@ -158,7 +158,7 @@ export default function AsetDetailModal({
                   Serahkan ke Karyawan
                 </button>
               )}
-              {isAdmin && detail.status === 'dipakai' && detail.pemakaiSaatIni && (
+              {isAdmin && detail.status === 'dipakai' && detail.pemakai_saat_ini && (
                 <button
                   onClick={() => onTerimaKembali(detail)}
                   className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
@@ -194,7 +194,7 @@ export default function AsetDetailModal({
                   Lapor Rusak
                 </button>
               )}
-              {!isAdmin && detail.status === 'tersedia' && !detail.pemakaiPending?.length && (
+              {!isAdmin && detail.status === 'tersedia' && !detail.pemakai_pending?.length && (
                 <button
                   onClick={() => onPinjam(detail)}
                   className="flex items-center gap-1.5 bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-800 transition"
@@ -203,7 +203,7 @@ export default function AsetDetailModal({
                   Pinjam Aset
                 </button>
               )}
-              {!isAdmin && detail.status === 'tersedia' && !!detail.pemakaiPending?.length && (
+              {!isAdmin && detail.status === 'tersedia' && !!detail.pemakai_pending?.length && (
                 <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 text-xs font-semibold px-3 py-2 rounded-lg">
                   <HandCoins size={14} />
                   Menunggu persetujuan admin
@@ -302,7 +302,7 @@ export default function AsetDetailModal({
             <div>
               <p className="text-sm font-semibold text-slate-900 mb-2">Riwayat Penggantian Sparepart</p>
               <ul className="flex flex-col gap-2">
-                {(detail.penggantianSparepart || []).map((s) => (
+                {(detail.penggantian_sparepart || []).map((s) => (
                   <li key={s.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2 flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <span className="font-medium text-slate-800">{s.nama_sparepart}</span>{' '}
@@ -321,7 +321,7 @@ export default function AsetDetailModal({
                     )}
                   </li>
                 ))}
-                {!detail.penggantianSparepart?.length && (
+                {!detail.penggantian_sparepart?.length && (
                   <p className="text-xs text-slate-400">Belum ada riwayat penggantian sparepart.</p>
                 )}
               </ul>
