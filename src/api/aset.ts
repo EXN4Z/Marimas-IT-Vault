@@ -82,11 +82,11 @@ export interface Aset {
   no_good_receive: string | null;
   status: AsetStatus;
   kelengkapan?: AsetKelengkapan[];
-  pemakaiSaatIni?: AsetPemakai | null;
+  pemakai_saat_ini?: AsetPemakai | null;
   pemakai?: AsetPemakai[]; // riwayat lengkap, cuma keisi di endpoint show()
-  pemakaiPending?: AsetPemakai[]; // request pinjam yang masih menunggu persetujuan admin
+  pemakai_pending?: AsetPemakai[]; // request pinjam yang masih menunggu persetujuan admin
   perbaikan?: AsetPerbaikan[];
-  penggantianSparepart?: AsetPenggantianSparepart[];
+  penggantian_sparepart?: AsetPenggantianSparepart[];
 }
 
 export interface AsetFormValues {

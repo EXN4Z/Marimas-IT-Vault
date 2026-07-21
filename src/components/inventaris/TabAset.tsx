@@ -295,9 +295,9 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                                 <span className="text-[11px] font-semibold">Pinjamkan</span>
                               </button>
                             )}
-                            {a.status === 'dipakai' && a.pemakaiSaatIni && (
+                            {a.status === 'dipakai' && a.pemakai_saat_ini && (
                               <button
-                                onClick={() => setPengembalianTarget({ aset: a, pemakai: a.pemakaiSaatIni! })}
+                                onClick={() => setPengembalianTarget({ aset: a, pemakai: a.pemakai_saat_ini! })}
                                 title="Terima Kembali"
                                 className="h-7 px-2 rounded-lg bg-emerald-50 text-emerald-700 flex items-center gap-1 hover:bg-emerald-100 transition"
                               >
@@ -324,7 +324,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                             </button>
                           </>
                         )}
-                        {!isAdmin && a.status === 'dipakai' && a.pemakaiSaatIni?.pekerja?.user?.id === user?.id && (
+                        {!isAdmin && a.status === 'dipakai' && a.pemakai_saat_ini?.pekerja?.user?.id === user?.id && (
                           <button
                             onClick={() => setLaporRusakTarget(a)}
                             title="Lapor Kerusakan"
@@ -334,7 +334,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                             <span className="text-[11px] font-semibold">Lapor Rusak</span>
                           </button>
                         )}
-                        {!isAdmin && a.status === 'tersedia' && !a.pemakaiPending?.length && (
+                        {!isAdmin && a.status === 'tersedia' && !a.pemakai_pending?.length && (
                           <button
                             onClick={() => setPinjamAsetTarget(a)}
                             title="Pinjam Aset"
@@ -344,7 +344,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                             <span className="text-[11px] font-semibold">Pinjam</span>
                           </button>
                         )}
-                        {!isAdmin && a.status === 'tersedia' && !!a.pemakaiPending?.length && (
+                        {!isAdmin && a.status === 'tersedia' && !!a.pemakai_pending?.length && (
                           <span className="h-7 px-2 rounded-lg bg-amber-50 text-amber-700 flex items-center gap-1 text-[11px] font-semibold">
                             Menunggu
                           </span>
@@ -416,12 +416,12 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
           detail={detail}
           detailLoading={detailLoading}
           isAdmin={isAdmin}
-          isPemakaiAktif={detail?.pemakaiSaatIni?.pekerja?.user?.id === user?.id}
+          isPemakaiAktif={detail?.pemakai_saat_ini?.pekerja?.user?.id === user?.id}
           totalKelengkapanMaster={totalKelengkapanMaster}
           historyActionError={historyActionError}
           onClose={closeAsetDetail}
           onSerahTerima={setSerahTerimaAset}
-          onTerimaKembali={(aset) => aset.pemakaiSaatIni && setPengembalianTarget({ aset, pemakai: aset.pemakaiSaatIni })}
+          onTerimaKembali={(aset) => aset.pemakai_saat_ini && setPengembalianTarget({ aset, pemakai: aset.pemakai_saat_ini })}
           onLaporKerusakan={setPerbaikanAsetTarget}
           onLaporRusakPeminjam={setLaporRusakTarget}
           onPinjam={setPinjamAsetTarget}
