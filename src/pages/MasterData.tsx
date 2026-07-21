@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, BriefcaseBusiness, Tags, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Building2, BriefcaseBusiness, Tags, Boxes, Package, Truck, Plus, Pencil, Trash2, X } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen } from '../api/departemen';
@@ -11,12 +11,21 @@ import {
   updateKategoriBarang,
   deleteKategoriBarang,
 } from '../api/kategoriBarang';
+import { getJenisAset, createJenisAset, updateJenisAset, deleteJenisAset } from '../api/jenisAset';
+import {
+  getKelengkapanMaster,
+  createKelengkapanMaster,
+  updateKelengkapanMaster,
+  deleteKelengkapanMaster,
+} from '../api/kelengkapanMaster';
+import { getSupplier, createSupplier, updateSupplier, deleteSupplier } from '../api/supplier';
 
-type TabKey = 'departemen' | 'jabatan' | 'kategori';
-type Item = { id: number; nama: string };
-type FormPayload = { nama: string };
+type TabKey = 'departemen' | 'jabatan' | 'kategori' | 'jenis-aset' | 'kelengkapan-master' | 'supplier';
+// alamat & telepon cuma dipakai tab 'supplier' -- tab lain cukup nama
+type Item = { id: number; nama: string; alamat?: string | null; telepon?: string | null };
+type FormPayload = { nama: string; alamat?: string; telepon?: string };
 
-const TAB_KEYS: TabKey[] = ['departemen', 'jabatan', 'kategori'];
+const TAB_KEYS: TabKey[] = ['departemen', 'jabatan', 'kategori', 'jenis-aset', 'kelengkapan-master', 'supplier'];
 
 function isTabKey(value: string | null): value is TabKey {
   return !!value && (TAB_KEYS as string[]).includes(value);
@@ -63,6 +72,33 @@ const tabConfig: Record<
     update: (id, payload) => updateKategoriBarang(id, payload.nama),
     remove: deleteKategoriBarang,
   },
+  'jenis-aset': {
+    label: 'Jenis Aset',
+    icon: Boxes,
+    singular: 'Jenis Aset',
+    get: getJenisAset as () => Promise<Item[]>,
+    create: (payload) => createJenisAset(payload.nama),
+    update: (id, payload) => updateJenisAset(id, payload.nama),
+    remove: deleteJenisAset,
+  },
+  'kelengkapan-master': {
+    label: 'Kelengkapan Aset',
+    icon: Package,
+    singular: 'Kelengkapan',
+    get: getKelengkapanMaster as () => Promise<Item[]>,
+    create: (payload) => createKelengkapanMaster(payload.nama),
+    update: (id, payload) => updateKelengkapanMaster(id, payload.nama),
+    remove: deleteKelengkapanMaster,
+  },
+  supplier: {
+    label: 'Supplier',
+    icon: Truck,
+    singular: 'Supplier',
+    get: getSupplier as () => Promise<Item[]>,
+    create: (payload) => createSupplier(payload),
+    update: (id, payload) => updateSupplier(id, { nama: payload.nama, alamat: payload.alamat, telepon: payload.telepon }),
+    remove: deleteSupplier,
+  },
 };
 
 export default function MasterData() {
@@ -100,6 +136,8 @@ export default function MasterData() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Item | null>(null);
   const [formNama, setFormNama] = useState('');
+  const [formAlamat, setFormAlamat] = useState('');
+  const [formTelepon, setFormTelepon] = useState('');
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -132,6 +170,8 @@ export default function MasterData() {
   const openCreateModal = () => {
     setEditing(null);
     setFormNama('');
+    setFormAlamat('');
+    setFormTelepon('');
     setFormError('');
     setModalOpen(true);
   };
@@ -139,6 +179,8 @@ export default function MasterData() {
   const openEditModal = (item: Item) => {
     setEditing(item);
     setFormNama(item.nama);
+    setFormAlamat(item.alamat || '');
+    setFormTelepon(item.telepon || '');
     setFormError('');
     setModalOpen(true);
   };
@@ -156,7 +198,10 @@ export default function MasterData() {
     setSubmitting(true);
     setFormError('');
     try {
-      const payload: FormPayload = { nama: formNama.trim() };
+      const payload: FormPayload = {
+        nama: formNama.trim(),
+        ...(activeTab === 'supplier' ? { alamat: formAlamat.trim(), telepon: formTelepon.trim() } : {}),
+      };
       if (editing) {
         await cfg.update(editing.id, payload);
       } else {
@@ -204,7 +249,8 @@ export default function MasterData() {
     <AppLayout title="Master Data">
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-slate-500">
-          Kelola data referensi departemen, jabatan, dan kategori barang yang dipakai di seluruh sistem.
+          Kelola data referensi departemen, jabatan, kategori barang, dan data master aset (jenis, kelengkapan,
+          supplier) yang dipakai di seluruh sistem.
         </p>
         <button
           onClick={openCreateModal}
@@ -253,6 +299,12 @@ export default function MasterData() {
             <thead>
               <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
                 <th className="px-6 py-3 font-medium">Nama</th>
+                {activeTab === 'supplier' && (
+                  <>
+                    <th className="px-6 py-3 font-medium">Alamat</th>
+                    <th className="px-6 py-3 font-medium">Telepon</th>
+                  </>
+                )}
                 <th className="px-6 py-3 font-medium text-right">Aksi</th>
               </tr>
             </thead>
@@ -260,6 +312,12 @@ export default function MasterData() {
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                   <td className="px-6 py-3 text-slate-800">{item.nama}</td>
+                  {activeTab === 'supplier' && (
+                    <>
+                      <td className="px-6 py-3 text-slate-600">{item.alamat || '-'}</td>
+                      <td className="px-6 py-3 text-slate-600">{item.telepon || '-'}</td>
+                    </>
+                  )}
                   <td className="px-6 py-3">
                     <div className="flex items-center justify-end gap-1">
                       <button
@@ -310,6 +368,28 @@ export default function MasterData() {
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
+
+              {activeTab === 'supplier' && (
+                <>
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 mb-1 block">Alamat</label>
+                    <input
+                      value={formAlamat}
+                      onChange={(e) => setFormAlamat(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 mb-1 block">Telepon</label>
+                    <input
+                      value={formTelepon}
+                      onChange={(e) => setFormTelepon(e.target.value)}
+                      placeholder="cth. 0812xxxxxxx"
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    />
+                  </div>
+                </>
+              )}
 
               {formError && (
                 <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">

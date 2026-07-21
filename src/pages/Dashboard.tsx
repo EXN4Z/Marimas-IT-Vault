@@ -230,6 +230,10 @@ function buildStatCards(stats?: StatsCardResponse) {
 const AUTO_DELETE_AFTER_READ_MS = 30 * 60 * 1000; // 30 menit
 const NOTIF_VISIBLE_COUNT = 2;
 const cardClass = 'bg-white rounded-3xl p-5 sm:p-6 shadow-[0_2px_20px_rgba(15,23,42,0.06)] border border-slate-100';
+// Padding khusus buat 4 stat card di paling atas — dibikin terpisah dari
+// cardClass biar lebih pendek tanpa ikut ngubah tinggi card-card lain
+// (chart, notifikasi, agenda, dll) yang masih pakai cardClass asli.
+const statCardClass = 'bg-white rounded-3xl p-4 sm:p-4 shadow-[0_2px_20px_rgba(15,23,42,0.06)] border border-slate-100';
 
 export default function Dashboard() {
   const { user: cachedUser, setUser } = useAuth();
@@ -523,7 +527,6 @@ function LegendDot({ color, label, value }: { color: string; label: string; valu
 
 function DashboardContent({
   error,
-  getGreeting,
   isApprover,
   departemen,
   statCards,
@@ -558,7 +561,7 @@ function DashboardContent({
   mutasiBarang: MutasiBulanan[];
   totalBarang?: TotalBarang;
 }) {
-  const { user } = useAuth();
+  useAuth();
 
   // ==== Hero chart "Pengajuan Izin Tahun Ini" — 1 bar disorot (nilai tertinggi)
   // + garis rata-rata putus-putus, gaya kartu fintech (bar polos vs bar disorot).
@@ -593,27 +596,25 @@ function DashboardContent({
 
   return (
     <>
-      <p className="text-sm text-slate-500 mb-6">
-        {getGreeting()}, <span className="font-semibold text-slate-800">{user?.name}</span> 👋
-      </p>
-
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
           {error}
         </div>
       )}
 
-      {/* ==== KPI cards — badge ikon warna solid + angka besar ==== */}
+      {/* ==== KPI cards — badge ikon warna solid + angka besar ====
+          Pakai statCardClass (bukan cardClass) biar lebih pendek, terpisah
+          dari card-card lain di bawah yang masih pakai cardClass asli. */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.length === 0
           ? Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className={`${cardClass} animate-pulse h-32`} />
+              <div key={i} className={`${statCardClass} animate-pulse h-24`} />
             ))
           : statCards.map((stat) => {
               const Icon = stat.icon;
               return (
-                <div key={stat.label} className={cardClass}>
-                  <div className="flex items-center justify-between mb-4">
+                <div key={stat.label} className={statCardClass}>
+                  <div className="flex items-center justify-between mb-3">
                     <p className="text-sm text-slate-500 font-medium">{stat.label}</p>
                     <StatBadge accent={stat.accent}>
                       <Icon size={18} />
@@ -623,7 +624,7 @@ function DashboardContent({
                     {stat.value}
                     {stat.unit && <span className="text-sm font-semibold text-slate-400 ml-1.5">{stat.unit}</span>}
                   </p>
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-xs text-slate-400">
+                  <div className="mt-3 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-xs text-slate-400">
                     <TrendingUp size={12} /> {stat.trend}
                   </div>
                 </div>
