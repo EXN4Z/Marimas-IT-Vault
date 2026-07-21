@@ -8,6 +8,7 @@ import TabAset from '../components/inventaris/TabAset';
 import TabStokMenipis from '../components/inventaris/TabStokMenipis';
 import TabKelengkapanAset from '../components/inventaris/TabKelengkapanAset';
 import TabPenangananAset from '../components/inventaris/TabPenangananAset';
+import TabPersetujuanAset from '../components/inventaris/TabPersetujuanAset';
 import { useAuth } from '../context/AuthContext';
 import { getBarangByKode, type Barang } from '../api/barang';
 import { getRiwayatPeminjaman, type Peminjaman } from '../api/peminjaman';
@@ -25,7 +26,7 @@ function formatWaktu(iso: string): string {
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 }
 
-type TabKey = 'barang' | 'aset' | 'stok_menipis' | 'kelengkapan_aset' | 'penanganan_aset';
+type TabKey = 'barang' | 'aset' | 'stok_menipis' | 'kelengkapan_aset' | 'penanganan_aset' | 'persetujuan_aset';
 
 export default function Inventaris() {
   const { user } = useAuth();
@@ -59,6 +60,7 @@ export default function Inventaris() {
   const handleCountBarang = useCallback((n: number) => updateCount('barang', n), [updateCount]);
   const handleCountAset = useCallback((n: number) => updateCount('aset', n), [updateCount]);
   const handleCountPenanganan = useCallback((n: number) => updateCount('penanganan_aset', n), [updateCount]);
+  const handleCountPersetujuan = useCallback((n: number) => updateCount('persetujuan_aset', n), [updateCount]);
 
   const handleScanSuccess = async (kodeBarang: string) => {
     setScanError('');
@@ -83,6 +85,7 @@ export default function Inventaris() {
     { key: 'aset', label: 'Aset', icon: Package },
     { key: 'stok_menipis', label: 'Stok Menipis', icon: AlertTriangle },
     { key: 'kelengkapan_aset', label: 'Kelengkapan Aset', icon: ClipboardList },
+    { key: 'persetujuan_aset', label: 'Persetujuan Aset', icon: HandCoins, adminOnly: true },
     { key: 'penanganan_aset', label: 'Penanganan Aset', icon: Wrench, adminOnly: true },
   ];
 
@@ -123,7 +126,7 @@ export default function Inventaris() {
                   {counts[t.key] != null && (
                     <span
                       className={`text-xs px-1.5 py-0.5 rounded-full ${
-                        t.key === 'stok_menipis' || t.key === 'penanganan_aset'
+                        t.key === 'stok_menipis' || t.key === 'penanganan_aset' || t.key === 'persetujuan_aset'
                           ? 'bg-red-50 text-red-600'
                           : 'bg-slate-100 text-slate-600'
                       }`}
@@ -204,6 +207,8 @@ export default function Inventaris() {
         </div>
       ) : activeTab === 'kelengkapan_aset' ? (
         <TabKelengkapanAset />
+      ) : activeTab === 'persetujuan_aset' ? (
+        <TabPersetujuanAset onCount={handleCountPersetujuan} />
       ) : (
         <TabPenangananAset onCount={handleCountPenanganan} />
       )}

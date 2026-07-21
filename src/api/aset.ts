@@ -4,6 +4,7 @@ import type { Supplier } from './supplier';
 import type { KelengkapanMaster } from './kelengkapanMaster';
 
 export type AsetStatus = 'tersedia' | 'dipakai' | 'rusak' | 'diperbaiki';
+export type AsetPemakaiStatus = 'pending' | 'disetujui' | 'ditolak';
 
 export interface KaryawanUser {
   id: number;
@@ -25,16 +26,21 @@ export interface AsetKelengkapan {
 }
 
 export interface AsetPemakai {
+  created_at: string;
   id: number;
   aset_id: number;
   pekerja_id: number;
   pekerja?: { id: number; nip: string; user?: { id: number; name: string } };
+  status: AsetPemakaiStatus;
+  requested_by_user_id: number | null;
   nomor_penerimaan: string | null;
-  tanggal_penerimaan: string;
+  tanggal_penerimaan: string | null; // nullable — request pending belum ada tanggal penerimaan
   catatan_penerimaan: string | null;
   nomor_pengembalian: string | null;
   tanggal_pengembalian: string | null;
   catatan_pengembalian: string | null;
+  catatan_penolakan: string | null;
+  aset?: Aset; // keisi kalau di-load dari endpoint /aset-pemakai/pending
 }
 
 export interface AsetPerbaikan {
@@ -78,6 +84,7 @@ export interface Aset {
   kelengkapan?: AsetKelengkapan[];
   pemakaiSaatIni?: AsetPemakai | null;
   pemakai?: AsetPemakai[]; // riwayat lengkap, cuma keisi di endpoint show()
+  pemakaiPending?: AsetPemakai[]; // request pinjam yang masih menunggu persetujuan admin
   perbaikan?: AsetPerbaikan[];
   penggantianSparepart?: AsetPenggantianSparepart[];
 }
@@ -179,6 +186,40 @@ export async function kembalikanAset(
   }
 ): Promise<AsetPemakai> {
   const res = await api.post<AsetPemakai>(`/aset-pemakai/${asetPemakaiId}/kembalikan`, payload);
+  return res.data;
+}
+
+// POST /aset/{aset}/pinjam — karyawan request pinjam aset (status 'tersedia' only).
+// Aset TIDAK langsung pindah status; nunggu admin approve lewat setujuiAsetPemakai().
+export async function requestPinjamAset(
+  asetId: number,
+  payload: { catatan_penerimaan?: string }
+): Promise<AsetPemakai> {
+  const res = await api.post<AsetPemakai>(`/aset/${asetId}/pinjam`, payload);
+  return res.data;
+}
+
+// GET /aset-pemakai/pending — daftar semua request pinjam yang belum diproses. Dibatasi backend ke role admin.
+export async function getPendingAsetPemakai(): Promise<AsetPemakai[]> {
+  const res = await api.get<AsetPemakai[]>('/aset-pemakai/pending');
+  return res.data;
+}
+
+// POST /aset-pemakai/{id}/setujui — approve request pinjam, aset jadi 'dipakai'. Dibatasi backend ke role admin.
+export async function setujuiAsetPemakai(
+  asetPemakaiId: number,
+  payload?: { nomor_penerimaan?: string; tanggal_penerimaan?: string }
+): Promise<AsetPemakai> {
+  const res = await api.post<AsetPemakai>(`/aset-pemakai/${asetPemakaiId}/setujui`, payload || {});
+  return res.data;
+}
+
+// POST /aset-pemakai/{id}/tolak — reject request pinjam, aset tetap 'tersedia'. Dibatasi backend ke role admin.
+export async function tolakAsetPemakai(
+  asetPemakaiId: number,
+  payload?: { catatan_penolakan?: string }
+): Promise<AsetPemakai> {
+  const res = await api.post<AsetPemakai>(`/aset-pemakai/${asetPemakaiId}/tolak`, payload || {});
   return res.data;
 }
 

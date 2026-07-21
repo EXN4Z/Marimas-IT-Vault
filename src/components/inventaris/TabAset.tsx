@@ -7,6 +7,7 @@ import AsetPerbaikanModal from '../AsetPerbaikanModal';
 import AsetPerbaikanSelesaiModal from '../AsetPerbaikanSelesaiModal';
 import AsetSparepartModal from '../AsetSparepartModal';
 import AsetLaporKerusakanModal from '../AsetLaporKerusakanModal';
+import AsetPinjamModal from '../AsetPinjamModal';
 import AsetDetailModal, { kelengkapanLevel, kelengkapanLevelStyle } from './AsetDetailModal';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -72,6 +73,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   const [perbaikanSelesaiTarget, setPerbaikanSelesaiTarget] = useState<{ aset: Aset; perbaikan: AsetPerbaikan } | null>(null);
   const [sparepartAsetTarget, setSparepartAsetTarget] = useState<Aset | null>(null);
   const [laporRusakTarget, setLaporRusakTarget] = useState<Aset | null>(null);
+  const [pinjamAsetTarget, setPinjamAsetTarget] = useState<Aset | null>(null);
   const [historyActionError, setHistoryActionError] = useState('');
 
   const loadAset = () => {
@@ -332,6 +334,21 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                             <span className="text-[11px] font-semibold">Lapor Rusak</span>
                           </button>
                         )}
+                        {!isAdmin && a.status === 'tersedia' && !a.pemakaiPending?.length && (
+                          <button
+                            onClick={() => setPinjamAsetTarget(a)}
+                            title="Pinjam Aset"
+                            className="h-7 px-2 rounded-lg bg-slate-900 text-white flex items-center gap-1 hover:bg-slate-800 transition"
+                          >
+                            <HandCoins size={13} />
+                            <span className="text-[11px] font-semibold">Pinjam</span>
+                          </button>
+                        )}
+                        {!isAdmin && a.status === 'tersedia' && !!a.pemakaiPending?.length && (
+                          <span className="h-7 px-2 rounded-lg bg-amber-50 text-amber-700 flex items-center gap-1 text-[11px] font-semibold">
+                            Menunggu
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -407,6 +424,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
           onTerimaKembali={(aset) => aset.pemakaiSaatIni && setPengembalianTarget({ aset, pemakai: aset.pemakaiSaatIni })}
           onLaporKerusakan={setPerbaikanAsetTarget}
           onLaporRusakPeminjam={setLaporRusakTarget}
+          onPinjam={setPinjamAsetTarget}
           onCatatSparepart={setSparepartAsetTarget}
           onTandaiSelesaiPerbaikan={(aset, perbaikan) => setPerbaikanSelesaiTarget({ aset, perbaikan })}
           onHapusPerbaikan={handleDeletePerbaikanAset}
@@ -482,6 +500,18 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
           onClose={() => setLaporRusakTarget(null)}
           onSuccess={() => {
             setLaporRusakTarget(null);
+          }}
+        />
+      )}
+
+      {pinjamAsetTarget && (
+        <AsetPinjamModal
+          aset={pinjamAsetTarget}
+          onClose={() => setPinjamAsetTarget(null)}
+          onSuccess={() => {
+            setPinjamAsetTarget(null);
+            loadAset();
+            if (detailId) refreshAsetDetail();
           }}
         />
       )}

@@ -57,6 +57,7 @@ interface Props {
   onTerimaKembali: (aset: Aset) => void;
   onLaporKerusakan: (aset: Aset) => void;
   onLaporRusakPeminjam: (aset: Aset) => void;
+  onPinjam: (aset: Aset) => void;
   onCatatSparepart: (aset: Aset) => void;
   onTandaiSelesaiPerbaikan: (aset: Aset, perbaikan: AsetPerbaikan) => void;
   onHapusPerbaikan: (id: number) => void;
@@ -75,6 +76,7 @@ export default function AsetDetailModal({
   onTerimaKembali,
   onLaporKerusakan,
   onLaporRusakPeminjam,
+  onPinjam,
   onCatatSparepart,
   onTandaiSelesaiPerbaikan,
   onHapusPerbaikan,
@@ -191,6 +193,21 @@ export default function AsetDetailModal({
                   <Wrench size={14} />
                   Lapor Rusak
                 </button>
+              )}
+              {!isAdmin && detail.status === 'tersedia' && !detail.pemakaiPending?.length && (
+                <button
+                  onClick={() => onPinjam(detail)}
+                  className="flex items-center gap-1.5 bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-800 transition"
+                >
+                  <HandCoins size={14} />
+                  Pinjam Aset
+                </button>
+              )}
+              {!isAdmin && detail.status === 'tersedia' && !!detail.pemakaiPending?.length && (
+                <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 text-xs font-semibold px-3 py-2 rounded-lg">
+                  <HandCoins size={14} />
+                  Menunggu persetujuan admin
+                </span>
               )}
             </div>
 
