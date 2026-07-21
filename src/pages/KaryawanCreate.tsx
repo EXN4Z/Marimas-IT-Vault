@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import RouteModal from '../components/RouteModal';
 import { getDepartemen, type Departemen } from '../api/departemen';
-import { getJabatan, type Jabatan } from '../api/jabatan';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
 
@@ -14,7 +13,6 @@ interface FormState {
     role: Role;
     nip: string;
     departemen_id: string;
-    jabatan_id: string;
     tanggal_masuk: string;
 }
 
@@ -29,7 +27,6 @@ const initialForm: FormState = {
     role: 'karyawan',
     nip: '',
     departemen_id: '',
-    jabatan_id: '',
     tanggal_masuk: '',
 };
 
@@ -38,7 +35,6 @@ export default function CreateKaryawanPage() {
 
     const [form, setForm] = useState<FormState>(initialForm);
     const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
-    const [jabatanList, setJabatanList] = useState<Jabatan[]>([]);
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
     const [errorMsg, setErrorMsg] = useState<string>('');
@@ -48,7 +44,6 @@ export default function CreateKaryawanPage() {
 
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
-        getJabatan().then(setJabatanList).catch(() => {});
     }, []);
 
     function closeModal() {
@@ -80,7 +75,6 @@ export default function CreateKaryawanPage() {
             const payload = {
                 ...form,
                 departemen_id: form.departemen_id || null,
-                jabatan_id: form.jabatan_id || null,
                 tanggal_masuk: form.tanggal_masuk || null,
             };
             const res = await api.post('/karyawan', payload);
@@ -179,9 +173,9 @@ export default function CreateKaryawanPage() {
                             <select
                                 value={form.departemen_id}
                                 onChange={(e) => handleChange('departemen_id', e.target.value)}
-                                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                                className={`w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10 ${form.departemen_id === '' ? 'text-gray-400' : 'text-gray-900'}`}
                             >
-                                <option value="">Pilih departemen</option>
+                                <option value="" className='opacity-50'>Pilih departemen</option>
                                 {departemenList.map((d) => (
                                     <option key={d.id} value={d.id}>
                                         {d.nama}
@@ -190,18 +184,17 @@ export default function CreateKaryawanPage() {
                             </select>
                         </Field>
 
-                        <Field label="Jabatan" error={errors.jabatan_id?.[0]}>
+                        <Field label="Posisi" error={errors.role?.[0]}>
                             <select
-                                value={form.jabatan_id}
-                                onChange={(e) => handleChange('jabatan_id', e.target.value)}
-                                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                                value={form.role}
+                                onChange={(e) => handleChange('role', e.target.value as Role)}
+                                className={`w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10`}
                             >
-                                <option value="">Pilih jabatan</option>
-                                {jabatanList.map((j) => (
-                                    <option key={j.id} value={j.id}>
-                                        {j.nama}
-                                    </option>
-                                ))}
+                                <option value="" className='opacity-50'>Pilih Posisi</option>
+                                <option value="karyawan">Karyawan</option>
+                                <option value="manajer">Manajer</option>
+                                <option value="hr">HR</option>
+                                <option value="admin">Admin</option>
                             </select>
                         </Field>
                     </div>
@@ -213,20 +206,7 @@ export default function CreateKaryawanPage() {
                             onChange={(e) => handleChange('tanggal_masuk', e.target.value)}
                             className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
                         />
-                    </Field>
-
-                    <Field label="Role" error={errors.role?.[0]}>
-                        <select
-                            value={form.role}
-                            onChange={(e) => handleChange('role', e.target.value as Role)}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                        >
-                            <option value="karyawan">Karyawan</option>
-                            <option value="manajer">Manajer</option>
-                            <option value="hr">HR</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                    </Field>
+                    </Field> 
 
                     <div className="flex justify-end gap-2 pt-2">
                         <button
