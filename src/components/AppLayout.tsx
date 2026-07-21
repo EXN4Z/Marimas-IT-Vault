@@ -265,20 +265,19 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
   };
 
 const handleLogout = async () => {
+    let passwordReset = false;
     try {
         const res = await api.post('/logout');
-        if (res.data.password_direset) {
-            toast('Password telah diganti, silahkan cek email Anda.', {
-                icon: '🔒',
-                duration: 4000,
-            });
-        }
+        passwordReset = res.data.password_direset;
     } catch (err) {
         console.error('Logout di server gagal, lanjut clear session lokal.', err);
     } finally {
         resetChat();
         logout();
-        navigate('/login', { replace: true });
+        navigate('/login', {
+            replace: true,
+            state: passwordReset ? { passwordReset: true } : undefined,
+        });
     }
 };
 

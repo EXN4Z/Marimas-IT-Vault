@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { User, Lock } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { login } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 
@@ -11,6 +12,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { user, isLoading, setUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // BARU: kalau AuthContext sudah selesai validasi token dan ternyata user
   // masih login (token valid), langsung lempar ke dashboard tanpa nampilin
@@ -20,6 +22,20 @@ export default function Login() {
       navigate('/dashboard', { replace: true });
     }
   }, [isLoading, user, navigate]);
+
+  // BARU: kalau kesini gara-gara logout otomatis (password ke-reset), state
+  // ini dikirim dari AppLayout.tsx lewat navigate(). Tampilkan toast sekali,
+  // lalu bersihin state-nya biar gak muncul lagi kalau user refresh/back.
+  useEffect(() => {
+    const state = location.state as { passwordReset?: boolean } | null;
+    if (state?.passwordReset) {
+      toast('Password telah diganti, silahkan cek email Anda.', {
+        icon: '🔒',
+        duration: 4000,
+      });
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
