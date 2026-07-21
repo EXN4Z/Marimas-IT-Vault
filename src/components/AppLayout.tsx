@@ -25,6 +25,7 @@ import {
   Package2,
   Truck,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import api from '../api/axios';
@@ -264,17 +265,23 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
     });
   };
 
-  const handleLogout = async () => {
+const handleLogout = async () => {
     try {
-      await api.post('/logout');
+        const res = await api.post('/logout');
+        if (res.data.password_direset) {
+            toast('Password telah diganti, silahkan cek email Anda.', {
+                icon: '🔒',
+                duration: 4000,
+            });
+        }
     } catch (err) {
-      console.error('Logout di server gagal, lanjut clear session lokal.', err);
+        console.error('Logout di server gagal, lanjut clear session lokal.', err);
     } finally {
-      resetChat();
-      logout();
-      navigate('/login', { replace: true });
+        resetChat();
+        logout();
+        navigate('/login', { replace: true });
     }
-  };
+};
 
   // Route yang sekarang dirender sebagai overlay absolute (RouteModal) di App.tsx,
   // bukan halaman penuh lagi — jadi navigasi ke sini WAJIB bawa state.backgroundLocation
