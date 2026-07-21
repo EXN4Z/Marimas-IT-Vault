@@ -45,12 +45,18 @@ export default function Inventaris() {
   const [lookingUpBarang, setLookingUpBarang] = useState(false);
 
   useEffect(() => {
+    // /peminjaman dibatasi backend ke role admin — karyawan biasa skip fetch ini
+    // biar gak nembak endpoint yang emang gak diizinkan (403).
+    if (!isAdmin) {
+      setRiwayatLoading(false);
+      return;
+    }
     setRiwayatLoading(true);
     getRiwayatPeminjaman(10)
       .then(setRiwayat)
       .catch(console.error)
       .finally(() => setRiwayatLoading(false));
-  }, []);
+  }, [isAdmin]);
 
   // stabil: hindari infinite loop di child (onCount di deps useEffect anak)
   const updateCount = useCallback((key: TabKey, n: number) => {
@@ -167,43 +173,45 @@ export default function Inventaris() {
             {activeTab === 'stok_menipis' && <TabStokMenipis search={search} />}
           </div>
 
-          {/* RIWAYAT PEMINJAMAN — tetap nempel di shell */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 h-fit">
-            <h3 className="text-base font-semibold text-slate-900 mb-4">
-              Riwayat <span className="text-slate-400 font-normal">({riwayat.length})</span>
-            </h3>
-            {riwayatLoading ? (
-              <p className="text-sm text-slate-400 text-center py-6">Memuat riwayat...</p>
-            ) : (
-              <ul className="flex flex-col gap-4">
-                {riwayat.map((p) => {
-                  const dikembalikan = p.status === 'dikembalikan';
-                  const waktu = dikembalikan ? p.tanggal_kembali_aktual! : p.tanggal_pinjam;
-                  return (
-                    <li key={p.id} className="flex items-start gap-3">
-                      <span
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                          dikembalikan ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
-                        }`}
-                      >
-                        {dikembalikan ? <Undo2 size={16} /> : <HandCoins size={16} />}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-sm text-slate-800">
-                          <span className="font-medium">{p.user?.name || '-'}</span>{' '}
-                          {dikembalikan ? 'mengembalikan' : 'meminjam'} <span className="font-medium">{p.jumlah}</span> pcs
-                        </p>
-                        <p className="text-xs text-slate-400">{formatWaktu(waktu)}</p>
-                      </div>
-                    </li>
-                  );
-                })}
-                {riwayat.length === 0 && (
-                  <p className="text-sm text-slate-400 text-center py-6">Belum ada riwayat peminjaman.</p>
-                )}
-              </ul>
-            )}
-          </div>
+          {/* RIWAYAT PEMINJAMAN — admin only, karena /peminjaman dibatasi role admin di backend */}
+          {isAdmin && (
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 h-fit">
+              <h3 className="text-base font-semibold text-slate-900 mb-4">
+                Riwayat <span className="text-slate-400 font-normal">({riwayat.length})</span>
+              </h3>
+              {riwayatLoading ? (
+                <p className="text-sm text-slate-400 text-center py-6">Memuat riwayat...</p>
+              ) : (
+                <ul className="flex flex-col gap-4">
+                  {riwayat.map((p) => {
+                    const dikembalikan = p.status === 'dikembalikan';
+                    const waktu = dikembalikan ? p.tanggal_kembali_aktual! : p.tanggal_pinjam;
+                    return (
+                      <li key={p.id} className="flex items-start gap-3">
+                        <span
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                            dikembalikan ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                          }`}
+                        >
+                          {dikembalikan ? <Undo2 size={16} /> : <HandCoins size={16} />}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm text-slate-800">
+                            <span className="font-medium">{p.user?.name || '-'}</span>{' '}
+                            {dikembalikan ? 'mengembalikan' : 'meminjam'} <span className="font-medium">{p.jumlah}</span> pcs
+                          </p>
+                          <p className="text-xs text-slate-400">{formatWaktu(waktu)}</p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                  {riwayat.length === 0 && (
+                    <p className="text-sm text-slate-400 text-center py-6">Belum ada riwayat peminjaman.</p>
+                  )}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
       ) : activeTab === 'kelengkapan_aset' ? (
         <TabKelengkapanAset />
