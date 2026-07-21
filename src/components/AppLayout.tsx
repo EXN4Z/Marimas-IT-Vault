@@ -21,6 +21,9 @@ import {
   Building2,
   BriefcaseBusiness,
   Tags,
+  Boxes,
+  Package2,
+  Truck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
@@ -54,6 +57,7 @@ const navItems: NavItem[] = [
   { label: 'Pengajuan Izin', icon: FileText, path: '/izin', matchPrefix: '/izin' },
   { label: 'Ticketing', icon: Ticket, path: '/ticketing', matchPrefix: '/ticketing' },
   { label: 'Inventaris', icon: Package, path: '/inventaris', matchPrefix: '/inventaris' },
+  { label: 'Aset', icon: Boxes, path: '/aset', matchPrefix: '/aset' },
   { label: 'Agenda', icon: CalendarDays, path: '/agenda', matchPrefix: '/agenda' },
   { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true },
   {
@@ -66,6 +70,9 @@ const navItems: NavItem[] = [
       { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen' },
       { label: 'Jabatan', icon: BriefcaseBusiness, path: '/master-data?tab=jabatan' },
       { label: 'Kategori Barang', icon: Tags, path: '/master-data?tab=kategori' },
+      { label: 'Jenis Aset', icon: Boxes, path: '/master-data?tab=jenis-aset' },
+      { label: 'Kelengkapan Aset', icon: Package2, path: '/master-data?tab=kelengkapan-master' },
+      { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier' },
     ],
   },
   { label: 'AI Assistant', icon: Bot, path: '/ai-assistant' },
