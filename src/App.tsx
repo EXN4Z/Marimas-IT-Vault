@@ -21,7 +21,6 @@ import IzinForm from './pages/IzinPageForm';
 import Agenda from './pages/Agenda';
 import Laporan from './pages/Laporan';
 import MasterData from './pages/MasterData';
-import AsetPage from './pages/Aset';
 
 interface LocationState {
   backgroundLocation?: Location;
@@ -45,7 +44,7 @@ function AppRoutes() {
         <Route path="/verify-otp" element={<VerifyOtp />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/inventaris" element={<Inventaris />} />
-        <Route path="/aset" element={<AsetPage />} />
+        <Route path="/aset" element={<Navigate to="/inventaris" replace />} />
         <Route path="/karyawan" element={<Karyawan />} />
         <Route path="/izin" element={<PengajuanIzin />} />
         {/* Dashboard Analytics sekarang jadi tab di dalam /dashboard, bukan halaman sendiri.

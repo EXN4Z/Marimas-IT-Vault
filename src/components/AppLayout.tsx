@@ -58,7 +58,6 @@ const navItems: NavItem[] = [
   { label: 'Pengajuan Izin', icon: FileText, path: '/izin', matchPrefix: '/izin' },
   { label: 'Ticketing', icon: Ticket, path: '/ticketing', matchPrefix: '/ticketing' },
   { label: 'Inventaris', icon: Package, path: '/inventaris', matchPrefix: '/inventaris' },
-  { label: 'Aset', icon: Boxes, path: '/aset', matchPrefix: '/aset' },
   { label: 'Agenda', icon: CalendarDays, path: '/agenda', matchPrefix: '/agenda' },
   { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true },
   {
