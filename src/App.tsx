@@ -38,6 +38,7 @@ function AppRoutes() {
 
   return (
     <>
+      <Toaster position='top-center' />
       <Routes location={backgroundLocation || location}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
