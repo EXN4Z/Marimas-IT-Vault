@@ -1,8 +1,15 @@
 import { useState } from 'react';
-import { FileSpreadsheet, ClipboardList, PackageSearch, Printer, Loader2 } from 'lucide-react';
+import { FileSpreadsheet, ClipboardList, PackageSearch, Printer, Loader2, Download } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { useAuth } from '../context/AuthContext';
-import { printLaporanAbsensi, printLaporanIzin, printLaporanInventaris } from '../api/laporan';
+import {
+  printLaporanAbsensi,
+  printLaporanIzin,
+  printLaporanInventaris,
+  downloadLaporanAbsensiExcel,
+  downloadLaporanIzinExcel,
+  downloadLaporanInventarisExcel,
+} from '../api/laporan';
 
 const STAFF_ROLES = ['admin', 'hr', 'manajer', 'manager'];
 
@@ -20,6 +27,7 @@ const laporanConfig: Record<
     description: string;
     icon: typeof FileSpreadsheet;
     print: (b: number, t: number, w: Window) => Promise<void>;
+    exportExcel: (b: number, t: number) => Promise<void>;
   }
 > = {
   absensi: {
@@ -27,20 +35,25 @@ const laporanConfig: Record<
     description: 'Rekap jam masuk, jam pulang, dan status kehadiran seluruh karyawan per bulan.',
     icon: ClipboardList,
     print: printLaporanAbsensi,
+    exportExcel: downloadLaporanAbsensiExcel,
   },
   izin: {
     label: 'Laporan Pengajuan Izin',
     description: 'Rekap pengajuan izin/cuti karyawan beserta status persetujuan per bulan.',
     icon: FileSpreadsheet,
     print: printLaporanIzin,
+    exportExcel: downloadLaporanIzinExcel,
   },
   inventaris: {
     label: 'Laporan Mutasi Inventaris',
     description: 'Rekap mutasi barang masuk dan keluar beserta perubahan stok per bulan.',
     icon: PackageSearch,
     print: printLaporanInventaris,
+    exportExcel: downloadLaporanInventarisExcel,
   },
 };
+
+type ActionType = 'pdf' | 'excel';
 
 export default function Laporan() {
   const { user } = useAuth();
@@ -49,7 +62,9 @@ export default function Laporan() {
   const now = new Date();
   const [bulan, setBulan] = useState(now.getMonth() + 1);
   const [tahun, setTahun] = useState(now.getFullYear());
-  const [printingKey, setPrintingKey] = useState<LaporanKey | null>(null);
+  // Lacak kombinasi laporan + jenis aksi yang lagi diproses, supaya tombol PDF
+  // dan Excel di kartu yang sama bisa disabled secara independen.
+  const [processing, setProcessing] = useState<{ key: LaporanKey; type: ActionType } | null>(null);
   const [error, setError] = useState('');
 
   const handlePrint = async (key: LaporanKey) => {
@@ -63,7 +78,7 @@ export default function Laporan() {
     }
     printWindow.document.write('<p style="font-family: sans-serif; padding: 24px;">Menyiapkan laporan...</p>');
 
-    setPrintingKey(key);
+    setProcessing({ key, type: 'pdf' });
     setError('');
     try {
       await laporanConfig[key].print(bulan, tahun, printWindow);
@@ -74,7 +89,23 @@ export default function Laporan() {
         setError(err?.message || `Gagal mencetak ${laporanConfig[key].label.toLowerCase()}.`);
       }
     } finally {
-      setPrintingKey(null);
+      setProcessing(null);
+    }
+  };
+
+  const handleExportExcel = async (key: LaporanKey) => {
+    setProcessing({ key, type: 'excel' });
+    setError('');
+    try {
+      await laporanConfig[key].exportExcel(bulan, tahun);
+    } catch (err: any) {
+      if (err.response?.status === 403) {
+        setError('Anda tidak punya akses untuk mengunduh laporan ini.');
+      } else {
+        setError(err?.message || `Gagal mengunduh ${laporanConfig[key].label.toLowerCase()} sebagai Excel.`);
+      }
+    } finally {
+      setProcessing(null);
     }
   };
 
@@ -92,7 +123,7 @@ export default function Laporan() {
     <AppLayout title="Laporan">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
         <p className="text-sm text-slate-500 max-w-lg">
-          Cetak rekap bulanan langsung sebagai PDF yang sudah rapi.
+          Cetak rekap bulanan sebagai PDF, atau unduh sebagai file Excel.
         </p>
 
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -124,7 +155,9 @@ export default function Laporan() {
         {(Object.keys(laporanConfig) as LaporanKey[]).map((key) => {
           const cfg = laporanConfig[key];
           const Icon = cfg.icon;
-          const isPrinting = printingKey === key;
+          const isPrintingPdf = processing?.key === key && processing.type === 'pdf';
+          const isExportingExcel = processing?.key === key && processing.type === 'excel';
+          const isBusy = processing?.key === key;
           return (
             <div key={key} className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
               <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
@@ -132,14 +165,25 @@ export default function Laporan() {
               </div>
               <h3 className="text-sm font-semibold text-slate-900 mb-1">{cfg.label}</h3>
               <p className="text-xs text-slate-500 leading-relaxed flex-1">{cfg.description}</p>
-              <button
-                onClick={() => handlePrint(key)}
-                disabled={isPrinting}
-                className="mt-4 flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
-              >
-                {isPrinting ? <Loader2 size={15} className="animate-spin" /> : <Printer size={15} />}
-                {isPrinting ? 'Menyiapkan...' : 'Cetak PDF'}
-              </button>
+
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={() => handlePrint(key)}
+                  disabled={isBusy}
+                  className="flex-1 flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
+                >
+                  {isPrintingPdf ? <Loader2 size={15} className="animate-spin" /> : <Printer size={15} />}
+                  {isPrintingPdf ? 'Menyiapkan...' : 'PDF'}
+                </button>
+                <button
+                  onClick={() => handleExportExcel(key)}
+                  disabled={isBusy}
+                  className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-emerald-700 transition disabled:opacity-40"
+                >
+                  {isExportingExcel ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+                  {isExportingExcel ? 'Mengunduh...' : 'Excel'}
+                </button>
+              </div>
             </div>
           );
         })}

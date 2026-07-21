@@ -1,3 +1,5 @@
+import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 import api from './axios';
 import { printCsvAsReport } from '../utils/printCsvReport';
 
@@ -45,6 +47,42 @@ async function printLaporan(
   }
 }
 
+// Helper generik: hit endpoint CSV yang sama seperti printLaporan, tapi hasilnya
+// di-convert jadi file .xlsx beneran (pakai SheetJS) lalu langsung di-download
+// lewat browser. Tidak perlu window baru karena tidak ada proses "print" di sini,
+// cuma trigger file download.
+async function downloadLaporanExcel(
+  jenis: JenisLaporan,
+  bulan: number,
+  tahun: number
+): Promise<void> {
+  const res = await api.get(`/laporan/${jenis}`, {
+    params: { bulan, tahun },
+    responseType: 'blob',
+  });
+
+  const csvText = await (res.data as Blob).text();
+
+  // PENTING: parsing manual pakai PapaParse, BUKAN XLSX.read(csvText, {type:'string'}).
+  // XLSX.read punya auto-detect tipe data yang suka salah nebak kolom tanggal/teks
+  // sebagai angka (mis. "21/07/2026 08:30" jadi serial number Excel seperti
+  // 46215.29 tanpa format tanggal yang benar). Dengan PapaParse, setiap sel dibaca
+  // sebagai string apa adanya, lalu aoa_to_sheet menyimpannya sebagai teks (type 's')
+  // tanpa konversi otomatis apapun.
+  const parsed = Papa.parse<string[]>(csvText.trim(), { skipEmptyLines: true });
+  const rows = parsed.data;
+
+  const worksheet = XLSX.utils.aoa_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+
+  // Nama sheet maks 31 karakter (batas Excel)
+  const sheetName = laporanTitle[jenis].slice(0, 31);
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+
+  const filename = `${laporanTitle[jenis]} - ${bulanLabel[bulan - 1]} ${tahun}.xlsx`;
+  XLSX.writeFile(workbook, filename);
+}
+
 export function printLaporanAbsensi(bulan: number, tahun: number, targetWindow: Window): Promise<void> {
   return printLaporan('absensi', bulan, tahun, targetWindow);
 }
@@ -55,4 +93,16 @@ export function printLaporanIzin(bulan: number, tahun: number, targetWindow: Win
 
 export function printLaporanInventaris(bulan: number, tahun: number, targetWindow: Window): Promise<void> {
   return printLaporan('inventaris', bulan, tahun, targetWindow);
+}
+
+export function downloadLaporanAbsensiExcel(bulan: number, tahun: number): Promise<void> {
+  return downloadLaporanExcel('absensi', bulan, tahun);
+}
+
+export function downloadLaporanIzinExcel(bulan: number, tahun: number): Promise<void> {
+  return downloadLaporanExcel('izin', bulan, tahun);
+}
+
+export function downloadLaporanInventarisExcel(bulan: number, tahun: number): Promise<void> {
+  return downloadLaporanExcel('inventaris', bulan, tahun);
 }
