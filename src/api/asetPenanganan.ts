@@ -44,7 +44,7 @@ export async function laporKerusakanAset(payload: {
   return res.data;
 }
 
-// POST /aset-penanganan/{id} (+ _method=PUT) — admin tandai selesai / isi hasil penanganan.
+// POST /aset-penanganan/{id} — admin tandai selesai / isi hasil penanganan.
 export async function selesaikanPenanganan(
   id: number,
   payload: Partial<{
@@ -56,9 +56,6 @@ export async function selesaikanPenanganan(
     catatan: string | null;
   }> = {},
 ): Promise<AsetPenanganan> {
-  const res = await api.post<AsetPenanganan>(`/aset-penanganan/${id}`, {
-    _method: 'PUT',
-    ...payload,
-  });
+  const res = await api.post<AsetPenanganan>(`/aset-penanganan/${id}`, payload);
   return res.data;
 }
