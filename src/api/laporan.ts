@@ -16,19 +16,21 @@ const laporanTitle: Record<JenisLaporan, string> = {
   inventaris: 'Laporan Mutasi Inventaris',
 };
 
-// Helper generik: hit endpoint /laporan/{jenis}?bulan=&tahun= sebagai blob, parse
+// Helper generik: hit endpoint /laporan/{jenis}?bulan=&tahun=&... sebagai blob, parse
 // hasilnya, lalu render sebagai tabel HTML rapi yang ditulis ke jendela print yang
 // SUDAH dibuka (lihat printCsvReport.ts untuk alasan kenapa window-nya harus dibuka
 // duluan, sebelum fetch data). Semua endpoint dibatasi backend ke role admin/hr/manajer.
+// extraParams: query tambahan opsional, misal { status: 'telat' } untuk filter khusus.
 async function printLaporan(
   jenis: JenisLaporan,
   bulan: number,
   tahun: number,
-  targetWindow: Window
+  targetWindow: Window,
+  extraParams: Record<string, string> = {}
 ): Promise<void> {
   try {
     const res = await api.get(`/laporan/${jenis}`, {
-      params: { bulan, tahun },
+      params: { bulan, tahun, ...extraParams },
       responseType: 'blob',
     });
 
@@ -36,7 +38,7 @@ async function printLaporan(
     printCsvAsReport(
       csvText,
       {
-        title: laporanTitle[jenis],
+        title: extraParams.status === 'telat' ? 'Laporan Karyawan Terlambat' : laporanTitle[jenis],
         periodLabel: `${bulanLabel[bulan - 1]} ${tahun}`,
       },
       targetWindow
@@ -54,10 +56,11 @@ async function printLaporan(
 async function downloadLaporanExcel(
   jenis: JenisLaporan,
   bulan: number,
-  tahun: number
+  tahun: number,
+  extraParams: Record<string, string> = {}
 ): Promise<void> {
   const res = await api.get(`/laporan/${jenis}`, {
-    params: { bulan, tahun },
+    params: { bulan, tahun, ...extraParams },
     responseType: 'blob',
   });
 
@@ -76,10 +79,11 @@ async function downloadLaporanExcel(
   const workbook = XLSX.utils.book_new();
 
   // Nama sheet maks 31 karakter (batas Excel)
-  const sheetName = laporanTitle[jenis].slice(0, 31);
+  const title = extraParams.status === 'telat' ? 'Laporan Karyawan Terlambat' : laporanTitle[jenis];
+  const sheetName = title.slice(0, 31);
   XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
 
-  const filename = `${laporanTitle[jenis]} - ${bulanLabel[bulan - 1]} ${tahun}.xlsx`;
+  const filename = `${title} - ${bulanLabel[bulan - 1]} ${tahun}.xlsx`;
   XLSX.writeFile(workbook, filename);
 }
 
@@ -105,4 +109,13 @@ export function downloadLaporanIzinExcel(bulan: number, tahun: number): Promise<
 
 export function downloadLaporanInventarisExcel(bulan: number, tahun: number): Promise<void> {
   return downloadLaporanExcel('inventaris', bulan, tahun);
+}
+
+// BARU: khusus data karyawan terlambat, dipakai dari chat AI
+export function printLaporanKaryawanTerlambat(bulan: number, tahun: number, targetWindow: Window): Promise<void> {
+  return printLaporan('absensi', bulan, tahun, targetWindow, { status: 'telat' });
+}
+
+export function downloadLaporanKaryawanTerlambatExcel(bulan: number, tahun: number): Promise<void> {
+  return downloadLaporanExcel('absensi', bulan, tahun, { status: 'telat' });
 }

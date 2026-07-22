@@ -4,6 +4,7 @@ import AppLayout from '../components/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import { sendChatMessage } from '../api/chat';
+import { printLaporanKaryawanTerlambat, downloadLaporanKaryawanTerlambatExcel } from '../api/laporan';
 
 const SUGGESTIONS = [
   'Berapa total karyawan di perusahaan?',
@@ -62,10 +63,10 @@ export default function AiAssistant() {
     requestAnimationFrame(resizeTextarea);
 
     try {
-      const reply = await sendChatMessage(text);
+      const { reply, exportPrompt } = await sendChatMessage(text);
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: 'assistant', text: reply, time: now() },
+        { id: crypto.randomUUID(), role: 'assistant', text: reply, time: now(), exportPrompt },
       ]);
     } catch {
       setMessages((prev) => [
@@ -92,6 +93,14 @@ export default function AiAssistant() {
 
   const handleClear = () => {
     resetChat();
+  };
+
+  const handlePrintTerlambat = (bulan: number, tahun: number) => {
+    // window.open HARUS di sini, di dalam onClick, sebelum ada await —
+    // supaya tidak diblokir popup blocker.
+    const w = window.open('', '_blank');
+    if (!w) return;
+    printLaporanKaryawanTerlambat(bulan, tahun, w);
   };
 
   return (
@@ -143,6 +152,26 @@ export default function AiAssistant() {
                 >
                   {m.text}
                 </div>
+
+                {m.exportPrompt?.jenis === 'karyawan_terlambat' && (
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => handlePrintTerlambat(m.exportPrompt!.bulan, m.exportPrompt!.tahun)}
+                      className="text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition"
+                    >
+                      Unduh PDF
+                    </button>
+                    <button
+                      onClick={() =>
+                        downloadLaporanKaryawanTerlambatExcel(m.exportPrompt!.bulan, m.exportPrompt!.tahun)
+                      }
+                      className="text-xs font-medium px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                    >
+                      Unduh Excel
+                    </button>
+                  </div>
+                )}
+
                 <span className="text-[10px] text-slate-400 mt-1 px-1">{m.time}</span>
               </div>
             </div>

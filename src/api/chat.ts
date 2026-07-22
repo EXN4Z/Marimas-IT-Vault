@@ -1,6 +1,20 @@
 import api from './axios';
 
-export const sendChatMessage = async (message: string): Promise<string> => {
+export interface ExportPrompt {
+  jenis: 'karyawan_terlambat';
+  bulan: number;
+  tahun: number;
+}
+
+export interface ChatbotResponse {
+  reply: string;
+  exportPrompt?: ExportPrompt;
+}
+
+export const sendChatMessage = async (message: string): Promise<ChatbotResponse> => {
   const res = await api.post('/chat', { message });
-  return res.data.reply;
+  return {
+    reply: res.data.reply,
+    exportPrompt: res.data.exportPrompt,
+  };
 };

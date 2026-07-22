@@ -6,6 +6,11 @@ export interface ChatMessage {
   text: string;
   time: string;
   error?: boolean;
+  exportPrompt?: {
+    jenis: 'karyawan_terlambat';
+    bulan: number;
+    tahun: number;
+  };
 }
 
 export const CHAT_STORAGE_KEY = 'marimas_ai_chat_history';

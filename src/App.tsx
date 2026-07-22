@@ -59,7 +59,6 @@ function AppRoutes() {
         <Route path="/agenda" element={<Agenda />} />
         <Route path="/laporan" element={<Laporan />} />
         <Route path="/master-data" element={<MasterData />} />
-
         {/* Fallback: kalau /karyawan/create atau /karyawan/:id/edit diakses langsung
             (refresh browser / paste link / belum ada backgroundLocation), route ini
             tetap harus ada di sini juga supaya tidak 404 — dia akan render sebagai
@@ -84,7 +83,6 @@ function AppRoutes() {
 
         <Route path="/" element={<Login />} />
       </Routes>
-
       {/* Layer overlay: hanya dirender kalau ada backgroundLocation, artinya halaman
           ini dibuka sebagai "child route" absolute di atas halaman sebelumnya. */}
       {backgroundLocation && (

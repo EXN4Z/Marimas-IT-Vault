@@ -4,6 +4,7 @@ import { MessageCircle, X, Send } from 'lucide-react';
 import { sendChatMessage } from '../api/chat';
 import { useChat, type ChatMessage } from '../context/ChatContext';
 import { detectIntent } from '../lib/chatIntent';
+import { printLaporanKaryawanTerlambat, downloadLaporanKaryawanTerlambatExcel } from '../api/laporan';
 
 function timeNow() {
   return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
@@ -29,17 +30,15 @@ export default function ChatWidget() {
     setInput('');
     setLoading(true);
 
-    // TAMBAH: deteksi apakah user minta tutorial ke fitur tertentu
     const intent = detectIntent(userText);
 
     try {
-      const reply = await sendChatMessage(userText);
+      const { reply, exportPrompt } = await sendChatMessage(userText);
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: 'assistant', text: reply, time: timeNow() },
+        { id: crypto.randomUUID(), role: 'assistant', text: reply, time: timeNow(), exportPrompt },
       ]);
 
-      // TAMBAH: kalau ketemu & bukan udah di halaman itu, redirect + kasih catatan
       if (intent && location.pathname !== intent.path) {
         setMessages((prev) => [
           ...prev,
@@ -68,6 +67,14 @@ export default function ChatWidget() {
     }
   };
 
+  const handlePrintTerlambat = (bulan: number, tahun: number) => {
+    // window.open HARUS di sini, di dalam onClick, sebelum ada await —
+    // sama seperti pola di Laporan.tsx, supaya tidak diblokir popup blocker.
+    const w = window.open('', '_blank');
+    if (!w) return;
+    printLaporanKaryawanTerlambat(bulan, tahun, w);
+  };
+
   return (
     <div className="fixed bottom-6 right-6 z-50">
       {isOpen ? (
@@ -81,17 +88,37 @@ export default function ChatWidget() {
 
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {messages.map((m) => (
-              <div
-                key={m.id}
-                className={`text-sm px-3 py-2 rounded-lg max-w-[85%] ${
-                  m.role === 'user'
-                    ? 'bg-slate-900 text-white ml-auto'
-                    : m.error
-                    ? 'bg-red-50 text-red-600'
-                    : 'bg-slate-100 text-slate-800'
-                }`}
-              >
-                {m.text}
+              <div key={m.id}>
+                <div
+                  className={`text-sm px-3 py-2 rounded-lg max-w-[85%] ${
+                    m.role === 'user'
+                      ? 'bg-slate-900 text-white ml-auto'
+                      : m.error
+                      ? 'bg-red-50 text-red-600'
+                      : 'bg-slate-100 text-slate-800'
+                  }`}
+                >
+                  {m.text}
+                </div>
+
+                {m.exportPrompt?.jenis === 'karyawan_terlambat' && (
+                  <div className="flex gap-2 mt-1.5">
+                    <button
+                      onClick={() => handlePrintTerlambat(m.exportPrompt!.bulan, m.exportPrompt!.tahun)}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800"
+                    >
+                      PDF
+                    </button>
+                    <button
+                      onClick={() =>
+                        downloadLaporanKaryawanTerlambatExcel(m.exportPrompt!.bulan, m.exportPrompt!.tahun)
+                      }
+                      className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
+                    >
+                      Excel
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
             {loading && (
