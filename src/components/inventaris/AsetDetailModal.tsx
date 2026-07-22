@@ -1,4 +1,4 @@
-import { X, Boxes, HandCoins, Undo2, Wrench, Cog, CheckCircle2, ImageOff, Trash2 } from 'lucide-react';
+import { X, Boxes, HandCoins, Undo2, Wrench, CheckCircle2, ImageOff, Trash2 } from 'lucide-react';
 import { type Aset, type AsetStatus, type AsetPenanganan } from '../../api/aset';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
@@ -74,10 +74,10 @@ export default function AsetDetailModal({
   onClose,
   onSerahTerima,
   onTerimaKembali,
-  onLaporKerusakan,
+  onLaporKerusakan: _onLaporKerusakan,
   onLaporRusakPeminjam,
   onPinjam,
-  onCatatSparepart,
+  onCatatSparepart: _onCatatSparepart,
   onTandaiSelesaiPerbaikan,
   onHapusPerbaikan,
   onHapusSparepart,
@@ -165,24 +165,6 @@ export default function AsetDetailModal({
                 >
                   <Undo2 size={14} />
                   Terima Kembali
-                </button>
-              )}
-              {isAdmin && (detail.status === 'tersedia' || detail.status === 'dipakai') && (
-                <button
-                  onClick={() => onLaporKerusakan(detail)}
-                  className="flex items-center gap-1.5 bg-red-50 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-red-100 transition"
-                >
-                  <Wrench size={14} />
-                  Lapor Kerusakan
-                </button>
-              )}
-              {isAdmin && (
-                <button
-                  onClick={() => onCatatSparepart(detail)}
-                  className="flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-200 transition"
-                >
-                  <Cog size={14} />
-                  Catat Sparepart
                 </button>
               )}
               {!isAdmin && detail.status === 'dipakai' && isPemakaiAktif && (
