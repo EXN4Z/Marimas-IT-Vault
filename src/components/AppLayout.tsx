@@ -25,7 +25,6 @@ import {
   Package2,
   Truck,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import api from '../api/axios';
