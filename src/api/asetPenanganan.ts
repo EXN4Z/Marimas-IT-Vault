@@ -1,21 +1,29 @@
 import api from './axios';
-import type { Aset, AsetPemakai } from './aset';
+import type { Aset } from './aset';
+
+interface PenangananPeminjaman {
+  id: number;
+  pekerja?: {
+    id: number;
+    user?: { id: number; name: string };
+  };
+}
 
 export interface AsetPenanganan {
   id: number;
   aset_id: number;
-  aset_pemakai_id: number;
+  aset_peminjaman_id: number | null;
   jenis_kerusakan: string;
   keluhan: string;
   tanggal_lapor: string;
   tanggal_selesai: string | null;
-  harga_jasa: number;
-  biaya_komponen: number;
+  harga_jasa: number | null;
+  biaya_komponen: number | null;
   hasil: string | null;
   no_struk: string | null;
   catatan: string | null;
   aset?: Aset;
-  pemakai?: AsetPemakai;
+  peminjaman?: PenangananPeminjaman | null;
 }
 
 // GET /aset-penanganan — dibatasi backend ke role admin.
@@ -31,5 +39,24 @@ export async function laporKerusakanAset(payload: {
   keluhan: string;
 }): Promise<AsetPenanganan> {
   const res = await api.post<AsetPenanganan>('/aset-penanganan', payload);
+  return res.data;
+}
+
+// POST /aset-penanganan/{id} (+ _method=PUT) — admin tandai selesai / isi hasil penanganan.
+export async function selesaikanPenanganan(
+  id: number,
+  payload: Partial<{
+    tanggal_selesai: string | null;
+    harga_jasa: number | null;
+    biaya_komponen: number | null;
+    hasil: string | null;
+    no_struk: string | null;
+    catatan: string | null;
+  }> = {},
+): Promise<AsetPenanganan> {
+  const res = await api.post<AsetPenanganan>(`/aset-penanganan/${id}`, {
+    _method: 'PUT',
+    ...payload,
+  });
   return res.data;
 }

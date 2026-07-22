@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { getAsetPenanganan, type AsetPenanganan } from '../../api/asetPenanganan';
+import toast from 'react-hot-toast';
+import { getAsetPenanganan, selesaikanPenanganan, type AsetPenanganan } from '../../api/asetPenanganan';
 import { formatTanggalId } from './AsetDetailModal';
 
 interface Props {
@@ -10,6 +11,21 @@ export default function TabPenangananAset({ onCount }: Props) {
   const [penangananList, setPenangananList] = useState<AsetPenanganan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [processingId, setProcessingId] = useState<number | null>(null);
+
+  const handleTandaiSelesai = async (id: number) => {
+    setProcessingId(id);
+    try {
+      const updated = await selesaikanPenanganan(id);
+      setPenangananList((prev) => prev.map((p) => (p.id === id ? updated : p)));
+      toast.success('Laporan ditandai selesai.');
+    } catch (err) {
+      console.error(err);
+      toast.error('Gagal menandai laporan selesai.');
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -61,11 +77,20 @@ export default function TabPenangananAset({ onCount }: Props) {
               </span>
             </div>
             <p className="text-xs text-slate-500">
-              Dilaporkan oleh <span className="font-medium">{p.pemakai?.pekerja?.user?.name || '-'}</span> · {formatTanggalId(p.tanggal_lapor)}
+              Dilaporkan oleh <span className="font-medium">{p.peminjaman?.pekerja?.user?.name || '-'}</span> · {formatTanggalId(p.tanggal_lapor)}
             </p>
             <p className="text-sm text-slate-700 mt-2">
               <span className="font-medium">{p.jenis_kerusakan}</span> — {p.keluhan}
             </p>
+            {!p.tanggal_selesai && (
+              <button
+                onClick={() => handleTandaiSelesai(p.id)}
+                disabled={processingId === p.id}
+                className="mt-3 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition disabled:opacity-40"
+              >
+                {processingId === p.id ? 'Memproses...' : 'Tandai Selesai'}
+              </button>
+            )}
           </div>
         ))}
         {penangananList.length === 0 && (

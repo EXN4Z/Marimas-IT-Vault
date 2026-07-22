@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { HandCoins, Undo2, Plus, Pencil, Trash2, ChevronDown, ChevronRight, Wrench } from 'lucide-react';
+import toast from 'react-hot-toast';
 import AsetFormModal from '../AsetFormModal';
 import AsetSerahTerimaModal from '../AsetSerahTerimaModal';
 import AsetPengembalianModal from '../AsetPengembalianModal';
@@ -500,6 +501,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
           onClose={() => setLaporRusakTarget(null)}
           onSuccess={() => {
             setLaporRusakTarget(null);
+            toast.success('Laporan kerusakan berhasil dikirim.');
           }}
         />
       )}
