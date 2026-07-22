@@ -325,7 +325,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                             </button>
                           </>
                         )}
-                        {!isAdmin && a.status === 'dipakai' && a.pemakai_saat_ini?.pekerja?.user?.id === user?.id && (
+                        {!isAdmin && a.status === 'dipakai' && a.pemakai_saat_ini?.pekerja?.user?.id === user?.id && !a.penanganan_aktif && (
                           <button
                             onClick={() => setLaporRusakTarget(a)}
                             title="Lapor Kerusakan"
@@ -334,6 +334,15 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                             <Wrench size={13} />
                             <span className="text-[11px] font-semibold">Lapor Rusak</span>
                           </button>
+                        )}
+                        {!isAdmin && a.status === 'dipakai' && a.pemakai_saat_ini?.pekerja?.user?.id === user?.id && a.penanganan_aktif && (
+                          <span
+                            title={a.penanganan_aktif.keluhan}
+                            className="h-7 px-2 rounded-lg bg-amber-50 text-amber-700 flex items-center gap-1 text-[11px] font-semibold"
+                          >
+                            <Wrench size={13} />
+                            Sudah Dilaporkan
+                          </span>
                         )}
                         {!isAdmin && a.status === 'tersedia' && !a.pemakai_pending?.length && (
                           <button
@@ -502,6 +511,8 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
           onSuccess={() => {
             setLaporRusakTarget(null);
             toast.success('Laporan kerusakan berhasil dikirim.');
+            loadAset();
+            if (detailId) refreshAsetDetail();
           }}
         />
       )}

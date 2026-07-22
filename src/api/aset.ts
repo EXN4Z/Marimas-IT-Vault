@@ -87,6 +87,7 @@ export interface Aset {
   pemakai_pending?: AsetPemakai[]; // request pinjam yang masih menunggu persetujuan admin
   perbaikan?: AsetPerbaikan[];
   penggantian_sparepart?: AsetPenggantianSparepart[];
+  penanganan_aktif?: { id: number; jenis_kerusakan: string; keluhan: string; tanggal_lapor: string } | null;
 }
 
 export interface AsetFormValues {
