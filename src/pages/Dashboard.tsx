@@ -222,7 +222,6 @@ function buildStatCards(stats?: StatsCardResponse) {
   return [
     { label: 'Kehadiran Bulan Ini', value: stats.kehadiran.value, unit: 'hari', trend: stats.kehadiran.trend, icon: QrCode, accent: 'violet' as const },
     { label: 'Izin Aktif', value: stats.izinAktif.value, unit: '', trend: stats.izinAktif.trend, icon: CalendarDays, accent: 'orange' as const },
-    { label: 'Izin Pending', value: stats.izin.value, unit: 'pengajuan', trend: stats.izin.trend, icon: FileText, accent: 'amber' as const },
     { label: 'Ticket Aktif', value: stats.ticket.value, unit: 'tiket', trend: stats.ticket.trend, icon: Ticket, accent: 'emerald' as const },
   ];
 }
@@ -605,7 +604,7 @@ function DashboardContent({
       {/* ==== KPI cards — badge ikon warna solid + angka besar ====
           Pakai statCardClass (bukan cardClass) biar lebih pendek, terpisah
           dari card-card lain di bawah yang masih pakai cardClass asli. */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {statCards.length === 0
           ? Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className={`${statCardClass} animate-pulse h-24`} />
