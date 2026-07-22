@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { X, Wrench } from 'lucide-react';
+import { X, Wrench, Printer } from 'lucide-react';
 import { getAsetPenanganan, selesaikanPenanganan, type AsetPenanganan } from '../../api/asetPenanganan';
 import { formatTanggalId } from './AsetDetailModal';
+import { printStruk } from '../../utils/printStruk';
 
 interface Props {
   onCount?: (count: number) => void;
@@ -50,6 +51,29 @@ export default function TabPenangananAset({ onCount }: Props) {
     toast.success('Perbaikan selesai dicatat.');
   };
 
+  const handlePrintStruk = (p: AsetPenanganan) => {
+    if (!p.no_struk) return;
+    const totalBiaya = (Number(p.harga_jasa) || 0) + (Number(p.biaya_komponen) || 0);
+    printStruk({
+      judul: 'Bukti Penanganan Aset',
+      noStruk: p.no_struk,
+      tanggal: formatTanggalId(p.tanggal_selesai),
+      rows: [
+        { label: 'Aset', value: p.aset?.kode_aset || '-' },
+        { label: 'Jenis Kerusakan', value: p.jenis_kerusakan === 'hardware' ? 'Hardware' : 'Software' },
+        { label: 'Keluhan', value: p.keluhan },
+        { label: 'Hasil', value: p.hasil || '-' },
+        { label: 'Tanggal Lapor', value: formatTanggalId(p.tanggal_lapor) },
+        { label: 'Durasi', value: p.durasi_hari != null ? `${p.durasi_hari} hari` : '-' },
+        { label: 'Biaya Komponen', value: formatRupiah(p.biaya_komponen) },
+        { label: 'Biaya Jasa', value: formatRupiah(p.harga_jasa) },
+      ],
+      totalLabel: 'Total Biaya',
+      totalValue: formatRupiah(totalBiaya),
+      catatan: p.catatan,
+    });
+  };
+
   if (loading) {
     return <p className="text-sm text-slate-500">Memuat laporan penanganan aset...</p>;
   }
@@ -72,10 +96,14 @@ export default function TabPenangananAset({ onCount }: Props) {
               <span className="text-sm font-medium text-slate-800">{p.aset?.kode_aset}</span>
               <span
                 className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                  p.tanggal_selesai ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                  !p.tanggal_selesai
+                    ? 'bg-amber-50 text-amber-700'
+                    : p.hasil === 'rusak_berat'
+                      ? 'bg-red-50 text-red-700'
+                      : 'bg-emerald-50 text-emerald-700'
                 }`}
               >
-                {p.tanggal_selesai ? 'Berhasil Diperbaiki' : 'Dalam Perbaikan'}
+                {!p.tanggal_selesai ? 'Dalam Perbaikan' : p.hasil === 'rusak_berat' ? 'Rusak Berat' : 'Berhasil Diperbaiki'}
               </span>
             </div>
             <p className="text-xs text-slate-500">
@@ -87,13 +115,23 @@ export default function TabPenangananAset({ onCount }: Props) {
 
             {p.tanggal_selesai ? (
               <div className="mt-3 text-xs text-slate-600 bg-slate-50 rounded-lg p-3 flex flex-col gap-1">
-                <p><span className="font-medium">Hasil:</span> {p.hasil || '-'}</p>
+                <p><span className="font-medium">Hasil:</span> {p.hasil === 'rusak_berat' ? 'Rusak Berat (tidak bisa diperbaiki)' : 'Diperbaiki'}</p>
                 <p>
                   <span className="font-medium">Biaya:</span> {formatRupiah(p.total_biaya)}
                   {' '}(komponen {formatRupiah(p.biaya_komponen)} + jasa {formatRupiah(p.harga_jasa)})
                 </p>
                 <p><span className="font-medium">Durasi:</span> {p.durasi_hari != null ? `${p.durasi_hari} hari` : '-'}</p>
                 {p.catatan && <p><span className="font-medium">Catatan:</span> {p.catatan}</p>}
+                {p.no_struk && <p><span className="font-medium">No. Struk:</span> {p.no_struk}</p>}
+                {p.no_struk && (
+                  <button
+                    onClick={() => handlePrintStruk(p)}
+                    className="mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition flex items-center gap-1.5 w-fit"
+                  >
+                    <Printer size={14} />
+                    Cetak Struk
+                  </button>
+                )}
               </div>
             ) : (
               <button
@@ -132,7 +170,7 @@ function FormPerbaikanModal({
   onSuccess: (updated: AsetPenanganan) => void;
 }) {
   const [tanggalSelesai, setTanggalSelesai] = useState(todayIso());
-  const [hasil, setHasil] = useState('');
+  const [hasil, setHasil] = useState<'diperbaiki' | 'rusak_berat'>('diperbaiki');
   const [biayaKomponen, setBiayaKomponen] = useState('');
   const [hargaJasa, setHargaJasa] = useState('');
   const [catatan, setCatatan] = useState('');
@@ -147,7 +185,7 @@ function FormPerbaikanModal({
         tanggal_selesai: tanggalSelesai,
         biaya_komponen: biayaKomponen.trim() ? Number(biayaKomponen) : null,
         harga_jasa: hargaJasa.trim() ? Number(hargaJasa) : null,
-        hasil: hasil.trim() || null,
+        hasil,
         catatan: catatan.trim() || null,
       });
       onSuccess(updated);
@@ -186,13 +224,15 @@ function FormPerbaikanModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Apa yang diperbaiki (hasil)</label>
-            <input
+            <label className="block text-sm font-medium text-slate-700 mb-1">Hasil</label>
+            <select
               value={hasil}
-              onChange={(e) => setHasil(e.target.value)}
-              placeholder="cth. Ganti SSD, sudah normal"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-            />
+              onChange={(e) => setHasil(e.target.value as 'diperbaiki' | 'rusak_berat')}
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
+            >
+              <option value="diperbaiki">Diperbaiki</option>
+              <option value="rusak_berat">Rusak Berat (tidak bisa diperbaiki)</option>
+            </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -219,11 +259,12 @@ function FormPerbaikanModal({
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Catatan (opsional)</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Detail Perbaikan / Catatan</label>
             <textarea
               value={catatan}
               onChange={(e) => setCatatan(e.target.value)}
               rows={3}
+              placeholder="cth. Ganti SSD baru, sudah normal"
               className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
             />
           </div>
