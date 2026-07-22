@@ -20,13 +20,12 @@ export interface StrukData {
 }
 
 /**
- * Buka tab/halaman baru berisi struk siap-cetak, dengan tombol "Cetak" dan
- * "Unduh PDF" (unduh PDF = dialog cetak browser, pilih tujuan "Simpan sebagai
- * PDF"). Tidak auto-print lagi — biar user yang milih aksinya. Dipakai buat
- * bukti pinjam/pengembalian/penanganan aset.
+ * Buka window kecil berisi struk siap-cetak, lalu langsung trigger print
+ * dialog dan nutup window-nya setelah selesai. Dipakai buat bukti
+ * pinjam/pengembalian/penanganan aset.
  */
 export function printStruk(data: StrukData) {
-  const printWindow = window.open('', '_blank');
+  const printWindow = window.open('', '_blank', 'width=420,height=600');
   if (!printWindow) return;
 
   const rowsHtml = data.rows
@@ -126,46 +125,6 @@ export function printStruk(data: StrukData) {
             color: #94a3b8;
             margin-top: 18px;
           }
-          .actions {
-            max-width: 340px;
-            margin: 16px auto 0;
-            display: flex;
-            gap: 8px;
-          }
-          .actions button {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            font-family: inherit;
-            font-size: 13px;
-            font-weight: 600;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid #cbd5e1;
-            background: #fff;
-            color: #1e293b;
-            cursor: pointer;
-          }
-          .actions button:hover { background: #f1f5f9; }
-          .actions button.primary {
-            background: #0f172a;
-            border-color: #0f172a;
-            color: #fff;
-          }
-          .actions button.primary:hover { background: #1e293b; }
-          .hint {
-            max-width: 340px;
-            margin: 8px auto 0;
-            text-align: center;
-            font-size: 11px;
-            color: #94a3b8;
-          }
-          @media print {
-            .actions, .hint { display: none; }
-            body { padding: 0; }
-          }
         </style>
       </head>
       <body>
@@ -178,16 +137,16 @@ export function printStruk(data: StrukData) {
           ${rowsHtml}
           ${totalHtml}
           ${catatanHtml}
-          <p class="footer">Dicetak oleh sistem Marimas One</p>
+          <p class="footer">Dicetak otomatis oleh sistem Marimas One</p>
         </div>
-        <div class="actions">
-          <button type="button" onclick="window.print()">🖨️ Cetak</button>
-          <button type="button" class="primary" onclick="window.print()">⬇️ Unduh PDF</button>
-        </div>
-        <p class="hint">Untuk unduh PDF, pilih tujuan "Simpan sebagai PDF" di dialog cetak.</p>
+        <script>
+          window.onload = function () {
+            window.print();
+            window.onafterprint = function () { window.close(); };
+          };
+        </script>
       </body>
     </html>
   `);
   printWindow.document.close();
-  printWindow.document.title = `${data.judul} - ${data.noStruk}`;
 }
