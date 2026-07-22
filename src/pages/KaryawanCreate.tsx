@@ -1,10 +1,13 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import api from '../api/axios';
 import RouteModal from '../components/RouteModal';
 import { getDepartemen, type Departemen } from '../api/departemen';
+import { getJabatan, type Jabatan } from '../api/jabatan';
+import { getCabang, type Cabang } from '../api/cabang';
 
-type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
+type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest';
 
 interface FormState {
     name: string;
@@ -13,6 +16,8 @@ interface FormState {
     role: Role;
     nip: string;
     departemen_id: string;
+    jabatan_id: string;
+    lokasi_kantor_id: string;
     tanggal_masuk: string;
 }
 
@@ -27,6 +32,8 @@ const initialForm: FormState = {
     role: 'karyawan',
     nip: '',
     departemen_id: '',
+    jabatan_id: '',
+    lokasi_kantor_id: '',
     tanggal_masuk: '',
 };
 
@@ -35,15 +42,18 @@ export default function CreateKaryawanPage() {
 
     const [form, setForm] = useState<FormState>(initialForm);
     const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
+    const [jabatanList, setJabatanList] = useState<Jabatan[]>([]);
+    const [cabangList, setCabangList] = useState<Cabang[]>([]);
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
-    const [errorMsg, setErrorMsg] = useState<string>('');
 
     const [generatedPassword, setGeneratedPassword] = useState<string>('');
     const [createdName, setCreatedName] = useState<string>('');
 
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
+        getJabatan().then(setJabatanList).catch(() => {});
+        getCabang().then(setCabangList).catch(() => {});
     }, []);
 
     function closeModal() {
@@ -68,25 +78,28 @@ export default function CreateKaryawanPage() {
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
         setSaving(true);
-        setErrorMsg('');
         setErrors({});
 
         try {
             const payload = {
                 ...form,
                 departemen_id: form.departemen_id || null,
+                jabatan_id: form.jabatan_id || null,
+                lokasi_kantor_id: form.lokasi_kantor_id || null,
                 tanggal_masuk: form.tanggal_masuk || null,
             };
             const res = await api.post('/karyawan', payload);
+            toast.success('Karyawan berhasil dibuat.');
             setGeneratedPassword(res.data.password);
             setCreatedName(res.data.user.name);
         } catch (err: any) {
             if (err.response?.status === 422) {
                 setErrors(err.response.data.errors ?? {});
+                toast.error('Periksa kembali data yang diisi.');
             } else if (err.response?.status === 403) {
-                setErrorMsg('Anda tidak punya akses untuk menambah karyawan.');
+                toast.error('Anda tidak punya akses untuk menambah karyawan.');
             } else {
-                setErrorMsg('Gagal menyimpan karyawan. Coba lagi.');
+                toast.error('Gagal menyimpan karyawan. Coba lagi.');
             }
         } finally {
             setSaving(false);
@@ -125,10 +138,6 @@ export default function CreateKaryawanPage() {
             onClose={closeModal}
         >
             <>
-                {errorMsg && (
-                    <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">{errorMsg}</div>
-                )}
-
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <Field label="Nama" error={errors.name?.[0]}>
                         <input
@@ -175,7 +184,7 @@ export default function CreateKaryawanPage() {
                                 onChange={(e) => handleChange('departemen_id', e.target.value)}
                                 className={`w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10 ${form.departemen_id === '' ? 'text-gray-400' : 'text-gray-900'}`}
                             >
-                                <option value="" className='opacity-50'>Pilih departemen</option>
+                                <option value="">Pilih departemen</option>
                                 {departemenList.map((d) => (
                                     <option key={d.id} value={d.id}>
                                         {d.nama}
@@ -184,20 +193,50 @@ export default function CreateKaryawanPage() {
                             </select>
                         </Field>
 
-                        <Field label="Posisi" error={errors.role?.[0]}>
+                        <Field label="Jabatan" error={errors.jabatan_id?.[0]}>
                             <select
-                                value={form.role}
-                                onChange={(e) => handleChange('role', e.target.value as Role)}
-                                className={`w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10`}
+                                value={form.jabatan_id}
+                                onChange={(e) => handleChange('jabatan_id', e.target.value)}
+                                className={`w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10 ${form.jabatan_id === '' ? 'text-gray-400' : 'text-gray-900'}`}
                             >
-                                <option value="" className='opacity-50'>Pilih Posisi</option>
-                                <option value="karyawan">Karyawan</option>
-                                <option value="manajer">Manajer</option>
-                                <option value="hr">HR</option>
-                                <option value="admin">Admin</option>
+                                <option value="">Pilih jabatan</option>
+                                {jabatanList.map((j) => (
+                                    <option key={j.id} value={j.id}>
+                                        {j.nama}
+                                    </option>
+                                ))}
                             </select>
                         </Field>
                     </div>
+
+                    <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]}>
+                        <select
+                            value={form.lokasi_kantor_id}
+                            onChange={(e) => handleChange('lokasi_kantor_id', e.target.value)}
+                            className={`w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10 ${form.lokasi_kantor_id === '' ? 'text-gray-400' : 'text-gray-900'}`}
+                        >
+                            <option value="">Pilih cabang</option>
+                            {cabangList.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                    {c.nama}
+                                </option>
+                            ))}
+                        </select>
+                    </Field>
+
+                    <Field label="Posisi (Role)" error={errors.role?.[0]}>
+                        <select
+                            value={form.role}
+                            onChange={(e) => handleChange('role', e.target.value as Role)}
+                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                        >
+                            <option value="karyawan">Karyawan</option>
+                            <option value="manajer">Manajer</option>
+                            <option value="hr">HR</option>
+                            <option value="admin">Admin</option>
+                            <option value="guest">Guest</option>
+                        </select>
+                    </Field>
 
                     <Field label="Tanggal Masuk" error={errors.tanggal_masuk?.[0]}>
                         <input
@@ -206,7 +245,7 @@ export default function CreateKaryawanPage() {
                             onChange={(e) => handleChange('tanggal_masuk', e.target.value)}
                             className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
                         />
-                    </Field> 
+                    </Field>
 
                     <div className="flex justify-end gap-2 pt-2">
                         <button
@@ -230,7 +269,7 @@ export default function CreateKaryawanPage() {
     );
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
     return (
         <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>

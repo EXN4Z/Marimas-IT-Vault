@@ -1,18 +1,21 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import api from '../api/axios';
 import RouteModal from '../components/RouteModal';
 import { getDepartemen } from '../api/departemen';
 import { getJabatan, type Jabatan } from '../api/jabatan';
+import { getCabang, type Cabang } from '../api/cabang';
 import type { Departemen } from '../api/departemen';
 
-type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
+type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest';
 
 interface Pekerja {
     id: number;
     nip: string;
     departemen_id: number | null;
     jabatan_id: number | null;
+    lokasi_kantor_id: number | null;
     tanggal_masuk: string | null;
 }
 
@@ -33,6 +36,7 @@ interface FormState {
     nip: string;
     departemen_id: string;
     jabatan_id: string;
+    lokasi_kantor_id: string;
     tanggal_masuk: string;
 }
 
@@ -48,6 +52,7 @@ const initialForm: FormState = {
     nip: '',
     departemen_id: '',
     jabatan_id: '',
+    lokasi_kantor_id: '',
     tanggal_masuk: '',
 };
 
@@ -58,14 +63,15 @@ export default function EditKaryawanPage() {
     const [form, setForm] = useState<FormState>(initialForm);
     const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
     const [jabatanList, setJabatanList] = useState<Jabatan[]>([]);
+    const [cabangList, setCabangList] = useState<Cabang[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
-    const [errorMsg, setErrorMsg] = useState<string>('');
 
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
         getJabatan().then(setJabatanList).catch(() => {});
+        getCabang().then(setCabangList).catch(() => {});
 
         api
             .get<User>(`/karyawan/${id}`)
@@ -79,11 +85,12 @@ export default function EditKaryawanPage() {
                     nip: u.pekerja?.nip ?? '',
                     departemen_id: u.pekerja?.departemen_id ? String(u.pekerja.departemen_id) : '',
                     jabatan_id: u.pekerja?.jabatan_id ? String(u.pekerja.jabatan_id) : '',
+                    lokasi_kantor_id: u.pekerja?.lokasi_kantor_id ? String(u.pekerja.lokasi_kantor_id) : '',
                     tanggal_masuk: u.pekerja?.tanggal_masuk ?? '',
                 });
             })
             .catch(() => {
-                setErrorMsg('Gagal memuat data karyawan.');
+                toast.error('Gagal memuat data karyawan.');
             })
             .finally(() => setLoading(false));
     }, [id]);
@@ -110,7 +117,6 @@ export default function EditKaryawanPage() {
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
         setSaving(true);
-        setErrorMsg('');
         setErrors({});
 
         try {
@@ -118,17 +124,20 @@ export default function EditKaryawanPage() {
                 ...form,
                 departemen_id: form.departemen_id || null,
                 jabatan_id: form.jabatan_id || null,
+                lokasi_kantor_id: form.lokasi_kantor_id || null,
                 tanggal_masuk: form.tanggal_masuk || null,
             };
             await api.put(`/karyawan/${id}`, payload);
+            toast.success('Perubahan berhasil disimpan.');
             navigate('/karyawan');
         } catch (err: any) {
             if (err.response?.status === 422) {
                 setErrors(err.response.data.errors ?? {});
+                toast.error('Periksa kembali data yang diisi.');
             } else if (err.response?.status === 403) {
-                setErrorMsg('Anda tidak punya akses untuk mengubah data ini.');
+                toast.error('Anda tidak punya akses untuk mengubah data ini.');
             } else {
-                setErrorMsg('Gagal menyimpan perubahan. Coba lagi.');
+                toast.error('Gagal menyimpan perubahan. Coba lagi.');
             }
         } finally {
             setSaving(false);
@@ -140,9 +149,10 @@ export default function EditKaryawanPage() {
 
         try {
             await api.delete(`/karyawan/${id}`);
+            toast.success('Karyawan berhasil dihapus.');
             navigate('/karyawan');
         } catch {
-            setErrorMsg('Gagal menghapus karyawan.');
+            toast.error('Gagal menghapus karyawan.');
         }
     }
 
@@ -162,10 +172,6 @@ export default function EditKaryawanPage() {
             onClose={closeModal}
         >
             <>
-                {errorMsg && (
-                    <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">{errorMsg}</div>
-                )}
-
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <Field label="Nama" error={errors.name?.[0]}>
                         <input
@@ -237,6 +243,21 @@ export default function EditKaryawanPage() {
                         </Field>
                     </div>
 
+                    <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]}>
+                        <select
+                            value={form.lokasi_kantor_id}
+                            onChange={(e) => handleChange('lokasi_kantor_id', e.target.value)}
+                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                        >
+                            <option value="">Pilih cabang</option>
+                            {cabangList.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                    {c.nama}
+                                </option>
+                            ))}
+                        </select>
+                    </Field>
+
                     <Field label="Tanggal Masuk" error={errors.tanggal_masuk?.[0]}>
                         <input
                             type="date"
@@ -256,6 +277,7 @@ export default function EditKaryawanPage() {
                             <option value="manajer">Manajer</option>
                             <option value="hr">HR</option>
                             <option value="admin">Admin</option>
+                            <option value="guest">Guest</option>
                         </select>
                     </Field>
 
@@ -291,7 +313,7 @@ export default function EditKaryawanPage() {
     );
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
     return (
         <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
