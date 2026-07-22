@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import api from '../api/axios';
 import RouteModal from '../components/RouteModal';
 
@@ -83,7 +84,6 @@ export default function IzinFormPage() {
     const [bukti, setBukti] = useState<File | null>(null);
     const [errors, setErrors] = useState<FormErrors>({});
     const [submitting, setSubmitting] = useState<boolean>(false);
-    const [serverError, setServerError] = useState<string>('');
 
     const lamaIzin = useMemo(() => hitungLamaIzin(form.tanggal_mulai, form.tanggal_selesai), [form.tanggal_mulai, form.tanggal_selesai]);
 
@@ -133,12 +133,16 @@ export default function IzinFormPage() {
         if (!form.alasan.trim()) next.alasan = 'Alasan wajib diisi.';
 
         setErrors((prev) => ({ ...prev, ...next }));
+
+        if (Object.keys(next).length > 0) {
+            toast.error('Mohon lengkapi form terlebih dahulu.');
+        }
+
         return Object.keys(next).length === 0;
     }
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
-        setServerError('');
 
         if (!validate()) return;
 
@@ -153,6 +157,7 @@ export default function IzinFormPage() {
             if (bukti) payload.append('bukti', bukti);
 
             await api.post('/izin', payload, { headers: { 'Content-Type': 'multipart/form-data' } });
+            toast.success('Pengajuan izin berhasil dikirim.');
             navigate('/izin');
         } catch (err: any) {
             if (err.response?.status === 422 && err.response.data?.errors) {
@@ -164,10 +169,11 @@ export default function IzinFormPage() {
                     alasan: apiErrors.alasan?.[0],
                     bukti: apiErrors.bukti?.[0],
                 });
+                toast.error('Data yang diisi belum valid. Periksa kembali form.');
             } else if (err.response?.status === 403) {
-                setServerError('Anda tidak punya akses untuk mengajukan izin.');
+                toast.error('Anda tidak punya akses untuk mengajukan izin.');
             } else {
-                setServerError('Gagal mengirim pengajuan. Coba lagi.');
+                toast.error('Gagal mengirim pengajuan. Coba lagi.');
             }
         } finally {
             setSubmitting(false);
@@ -183,12 +189,6 @@ export default function IzinFormPage() {
             maxWidthClassName="max-w-2xl"
         >
             <>
-                {serverError && (
-                    <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-                        {serverError}
-                    </div>
-                )}
-
                 <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>

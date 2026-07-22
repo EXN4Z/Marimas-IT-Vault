@@ -21,6 +21,7 @@ import IzinForm from './pages/IzinPageForm';
 import Agenda from './pages/Agenda';
 import Laporan from './pages/Laporan';
 import MasterData from './pages/MasterData';
+import CabangPage from './pages/CabangPage';
 
 interface LocationState {
   backgroundLocation?: Location;
@@ -59,6 +60,7 @@ function AppRoutes() {
         <Route path="/agenda" element={<Agenda />} />
         <Route path="/laporan" element={<Laporan />} />
         <Route path="/master-data" element={<MasterData />} />
+        <Route path="/cabang" element={<CabangPage />} />
         {/* Fallback: kalau /karyawan/create atau /karyawan/:id/edit diakses langsung
             (refresh browser / paste link / belum ada backgroundLocation), route ini
             tetap harus ada di sini juga supaya tidak 404 — dia akan render sebagai

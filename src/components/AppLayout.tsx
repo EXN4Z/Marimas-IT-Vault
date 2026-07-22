@@ -58,6 +58,7 @@ const navItems: NavItem[] = [
   { label: 'Ticketing', icon: Ticket, path: '/ticketing', matchPrefix: '/ticketing' },
   { label: 'Inventaris', icon: Package, path: '/inventaris', matchPrefix: '/inventaris' },
   { label: 'Agenda', icon: CalendarDays, path: '/agenda', matchPrefix: '/agenda' },
+  { label: 'Cabang', icon: Building2, path: '/cabang', matchPrefix: '/cabang' },
   { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true },
   {
     label: 'Master Data',
