@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   Users,
@@ -74,6 +74,69 @@ function formatWaktu(tanggal: string): string {
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 }
 
+interface PaginationAbsensiProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+
+function PaginationAbsensi({ currentPage, totalPages, onPageChange }: PaginationAbsensiProps) {
+  const pageNumbers: (number | 'ellipsis')[] = [];
+  const delta = 1;
+
+  for (let i = 1; i <= totalPages; i++) {
+    const isEdge = i === 1 || i === totalPages;
+    const isNearCurrent = Math.abs(i - currentPage) <= delta;
+    if (isEdge || isNearCurrent) {
+      pageNumbers.push(i);
+    } else if (pageNumbers[pageNumbers.length - 1] !== 'ellipsis') {
+      pageNumbers.push('ellipsis');
+    }
+  }
+
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-center gap-1 pt-4 mt-2 border-t border-slate-100">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+      >
+        Sebelumnya
+      </button>
+
+      {pageNumbers.map((p, idx) =>
+        p === 'ellipsis' ? (
+          <span key={`ellipsis-${idx}`} className="px-2 text-sm text-slate-400">
+            ...
+          </span>
+        ) : (
+          <button
+            key={p}
+            onClick={() => onPageChange(p)}
+            className={`min-w-[2rem] px-3 py-1.5 text-sm rounded-lg transition-colors ${
+              p === currentPage
+                ? 'bg-slate-900 text-white font-medium'
+                : 'text-slate-600 hover:bg-slate-50 border border-slate-200'
+            }`}
+          >
+            {p}
+          </button>
+        )
+      )}
+
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+      >
+        Selanjutnya
+      </button>
+    </div>
+  );
+}
+
 export default function AbsensiPage() {
   const queryClient = useQueryClient();
 
@@ -85,6 +148,8 @@ export default function AbsensiPage() {
 
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<TabKey>('semua');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const [modalKaryawan, setModalKaryawan] = useState<Karyawan | null>(null);
   const [modalAbsensi, setModalAbsensi] = useState<Absensi | null>(null);
@@ -125,6 +190,18 @@ export default function AbsensiPage() {
   const totalKaryawan = karyawanList.length;
   const sudahAbsenCount = karyawanList.filter((k) => !!findAbsensi(k.id)?.jam_masuk).length;
   const belumAbsenCount = totalKaryawan - sudahAbsenCount;
+
+  const totalPages = Math.max(1, Math.ceil(filteredKaryawan.length / ITEMS_PER_PAGE));
+
+  const paginatedKaryawan = filteredKaryawan.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    (currentPage - 1) * ITEMS_PER_PAGE + ITEMS_PER_PAGE
+  );
+
+  // Reset ke halaman 1 setiap kali pencarian atau tab berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, activeTab]);
 
   const openModal = (item: Karyawan) => {
     const rec = findAbsensi(item.id);
@@ -317,7 +394,7 @@ export default function AbsensiPage() {
               <p className="text-sm text-slate-400 text-center py-8">Memuat data karyawan...</p>
             ) : (
               <>
-                {filteredKaryawan.map((item) => {
+                {paginatedKaryawan.map((item) => {
                   const rec = findAbsensi(item.id);
                   const sudahMasuk = !!rec?.jam_masuk;
                   const sudahPulang = !!rec?.jam_pulang;
@@ -431,6 +508,14 @@ export default function AbsensiPage() {
 
                 {filteredKaryawan.length === 0 && (
                   <p className="text-sm text-slate-400 text-center py-8">Karyawan tidak ditemukan.</p>
+                )}
+
+                {filteredKaryawan.length > 0 && (
+                  <PaginationAbsensi
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
                 )}
               </>
             )}

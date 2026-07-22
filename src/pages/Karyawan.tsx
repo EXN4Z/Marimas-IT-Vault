@@ -94,6 +94,8 @@ export default function KaryawanPage() {
     const [activeTab, setActiveTab] = useState<TabKey>('semua');
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
     const [deleting, setDeleting] = useState<boolean>(false);
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const ITEMS_PER_PAGE = 10;
 
     useEffect(() => {
         api.get<{ role: Role }>('/user').then((res) => setCurrentRole(res.data.role)).catch(() => {});
@@ -123,6 +125,18 @@ export default function KaryawanPage() {
             return matchSearch && matchTab;
         });
     }, [users, search, activeTab]);
+
+    // Reset ke halaman 1 setiap kali pencarian atau tab berubah
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search, activeTab]);
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+
+    const paginated = useMemo<User[]>(() => {
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filtered.slice(start, start + ITEMS_PER_PAGE);
+    }, [filtered, currentPage]);
 
     async function confirmDelete() {
         if (!userToDelete) return;
@@ -217,17 +231,25 @@ export default function KaryawanPage() {
                     )}
 
                     {!loading && !errorMsg && filtered.length > 0 && (
-                        <div className="divide-y divide-gray-100">
-                            {filtered.map((user) => (
-                                <UserRow
-                                    key={user.id}
-                                    user={user}
-                                    isAdmin={isAdmin}
-                                    onDelete={() => setUserToDelete(user)}
-                                    onEdit={() => navigate(`/karyawan/${user.id}/edit`, { state: { backgroundLocation: location } })}
-                                />
-                            ))}
-                        </div>
+                        <>
+                            <div className="divide-y divide-gray-100">
+                                {paginated.map((user) => (
+                                    <UserRow
+                                        key={user.id}
+                                        user={user}
+                                        isAdmin={isAdmin}
+                                        onDelete={() => setUserToDelete(user)}
+                                        onEdit={() => navigate(`/karyawan/${user.id}/edit`, { state: { backgroundLocation: location } })}
+                                    />
+                                ))}
+                            </div>
+
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                            />
+                        </>
                     )}
                 </div>
             </div>
@@ -283,6 +305,73 @@ function UserRow({ user, isAdmin, onDelete, onEdit }: UserRowProps) {
                     </>
                 )}
             </div>
+        </div>
+    );
+}
+
+interface PaginationProps {
+    currentPage: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
+}
+
+function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
+    // Bangun daftar nomor halaman dengan elipsis jika halaman terlalu banyak
+    const pageNumbers = useMemo<(number | 'ellipsis')[]>(() => {
+        const pages: (number | 'ellipsis')[] = [];
+        const delta = 1; // jumlah halaman di kiri/kanan halaman aktif yang ditampilkan
+
+        for (let i = 1; i <= totalPages; i++) {
+            const isEdge = i === 1 || i === totalPages;
+            const isNearCurrent = Math.abs(i - currentPage) <= delta;
+            if (isEdge || isNearCurrent) {
+                pages.push(i);
+            } else if (pages[pages.length - 1] !== 'ellipsis') {
+                pages.push('ellipsis');
+            }
+        }
+        return pages;
+    }, [currentPage, totalPages]);
+
+    if (totalPages <= 1) return null;
+
+    return (
+        <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-gray-100">
+            <button
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            >
+                Sebelumnya
+            </button>
+
+            {pageNumbers.map((p, idx) =>
+                p === 'ellipsis' ? (
+                    <span key={`ellipsis-${idx}`} className="px-2 text-sm text-gray-400">
+                        ...
+                    </span>
+                ) : (
+                    <button
+                        key={p}
+                        onClick={() => onPageChange(p)}
+                        className={`min-w-[2rem] px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                            p === currentPage
+                                ? 'bg-black text-white font-medium'
+                                : 'text-gray-600 hover:bg-gray-50 border border-gray-200'
+                        }`}
+                    >
+                        {p}
+                    </button>
+                )
+            )}
+
+            <button
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            >
+                Selanjutnya
+            </button>
         </div>
     );
 }

@@ -119,6 +119,8 @@ export default function PengajuanIzinPage() {
 
     const [search, setSearch] = useState<string>('');
     const [activeTab, setActiveTab] = useState<TabKey>('semua');
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const ITEMS_PER_PAGE = 10;
 
     const [detailId, setDetailId] = useState<number | null>(null);
     const [detailData, setDetailData] = useState<Izin | null>(null);
@@ -188,6 +190,18 @@ export default function PengajuanIzinPage() {
                 i.alasan.toLowerCase().includes(q)
         );
     }, [izinList, search, activeTab]);
+
+    // Reset ke halaman 1 setiap kali pencarian atau tab berubah
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search, activeTab]);
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+
+    const paginated = useMemo<Izin[]>(() => {
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filtered.slice(start, start + ITEMS_PER_PAGE);
+    }, [filtered, currentPage]);
 
     function openDetail(id: number) {
         setDetailId(id);
@@ -296,50 +310,58 @@ export default function PengajuanIzinPage() {
                     )}
 
                     {!loading && !errorMsg && filtered.length > 0 && (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm min-w-[640px]">
-                                <thead>
-                                    <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
-                                        <th className="py-2 pr-3 font-medium">Nomor Izin</th>
-                                        <th className="py-2 pr-3 font-medium">Karyawan</th>
-                                        <th className="py-2 pr-3 font-medium">Tanggal</th>
-                                        <th className="py-2 pr-3 font-medium">Jenis</th>
-                                        <th className="py-2 pr-3 font-medium">Status</th>
-                                        <th className="py-2 pr-3 font-medium text-right">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {filtered.map((izin) => (
-                                        <tr key={izin.id}>
-                                            <td className="py-3 pr-3 font-medium text-gray-900">{izin.nomor_izin}</td>
-                                            <td className="py-3 pr-3">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-700">
-                                                        {initials(izin.karyawan?.name ?? '?')}
-                                                    </div>
-                                                    <span className="text-gray-800">{izin.karyawan?.name}</span>
-                                                </div>
-                                            </td>
-                                            <td className="py-3 pr-3 text-gray-600">{formatTanggal(izin.tanggal_mulai)}</td>
-                                            <td className="py-3 pr-3 text-gray-600">{jenisLabels[izin.jenis_izin]}</td>
-                                            <td className="py-3 pr-3">
-                                                <span className={`text-xs px-3 py-1 rounded-full ${statusStyles[izin.status]}`}>
-                                                    {statusLabels[izin.status]}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 pr-3 text-right">
-                                                <button
-                                                    onClick={() => openDetail(izin.id)}
-                                                    className="text-xs text-gray-600 hover:text-black border border-gray-200 rounded-lg px-3 py-1"
-                                                >
-                                                    Detail
-                                                </button>
-                                            </td>
+                        <>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm min-w-[640px]">
+                                    <thead>
+                                        <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+                                            <th className="py-2 pr-3 font-medium">Nomor Izin</th>
+                                            <th className="py-2 pr-3 font-medium">Karyawan</th>
+                                            <th className="py-2 pr-3 font-medium">Tanggal</th>
+                                            <th className="py-2 pr-3 font-medium">Jenis</th>
+                                            <th className="py-2 pr-3 font-medium">Status</th>
+                                            <th className="py-2 pr-3 font-medium text-right">Aksi</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {paginated.map((izin) => (
+                                            <tr key={izin.id}>
+                                                <td className="py-3 pr-3 font-medium text-gray-900">{izin.nomor_izin}</td>
+                                                <td className="py-3 pr-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-700">
+                                                            {initials(izin.karyawan?.name ?? '?')}
+                                                        </div>
+                                                        <span className="text-gray-800">{izin.karyawan?.name}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="py-3 pr-3 text-gray-600">{formatTanggal(izin.tanggal_mulai)}</td>
+                                                <td className="py-3 pr-3 text-gray-600">{jenisLabels[izin.jenis_izin]}</td>
+                                                <td className="py-3 pr-3">
+                                                    <span className={`text-xs px-3 py-1 rounded-full ${statusStyles[izin.status]}`}>
+                                                        {statusLabels[izin.status]}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 pr-3 text-right">
+                                                    <button
+                                                        onClick={() => openDetail(izin.id)}
+                                                        className="text-xs text-gray-600 hover:text-black border border-gray-200 rounded-lg px-3 py-1"
+                                                    >
+                                                        Detail
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                            />
+                        </>
                     )}
                 </div>
             </div>
@@ -387,6 +409,72 @@ export default function PengajuanIzinPage() {
                 </div>
             )}
         </AppLayout>
+    );
+}
+
+interface PaginationProps {
+    currentPage: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
+}
+
+function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
+    const pageNumbers = useMemo<(number | 'ellipsis')[]>(() => {
+        const pages: (number | 'ellipsis')[] = [];
+        const delta = 1;
+
+        for (let i = 1; i <= totalPages; i++) {
+            const isEdge = i === 1 || i === totalPages;
+            const isNearCurrent = Math.abs(i - currentPage) <= delta;
+            if (isEdge || isNearCurrent) {
+                pages.push(i);
+            } else if (pages[pages.length - 1] !== 'ellipsis') {
+                pages.push('ellipsis');
+            }
+        }
+        return pages;
+    }, [currentPage, totalPages]);
+
+    if (totalPages <= 1) return null;
+
+    return (
+        <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-gray-100">
+            <button
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            >
+                Sebelumnya
+            </button>
+
+            {pageNumbers.map((p, idx) =>
+                p === 'ellipsis' ? (
+                    <span key={`ellipsis-${idx}`} className="px-2 text-sm text-gray-400">
+                        ...
+                    </span>
+                ) : (
+                    <button
+                        key={p}
+                        onClick={() => onPageChange(p)}
+                        className={`min-w-[2rem] px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                            p === currentPage
+                                ? 'bg-black text-white font-medium'
+                                : 'text-gray-600 hover:bg-gray-50 border border-gray-200'
+                        }`}
+                    >
+                        {p}
+                    </button>
+                )
+            )}
+
+            <button
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            >
+                Selanjutnya
+            </button>
+        </div>
     );
 }
 
