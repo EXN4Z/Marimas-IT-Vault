@@ -414,7 +414,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
 
       {/* KONFIRMASI HAPUS */}
       {deleteTarget && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] px-4">
           <div className="bg-white rounded-xl w-full max-w-sm p-5">
             <h2 className="text-base font-semibold text-slate-900 mb-1">Hapus aset?</h2>
             <p className="text-sm text-slate-500 mb-5">
@@ -441,9 +441,17 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
         </div>
       )}
 
-      {/* DETAIL ASET */}
-      {detailId && (
-        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center px-4">
+      {/* DETAIL ASET — disembunyiin sementara kalau ada modal aksi (serah-terima,
+          terima kembali, dst) yang kebuka di atasnya, biar gak numpuk 2 modal
+          + 2 overlay keliatan bareng */}
+      {detailId &&
+        !serahTerimaAset &&
+        !pengembalianTarget &&
+        !pinjamAsetTarget &&
+        !perbaikanAsetTarget &&
+        !penangananSelesaiTarget &&
+        !sparepartAsetTarget && (
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">

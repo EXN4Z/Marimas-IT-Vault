@@ -76,7 +76,7 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
+    <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-semibold text-slate-900">Serahkan Aset {aset.kode_aset}</h3>

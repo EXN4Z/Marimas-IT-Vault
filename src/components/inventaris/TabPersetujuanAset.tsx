@@ -165,7 +165,7 @@ export default function TabPersetujuanAset({ onCount }: Props) {
       </div>
 
       {tolakTarget && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
             <h3 className="text-base font-semibold text-slate-900 mb-1">Tolak permintaan?</h3>
             <p className="text-sm text-slate-500 mb-4">
