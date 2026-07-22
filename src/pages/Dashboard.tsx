@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import {
   QrCode,
   CalendarDays,
-  FileText,
   Ticket,
   TrendingUp,
   Clock,
