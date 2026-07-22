@@ -34,24 +34,38 @@ export interface AsetPemakai {
   status: AsetPemakaiStatus;
   requested_by_user_id: number | null;
   nomor_penerimaan: string | null;
+  no_struk_penerimaan: string | null;
   tanggal_penerimaan: string | null; // nullable — request pending belum ada tanggal penerimaan
   catatan_penerimaan: string | null;
   nomor_pengembalian: string | null;
+  no_struk_pengembalian: string | null;
   tanggal_pengembalian: string | null;
   catatan_pengembalian: string | null;
   catatan_penolakan: string | null;
   aset?: Aset; // keisi kalau di-load dari endpoint /aset-pemakai/pending
 }
 
-export interface AsetPerbaikan {
+export interface AsetPenanganan {
   id: number;
   aset_id: number;
-  tanggal_perbaikan: string;
-  keterangan_kerusakan: string;
-  teknisi_vendor: string | null;
-  biaya: number | null;
-  status: 'proses' | 'selesai';
+  aset_pemakai_id: number | null;
+  jenis_kerusakan: 'software' | 'hardware';
+  keluhan: string;
+  tanggal_lapor: string;
   tanggal_selesai: string | null;
+  harga_jasa: number | null;
+  biaya_komponen: number | null;
+  hasil: string | null;
+  no_struk: string | null;
+  catatan: string | null;
+  // dikirim backend lewat accessor, bukan kolom asli
+  total_biaya?: number;
+  durasi_hari?: number | null;
+  // siapa yang lagi pegang aset ini pas dilaporkan rusak (nullable — bisa juga ketauan pas audit gudang)
+  pemakai?: {
+    id: number;
+    pekerja?: { id: number; user?: { id: number; name: string } };
+  } | null;
 }
 
 export interface AsetPenggantianSparepart {
@@ -85,7 +99,7 @@ export interface Aset {
   pemakai_saat_ini?: AsetPemakai | null;
   pemakai?: AsetPemakai[]; // riwayat lengkap, cuma keisi di endpoint show()
   pemakai_pending?: AsetPemakai[]; // request pinjam yang masih menunggu persetujuan admin
-  perbaikan?: AsetPerbaikan[];
+  penanganan?: AsetPenanganan[]; // riwayat lengkap, cuma keisi di endpoint show()
   penggantian_sparepart?: AsetPenggantianSparepart[];
   penanganan_aktif?: { id: number; jenis_kerusakan: string; keluhan: string; tanggal_lapor: string } | null;
 }
@@ -177,10 +191,12 @@ export async function serahTerimaAset(
   return res.data;
 }
 
-// POST /aset-pemakai/{id}/kembalikan — dibatasi backend ke role admin.
+// POST /aset-pemakai/{id}/kembalikan — dibatasi backend ke role admin. Wajib
+// sertain no_struk_penerimaan (struk asli pas serah-terima) buat validasi backend.
 export async function kembalikanAset(
   asetPemakaiId: number,
   payload: {
+    no_struk_penerimaan: string;
     nomor_pengembalian?: string;
     tanggal_pengembalian: string;
     catatan_pengembalian?: string;
@@ -224,33 +240,39 @@ export async function tolakAsetPemakai(
   return res.data;
 }
 
-// POST /aset/{aset}/perbaikan — lapor kerusakan / mulai perbaikan. Aset otomatis
-// jadi status 'rusak' di backend. Dibatasi backend ke role admin.
-export async function laporPerbaikanAset(
-  asetId: number,
-  payload: {
-    tanggal_perbaikan: string;
-    keterangan_kerusakan: string;
-    teknisi_vendor?: string;
-    biaya?: number;
-  }
-): Promise<AsetPerbaikan> {
-  const res = await api.post<AsetPerbaikan>(`/aset/${asetId}/perbaikan`, payload);
+// POST /aset-penanganan — lapor kerusakan aset. aset_id wajib dikirim di payload
+// (endpoint ini gak nempel di path /aset/{aset}, beda dari pola lain di file ini).
+export async function laporPenangananAset(payload: {
+  aset_id: number;
+  jenis_kerusakan: 'software' | 'hardware';
+  keluhan: string;
+}): Promise<AsetPenanganan> {
+  const res = await api.post<AsetPenanganan>('/aset-penanganan', payload);
   return res.data;
 }
 
-// PATCH /aset-perbaikan/{id}/selesai — tandai perbaikan selesai, aset balik 'tersedia'.
-export async function selesaikanPerbaikanAset(
-  asetPerbaikanId: number,
-  payload: { tanggal_selesai: string; biaya?: number }
-): Promise<AsetPerbaikan> {
-  const res = await api.patch<AsetPerbaikan>(`/aset-perbaikan/${asetPerbaikanId}/selesai`, payload);
+// POST /aset-penanganan/{id} + _method=PUT — admin tandai selesai + isi hasil/biaya.
+// no_struk digenerate otomatis backend, gak perlu dikirim dari sini.
+export async function selesaikanPenangananAset(
+  asetPenangananId: number,
+  payload: Partial<{
+    tanggal_selesai: string | null;
+    harga_jasa: number | null;
+    biaya_komponen: number | null;
+    hasil: string | null;
+    catatan: string | null;
+  }>
+): Promise<AsetPenanganan> {
+  const res = await api.post<AsetPenanganan>(`/aset-penanganan/${asetPenangananId}`, {
+    _method: 'PUT',
+    ...payload,
+  });
   return res.data;
 }
 
-// DELETE /aset-perbaikan/{id} — dibatasi backend ke role admin.
-export async function deletePerbaikanAset(asetPerbaikanId: number): Promise<{ message: string }> {
-  const res = await api.delete<{ message: string }>(`/aset-perbaikan/${asetPerbaikanId}`);
+// DELETE /aset-penanganan/{id} — dibatasi backend ke role admin.
+export async function deletePenangananAset(asetPenangananId: number): Promise<{ message: string }> {
+  const res = await api.delete<{ message: string }>(`/aset-penanganan/${asetPenangananId}`);
   return res.data;
 }
 

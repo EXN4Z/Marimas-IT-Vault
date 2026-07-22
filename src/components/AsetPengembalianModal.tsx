@@ -25,6 +25,7 @@ export default function AsetPengembalianModal({ aset, pemakai, onClose, onSucces
     setError('');
     try {
       const res = await kembalikanAset(pemakai.id, {
+        no_struk_penerimaan: pemakai.no_struk_penerimaan || '',
         nomor_pengembalian: nomorPengembalian.trim() || undefined,
         tanggal_pengembalian: tanggalPengembalian,
         catatan_pengembalian: catatan.trim() || undefined,
@@ -50,6 +51,12 @@ export default function AsetPengembalianModal({ aset, pemakai, onClose, onSucces
         <div className="bg-slate-50 rounded-lg px-3 py-2.5 mb-4 text-sm">
           <p className="text-slate-500 text-xs">Dipakai oleh</p>
           <p className="text-slate-800 font-medium">{pemakai.pekerja?.user?.name || '-'}</p>
+          {pemakai.no_struk_penerimaan && (
+            <>
+              <p className="text-slate-500 text-xs mt-2">Struk Penerimaan</p>
+              <p className="text-slate-800 font-medium">{pemakai.no_struk_penerimaan}</p>
+            </>
+          )}
         </div>
 
         <div className="flex flex-col gap-3 mb-4">

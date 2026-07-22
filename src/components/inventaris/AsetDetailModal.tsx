@@ -1,5 +1,5 @@
 import { X, Boxes, HandCoins, Undo2, Wrench, Cog, CheckCircle2, ImageOff, Trash2 } from 'lucide-react';
-import { type Aset, type AsetStatus, type AsetPerbaikan } from '../../api/aset';
+import { type Aset, type AsetStatus, type AsetPenanganan } from '../../api/aset';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 
@@ -59,7 +59,7 @@ interface Props {
   onLaporRusakPeminjam: (aset: Aset) => void;
   onPinjam: (aset: Aset) => void;
   onCatatSparepart: (aset: Aset) => void;
-  onTandaiSelesaiPerbaikan: (aset: Aset, perbaikan: AsetPerbaikan) => void;
+  onTandaiSelesaiPerbaikan: (aset: Aset, penanganan: AsetPenanganan) => void;
   onHapusPerbaikan: (id: number) => void;
   onHapusSparepart: (id: number) => void;
 }
@@ -253,28 +253,30 @@ export default function AsetDetailModal({
             <div className="border-t border-slate-100 pt-4">
               <p className="text-sm font-semibold text-slate-900 mb-2">Riwayat Perbaikan</p>
               <ul className="flex flex-col gap-2">
-                {(detail.perbaikan || []).map((p) => (
+                {(detail.penanganan || []).map((p) => (
                   <li key={p.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <span
                           className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium mb-1 ${
-                            p.status === 'selesai' ? 'bg-emerald-50 text-emerald-700' : 'bg-orange-50 text-orange-700'
+                            p.tanggal_selesai ? 'bg-emerald-50 text-emerald-700' : 'bg-orange-50 text-orange-700'
                           }`}
                         >
-                          {p.status === 'selesai' ? 'Selesai' : 'Proses'}
+                          {p.tanggal_selesai ? 'Selesai' : 'Proses'}
                         </span>
-                        <p className="text-slate-700">{p.keterangan_kerusakan}</p>
+                        <p className="text-slate-700">
+                          <span className="font-medium">{p.jenis_kerusakan}</span> — {p.keluhan}
+                        </p>
                         <p className="text-slate-400 mt-0.5">
-                          {formatTanggalId(p.tanggal_perbaikan)}
+                          {formatTanggalId(p.tanggal_lapor)}
                           {p.tanggal_selesai ? ` s/d ${formatTanggalId(p.tanggal_selesai)}` : ''}
-                          {p.teknisi_vendor ? ` · ${p.teknisi_vendor}` : ''}
-                          {p.biaya != null ? ` · ${formatRupiah(p.biaya)}` : ''}
+                          {p.durasi_hari != null ? ` · ${p.durasi_hari} hari` : ''}
+                          {p.total_biaya != null ? ` · ${formatRupiah(p.total_biaya)}` : ''}
                         </p>
                       </div>
                       {isAdmin && (
                         <div className="flex items-center gap-1 flex-shrink-0">
-                          {p.status === 'proses' && (
+                          {!p.tanggal_selesai && (
                             <button
                               onClick={() => onTandaiSelesaiPerbaikan(detail, p)}
                               title="Tandai selesai"
@@ -295,7 +297,7 @@ export default function AsetDetailModal({
                     </div>
                   </li>
                 ))}
-                {!detail.perbaikan?.length && <p className="text-xs text-slate-400">Belum ada riwayat perbaikan.</p>}
+                {!detail.penanganan?.length && <p className="text-xs text-slate-400">Belum ada riwayat perbaikan.</p>}
               </ul>
             </div>
 

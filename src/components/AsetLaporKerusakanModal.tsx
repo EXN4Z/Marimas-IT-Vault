@@ -56,13 +56,15 @@ export default function AsetLaporKerusakanModal({ aset, onClose, onSuccess }: Pr
         <div className="flex flex-col gap-3 mb-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Jenis Kerusakan</label>
-            <input
+            <select
               value={jenisKerusakan}
               onChange={(e) => setJenisKerusakan(e.target.value)}
-              placeholder="cth. Layar retak, tidak bisa nyala..."
-              autoFocus
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-            />
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
+            >
+              <option value="">Pilih jenis...</option>
+              <option value="hardware">Hardware</option>
+              <option value="software">Software</option>
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Keluhan</label>

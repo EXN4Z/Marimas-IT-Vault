@@ -77,7 +77,7 @@ export default function TabPenangananAset({ onCount }: Props) {
               </span>
             </div>
             <p className="text-xs text-slate-500">
-              Dilaporkan oleh <span className="font-medium">{p.peminjaman?.pekerja?.user?.name || '-'}</span> · {formatTanggalId(p.tanggal_lapor)}
+              Dilaporkan oleh <span className="font-medium">{p.pemakai?.pekerja?.user?.name || '-'}</span> · {formatTanggalId(p.tanggal_lapor)}
             </p>
             <p className="text-sm text-slate-700 mt-2">
               <span className="font-medium">{p.jenis_kerusakan}</span> — {p.keluhan}

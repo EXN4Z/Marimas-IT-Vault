@@ -1,7 +1,7 @@
 import api from './axios';
 import type { Aset } from './aset';
 
-interface PenangananPeminjaman {
+interface PenangananPemakai {
   id: number;
   pekerja?: {
     id: number;
@@ -12,7 +12,7 @@ interface PenangananPeminjaman {
 export interface AsetPenanganan {
   id: number;
   aset_id: number;
-  aset_peminjaman_id: number | null;
+  aset_pemakai_id: number | null;
   jenis_kerusakan: string;
   keluhan: string;
   tanggal_lapor: string;
@@ -22,8 +22,10 @@ export interface AsetPenanganan {
   hasil: string | null;
   no_struk: string | null;
   catatan: string | null;
+  total_biaya?: number;
+  durasi_hari?: number | null;
   aset?: Aset;
-  peminjaman?: PenangananPeminjaman | null;
+  pemakai?: PenangananPemakai | null;
 }
 
 // GET /aset-penanganan — dibatasi backend ke role admin.

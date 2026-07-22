@@ -1,44 +1,53 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { HandCoins, Undo2, Plus, Pencil, Trash2, ChevronDown, ChevronRight, Wrench } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useEffect, useRef, useState } from 'react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, Cog, Printer } from 'lucide-react';
 import AsetFormModal from '../AsetFormModal';
 import AsetSerahTerimaModal from '../AsetSerahTerimaModal';
 import AsetPengembalianModal from '../AsetPengembalianModal';
-import AsetPerbaikanModal from '../AsetPerbaikanModal';
-import AsetPerbaikanSelesaiModal from '../AsetPerbaikanSelesaiModal';
-import AsetSparepartModal from '../AsetSparepartModal';
 import AsetLaporKerusakanModal from '../AsetLaporKerusakanModal';
-import AsetPinjamModal from '../AsetPinjamModal';
-import AsetDetailModal, { kelengkapanLevel, kelengkapanLevelStyle } from './AsetDetailModal';
+import AsetPenangananSelesaiModal from '../AsetPenangananSelesaiModal';
+import AsetSparepartModal from '../AsetSparepartModal';
 import { useAuth } from '../../context/AuthContext';
+import { printStruk } from '../../utils/printStruk';
 import {
   getAset,
   getAsetById,
   deleteAset,
-  deletePerbaikanAset,
+  deletePenangananAset,
   deletePenggantianSparepart,
   type Aset,
   type AsetStatus,
   type AsetPemakai,
-  type AsetPerbaikan,
+  type AsetPenanganan,
 } from '../../api/aset';
 import { getJenisAset, type JenisAset } from '../../api/jenisAset';
 import { getSupplier, type Supplier } from '../../api/supplier';
 import { getKelengkapanMaster, type KelengkapanMaster } from '../../api/kelengkapanMaster';
 
-const ASET_STATUS_LABEL: Record<AsetStatus, string> = {
+const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
+
+const STATUS_LABEL: Record<AsetStatus, string> = {
   tersedia: 'Tersedia',
   dipakai: 'Dipakai',
   rusak: 'Rusak',
   diperbaiki: 'Diperbaiki',
 };
 
-const ASET_STATUS_STYLE: Record<AsetStatus, string> = {
+const STATUS_STYLE: Record<AsetStatus, string> = {
   tersedia: 'bg-emerald-50 text-emerald-700',
   dipakai: 'bg-amber-50 text-amber-700',
   rusak: 'bg-red-50 text-red-700',
   diperbaiki: 'bg-orange-50 text-orange-700',
 };
+
+function formatTanggalId(iso: string | null): string {
+  if (!iso) return '-';
+  return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function formatRupiah(n: number | null): string {
+  if (n == null) return '-';
+  return 'Rp ' + n.toLocaleString('id-ID');
+}
 
 interface Props {
   search: string;
@@ -56,13 +65,13 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   const [kelengkapanOptions, setKelengkapanOptions] = useState<KelengkapanMaster[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const totalKelengkapanMaster = kelengkapanOptions.length || 3;
 
-  const [expandedJenis, setExpandedJenis] = useState<string | null>(null);
-  const [asetFormOpen, setAsetFormOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<AsetStatus | ''>('');
+
+  const [formOpen, setFormOpen] = useState(false);
   const [editingAset, setEditingAset] = useState<Aset | null>(null);
-  const [asetDeleteTarget, setAsetDeleteTarget] = useState<Aset | null>(null);
-  const [asetDeleting, setAsetDeleting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Aset | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [detailId, setDetailId] = useState<number | null>(null);
   const [detail, setDetail] = useState<Aset | null>(null);
@@ -70,27 +79,28 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
 
   const [serahTerimaAset, setSerahTerimaAset] = useState<Aset | null>(null);
   const [pengembalianTarget, setPengembalianTarget] = useState<{ aset: Aset; pemakai: AsetPemakai } | null>(null);
+
   const [perbaikanAsetTarget, setPerbaikanAsetTarget] = useState<Aset | null>(null);
-  const [perbaikanSelesaiTarget, setPerbaikanSelesaiTarget] = useState<{ aset: Aset; perbaikan: AsetPerbaikan } | null>(null);
+  const [penangananSelesaiTarget, setPenangananSelesaiTarget] = useState<{ aset: Aset; penanganan: AsetPenanganan } | null>(null);
   const [sparepartAsetTarget, setSparepartAsetTarget] = useState<Aset | null>(null);
-  const [laporRusakTarget, setLaporRusakTarget] = useState<Aset | null>(null);
-  const [pinjamAsetTarget, setPinjamAsetTarget] = useState<Aset | null>(null);
   const [historyActionError, setHistoryActionError] = useState('');
 
-  const loadAset = () => {
+  const loadList = async () => {
     setLoading(true);
     setError('');
-    getAset()
-      .then(setAsetList)
-      .catch((err) => {
-        setError('Gagal memuat data aset. Coba refresh halaman.');
-        console.error(err);
-      })
-      .finally(() => setLoading(false));
+    try {
+      const data = await getAset();
+      setAsetList(data);
+    } catch (err) {
+      setError('Gagal memuat data aset. Coba refresh halaman.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    loadAset();
+    loadList();
     getJenisAset().then(setJenisOptions).catch(() => {});
     getSupplier().then(setSupplierOptions).catch(() => {});
     getKelengkapanMaster().then(setKelengkapanOptions).catch(() => {});
@@ -104,36 +114,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
     }
   }, [asetList, onCount]);
 
-  const asetStokList = useMemo(() => {
-    const groups = new Map<string, { jenisNama: string; items: Aset[] }>();
-    asetList.forEach((a) => {
-      const key = a.jenis?.nama || 'Aset Lainnya';
-      if (!groups.has(key)) groups.set(key, { jenisNama: key, items: [] });
-      groups.get(key)!.items.push(a);
-    });
-    return Array.from(groups.entries()).map(([key, { jenisNama, items }]) => {
-      const stokTersedia = items.filter((a) => a.status === 'tersedia').length;
-      return { key, jenisNama, stok: items.length, stokTersedia, items };
-    });
-  }, [asetList]);
-
-  const filteredAsetStok = asetStokList
-    .filter((g) => {
-      const q = search.toLowerCase();
-      const matchSearch =
-        !q ||
-        g.jenisNama.toLowerCase().includes(q) ||
-        g.items.some(
-          (a) =>
-            a.kode_aset.toLowerCase().includes(q) ||
-            (a.serial_number || '').toLowerCase().includes(q) ||
-            (a.merek || '').toLowerCase().includes(q)
-        );
-      return matchSearch;
-    })
-    .filter((g) => !onlyMenipis || g.stokTersedia === 0);
-
-  const openAsetDetail = async (id: number) => {
+  const openDetail = async (id: number) => {
     setDetailId(id);
     setDetailLoading(true);
     try {
@@ -146,73 +127,137 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
     }
   };
 
-  const closeAsetDetail = () => {
+  const closeDetail = () => {
     setDetailId(null);
     setDetail(null);
   };
 
-  const refreshAsetDetail = async () => {
+  const refreshDetail = async () => {
     if (!detailId) return;
     const data = await getAsetById(detailId);
     setDetail(data);
     setAsetList((prev) => prev.map((a) => (a.id === data.id ? { ...a, status: data.status } : a)));
   };
 
-  const confirmDeleteAset = async () => {
-    if (!asetDeleteTarget) return;
-    setAsetDeleting(true);
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await deleteAset(asetDeleteTarget.id);
-      setAsetList((prev) => prev.filter((a) => a.id !== asetDeleteTarget.id));
-      setAsetDeleteTarget(null);
-      if (detailId === asetDeleteTarget.id) closeAsetDetail();
+      await deleteAset(deleteTarget.id);
+      setAsetList((prev) => prev.filter((a) => a.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      if (detailId === deleteTarget.id) closeDetail();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Gagal menghapus aset.');
-      setAsetDeleteTarget(null);
+      setDeleteTarget(null);
     } finally {
-      setAsetDeleting(false);
+      setDeleting(false);
     }
   };
 
-  const handleDeletePerbaikanAset = async (id: number) => {
-    if (!confirm('Hapus riwayat perbaikan ini?')) return;
+  const handleDeletePenanganan = async (id: number) => {
+    if (!confirm('Hapus riwayat penanganan ini?')) return;
     setHistoryActionError('');
     try {
-      await deletePerbaikanAset(id);
-      await refreshAsetDetail();
+      await deletePenangananAset(id);
+      await refreshDetail();
     } catch (err: any) {
-      setHistoryActionError(err.response?.data?.message || 'Gagal menghapus riwayat perbaikan.');
+      setHistoryActionError(err.response?.data?.message || 'Gagal menghapus riwayat penanganan.');
     }
   };
 
-  const handleDeleteSparepartAset = async (id: number) => {
+  const handleDeleteSparepart = async (id: number) => {
     if (!confirm('Hapus riwayat penggantian sparepart ini?')) return;
     setHistoryActionError('');
     try {
       await deletePenggantianSparepart(id);
-      await refreshAsetDetail();
+      await refreshDetail();
     } catch (err: any) {
       setHistoryActionError(err.response?.data?.message || 'Gagal menghapus riwayat sparepart.');
     }
   };
 
-  if (loading) {
-    return <p className="text-sm text-slate-500">Memuat data aset...</p>;
-  }
+  const handlePrintPenanganan = (aset: Aset, p: AsetPenanganan) => {
+    if (!p.no_struk) return;
+    const totalBiaya = (Number(p.harga_jasa) || 0) + (Number(p.biaya_komponen) || 0);
+    printStruk({
+      judul: 'Bukti Penanganan Aset',
+      noStruk: p.no_struk,
+      tanggal: formatTanggalId(p.tanggal_selesai),
+      rows: [
+        { label: 'Aset', value: `${aset.kode_aset} — ${[aset.merek, aset.tipe].filter(Boolean).join(' ') || '-'}` },
+        { label: 'Jenis Kerusakan', value: p.jenis_kerusakan === 'hardware' ? 'Hardware' : 'Software' },
+        { label: 'Keluhan', value: p.keluhan },
+        { label: 'Hasil', value: p.hasil || '-' },
+        { label: 'Tanggal Lapor', value: formatTanggalId(p.tanggal_lapor) },
+        { label: 'Durasi', value: p.durasi_hari != null ? `${p.durasi_hari} hari` : '-' },
+        { label: 'Biaya Komponen', value: formatRupiah(p.biaya_komponen) },
+        { label: 'Biaya Jasa', value: formatRupiah(p.harga_jasa) },
+      ],
+      totalLabel: 'Total Biaya',
+      totalValue: formatRupiah(totalBiaya),
+      catatan: p.catatan,
+    });
+  };
+
+  const handlePrintSerahTerima = (aset: Aset, pemakai: AsetPemakai) => {
+    if (!pemakai.no_struk_penerimaan) return;
+    printStruk({
+      judul: 'Bukti Serah Terima Aset',
+      noStruk: pemakai.no_struk_penerimaan,
+      tanggal: formatTanggalId(pemakai.tanggal_penerimaan),
+      rows: [
+        { label: 'Aset', value: `${aset.kode_aset} — ${[aset.merek, aset.tipe].filter(Boolean).join(' ') || '-'}` },
+        { label: 'Diserahkan Kepada', value: pemakai.pekerja?.user?.name || '-' },
+        { label: 'Nomor Penerimaan', value: pemakai.nomor_penerimaan || '-' },
+      ],
+      catatan: pemakai.catatan_penerimaan,
+    });
+  };
+
+  const handlePrintPengembalian = (aset: Aset, pemakai: AsetPemakai) => {
+    if (!pemakai.no_struk_pengembalian) return;
+    printStruk({
+      judul: 'Bukti Pengembalian Aset',
+      noStruk: pemakai.no_struk_pengembalian,
+      tanggal: formatTanggalId(pemakai.tanggal_pengembalian),
+      rows: [
+        { label: 'Aset', value: `${aset.kode_aset} — ${[aset.merek, aset.tipe].filter(Boolean).join(' ') || '-'}` },
+        { label: 'Dikembalikan Oleh', value: pemakai.pekerja?.user?.name || '-' },
+        { label: 'Struk Penerimaan Asli', value: pemakai.no_struk_penerimaan || '-' },
+      ],
+      catatan: pemakai.catatan_pengembalian,
+    });
+  };
+
+  const filteredAset = asetList
+    .filter((a) => {
+      const matchStatus = !statusFilter || a.status === statusFilter;
+      const q = search.toLowerCase();
+      const matchSearch =
+        !q ||
+        a.kode_aset.toLowerCase().includes(q) ||
+        (a.serial_number || '').toLowerCase().includes(q) ||
+        (a.merek || '').toLowerCase().includes(q) ||
+        (a.tipe || '').toLowerCase().includes(q) ||
+        (a.jenis?.nama || '').toLowerCase().includes(q);
+      return matchStatus && matchSearch;
+    })
+    .filter((a) => !onlyMenipis || a.status === 'tersedia');
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold text-slate-900">
-          {onlyMenipis ? 'Aset Stok Menipis' : 'Daftar Aset'}
-        </h3>
-        {isAdmin && !onlyMenipis && (
+    <div>
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <p className="text-sm text-slate-500">
+          Kelola aset IT per-unit (laptop, monitor, dsb) — serah-terima ke karyawan dan riwayatnya.
+        </p>
+        {isAdmin && (
           <button
             onClick={() => {
               setEditingAset(null);
-              setAsetFormOpen(true);
+              setFormOpen(true);
             }}
-            className="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-slate-50 transition"
+            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition flex-shrink-0"
           >
             <Plus size={16} />
             Tambah Aset
@@ -220,236 +265,430 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
         )}
       </div>
 
-      {error && (
-        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
-          {error}
-        </div>
-      )}
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as AsetStatus | '')}
+          className="px-3 py-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
+        >
+          <option value="">Semua Status</option>
+          {(Object.keys(STATUS_LABEL) as AsetStatus[]).map((s) => (
+            <option key={s} value={s}>
+              {STATUS_LABEL[s]}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <div className="flex flex-col gap-2">
-        {filteredAsetStok.map((g) => {
-          const isOpen = expandedJenis === g.key;
-          return (
-            <div key={g.key} className="border border-slate-200 rounded-lg overflow-hidden">
-              <div
-                className="flex items-center justify-between p-3 hover:bg-slate-50 transition cursor-pointer"
-                onClick={() => setExpandedJenis(isOpen ? null : g.key)}
-              >
-                <div className="min-w-0 flex items-center gap-2">
-                  {isOpen ? (
-                    <ChevronDown size={16} className="text-slate-400 flex-shrink-0" />
-                  ) : (
-                    <ChevronRight size={16} className="text-slate-400 flex-shrink-0" />
-                  )}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-slate-800 truncate">{g.jenisNama}</p>
-                      <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full flex-shrink-0">
-                        Aset
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        {loading && <p className="text-sm text-slate-400 text-center py-8">Memuat data...</p>}
+        {!loading && error && <p className="text-sm text-red-500 text-center py-8">{error}</p>}
+        {!loading && !error && filteredAset.length === 0 && (
+          <p className="text-sm text-slate-400 text-center py-8">Belum ada aset.</p>
+        )}
+
+        {!loading && !error && filteredAset.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[760px]">
+              <thead>
+                <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
+                  <th className="px-6 py-3 font-medium">Kode Aset</th>
+                  <th className="px-6 py-3 font-medium">Jenis</th>
+                  <th className="px-6 py-3 font-medium">Merek / Tipe</th>
+                  <th className="px-6 py-3 font-medium">Status</th>
+                  <th className="px-6 py-3 font-medium">Dipakai Oleh</th>
+                  <th className="px-6 py-3 font-medium text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAset.map((a) => (
+                  <tr
+                    key={a.id}
+                    className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition cursor-pointer"
+                    onClick={() => openDetail(a.id)}
+                  >
+                    <td className="px-6 py-3 font-medium text-slate-800">{a.kode_aset}</td>
+                    <td className="px-6 py-3 text-slate-600">{a.jenis?.nama || '-'}</td>
+                    <td className="px-6 py-3 text-slate-600">{[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}</td>
+                    <td className="px-6 py-3">
+                      <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_STYLE[a.status]}`}>
+                        {STATUS_LABEL[a.status]}
                       </span>
-                      {g.stokTersedia === 0 && (
-                        <span className="text-[10px] font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full flex-shrink-0">
-                          Stok menipis
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-400">{g.stok} unit tercatat</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 flex-shrink-0 ml-3">
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-slate-900">{g.stokTersedia}</p>
-                    <p className="text-[11px] text-slate-400">unit</p>
-                  </div>
-                </div>
-              </div>
-
-              {isOpen && (
-                <div className="border-t border-slate-100 divide-y divide-slate-50">
-                  {g.items.map((a) => (
-                    <div key={a.id} className="flex items-center justify-between px-3 py-2 pl-9 hover:bg-slate-50/60 transition">
-                      <div className="min-w-0 cursor-pointer" onClick={() => openAsetDetail(a.id)}>
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-medium text-slate-800">{a.kode_aset}</p>
-                          <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${ASET_STATUS_STYLE[a.status]}`}>
-                            {ASET_STATUS_LABEL[a.status]}
-                          </span>
-                          <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${kelengkapanLevelStyle(kelengkapanLevel(a, totalKelengkapanMaster), totalKelengkapanMaster)}`}>
-                            Kelengkapan {kelengkapanLevel(a, totalKelengkapanMaster)}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-400">
-                          {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'} · S/N: {a.serial_number || '-'}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                    </td>
+                    <td className="px-6 py-3 text-slate-600">{a.pemakai_saat_ini?.pekerja?.user?.name || '-'}</td>
+                    <td className="px-6 py-3">
+                      <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                         {isAdmin && (
                           <>
-                            {a.status === 'tersedia' && (
-                              <button
-                                onClick={() => setSerahTerimaAset(a)}
-                                title="Serahkan ke Karyawan"
-                                className="h-7 px-2 rounded-lg bg-slate-100 text-slate-700 flex items-center gap-1 hover:bg-slate-200 transition"
-                              >
-                                <HandCoins size={13} />
-                                <span className="text-[11px] font-semibold">Pinjamkan</span>
-                              </button>
-                            )}
-                            {a.status === 'dipakai' && a.pemakai_saat_ini && (
-                              <button
-                                onClick={() => setPengembalianTarget({ aset: a, pemakai: a.pemakai_saat_ini! })}
-                                title="Terima Kembali"
-                                className="h-7 px-2 rounded-lg bg-emerald-50 text-emerald-700 flex items-center gap-1 hover:bg-emerald-100 transition"
-                              >
-                                <Undo2 size={13} />
-                                <span className="text-[11px] font-semibold">Kembalikan</span>
-                              </button>
-                            )}
                             <button
                               onClick={() => {
                                 setEditingAset(a);
-                                setAsetFormOpen(true);
+                                setFormOpen(true);
                               }}
-                              title="Edit Aset"
-                              className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-slate-200 transition"
+                              title="Edit"
+                              className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
                             >
-                              <Pencil size={13} />
+                              <Pencil size={15} />
                             </button>
                             <button
-                              onClick={() => setAsetDeleteTarget(a)}
-                              title="Hapus Aset"
-                              className="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition"
+                              onClick={() => setDeleteTarget(a)}
+                              title="Hapus"
+                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
                             >
-                              <Trash2 size={13} />
+                              <Trash2 size={15} />
                             </button>
                           </>
                         )}
-                        {!isAdmin && a.status === 'dipakai' && a.pemakai_saat_ini?.pekerja?.user?.id === user?.id && !a.penanganan_aktif && (
-                          <button
-                            onClick={() => setLaporRusakTarget(a)}
-                            title="Lapor Kerusakan"
-                            className="h-7 px-2 rounded-lg bg-red-50 text-red-700 flex items-center gap-1 hover:bg-red-100 transition"
-                          >
-                            <Wrench size={13} />
-                            <span className="text-[11px] font-semibold">Lapor Rusak</span>
-                          </button>
-                        )}
-                        {!isAdmin && a.status === 'dipakai' && a.pemakai_saat_ini?.pekerja?.user?.id === user?.id && a.penanganan_aktif && (
-                          <span
-                            title={a.penanganan_aktif.keluhan}
-                            className="h-7 px-2 rounded-lg bg-amber-50 text-amber-700 flex items-center gap-1 text-[11px] font-semibold"
-                          >
-                            <Wrench size={13} />
-                            Sudah Dilaporkan
-                          </span>
-                        )}
-                        {!isAdmin && a.status === 'tersedia' && !a.pemakai_pending?.length && (
-                          <button
-                            onClick={() => setPinjamAsetTarget(a)}
-                            title="Pinjam Aset"
-                            className="h-7 px-2 rounded-lg bg-slate-900 text-white flex items-center gap-1 hover:bg-slate-800 transition"
-                          >
-                            <HandCoins size={13} />
-                            <span className="text-[11px] font-semibold">Pinjam</span>
-                          </button>
-                        )}
-                        {!isAdmin && a.status === 'tersedia' && !!a.pemakai_pending?.length && (
-                          <span className="h-7 px-2 rounded-lg bg-amber-50 text-amber-700 flex items-center gap-1 text-[11px] font-semibold">
-                            Menunggu
-                          </span>
-                        )}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {filteredAsetStok.length === 0 && (
-          <p className="text-sm text-slate-400 text-center py-8">
-            {onlyMenipis ? 'Tidak ada aset dengan stok menipis.' : 'Aset tidak ditemukan.'}
-          </p>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
-      {asetFormOpen && (
+      {/* FORM TAMBAH / EDIT ASET */}
+      {formOpen && (
         <AsetFormModal
           aset={editingAset}
           jenisOptions={jenisOptions}
           supplierOptions={supplierOptions}
           kelengkapanOptions={kelengkapanOptions}
-          onClose={() => setAsetFormOpen(false)}
+          onClose={() => setFormOpen(false)}
           onSaved={(saved) => {
             setAsetList((prev) => {
               const exists = prev.some((a) => a.id === saved.id);
               return exists ? prev.map((a) => (a.id === saved.id ? saved : a)) : [saved, ...prev];
             });
-            setAsetFormOpen(false);
-            if (detailId === saved.id) refreshAsetDetail();
+            setFormOpen(false);
+            if (detailId === saved.id) refreshDetail();
           }}
         />
       )}
 
-      {asetDeleteTarget && (
+      {/* KONFIRMASI HAPUS */}
+      {deleteTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-xl w-full max-w-sm p-5">
             <h2 className="text-base font-semibold text-slate-900 mb-1">Hapus aset?</h2>
             <p className="text-sm text-slate-500 mb-5">
-              <span className="font-medium text-slate-700">{asetDeleteTarget.kode_aset}</span> akan dihapus
-              permanen beserta riwayatnya, dan tidak bisa dikembalikan.
+              <span className="font-medium text-slate-700">{deleteTarget.kode_aset}</span> akan dihapus permanen
+              beserta riwayatnya, dan tidak bisa dikembalikan.
             </p>
             <div className="flex justify-end gap-2">
               <button
-                onClick={() => setAsetDeleteTarget(null)}
-                disabled={asetDeleting}
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
                 className="text-sm px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
               >
                 Batal
               </button>
               <button
-                onClick={confirmDeleteAset}
-                disabled={asetDeleting}
+                onClick={confirmDelete}
+                disabled={deleting}
                 className="text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
               >
-                {asetDeleting ? 'Menghapus...' : 'Ya, hapus'}
+                {deleting ? 'Menghapus...' : 'Ya, hapus'}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* DETAIL ASET */}
       {detailId && (
-        <AsetDetailModal
-          detail={detail}
-          detailLoading={detailLoading}
-          isAdmin={isAdmin}
-          isPemakaiAktif={detail?.pemakai_saat_ini?.pekerja?.user?.id === user?.id}
-          totalKelengkapanMaster={totalKelengkapanMaster}
-          historyActionError={historyActionError}
-          onClose={closeAsetDetail}
-          onSerahTerima={setSerahTerimaAset}
-          onTerimaKembali={(aset) => aset.pemakai_saat_ini && setPengembalianTarget({ aset, pemakai: aset.pemakai_saat_ini })}
-          onLaporKerusakan={setPerbaikanAsetTarget}
-          onLaporRusakPeminjam={setLaporRusakTarget}
-          onPinjam={setPinjamAsetTarget}
-          onCatatSparepart={setSparepartAsetTarget}
-          onTandaiSelesaiPerbaikan={(aset, perbaikan) => setPerbaikanSelesaiTarget({ aset, perbaikan })}
-          onHapusPerbaikan={handleDeletePerbaikanAset}
-          onHapusSparepart={handleDeleteSparepartAset}
-        />
+        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center px-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                <Boxes size={18} className="text-slate-400" />
+                {detail?.kode_aset || 'Memuat...'}
+              </h3>
+              <button onClick={closeDetail} className="text-slate-400 hover:text-slate-600">
+                <X size={20} />
+              </button>
+            </div>
+
+            {detailLoading && <p className="text-sm text-slate-400 text-center py-8">Memuat detail...</p>}
+
+            {!detailLoading && detail && (
+              <div className="flex flex-col gap-5">
+                <div className="flex gap-4">
+                  <div className="w-24 h-24 rounded-lg bg-slate-100 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                    {detail.foto ? (
+                      <img src={STORAGE_BASE_URL + detail.foto} alt={detail.kode_aset} className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageOff size={22} className="text-slate-300" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium mb-2 ${STATUS_STYLE[detail.status]}`}>
+                      {STATUS_LABEL[detail.status]}
+                    </span>
+                    <p className="text-sm text-slate-800 font-medium">{[detail.merek, detail.tipe].filter(Boolean).join(' ') || '-'}</p>
+                    <p className="text-xs text-slate-400">{detail.jenis?.nama || '-'} · {detail.warna || '-'}</p>
+                    <p className="text-xs text-slate-400">S/N: {detail.serial_number || '-'}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-xs text-slate-400">Perusahaan</p>
+                    <p className="text-slate-800">{detail.perusahaan || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Supplier</p>
+                    <p className="text-slate-800">{detail.supplier?.nama || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Tanggal Pembelian</p>
+                    <p className="text-slate-800">{formatTanggalId(detail.tanggal_pembelian)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">No. Surat Jalan / GR</p>
+                    <p className="text-slate-800">{detail.no_surat_jalan || '-'} / {detail.no_good_receive || '-'}</p>
+                  </div>
+                </div>
+
+                {detail.keterangan && (
+                  <div>
+                    <p className="text-xs text-slate-400">Keterangan</p>
+                    <p className="text-sm text-slate-700">{detail.keterangan}</p>
+                  </div>
+                )}
+
+                {/* AKSI KONTEKSTUAL */}
+                {isAdmin && (
+                  <div className="flex flex-wrap gap-2">
+                    {detail.status === 'tersedia' && (
+                      <button
+                        onClick={() => setSerahTerimaAset(detail)}
+                        className="flex items-center gap-1.5 bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-800 transition"
+                      >
+                        <HandCoins size={14} />
+                        Serahkan ke Karyawan
+                      </button>
+                    )}
+                    {detail.status === 'dipakai' && detail.pemakai_saat_ini && (
+                      <button
+                        onClick={() => setPengembalianTarget({ aset: detail, pemakai: detail.pemakai_saat_ini! })}
+                        className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
+                      >
+                        <Undo2 size={14} />
+                        Terima Kembali
+                      </button>
+                    )}
+                    {(detail.status === 'tersedia' || detail.status === 'dipakai') && (
+                      <button
+                        onClick={() => setPerbaikanAsetTarget(detail)}
+                        className="flex items-center gap-1.5 bg-red-50 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-red-100 transition"
+                      >
+                        <Wrench size={14} />
+                        Lapor Kerusakan
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setSparepartAsetTarget(detail)}
+                      className="flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-200 transition"
+                    >
+                      <Cog size={14} />
+                      Catat Sparepart
+                    </button>
+                  </div>
+                )}
+
+                {/* KELENGKAPAN */}
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 mb-2">Kelengkapan</p>
+                  <div className="flex flex-col gap-1.5">
+                    {(detail.kelengkapan || []).map((k) => (
+                      <div key={k.id} className="flex items-center justify-between text-sm bg-slate-50 rounded-lg px-3 py-1.5">
+                        <span className="text-slate-700">{k.kelengkapan_master?.nama}</span>
+                        {k.keterangan && <span className="text-xs text-slate-400">{k.keterangan}</span>}
+                      </div>
+                    ))}
+                    {!detail.kelengkapan?.length && (
+                      <p className="text-xs text-slate-400">Belum ada kelengkapan tercatat.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* RIWAYAT PEMAKAI / PEMINJAMAN */}
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 mb-2">Riwayat Pemakai (Peminjaman)</p>
+                  <ul className="flex flex-col gap-2">
+                    {(detail.pemakai || []).map((p) => (
+                      <li key={p.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <span className="font-medium text-slate-800">{p.pekerja?.user?.name || '-'}</span>{' '}
+                            <span className="text-slate-500">
+                              — {formatTanggalId(p.tanggal_penerimaan)}
+                              {p.tanggal_pengembalian ? ` s/d ${formatTanggalId(p.tanggal_pengembalian)}` : ' (masih dipakai)'}
+                            </span>
+                            {p.catatan_penerimaan && (
+                              <p className="text-slate-400 mt-0.5">Terima: {p.catatan_penerimaan}</p>
+                            )}
+                            {p.catatan_pengembalian && (
+                              <p className="text-slate-400 mt-0.5">Kembali: {p.catatan_pengembalian}</p>
+                            )}
+                            {p.no_struk_penerimaan && (
+                              <p className="text-slate-400 mt-0.5">Struk terima: {p.no_struk_penerimaan}</p>
+                            )}
+                            {p.no_struk_pengembalian && (
+                              <p className="text-slate-400 mt-0.5">Struk kembali: {p.no_struk_pengembalian}</p>
+                            )}
+                          </div>
+                          {isAdmin && (p.no_struk_penerimaan || p.no_struk_pengembalian) && (
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              {p.no_struk_penerimaan && (
+                                <button
+                                  onClick={() => handlePrintSerahTerima(detail, p)}
+                                  title="Cetak struk penerimaan"
+                                  className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 transition"
+                                >
+                                  <Printer size={13} />
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                    {!detail.pemakai?.length && (
+                      <p className="text-xs text-slate-400">Belum ada riwayat pemakai.</p>
+                    )}
+                  </ul>
+                </div>
+
+                {historyActionError && (
+                  <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                    {historyActionError}
+                  </p>
+                )}
+
+                {/* RIWAYAT PERBAIKAN / PENANGANAN KERUSAKAN */}
+                <div className="border-t border-slate-100 pt-4">
+                  <p className="text-sm font-semibold text-slate-900 mb-2">Riwayat Perbaikan</p>
+                  <ul className="flex flex-col gap-2">
+                    {(detail.penanganan || []).map((p) => {
+                      const totalBiaya = (Number(p.harga_jasa) || 0) + (Number(p.biaya_komponen) || 0);
+                      const selesai = !!p.tanggal_selesai;
+                      return (
+                        <li key={p.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <span
+                                className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium mb-1 ${
+                                  selesai ? 'bg-emerald-50 text-emerald-700' : 'bg-orange-50 text-orange-700'
+                                }`}
+                              >
+                                {selesai ? 'Selesai' : 'Proses'}
+                              </span>{' '}
+                              <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium mb-1 bg-slate-200 text-slate-600 capitalize">
+                                {p.jenis_kerusakan}
+                              </span>
+                              <p className="text-slate-700">{p.keluhan}</p>
+                              {p.hasil && <p className="text-slate-500 mt-0.5">Hasil: {p.hasil}</p>}
+                              <p className="text-slate-400 mt-0.5">
+                                Dipinjam oleh: <span className="font-medium">{p.pemakai?.pekerja?.user?.name || 'Tidak ada (audit gudang)'}</span>
+                              </p>
+                              <p className="text-slate-400 mt-0.5">
+                                {formatTanggalId(p.tanggal_lapor)}
+                                {p.tanggal_selesai ? ` s/d ${formatTanggalId(p.tanggal_selesai)}` : ''}
+                                {p.durasi_hari != null ? ` · ${p.durasi_hari} hari` : ''}
+                              </p>
+                              {(p.harga_jasa != null || p.biaya_komponen != null) && (
+                                <p className="text-slate-400 mt-0.5">
+                                  Komponen {formatRupiah(p.biaya_komponen)} + Jasa {formatRupiah(p.harga_jasa)} = <span className="font-medium text-slate-600">{formatRupiah(totalBiaya)}</span>
+                                </p>
+                              )}
+                              {p.no_struk && <p className="text-slate-400 mt-0.5">Struk: {p.no_struk}</p>}
+                            </div>
+                            {isAdmin && (
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                {!selesai && (
+                                  <button
+                                    onClick={() => setPenangananSelesaiTarget({ aset: detail, penanganan: p })}
+                                    title="Tandai selesai"
+                                    className="p-1.5 rounded-md text-emerald-600 hover:bg-emerald-100 transition"
+                                  >
+                                    <CheckCircle2 size={14} />
+                                  </button>
+                                )}
+                                {p.no_struk && (
+                                  <button
+                                    onClick={() => handlePrintPenanganan(detail, p)}
+                                    title="Cetak struk"
+                                    className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 transition"
+                                  >
+                                    <Printer size={13} />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleDeletePenanganan(p.id)}
+                                  title="Hapus"
+                                  className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                    {!detail.penanganan?.length && (
+                      <p className="text-xs text-slate-400">Belum ada riwayat perbaikan.</p>
+                    )}
+                  </ul>
+                </div>
+
+                {/* RIWAYAT PENGGANTIAN SPAREPART */}
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 mb-2">Riwayat Penggantian Sparepart</p>
+                  <ul className="flex flex-col gap-2">
+                    {(detail.penggantian_sparepart || []).map((s) => (
+                      <li key={s.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2 flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="font-medium text-slate-800">{s.nama_sparepart}</span>{' '}
+                          <span className="text-slate-500">— {formatTanggalId(s.tanggal)}</span>
+                          {s.keterangan && <p className="text-slate-400 mt-0.5">{s.keterangan}</p>}
+                          {s.biaya != null && <p className="text-slate-400 mt-0.5">{formatRupiah(s.biaya)}</p>}
+                        </div>
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleDeleteSparepart(s.id)}
+                            title="Hapus"
+                            className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition flex-shrink-0"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                    {!detail.penggantian_sparepart?.length && (
+                      <p className="text-xs text-slate-400">Belum ada riwayat penggantian sparepart.</p>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {serahTerimaAset && (
         <AsetSerahTerimaModal
           aset={serahTerimaAset}
           onClose={() => setSerahTerimaAset(null)}
-          onSuccess={() => {
+          onSuccess={(pemakai) => {
+            handlePrintSerahTerima(serahTerimaAset, pemakai);
             setSerahTerimaAset(null);
-            loadAset();
-            if (detailId) refreshAsetDetail();
+            loadList();
+            if (detailId) refreshDetail();
           }}
         />
       )}
@@ -459,35 +698,36 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
           aset={pengembalianTarget.aset}
           pemakai={pengembalianTarget.pemakai}
           onClose={() => setPengembalianTarget(null)}
-          onSuccess={() => {
+          onSuccess={(pemakai) => {
+            handlePrintPengembalian(pengembalianTarget.aset, pemakai);
             setPengembalianTarget(null);
-            loadAset();
-            if (detailId) refreshAsetDetail();
+            loadList();
+            if (detailId) refreshDetail();
           }}
         />
       )}
 
       {perbaikanAsetTarget && (
-        <AsetPerbaikanModal
+        <AsetLaporKerusakanModal
           aset={perbaikanAsetTarget}
           onClose={() => setPerbaikanAsetTarget(null)}
           onSuccess={() => {
             setPerbaikanAsetTarget(null);
-            loadAset();
-            if (detailId) refreshAsetDetail();
+            loadList();
+            if (detailId) refreshDetail();
           }}
         />
       )}
 
-      {perbaikanSelesaiTarget && (
-        <AsetPerbaikanSelesaiModal
-          aset={perbaikanSelesaiTarget.aset}
-          perbaikan={perbaikanSelesaiTarget.perbaikan}
-          onClose={() => setPerbaikanSelesaiTarget(null)}
+      {penangananSelesaiTarget && (
+        <AsetPenangananSelesaiModal
+          aset={penangananSelesaiTarget.aset}
+          penanganan={penangananSelesaiTarget.penanganan}
+          onClose={() => setPenangananSelesaiTarget(null)}
           onSuccess={() => {
-            setPerbaikanSelesaiTarget(null);
-            loadAset();
-            if (detailId) refreshAsetDetail();
+            setPenangananSelesaiTarget(null);
+            loadList();
+            if (detailId) refreshDetail();
           }}
         />
       )}
@@ -498,33 +738,8 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
           onClose={() => setSparepartAsetTarget(null)}
           onSuccess={() => {
             setSparepartAsetTarget(null);
-            loadAset();
-            if (detailId) refreshAsetDetail();
-          }}
-        />
-      )}
-
-      {laporRusakTarget && (
-        <AsetLaporKerusakanModal
-          aset={laporRusakTarget}
-          onClose={() => setLaporRusakTarget(null)}
-          onSuccess={() => {
-            setLaporRusakTarget(null);
-            toast.success('Laporan kerusakan berhasil dikirim.');
-            loadAset();
-            if (detailId) refreshAsetDetail();
-          }}
-        />
-      )}
-
-      {pinjamAsetTarget && (
-        <AsetPinjamModal
-          aset={pinjamAsetTarget}
-          onClose={() => setPinjamAsetTarget(null)}
-          onSuccess={() => {
-            setPinjamAsetTarget(null);
-            loadAset();
-            if (detailId) refreshAsetDetail();
+            loadList();
+            if (detailId) refreshDetail();
           }}
         />
       )}
