@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, Cog, Printer } from 'lucide-react';
 import AsetFormModal from '../AsetFormModal';
 import AsetSerahTerimaModal from '../AsetSerahTerimaModal';
 import AsetPengembalianModal from '../AsetPengembalianModal';
 import AsetLaporKerusakanModal from '../AsetLaporKerusakanModal';
+import AsetPinjamModal from '../AsetPinjamModal';
 import AsetPenangananSelesaiModal from '../AsetPenangananSelesaiModal';
 import AsetSparepartModal from '../AsetSparepartModal';
 import { useAuth } from '../../context/AuthContext';
@@ -80,6 +82,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   const [serahTerimaAset, setSerahTerimaAset] = useState<Aset | null>(null);
   const [pengembalianTarget, setPengembalianTarget] = useState<{ aset: Aset; pemakai: AsetPemakai } | null>(null);
 
+  const [pinjamAsetTarget, setPinjamAsetTarget] = useState<Aset | null>(null);
   const [perbaikanAsetTarget, setPerbaikanAsetTarget] = useState<Aset | null>(null);
   const [penangananSelesaiTarget, setPenangananSelesaiTarget] = useState<{ aset: Aset; penanganan: AsetPenanganan } | null>(null);
   const [sparepartAsetTarget, setSparepartAsetTarget] = useState<Aset | null>(null);
@@ -314,6 +317,11 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                       <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_STYLE[a.status]}`}>
                         {STATUS_LABEL[a.status]}
                       </span>
+                      {a.status === 'tersedia' && (a.pemakai_pending?.length ?? 0) > 0 && (
+                        <span className="inline-block ml-1.5 px-2 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700">
+                          Diajukan
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-3 text-slate-600">{a.pemakai_saat_ini?.pekerja?.user?.name || '-'}</td>
                     <td className="px-6 py-3">
@@ -498,6 +506,45 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                     </button>
                   </div>
                 )}
+
+                {/* KARYAWAN: ajukan pinjam kalau aset tersedia, atau lapor kerusakan kalau lagi dia pakai sendiri */}
+                {!isAdmin && (() => {
+                  const myPending = detail.pemakai_pending?.find((p) => p.pekerja?.user?.id === user?.id);
+                  const otherPending = detail.pemakai_pending?.find((p) => p.pekerja?.user?.id !== user?.id);
+
+                  return (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {detail.status === 'tersedia' && myPending && (
+                        <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
+                          Menunggu persetujuan admin untuk pengajuanmu.
+                        </span>
+                      )}
+                      {detail.status === 'tersedia' && !myPending && otherPending && (
+                        <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg">
+                          Sedang diajukan karyawan lain, tunggu keputusan admin dulu.
+                        </span>
+                      )}
+                      {detail.status === 'tersedia' && !myPending && !otherPending && (
+                        <button
+                          onClick={() => setPinjamAsetTarget(detail)}
+                          className="flex items-center gap-1.5 bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-800 transition"
+                        >
+                          <HandCoins size={14} />
+                          Ajukan Pinjam
+                        </button>
+                      )}
+                      {detail.status === 'dipakai' && detail.pemakai_saat_ini?.pekerja?.user?.id === user?.id && (
+                        <button
+                          onClick={() => setPerbaikanAsetTarget(detail)}
+                          className="flex items-center gap-1.5 bg-red-50 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-red-100 transition"
+                        >
+                          <Wrench size={14} />
+                          Lapor Kerusakan
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* KELENGKAPAN */}
                 <div>
@@ -707,12 +754,26 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
         />
       )}
 
+      {pinjamAsetTarget && (
+        <AsetPinjamModal
+          aset={pinjamAsetTarget}
+          onClose={() => setPinjamAsetTarget(null)}
+          onSuccess={() => {
+            setPinjamAsetTarget(null);
+            toast.success('Pengajuan pinjam berhasil dikirim, menunggu persetujuan admin.');
+            loadList();
+            if (detailId) refreshDetail();
+          }}
+        />
+      )}
+
       {perbaikanAsetTarget && (
         <AsetLaporKerusakanModal
           aset={perbaikanAsetTarget}
           onClose={() => setPerbaikanAsetTarget(null)}
           onSuccess={() => {
             setPerbaikanAsetTarget(null);
+            toast.success('Laporan kerusakan berhasil dikirim.');
             loadList();
             if (detailId) refreshDetail();
           }}
