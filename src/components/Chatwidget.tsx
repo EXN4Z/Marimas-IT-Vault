@@ -4,7 +4,7 @@ import { MessageCircle, X, Send } from 'lucide-react';
 import { sendChatMessage } from '../api/chat';
 import { useChat, type ChatMessage } from '../context/ChatContext';
 import { detectIntent } from '../lib/chatIntent';
-import { printLaporanKaryawanTerlambat, downloadLaporanKaryawanTerlambatExcel } from '../api/laporan';
+import { printLaporanAbsensiStatus, downloadLaporanAbsensiStatusExcel } from '../api/laporan';
 
 function timeNow() {
   return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
@@ -17,6 +17,12 @@ export default function ChatWidget() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  function getLastExportPrompt(msgs: ChatMessage[]): ChatMessage['exportPrompt'] {
+  for (let i = msgs.length - 1; i >= 0; i--) {
+    if (msgs[i].exportPrompt) return msgs[i].exportPrompt;
+  }
+  return undefined;
+  }
   const handleSend = async () => {
     if (!input.trim()) return;
     const userText = input;
@@ -33,7 +39,8 @@ export default function ChatWidget() {
     const intent = detectIntent(userText);
 
     try {
-      const { reply, exportPrompt } = await sendChatMessage(userText);
+      const previousExport = getLastExportPrompt(messages);
+      const { reply, exportPrompt } = await sendChatMessage(userText, previousExport);
       setMessages((prev) => [
         ...prev,
         { id: crypto.randomUUID(), role: 'assistant', text: reply, time: timeNow(), exportPrompt },
@@ -67,12 +74,10 @@ export default function ChatWidget() {
     }
   };
 
-  const handlePrintTerlambat = (bulan: number, tahun: number) => {
-    // window.open HARUS di sini, di dalam onClick, sebelum ada await —
-    // sama seperti pola di Laporan.tsx, supaya tidak diblokir popup blocker.
+  const handlePrintAbsensi = (exportPrompt: NonNullable<ChatMessage['exportPrompt']>) => {
     const w = window.open('', '_blank');
     if (!w) return;
-    printLaporanKaryawanTerlambat(bulan, tahun, w);
+    printLaporanAbsensiStatus(exportPrompt, w);
   };
 
   return (
@@ -101,24 +106,22 @@ export default function ChatWidget() {
                   {m.text}
                 </div>
 
-                {m.exportPrompt?.jenis === 'karyawan_terlambat' && (
-                  <div className="flex gap-2 mt-1.5">
-                    <button
-                      onClick={() => handlePrintTerlambat(m.exportPrompt!.bulan, m.exportPrompt!.tahun)}
-                      className="text-xs px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800"
-                    >
-                      PDF
-                    </button>
-                    <button
-                      onClick={() =>
-                        downloadLaporanKaryawanTerlambatExcel(m.exportPrompt!.bulan, m.exportPrompt!.tahun)
-                      }
-                      className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
-                    >
-                      Excel
-                    </button>
-                  </div>
-                )}
+              {m.exportPrompt?.jenis === 'absensi_status' && (
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => handlePrintAbsensi(m.exportPrompt!)}
+                    className="text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition"
+                  >
+                    Unduh PDF
+                  </button>
+                  <button
+                    onClick={() => downloadLaporanAbsensiStatusExcel(m.exportPrompt!)}
+                    className="text-xs font-medium px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                  >
+                    Unduh Excel
+                  </button>
+                </div>
+              )}
               </div>
             ))}
             {loading && (

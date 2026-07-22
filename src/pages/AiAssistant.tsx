@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Bot, Send, Sparkles, Trash2 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { useAuth } from '../context/AuthContext';
-import { useChat } from '../context/ChatContext';
+import { useChat, type ChatMessage } from '../context/ChatContext';
 import { sendChatMessage } from '../api/chat';
-import { printLaporanKaryawanTerlambat, downloadLaporanKaryawanTerlambatExcel } from '../api/laporan';
+import { printLaporanAbsensiStatus, downloadLaporanAbsensiStatusExcel } from '../api/laporan';
 
 const SUGGESTIONS = [
   'Berapa total karyawan di perusahaan?',
@@ -25,6 +25,13 @@ function initials(name?: string) {
     .slice(0, 2)
     .join('')
     .toUpperCase();
+}
+
+function getLastExportPrompt(msgs: ChatMessage[]): ChatMessage['exportPrompt'] {
+  for (let i = msgs.length - 1; i >= 0; i--) {
+    if (msgs[i].exportPrompt) return msgs[i].exportPrompt;
+  }
+  return undefined;
 }
 
 export default function AiAssistant() {
@@ -63,7 +70,8 @@ export default function AiAssistant() {
     requestAnimationFrame(resizeTextarea);
 
     try {
-      const { reply, exportPrompt } = await sendChatMessage(text);
+      const previousExport = getLastExportPrompt(messages);
+      const { reply, exportPrompt } = await sendChatMessage(text, previousExport);
       setMessages((prev) => [
         ...prev,
         { id: crypto.randomUUID(), role: 'assistant', text: reply, time: now(), exportPrompt },
@@ -95,12 +103,10 @@ export default function AiAssistant() {
     resetChat();
   };
 
-  const handlePrintTerlambat = (bulan: number, tahun: number) => {
-    // window.open HARUS di sini, di dalam onClick, sebelum ada await —
-    // supaya tidak diblokir popup blocker.
+  const handlePrintAbsensi = (exportPrompt: NonNullable<ChatMessage['exportPrompt']>) => {
     const w = window.open('', '_blank');
     if (!w) return;
-    printLaporanKaryawanTerlambat(bulan, tahun, w);
+    printLaporanAbsensiStatus(exportPrompt, w);
   };
 
   return (
@@ -153,18 +159,16 @@ export default function AiAssistant() {
                   {m.text}
                 </div>
 
-                {m.exportPrompt?.jenis === 'karyawan_terlambat' && (
+                {m.exportPrompt?.jenis === 'absensi_status' && (
                   <div className="flex gap-2 mt-2">
                     <button
-                      onClick={() => handlePrintTerlambat(m.exportPrompt!.bulan, m.exportPrompt!.tahun)}
+                      onClick={() => handlePrintAbsensi(m.exportPrompt!)}
                       className="text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition"
                     >
                       Unduh PDF
                     </button>
                     <button
-                      onClick={() =>
-                        downloadLaporanKaryawanTerlambatExcel(m.exportPrompt!.bulan, m.exportPrompt!.tahun)
-                      }
+                      onClick={() => downloadLaporanAbsensiStatusExcel(m.exportPrompt!)}
                       className="text-xs font-medium px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition"
                     >
                       Unduh Excel

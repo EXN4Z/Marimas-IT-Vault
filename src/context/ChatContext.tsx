@@ -7,9 +7,11 @@ export interface ChatMessage {
   time: string;
   error?: boolean;
   exportPrompt?: {
-    jenis: 'karyawan_terlambat';
-    bulan: number;
-    tahun: number;
+    jenis: 'absensi_status';
+    status: 'telat' | 'tepat_waktu';
+    tanggal_mulai: string;
+    tanggal_selesai: string;
+    label: string;
   };
 }
 

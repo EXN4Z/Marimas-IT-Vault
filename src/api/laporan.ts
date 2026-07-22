@@ -21,6 +21,7 @@ const laporanTitle: Record<JenisLaporan, string> = {
 // SUDAH dibuka (lihat printCsvReport.ts untuk alasan kenapa window-nya harus dibuka
 // duluan, sebelum fetch data). Semua endpoint dibatasi backend ke role admin/hr/manajer.
 // extraParams: query tambahan opsional, misal { status: 'telat' } untuk filter khusus.
+
 async function printLaporan(
   jenis: JenisLaporan,
   bulan: number,
@@ -64,6 +65,7 @@ async function downloadLaporanExcel(
     responseType: 'blob',
   });
 
+  
   const csvText = await (res.data as Blob).text();
 
   // PENTING: parsing manual pakai PapaParse, BUKAN XLSX.read(csvText, {type:'string'}).
@@ -87,6 +89,57 @@ async function downloadLaporanExcel(
   XLSX.writeFile(workbook, filename);
 }
 
+interface AbsensiStatusParams {
+  status: 'telat' | 'tepat_waktu';
+  tanggal_mulai: string;
+  tanggal_selesai: string;
+  label: string;
+}
+
+function judulAbsensiStatus(p: AbsensiStatusParams): string {
+  const statusLabel = p.status === 'telat' ? 'Terlambat' : 'Tepat Waktu';
+  return `Laporan Karyawan ${statusLabel}`;
+}
+
+export async function printLaporanAbsensiStatus(p: AbsensiStatusParams, targetWindow: Window): Promise<void> {
+  try {
+    const res = await api.get('/laporan/absensi', {
+      params: { status: p.status, tanggal_mulai: p.tanggal_mulai, tanggal_selesai: p.tanggal_selesai },
+      responseType: 'blob',
+    });
+
+    const csvText = await (res.data as Blob).text();
+    printCsvAsReport(
+      csvText,
+      { title: judulAbsensiStatus(p), periodLabel: p.label },
+      targetWindow
+    );
+  } catch (err) {
+    targetWindow.close();
+    throw err;
+  }
+}
+
+export async function downloadLaporanAbsensiStatusExcel(p: AbsensiStatusParams): Promise<void> {
+  const res = await api.get('/laporan/absensi', {
+    params: { status: p.status, tanggal_mulai: p.tanggal_mulai, tanggal_selesai: p.tanggal_selesai },
+    responseType: 'blob',
+  });
+
+  const csvText = await (res.data as Blob).text();
+  const parsed = Papa.parse<string[]>(csvText.trim(), { skipEmptyLines: true });
+  const rows = parsed.data;
+
+  const worksheet = XLSX.utils.aoa_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+
+  const title = judulAbsensiStatus(p);
+  const sheetName = title.slice(0, 31);
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+
+  const filename = `${title} - ${p.label}.xlsx`;
+  XLSX.writeFile(workbook, filename);
+}
 export function printLaporanAbsensi(bulan: number, tahun: number, targetWindow: Window): Promise<void> {
   return printLaporan('absensi', bulan, tahun, targetWindow);
 }
