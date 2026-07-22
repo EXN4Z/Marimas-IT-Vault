@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, Cog, Printer } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, Printer } from 'lucide-react';
 import AsetFormModal from '../AsetFormModal';
 import AsetSerahTerimaModal from '../AsetSerahTerimaModal';
 import AsetPengembalianModal from '../AsetPengembalianModal';
@@ -488,22 +488,6 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                         Terima Kembali
                       </button>
                     )}
-                    {(detail.status === 'tersedia' || detail.status === 'dipakai') && (
-                      <button
-                        onClick={() => setPerbaikanAsetTarget(detail)}
-                        className="flex items-center gap-1.5 bg-red-50 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-red-100 transition"
-                      >
-                        <Wrench size={14} />
-                        Lapor Kerusakan
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setSparepartAsetTarget(detail)}
-                      className="flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-200 transition"
-                    >
-                      <Cog size={14} />
-                      Catat Sparepart
-                    </button>
                   </div>
                 )}
 
