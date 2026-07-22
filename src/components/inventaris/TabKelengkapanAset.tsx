@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getAset, type Aset } from '../../api/aset';
 import { getKelengkapanMaster, type KelengkapanMaster } from '../../api/kelengkapanMaster';
-import { kelengkapanLevel, kelengkapanLevelStyle, kelengkapanLevelLabel } from './AsetDetailModal';
+import { kelengkapanLevel, kelengkapanLevelStyle, kelengkapanLevelLabel } from './asetHelpers';
 
 export default function TabKelengkapanAset() {
   const [asetList, setAsetList] = useState<Aset[]>([]);

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { X, Wrench, Printer } from 'lucide-react';
 import { getAsetPenanganan, selesaikanPenanganan, type AsetPenanganan } from '../../api/asetPenanganan';
-import { formatTanggalId } from './AsetDetailModal';
+import { formatTanggalId } from './asetHelpers';
 import { printStruk } from '../../utils/printStruk';
 
 interface Props {

@@ -6,6 +6,8 @@ import {
   tolakAsetPemakai,
   type AsetPemakai,
 } from '../../api/aset';
+import { printStruk } from '../../utils/printStruk';
+import { formatTanggalId } from './asetHelpers';
 
 function formatTanggalWaktu(iso: string): string {
   return new Date(iso).toLocaleString('id-ID', {
@@ -57,8 +59,21 @@ export default function TabPersetujuanAset({ onCount }: Props) {
     setProcessingId(item.id);
     setError('');
     try {
-      await setujuiAsetPemakai(item.id);
+      const updated = await setujuiAsetPemakai(item.id);
       setList((prev) => prev.filter((p) => p.id !== item.id));
+      if (updated.no_struk_penerimaan) {
+        printStruk({
+          judul: 'Bukti Serah Terima Aset',
+          noStruk: updated.no_struk_penerimaan,
+          tanggal: formatTanggalId(updated.tanggal_penerimaan),
+          rows: [
+            { label: 'Aset', value: updated.aset?.kode_aset || item.aset?.kode_aset || '-' },
+            { label: 'Diserahkan Kepada', value: updated.pekerja?.user?.name || '-' },
+            { label: 'Nomor Penerimaan', value: updated.nomor_penerimaan || '-' },
+          ],
+          catatan: updated.catatan_penerimaan,
+        });
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Gagal menyetujui permintaan.');
     } finally {

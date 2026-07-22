@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, Printer } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, Printer, Eye } from 'lucide-react';
 import AsetFormModal from '../AsetFormModal';
 import AsetSerahTerimaModal from '../AsetSerahTerimaModal';
 import AsetPengembalianModal from '../AsetPengembalianModal';
@@ -304,53 +304,89 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {filteredAset.map((a) => (
-                  <tr
-                    key={a.id}
-                    className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition cursor-pointer"
-                    onClick={() => openDetail(a.id)}
-                  >
-                    <td className="px-6 py-3 font-medium text-slate-800">{a.kode_aset}</td>
-                    <td className="px-6 py-3 text-slate-600">{a.jenis?.nama || '-'}</td>
-                    <td className="px-6 py-3 text-slate-600">{[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}</td>
-                    <td className="px-6 py-3">
-                      <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_STYLE[a.status]}`}>
-                        {STATUS_LABEL[a.status]}
-                      </span>
-                      {a.status === 'tersedia' && (a.pemakai_pending?.length ?? 0) > 0 && (
-                        <span className="inline-block ml-1.5 px-2 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700">
-                          Diajukan
+                {filteredAset.map((a) => {
+                  const akuPeminjamnya = a.pemakai_saat_ini?.pekerja?.user?.id === user?.id;
+                  const bolehLihatDetail = isAdmin || akuPeminjamnya;
+                  const sudahAdaPengajuan = (a.pemakai_pending?.length ?? 0) > 0;
+
+                  return (
+                    <tr key={a.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
+                      <td className="px-6 py-3 font-medium text-slate-800">{a.kode_aset}</td>
+                      <td className="px-6 py-3 text-slate-600">{a.jenis?.nama || '-'}</td>
+                      <td className="px-6 py-3 text-slate-600">{[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}</td>
+                      <td className="px-6 py-3">
+                        <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_STYLE[a.status]}`}>
+                          {STATUS_LABEL[a.status]}
                         </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-3 text-slate-600">{a.pemakai_saat_ini?.pekerja?.user?.name || '-'}</td>
-                    <td className="px-6 py-3">
-                      <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                        {isAdmin && (
-                          <>
+                        {a.status === 'tersedia' && sudahAdaPengajuan && (
+                          <span className="inline-block ml-1.5 px-2 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700">
+                            Diajukan
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-3 text-slate-600">{a.pemakai_saat_ini?.pekerja?.user?.name || '-'}</td>
+                      <td className="px-6 py-3">
+                        <div className="flex items-center justify-end gap-1">
+                          {bolehLihatDetail && (
                             <button
-                              onClick={() => {
-                                setEditingAset(a);
-                                setFormOpen(true);
-                              }}
-                              title="Edit"
+                              onClick={() => openDetail(a.id)}
+                              title="Detail"
                               className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
                             >
-                              <Pencil size={15} />
+                              <Eye size={15} />
                             </button>
+                          )}
+
+                          {isAdmin && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setEditingAset(a);
+                                  setFormOpen(true);
+                                }}
+                                title="Edit"
+                                className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                              >
+                                <Pencil size={15} />
+                              </button>
+                              <button
+                                onClick={() => setDeleteTarget(a)}
+                                title="Hapus"
+                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </>
+                          )}
+
+                          {/* KARYAWAN yang lagi minjem aset ini: kembalikan langsung dari tabel, gak perlu buka detail dulu */}
+                          {!isAdmin && akuPeminjamnya && a.pemakai_saat_ini && (
                             <button
-                              onClick={() => setDeleteTarget(a)}
-                              title="Hapus"
-                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                              onClick={() => setPengembalianTarget({ aset: a, pemakai: a.pemakai_saat_ini! })}
+                              title="Kembalikan"
+                              className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg hover:bg-emerald-100 transition"
                             >
-                              <Trash2 size={15} />
+                              <Undo2 size={14} />
+                              Kembalikan
                             </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          )}
+
+                          {/* KARYAWAN lain (bukan peminjam, bukan admin): cuma bisa ajukan pinjam kalau lagi tersedia, gak dikasih akses Detail (biar gak keliatan riwayat/kode struk aset ini) */}
+                          {!isAdmin && !akuPeminjamnya && a.status === 'tersedia' && !sudahAdaPengajuan && (
+                            <button
+                              onClick={() => setPinjamAsetTarget(a)}
+                              title="Ajukan Pinjam"
+                              className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 bg-slate-100 px-3 py-2 rounded-lg hover:bg-slate-200 transition"
+                            >
+                              <HandCoins size={14} />
+                              Pinjam
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -515,6 +551,15 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                         >
                           <HandCoins size={14} />
                           Ajukan Pinjam
+                        </button>
+                      )}
+                      {detail.status === 'dipakai' && detail.pemakai_saat_ini?.pekerja?.user?.id === user?.id && (
+                        <button
+                          onClick={() => setPengembalianTarget({ aset: detail, pemakai: detail.pemakai_saat_ini! })}
+                          className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
+                        >
+                          <Undo2 size={14} />
+                          Kembalikan
                         </button>
                       )}
                       {detail.status === 'dipakai' && detail.pemakai_saat_ini?.pekerja?.user?.id === user?.id && (

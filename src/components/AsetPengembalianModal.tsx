@@ -14,6 +14,7 @@ function todayIso() {
 }
 
 export default function AsetPengembalianModal({ aset, pemakai, onClose, onSuccess }: AsetPengembalianModalProps) {
+  const [kodeStruk, setKodeStruk] = useState('');
   const [nomorPengembalian, setNomorPengembalian] = useState('');
   const [tanggalPengembalian, setTanggalPengembalian] = useState(todayIso());
   const [catatan, setCatatan] = useState('');
@@ -21,18 +22,26 @@ export default function AsetPengembalianModal({ aset, pemakai, onClose, onSucces
   const [error, setError] = useState('');
 
   const handleSubmit = async () => {
+    if (!kodeStruk.trim()) {
+      setError('Masukkan kode struk penerimaan yang tertera di struk fisik sebagai bukti pengembalian.');
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
       const res = await kembalikanAset(pemakai.id, {
-        no_struk_penerimaan: pemakai.no_struk_penerimaan || '',
+        no_struk_penerimaan: kodeStruk.trim(),
         nomor_pengembalian: nomorPengembalian.trim() || undefined,
         tanggal_pengembalian: tanggalPengembalian,
         catatan_pengembalian: catatan.trim() || undefined,
       });
       onSuccess(res);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal memproses pengembalian.');
+      setError(
+        err.response?.data?.errors?.no_struk_penerimaan?.[0] ||
+          err.response?.data?.message ||
+          'Gagal memproses pengembalian.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -51,15 +60,24 @@ export default function AsetPengembalianModal({ aset, pemakai, onClose, onSucces
         <div className="bg-slate-50 rounded-lg px-3 py-2.5 mb-4 text-sm">
           <p className="text-slate-500 text-xs">Dipakai oleh</p>
           <p className="text-slate-800 font-medium">{pemakai.pekerja?.user?.name || '-'}</p>
-          {pemakai.no_struk_penerimaan && (
-            <>
-              <p className="text-slate-500 text-xs mt-2">Struk Penerimaan</p>
-              <p className="text-slate-800 font-medium">{pemakai.no_struk_penerimaan}</p>
-            </>
-          )}
         </div>
 
         <div className="flex flex-col gap-3 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Kode Struk Penerimaan <span className="text-red-500">*</span>
+            </label>
+            <input
+              value={kodeStruk}
+              onChange={(e) => setKodeStruk(e.target.value)}
+              autoFocus
+              placeholder="cth. STJ-20260722-0001"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-slate-900"
+            />
+            <p className="text-xs text-slate-400 mt-1">
+              Minta karyawan menunjukkan struk penerimaan aset, lalu ketik kodenya di sini sebagai bukti pengembalian sah.
+            </p>
+          </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Pengembalian (opsional)</label>
             <input
