@@ -519,6 +519,15 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                       )}
                       {detail.status === 'dipakai' && detail.pemakai_saat_ini?.pekerja?.user?.id === user?.id && (
                         <button
+                          onClick={() => setPengembalianTarget({ aset: detail, pemakai: detail.pemakai_saat_ini! })}
+                          className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
+                        >
+                          <Undo2 size={14} />
+                          Kembalikan
+                        </button>
+                      )}
+                      {detail.status === 'dipakai' && detail.pemakai_saat_ini?.pekerja?.user?.id === user?.id && (
+                        <button
                           onClick={() => setPerbaikanAsetTarget(detail)}
                           className="flex items-center gap-1.5 bg-red-50 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-red-100 transition"
                         >
