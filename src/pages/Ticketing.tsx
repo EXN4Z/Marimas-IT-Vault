@@ -68,6 +68,8 @@ export default function Ticketing() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<TabKey>('aktif');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const ITEMS_PER_PAGE = 10;
 
   // modal buat laporan
   const [createOpen, setCreateOpen] = useState(false);
@@ -117,6 +119,18 @@ export default function Ticketing() {
       ),
     [listShown, search]
   );
+
+  // Reset ke halaman 1 setiap kali pencarian atau tab berubah (sama seperti di Pengajuan Izin)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, activeTab]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredList.length / ITEMS_PER_PAGE));
+
+  const paginatedList = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredList.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredList, currentPage]);
 
   const openCreateModal = () => {
     setFormJudul('');
@@ -281,7 +295,7 @@ export default function Ticketing() {
 
         <div className="p-6">
           <div className="flex flex-col gap-2">
-            {filteredList.map((ticket) => {
+            {paginatedList.map((ticket) => {
               const meta = statusMeta[ticket.status];
               const StatusIcon = meta.icon;
               return (
@@ -326,8 +340,11 @@ export default function Ticketing() {
               </p>
             )}
           </div>
+
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </div>
       </div>
+
 
       {/* MODAL BUAT LAPORAN */}
       {createOpen && (
@@ -516,5 +533,71 @@ export default function Ticketing() {
         </div>
       )}
     </AppLayout>
+  );
+}
+
+interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+
+function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
+  const pageNumbers = useMemo<(number | 'ellipsis')[]>(() => {
+    const pages: (number | 'ellipsis')[] = [];
+    const delta = 1;
+
+    for (let i = 1; i <= totalPages; i++) {
+      const isEdge = i === 1 || i === totalPages;
+      const isNearCurrent = Math.abs(i - currentPage) <= delta;
+      if (isEdge || isNearCurrent) {
+        pages.push(i);
+      } else if (pages[pages.length - 1] !== 'ellipsis') {
+        pages.push('ellipsis');
+      }
+    }
+    return pages;
+  }, [currentPage, totalPages]);
+
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-slate-100">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+      >
+        Sebelumnya
+      </button>
+
+      {pageNumbers.map((p, idx) =>
+        p === 'ellipsis' ? (
+          <span key={`ellipsis-${idx}`} className="px-2 text-sm text-slate-400">
+            ...
+          </span>
+        ) : (
+          <button
+            key={p}
+            onClick={() => onPageChange(p)}
+            className={`min-w-[2rem] px-3 py-1.5 text-sm rounded-lg transition-colors ${
+              p === currentPage
+                ? 'bg-slate-900 text-white font-medium'
+                : 'text-slate-600 hover:bg-slate-50 border border-slate-200'
+            }`}
+          >
+            {p}
+          </button>
+        )
+      )}
+
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+      >
+        Selanjutnya
+      </button>
+    </div>
   );
 }
