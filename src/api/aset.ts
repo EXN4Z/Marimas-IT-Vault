@@ -157,7 +157,6 @@ export async function createAset(values: AsetFormValues): Promise<Aset> {
 // POST /aset/{id} + _method=PUT (multipart, krn ada file upload) — dibatasi backend ke role admin.
 export async function updateAset(id: number, values: AsetFormValues): Promise<Aset> {
   const fd = buildAsetFormData(values);
-  fd.append('_method', 'PUT');
   const res = await api.post<Aset>(`/aset/${id}`, fd);
   return res.data;
 }
@@ -251,7 +250,7 @@ export async function laporPenangananAset(payload: {
   return res.data;
 }
 
-// POST /aset-penanganan/{id} + _method=PUT — admin tandai selesai + isi hasil/biaya.
+// POST /aset-penanganan/{id} — admin tandai selesai + isi hasil/biaya.
 // no_struk digenerate otomatis backend, gak perlu dikirim dari sini.
 export async function selesaikanPenangananAset(
   asetPenangananId: number,
@@ -263,10 +262,7 @@ export async function selesaikanPenangananAset(
     catatan: string | null;
   }>
 ): Promise<AsetPenanganan> {
-  const res = await api.post<AsetPenanganan>(`/aset-penanganan/${asetPenangananId}`, {
-    _method: 'PUT',
-    ...payload,
-  });
+  const res = await api.post<AsetPenanganan>(`/aset-penanganan/${asetPenangananId}`, payload);
   return res.data;
 }
 
