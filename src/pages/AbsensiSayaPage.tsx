@@ -27,6 +27,7 @@ export default function AbsensiSayaPage() {
   const [error, setError] = useState('');
 
   const [mode, setMode] = useState<'qr' | 'face'>(isBeforeCutoff() ? 'qr' : 'face');
+  const [now, setNow] = useState(new Date());
 
   const [showQr, setShowQr] = useState(false);
   const [qrProcessing, setQrProcessing] = useState(false);
@@ -57,17 +58,26 @@ export default function AbsensiSayaPage() {
     muatData();
   }, []);
 
-  // Cek tiap menit, biar kalau halaman dibiarin kebuka pas transisi jam cutoff, mode-nya ikut update
+  // Jam berjalan tiap detik, dan sekaligus jadi acuan buat cek cutoff QR/Wajah
   useEffect(() => {
     const interval = setInterval(() => {
+      setNow(new Date());
       setMode(isBeforeCutoff() ? 'qr' : 'face');
-    }, 60_000);
+    }, 1_000);
     return () => clearInterval(interval);
   }, []);
 
   const sudahMasuk = !!absensi?.jam_masuk;
   const sudahPulang = !!absensi?.jam_pulang;
   const tipe: 'masuk' | 'pulang' | 'sudah_lengkap' = !sudahMasuk ? 'masuk' : !sudahPulang ? 'pulang' : 'sudah_lengkap';
+
+  const jamSekarang = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const tanggalSekarang = now.toLocaleDateString('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 
   const bukaAbsen = () => {
     if (mode === 'qr') {
@@ -141,6 +151,9 @@ export default function AbsensiSayaPage() {
     <AppLayout title="Absensi">
       <div className="max-w-md mx-auto">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 text-center">
+          <p className="text-3xl font-bold text-slate-900 tabular-nums tracking-wide">{jamSekarang}</p>
+          <p className="text-xs text-slate-400 mb-6 capitalize">{tanggalSekarang}</p>
+
           <h2 className="text-lg font-semibold text-slate-900">{pekerja.user.name}</h2>
           <p className="text-sm text-slate-400 mb-1">{pekerja.nip}</p>
           <p className="text-xs text-slate-400 mb-6 flex items-center justify-center gap-1">

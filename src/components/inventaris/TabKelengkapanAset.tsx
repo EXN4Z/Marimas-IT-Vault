@@ -20,8 +20,12 @@ export default function TabKelengkapanAset() {
       .finally(() => setLoading(false));
   }, []);
 
+    const laptopList = asetList.filter((a) =>
+  (a.jenis?.nama || '').toLowerCase().includes('laptop')
+  );
+
   const levels = new Map<number, Aset[]>();
-  asetList.forEach((a) => {
+  laptopList.forEach((a) => {
     const level = kelengkapanLevel(a, totalKelengkapanMaster);
     if (!levels.has(level)) levels.set(level, []);
     levels.get(level)!.push(a);
@@ -29,6 +33,7 @@ export default function TabKelengkapanAset() {
   const kelengkapanSummary = Array.from({ length: totalKelengkapanMaster + 1 }, (_, i) => totalKelengkapanMaster - i).map(
     (level) => ({ level, items: levels.get(level) || [] })
   );
+
 
   if (loading) {
     return <p className="text-sm text-slate-500">Memuat data kelengkapan aset...</p>;
@@ -65,7 +70,7 @@ export default function TabKelengkapanAset() {
             </tr>
           </thead>
           <tbody>
-            {asetList.map((a) => {
+            {laptopList.map((a) => {
               const level = kelengkapanLevel(a, totalKelengkapanMaster);
               return (
                 <tr key={a.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
@@ -84,10 +89,10 @@ export default function TabKelengkapanAset() {
                 </tr>
               );
             })}
-            {asetList.length === 0 && (
+            {laptopList.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-400">
-                  Belum ada aset tercatat.
+                  Belum ada aset laptop tercatat.
                 </td>
               </tr>
             )}
