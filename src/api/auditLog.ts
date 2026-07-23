@@ -12,12 +12,20 @@ export interface AuditLog {
   user: { id: number; name: string } | null;
 }
 
-export async function getAuditLog(limit = 50): Promise<AuditLog[]> {
-  const res = await api.get<AuditLog[]>('/audit-log', { params: { limit } });
+export interface PaginatedAuditLog {
+  data: AuditLog[];
+  current_page: number;
+  last_page: number;
+  total: number;
+  per_page: number;
+}
+
+export async function getAuditLog(page = 1, search = ''): Promise<PaginatedAuditLog> {
+  const res = await api.get<PaginatedAuditLog>('/audit-log', { params: { page, search: search || undefined } });
   return res.data;
 }
 
-export async function getAuditLogTrash(limit = 50): Promise<AuditLog[]> {
-  const res = await api.get<AuditLog[]>('/audit-log/trash', { params: { limit } });
+export async function getAuditLogTrash(page = 1, search = ''): Promise<PaginatedAuditLog> {
+  const res = await api.get<PaginatedAuditLog>('/audit-log/trash', { params: { page, search: search || undefined } });
   return res.data;
 }

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ScrollText, Trash2, ArrowDownCircle, ArrowUpCircle, RefreshCw } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ScrollText, Trash2, ArrowDownCircle, ArrowUpCircle, RefreshCw, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { getAuditLog, getAuditLogTrash, type AuditLog } from '../api/auditLog';
 
@@ -23,18 +23,52 @@ function formatWaktu(iso: string): string {
   });
 }
 
+// Menghasilkan array nomor halaman + elipsis, misal: [1, '...', 4, 5, 6, '...', 20]
+function buatRangeHalaman(current: number, last: number): (number | 'ellipsis')[] {
+  const delta = 1; // jumlah halaman yang ditampilkan di kiri-kanan halaman aktif
+  const range: (number | 'ellipsis')[] = [];
+
+  const start = Math.max(2, current - delta);
+  const end = Math.min(last - 1, current + delta);
+
+  range.push(1);
+
+  if (start > 2) range.push('ellipsis');
+
+  for (let i = start; i <= end; i++) {
+    range.push(i);
+  }
+
+  if (end < last - 1) range.push('ellipsis');
+
+  if (last > 1) range.push(last);
+
+  return range;
+}
+
 export default function AuditLogPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('aktif');
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const loadData = async (tab: TabKey) => {
+  const loadData = async (tab: TabKey, targetPage: number, targetSearch: string) => {
     setLoading(true);
     setError('');
     try {
-      const data = tab === 'aktif' ? await getAuditLog(100) : await getAuditLogTrash(100);
-      setLogs(data);
+      const data = tab === 'aktif'
+        ? await getAuditLog(targetPage, targetSearch)
+        : await getAuditLogTrash(targetPage, targetSearch);
+
+      setLogs(data.data);
+      setPage(data.current_page);
+      setLastPage(data.last_page);
+      setTotal(data.total);
     } catch (err: any) {
       if (err.response?.status === 403) {
         setError('Anda tidak punya akses ke halaman ini.');
@@ -46,9 +80,32 @@ export default function AuditLogPage() {
     }
   };
 
+  // Ganti tab -> reset search & langsung load halaman 1
   useEffect(() => {
-    loadData(activeTab);
+    setSearch('');
+    loadData(activeTab, 1, '');
   }, [activeTab]);
+
+  // Ketik di search -> debounce 400ms baru fetch, biar gak nembak API tiap huruf
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      loadData(activeTab, 1, search);
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  function gantiTab(tab: TabKey) {
+    setActiveTab(tab);
+  }
+
+  function gantiHalaman(target: number) {
+    if (target < 1 || target > lastPage || target === page) return;
+    loadData(activeTab, target, search);
+  }
 
   return (
     <AppLayout title="Audit Log">
@@ -58,7 +115,7 @@ export default function AuditLogPage() {
           terhapus permanen setelah 7 hari di trash.
         </p>
         <button
-          onClick={() => loadData(activeTab)}
+          onClick={() => loadData(activeTab, page, search)}
           className="flex items-center gap-2 bg-slate-100 text-slate-600 text-sm font-medium px-3 py-2 rounded-lg hover:bg-slate-200 transition"
         >
           <RefreshCw size={14} />
@@ -70,7 +127,7 @@ export default function AuditLogPage() {
         <ul className="flex items-center gap-6 border-b border-slate-200">
           <li>
             <button
-              onClick={() => setActiveTab('aktif')}
+              onClick={() => gantiTab('aktif')}
               className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
                 activeTab === 'aktif'
                   ? 'border-slate-900 text-slate-900 font-medium'
@@ -83,7 +140,7 @@ export default function AuditLogPage() {
           </li>
           <li>
             <button
-              onClick={() => setActiveTab('trash')}
+              onClick={() => gantiTab('trash')}
               className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
                 activeTab === 'trash'
                   ? 'border-slate-900 text-slate-900 font-medium'
@@ -97,6 +154,26 @@ export default function AuditLogPage() {
         </ul>
       </nav>
 
+      <div className="relative mb-4">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Cari deskripsi, endpoint, IP, atau nama pengguna..."
+          className="w-full text-sm border border-slate-200 rounded-lg pl-9 pr-9 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            aria-label="Hapus pencarian"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+          >
+            <X size={15} />
+          </button>
+        )}
+      </div>
+
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
         {loading && <p className="text-sm text-slate-400 text-center py-8">Memuat data...</p>}
 
@@ -104,7 +181,9 @@ export default function AuditLogPage() {
 
         {!loading && !error && logs.length === 0 && (
           <p className="text-sm text-slate-400 text-center py-8">
-            {activeTab === 'aktif' ? 'Belum ada aktivitas.' : 'Trash kosong.'}
+            {search
+              ? `Tidak ada hasil untuk "${search}".`
+              : activeTab === 'aktif' ? 'Belum ada aktivitas.' : 'Trash kosong.'}
           </p>
         )}
 
@@ -142,6 +221,53 @@ export default function AuditLogPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {!loading && !error && logs.length > 0 && lastPage > 1 && (
+          <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-100">
+            <p className="text-xs text-slate-400">
+              Halaman {page} dari {lastPage} · {total} total log
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => gantiHalaman(page - 1)}
+                disabled={page <= 1}
+                aria-label="Halaman sebelumnya"
+                className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                <ChevronLeft size={14} />
+              </button>
+
+              {buatRangeHalaman(page, lastPage).map((item, idx) =>
+                item === 'ellipsis' ? (
+                  <span key={`ellipsis-${idx}`} className="w-7 h-7 flex items-center justify-center text-xs text-slate-300">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => gantiHalaman(item)}
+                    className={`w-7 h-7 flex items-center justify-center text-xs font-medium rounded-lg border transition ${
+                      item === page
+                        ? 'bg-slate-900 border-slate-900 text-white'
+                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
+
+              <button
+                onClick={() => gantiHalaman(page + 1)}
+                disabled={page >= lastPage}
+                aria-label="Halaman selanjutnya"
+                className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
           </div>
         )}
       </div>
