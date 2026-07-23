@@ -50,6 +50,7 @@ export interface AsetPemakai {
 }
 
 export interface AsetPenanganan {
+  aset: any;
   id: number;
   aset_id: number;
   aset_pemakai_id: number | null;
