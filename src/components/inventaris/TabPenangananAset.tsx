@@ -1,9 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { X, Wrench, Printer } from 'lucide-react';
-import { getAsetPenanganan, selesaikanPenanganan, type AsetPenanganan } from '../../api/asetPenanganan';
+import { X, Wrench, Printer, PlayCircle } from 'lucide-react';
+import api from '../../api/axios';
+import { terimaPenangananAset, selesaikanPenangananAset, type AsetPenanganan } from '../../api/aset';
 import { formatTanggalId } from './asetHelpers';
 import { printStruk } from '../../utils/printStruk';
+
+// pakai tipe dari api/aset.ts (yang sudah punya tanggal_diterima), tapi hit
+// endpoint yang sama '/aset-penanganan' — konsisten sama tab Aset & backend.
+async function getAsetPenanganan(): Promise<AsetPenanganan[]> {
+  const res = await api.get<AsetPenanganan[]>('/aset-penanganan');
+  return res.data;
+}
 
 interface Props {
   onCount?: (count: number) => void;
@@ -24,7 +32,7 @@ export default function TabPenangananAset({ onCount }: Props) {
   const [error, setError] = useState('');
   const [activePenanganan, setActivePenanganan] = useState<AsetPenanganan | null>(null);
 
-  useEffect(() => {
+  const load = () => {
     setLoading(true);
     setError('');
     getAsetPenanganan()
@@ -34,6 +42,24 @@ export default function TabPenangananAset({ onCount }: Props) {
         console.error(err);
       })
       .finally(() => setLoading(false));
+  };
+
+  // versi diam-diam buat polling — gak nyalain loading spinner / error state
+  const loadSilent = () => {
+    getAsetPenanganan()
+      .then(setPenangananList)
+      .catch((err) => console.error(err));
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  // auto-refresh tiap 5 detik biar status (menunggu perbaikan / sedang
+  // diperbaiki / selesai) langsung update di layar tanpa perlu F5.
+  useEffect(() => {
+    const interval = setInterval(loadSilent, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const lastCount = useRef<number | null>(null);
@@ -44,6 +70,21 @@ export default function TabPenangananAset({ onCount }: Props) {
       onCount?.(belumDitangani);
     }
   }, [penangananList, onCount]);
+
+  const [terimaLoadingId, setTerimaLoadingId] = useState<number | null>(null);
+
+  const handleTerima = async (p: AsetPenanganan) => {
+    setTerimaLoadingId(p.id);
+    try {
+      const updated = await terimaPenangananAset(p.id);
+      setPenangananList((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+      toast.success('Laporan diterima, aset ditandai sedang diperbaiki.');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Gagal menerima laporan.');
+    } finally {
+      setTerimaLoadingId(null);
+    }
+  };
 
   const handleSelesai = (updated: AsetPenanganan) => {
     setPenangananList((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
@@ -90,20 +131,26 @@ export default function TabPenangananAset({ onCount }: Props) {
       )}
 
       <div className="flex flex-col gap-2">
-        {penangananList.map((p) => (
+        {penangananList.map((p) => {
+          const selesai = !!p.tanggal_selesai;
+          const diterima = !!p.tanggal_diterima;
+          const statusLabel = selesai
+            ? (p.hasil === 'rusak_berat' ? 'Rusak Berat' : 'Berhasil Diperbaiki')
+            : diterima
+              ? 'Sedang Diperbaiki'
+              : 'Menunggu Perbaikan';
+          const statusStyle = selesai
+            ? (p.hasil === 'rusak_berat' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700')
+            : diterima
+              ? 'bg-orange-50 text-orange-700'
+              : 'bg-yellow-50 text-yellow-700';
+
+          return (
           <div key={p.id} className="border border-slate-200 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-sm font-medium text-slate-800">{p.aset?.kode_aset}</span>
-              <span
-                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                  !p.tanggal_selesai
-                    ? 'bg-amber-50 text-amber-700'
-                    : p.hasil === 'rusak_berat'
-                      ? 'bg-red-50 text-red-700'
-                      : 'bg-emerald-50 text-emerald-700'
-                }`}
-              >
-                {!p.tanggal_selesai ? 'Dalam Perbaikan' : p.hasil === 'rusak_berat' ? 'Rusak Berat' : 'Berhasil Diperbaiki'}
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusStyle}`}>
+                {statusLabel}
               </span>
             </div>
             <p className="text-xs text-slate-500">
@@ -133,17 +180,27 @@ export default function TabPenangananAset({ onCount }: Props) {
                   </button>
                 )}
               </div>
+            ) : !diterima ? (
+              <button
+                onClick={() => handleTerima(p)}
+                disabled={terimaLoadingId === p.id}
+                className="mt-3 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition flex items-center gap-1.5 w-fit disabled:opacity-40"
+              >
+                <PlayCircle size={14} />
+                {terimaLoadingId === p.id ? 'Memproses...' : 'Terima Laporan'}
+              </button>
             ) : (
               <button
                 onClick={() => setActivePenanganan(p)}
                 className="mt-3 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition flex items-center gap-1.5 w-fit"
               >
                 <Wrench size={14} />
-                Perbaiki
+                Tandai Selesai
               </button>
             )}
           </div>
-        ))}
+          );
+        })}
         {penangananList.length === 0 && (
           <p className="text-sm text-slate-400 text-center py-8">Belum ada laporan kerusakan.</p>
         )}
@@ -181,7 +238,7 @@ function FormPerbaikanModal({
     setSubmitting(true);
     setError('');
     try {
-      const updated = await selesaikanPenanganan(penanganan.id, {
+      const updated = await selesaikanPenangananAset(penanganan.id, {
         tanggal_selesai: tanggalSelesai,
         biaya_komponen: biayaKomponen.trim() ? Number(biayaKomponen) : null,
         harga_jasa: hargaJasa.trim() ? Number(hargaJasa) : null,
