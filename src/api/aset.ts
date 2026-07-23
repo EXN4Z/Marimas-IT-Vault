@@ -3,7 +3,7 @@ import type { JenisAset } from './jenisAset';
 import type { Supplier } from './supplier';
 import type { KelengkapanMaster } from './kelengkapanMaster';
 
-export type AsetStatus = 'tersedia' | 'dipakai' | 'rusak' | 'diperbaiki';
+export type AsetStatus = 'tersedia' | 'dipakai' | 'rusak' | 'menunggu_perbaikan' | 'diperbaiki';
 export type AsetPemakaiStatus = 'pending' | 'disetujui' | 'ditolak';
 
 export interface KaryawanUser {
@@ -52,6 +52,7 @@ export interface AsetPenanganan {
   jenis_kerusakan: 'software' | 'hardware';
   keluhan: string;
   tanggal_lapor: string;
+  tanggal_diterima: string | null;
   tanggal_selesai: string | null;
   harga_jasa: number | null;
   biaya_komponen: number | null;
@@ -266,6 +267,13 @@ export async function laporPenangananAset(payload: {
   keluhan: string;
 }): Promise<AsetPenanganan> {
   const res = await api.post<AsetPenanganan>('/aset-penanganan', payload);
+  return res.data;
+}
+
+// POST /aset-penanganan/{id}/terima — admin terima/mulai tangani laporan kerusakan,
+// aset jadi status "diperbaiki". Dibatasi backend ke role admin.
+export async function terimaPenangananAset(asetPenangananId: number): Promise<AsetPenanganan> {
+  const res = await api.post<AsetPenanganan>(`/aset-penanganan/${asetPenangananId}/terima`);
   return res.data;
 }
 

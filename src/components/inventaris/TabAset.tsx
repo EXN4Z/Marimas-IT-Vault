@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, Printer, Eye } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye } from 'lucide-react';
 import AsetFormModal from '../AsetFormModal';
 import AsetSerahTerimaModal from '../AsetSerahTerimaModal';
 import AsetPengembalianModal from '../AsetPengembalianModal';
@@ -16,6 +16,7 @@ import {
   deleteAset,
   deletePenangananAset,
   deletePenggantianSparepart,
+  terimaPenangananAset,
   type Aset,
   type AsetStatus,
   type AsetPemakai,
@@ -31,13 +32,15 @@ const STATUS_LABEL: Record<AsetStatus, string> = {
   tersedia: 'Tersedia',
   dipakai: 'Dipakai',
   rusak: 'Rusak',
-  diperbaiki: 'Diperbaiki',
+  menunggu_perbaikan: 'Menunggu Perbaikan',
+  diperbaiki: 'Sedang Diperbaiki',
 };
 
 const STATUS_STYLE: Record<AsetStatus, string> = {
   tersedia: 'bg-emerald-50 text-emerald-700',
   dipakai: 'bg-amber-50 text-amber-700',
   rusak: 'bg-red-50 text-red-700',
+  menunggu_perbaikan: 'bg-yellow-50 text-yellow-700',
   diperbaiki: 'bg-orange-50 text-orange-700',
 };
 
@@ -102,11 +105,43 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
     }
   };
 
+  // BARU: versi "diam-diam" buat polling — gak nyalain loading spinner /
+  // error state, biar gak ganggu tampilan yang lagi dilihat user.
+  const loadListSilent = async () => {
+    try {
+      const data = await getAset();
+      setAsetList(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     loadList();
     getJenisAset().then(setJenisOptions).catch(() => {});
     getSupplier().then(setSupplierOptions).catch(() => {});
     getKelengkapanMaster().then(setKelengkapanOptions).catch(() => {});
+  }, []);
+
+  // dipakai polling interval biar selalu tau detailId TERBARU tanpa perlu
+  // re-create interval-nya tiap kali detailId berubah
+  const detailIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    detailIdRef.current = detailId;
+  }, [detailId]);
+
+  // BARU: auto-refresh tiap 5 detik biar perubahan status (menunggu perbaikan /
+  // sedang diperbaiki / tersedia) langsung kelihatan tanpa perlu refresh manual —
+  // baik di list maupun di modal detail yang lagi kebuka.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadListSilent();
+      if (detailIdRef.current) {
+        refreshDetailSilent(detailIdRef.current);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const lastCount = useRef<number | null>(null);
@@ -142,6 +177,17 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
     setAsetList((prev) => prev.map((a) => (a.id === data.id ? { ...a, status: data.status } : a)));
   };
 
+  // versi silent buat dipanggil dari polling interval (gak ada loading state)
+  const refreshDetailSilent = async (id: number) => {
+    try {
+      const data = await getAsetById(id);
+      setDetail((prev) => (prev && prev.id === id ? data : prev));
+      setAsetList((prev) => prev.map((a) => (a.id === data.id ? { ...a, status: data.status } : a)));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -155,6 +201,22 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const [terimaLoadingId, setTerimaLoadingId] = useState<number | null>(null);
+
+  const handleTerimaPenanganan = async (id: number) => {
+    setHistoryActionError('');
+    setTerimaLoadingId(id);
+    try {
+      await terimaPenangananAset(id);
+      await refreshDetail();
+      loadList();
+    } catch (err: any) {
+      setHistoryActionError(err.response?.data?.message || 'Gagal menerima laporan penanganan.');
+    } finally {
+      setTerimaLoadingId(null);
     }
   };
 
@@ -660,16 +722,21 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                     {(detail.penanganan || []).map((p) => {
                       const totalBiaya = (Number(p.harga_jasa) || 0) + (Number(p.biaya_komponen) || 0);
                       const selesai = !!p.tanggal_selesai;
+                      const diterima = !!p.tanggal_diterima;
+                      const statusLabel = selesai ? 'Selesai' : diterima ? 'Sedang Diperbaiki' : 'Menunggu Diterima';
+                      const statusStyle = selesai
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : diterima
+                        ? 'bg-orange-50 text-orange-700'
+                        : 'bg-yellow-50 text-yellow-700';
                       return (
                         <li key={p.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2">
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                               <span
-                                className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium mb-1 ${
-                                  selesai ? 'bg-emerald-50 text-emerald-700' : 'bg-orange-50 text-orange-700'
-                                }`}
+                                className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium mb-1 ${statusStyle}`}
                               >
-                                {selesai ? 'Selesai' : 'Proses'}
+                                {statusLabel}
                               </span>{' '}
                               <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium mb-1 bg-slate-200 text-slate-600 capitalize">
                                 {p.jenis_kerusakan}
@@ -680,8 +747,9 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                                 Dipinjam oleh: <span className="font-medium">{p.pemakai?.pekerja?.user?.name || 'Tidak ada (audit gudang)'}</span>
                               </p>
                               <p className="text-slate-400 mt-0.5">
-                                {formatTanggalId(p.tanggal_lapor)}
-                                {p.tanggal_selesai ? ` s/d ${formatTanggalId(p.tanggal_selesai)}` : ''}
+                                Lapor {formatTanggalId(p.tanggal_lapor)}
+                                {p.tanggal_diterima ? ` · Diterima ${formatTanggalId(p.tanggal_diterima)}` : ''}
+                                {p.tanggal_selesai ? ` · Selesai ${formatTanggalId(p.tanggal_selesai)}` : ''}
                                 {p.durasi_hari != null ? ` · ${p.durasi_hari} hari` : ''}
                               </p>
                               {(p.harga_jasa != null || p.biaya_komponen != null) && (
@@ -693,7 +761,17 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                             </div>
                             {isAdmin && (
                               <div className="flex items-center gap-1 flex-shrink-0">
-                                {!selesai && (
+                                {!selesai && !diterima && (
+                                  <button
+                                    onClick={() => handleTerimaPenanganan(p.id)}
+                                    disabled={terimaLoadingId === p.id}
+                                    title="Terima & mulai tangani laporan ini"
+                                    className="p-1.5 rounded-md text-amber-600 hover:bg-amber-100 transition disabled:opacity-50"
+                                  >
+                                    <PlayCircle size={14} />
+                                  </button>
+                                )}
+                                {!selesai && diterima && (
                                   <button
                                     onClick={() => setPenangananSelesaiTarget({ aset: detail, penanganan: p })}
                                     title="Tandai selesai"
