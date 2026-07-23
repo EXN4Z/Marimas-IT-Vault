@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/* Matiin outline default browser pas card/chart/search diklik,
+   tapi tetep nyala kalau navigasi pake keyboard (Tab) */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Hilangkan semua focus ring / box-shadow dari Tailwind focus:ring di frontend */
+:where(input, textarea, select, button, a, [tabindex]):focus,
+:where(input, textarea, select, button, a, [tabindex]):focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: none !important;
+  --tw-ring-offset-shadow: none !important;
+}
+
 * {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* Edge lama */

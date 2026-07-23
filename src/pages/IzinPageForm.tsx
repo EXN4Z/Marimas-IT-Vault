@@ -206,7 +206,7 @@ export default function IzinFormPage() {
                                             updateField('tanggal_selesai', tambahHari(value, DURASI_HARI[form.jenis_izin as JenisIzin]!));
                                         }
                                     }}
-                                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10 ${
+                                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none ${
                                         errors.tanggal_mulai ? 'border-red-300' : 'border-gray-200'
                                     }`}
                                 />
@@ -220,7 +220,7 @@ export default function IzinFormPage() {
                                     min={form.tanggal_mulai || todayISO()}
                                     value={form.tanggal_selesai}
                                     onChange={(e) => updateField('tanggal_selesai', e.target.value)}
-                                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10 ${
+                                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none ${
                                         errors.tanggal_selesai ? 'border-red-300' : 'border-gray-200'
                                     }`}
                                 />
@@ -248,7 +248,7 @@ export default function IzinFormPage() {
                                         updateField('tanggal_selesai', tambahHari(form.tanggal_mulai, DURASI_HARI[value]!));
                                     }
                                 }}
-                                className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10 bg-white ${
+                                className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none ${
                                     errors.jenis_izin ? 'border-red-300' : 'border-gray-200'
                                 }`}
                             >
@@ -281,7 +281,7 @@ export default function IzinFormPage() {
                                 placeholder="Jelaskan alasan pengajuan izin..."
                                 value={form.alasan}
                                 onChange={(e) => updateField('alasan', e.target.value)}
-                                className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10 resize-none ${
+                                className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none ${
                                     errors.alasan ? 'border-red-300' : 'border-gray-200'
                                 }`}
                             />
@@ -307,7 +307,7 @@ export default function IzinFormPage() {
                                 placeholder="Nomor telepon yang bisa dihubungi..."
                                 value={form.kontak_darurat}
                                 onChange={(e) => updateField('kontak_darurat', e.target.value)}
-                                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
+                                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none"
                             />
                         </div>
 

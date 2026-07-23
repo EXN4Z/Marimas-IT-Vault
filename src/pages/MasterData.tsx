@@ -1,3 +1,4 @@
+import '../index.css';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Building2, BriefcaseBusiness, Tags, Boxes, Package, Truck, Plus, Pencil, Trash2, X } from 'lucide-react';

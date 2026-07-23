@@ -9,6 +9,7 @@ export type AsetPemakaiStatus = 'pending' | 'disetujui' | 'ditolak';
 export interface KaryawanUser {
   id: number;
   name: string;
+  role?: string;
   pekerja?: {
     id: number;
     nip: string;
@@ -29,8 +30,11 @@ export interface AsetPemakai {
   created_at: string;
   id: number;
   aset_id: number;
-  pekerja_id: number;
+  // salah satu dari dua ini yang terisi: pekerja_id buat karyawan, user_id buat akun cabang
+  pekerja_id: number | null;
   pekerja?: { id: number; nip: string; user?: { id: number; name: string } };
+  user_id: number | null;
+  user?: { id: number; name: string } | null;
   status: AsetPemakaiStatus;
   requested_by_user_id: number | null;
   nomor_penerimaan: string | null;
@@ -169,19 +173,28 @@ export async function deleteAset(id: number): Promise<{ message: string }> {
 }
 
 /**
- * Cari karyawan (buat dipilih sebagai pemakai aset). Pakai endpoint /karyawan
- * yang sudah ada (UserController::index), yang eager-load relasi pekerja.
+ * Cari karyawan atau akun cabang (buat dipilih sebagai pemakai aset). Pakai
+ * endpoint /karyawan yang sudah ada (UserController::index), yang eager-load
+ * relasi pekerja dan sudah support filter ?role=.
+ *
+ * Kirim role='cabang' buat nampilin akun cabang aja. Kosongkan (undefined)
+ * buat perilaku lama (semua role, biasanya dipakai buat cari karyawan).
  */
-export async function searchKaryawan(query: string): Promise<KaryawanUser[]> {
-  const res = await api.get<KaryawanUser[]>('/karyawan', { params: { search: query } });
+export async function searchKaryawan(query: string, role?: string): Promise<KaryawanUser[]> {
+  const res = await api.get<KaryawanUser[]>('/karyawan', {
+    params: { search: query, ...(role ? { role } : {}) },
+  });
   return res.data;
 }
 
-// POST /aset/{aset}/pemakai — serah-terima aset ke pekerja. Dibatasi backend ke role admin.
+// POST /aset/{aset}/pemakai — serah-terima aset ke pekerja ATAU akun cabang.
+// Kirim salah satu: pekerja_id (karyawan) atau user_id (cabang), jangan dua-duanya.
+// Dibatasi backend ke role admin.
 export async function serahTerimaAset(
   asetId: number,
   payload: {
-    pekerja_id: number;
+    pekerja_id?: number;
+    user_id?: number;
     nomor_penerimaan?: string;
     tanggal_penerimaan: string;
     catatan_penerimaan?: string;
