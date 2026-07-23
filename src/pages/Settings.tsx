@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { User as UserIcon, Mail, Phone, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { User as UserIcon, Mail, Phone, Save, AlertCircle, CheckCircle2, Bell, BellOff } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import { updateProfile } from '../api/auth';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 const roleLabels: Record<string, string> = {
   admin: 'Admin',
@@ -24,6 +25,7 @@ function initials(name?: string): string {
 
 export default function Settings() {
   const { user, setUser } = useAuth();
+  const push = usePushNotifications();
 
   const [name, setName] = useState(user?.name ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
@@ -84,6 +86,46 @@ export default function Settings() {
               {roleLabels[user.role] ?? user.role}
             </span>
           )}
+        </div>
+
+        {/* NOTIFIKASI PUSH */}
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 h-fit lg:col-span-3">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 flex-shrink-0">
+                {push.isSubscribed ? <Bell size={16} /> : <BellOff size={16} />}
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">Notifikasi Push</h3>
+                <p className="text-sm text-slate-400 max-w-md">
+                  Aktifkan supaya kamu tetap dapat notifikasi (misal laporan kerusakan aset)
+                  walau tab/browser lagi ketutup atau lagi di device lain.
+                </p>
+                {push.status === 'denied' && (
+                  <p className="text-xs text-red-500 mt-1">
+                    Notifikasi diblokir di browser ini. Aktifkan lewat setting izin situs.
+                  </p>
+                )}
+                {!push.isSupported && (
+                  <p className="text-xs text-slate-400 mt-1">Browser ini tidak mendukung push notification.</p>
+                )}
+              </div>
+            </div>
+
+            {push.isSupported && push.status !== 'denied' && (
+              <button
+                onClick={push.isSubscribed ? push.unsubscribe : push.subscribe}
+                disabled={push.loading}
+                className={`flex-shrink-0 text-sm font-semibold px-4 py-2.5 rounded-lg transition disabled:opacity-40 ${
+                  push.isSubscribed
+                    ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    : 'bg-slate-900 text-white hover:bg-slate-800'
+                }`}
+              >
+                {push.loading ? 'Memproses...' : push.isSubscribed ? 'Matikan' : 'Aktifkan'}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* FORM PROFIL SAYA */}
