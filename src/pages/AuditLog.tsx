@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ScrollText, Trash2, ArrowDownCircle, ArrowUpCircle, RefreshCw } from 'lucide-react';
+import { ScrollText, Trash2, ArrowDownCircle, ArrowUpCircle, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { getAuditLog, getAuditLogTrash, type AuditLog } from '../api/auditLog';
 
@@ -23,18 +23,50 @@ function formatWaktu(iso: string): string {
   });
 }
 
+// Menghasilkan array nomor halaman + elipsis, misal: [1, '...', 4, 5, 6, '...', 20]
+function buatRangeHalaman(current: number, last: number): (number | 'ellipsis')[] {
+  const delta = 1; // jumlah halaman yang ditampilkan di kiri-kanan halaman aktif
+  const range: (number | 'ellipsis')[] = [];
+
+  const start = Math.max(2, current - delta);
+  const end = Math.min(last - 1, current + delta);
+
+  range.push(1);
+
+  if (start > 2) range.push('ellipsis');
+
+  for (let i = start; i <= end; i++) {
+    range.push(i);
+  }
+
+  if (end < last - 1) range.push('ellipsis');
+
+  if (last > 1) range.push(last);
+
+  return range;
+}
+
 export default function AuditLogPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('aktif');
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
-  const loadData = async (tab: TabKey) => {
+  const loadData = async (tab: TabKey, targetPage: number) => {
     setLoading(true);
     setError('');
     try {
-      const data = tab === 'aktif' ? await getAuditLog(100) : await getAuditLogTrash(100);
-      setLogs(data);
+      const data = tab === 'aktif'
+        ? await getAuditLog(targetPage)
+        : await getAuditLogTrash(targetPage);
+
+      setLogs(data.data);
+      setPage(data.current_page);
+      setLastPage(data.last_page);
+      setTotal(data.total);
     } catch (err: any) {
       if (err.response?.status === 403) {
         setError('Anda tidak punya akses ke halaman ini.');
@@ -47,8 +79,17 @@ export default function AuditLogPage() {
   };
 
   useEffect(() => {
-    loadData(activeTab);
+    loadData(activeTab, 1);
   }, [activeTab]);
+
+  function gantiTab(tab: TabKey) {
+    setActiveTab(tab);
+  }
+
+  function gantiHalaman(target: number) {
+    if (target < 1 || target > lastPage || target === page) return;
+    loadData(activeTab, target);
+  }
 
   return (
     <AppLayout title="Audit Log">
@@ -58,7 +99,7 @@ export default function AuditLogPage() {
           terhapus permanen setelah 7 hari di trash.
         </p>
         <button
-          onClick={() => loadData(activeTab)}
+          onClick={() => loadData(activeTab, page)}
           className="flex items-center gap-2 bg-slate-100 text-slate-600 text-sm font-medium px-3 py-2 rounded-lg hover:bg-slate-200 transition"
         >
           <RefreshCw size={14} />
@@ -70,7 +111,7 @@ export default function AuditLogPage() {
         <ul className="flex items-center gap-6 border-b border-slate-200">
           <li>
             <button
-              onClick={() => setActiveTab('aktif')}
+              onClick={() => gantiTab('aktif')}
               className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
                 activeTab === 'aktif'
                   ? 'border-slate-900 text-slate-900 font-medium'
@@ -83,7 +124,7 @@ export default function AuditLogPage() {
           </li>
           <li>
             <button
-              onClick={() => setActiveTab('trash')}
+              onClick={() => gantiTab('trash')}
               className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
                 activeTab === 'trash'
                   ? 'border-slate-900 text-slate-900 font-medium'
@@ -142,6 +183,53 @@ export default function AuditLogPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {!loading && !error && logs.length > 0 && lastPage > 1 && (
+          <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-100">
+            <p className="text-xs text-slate-400">
+              Halaman {page} dari {lastPage} · {total} total log
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => gantiHalaman(page - 1)}
+                disabled={page <= 1}
+                aria-label="Halaman sebelumnya"
+                className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                <ChevronLeft size={14} />
+              </button>
+
+              {buatRangeHalaman(page, lastPage).map((item, idx) =>
+                item === 'ellipsis' ? (
+                  <span key={`ellipsis-${idx}`} className="w-7 h-7 flex items-center justify-center text-xs text-slate-300">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => gantiHalaman(item)}
+                    className={`w-7 h-7 flex items-center justify-center text-xs font-medium rounded-lg border transition ${
+                      item === page
+                        ? 'bg-slate-900 border-slate-900 text-white'
+                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
+
+              <button
+                onClick={() => gantiHalaman(page + 1)}
+                disabled={page >= lastPage}
+                aria-label="Halaman selanjutnya"
+                className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
           </div>
         )}
       </div>

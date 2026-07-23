@@ -4,7 +4,6 @@ import toast from 'react-hot-toast';
 import api from '../api/axios';
 import RouteModal from '../components/RouteModal';
 import { getDepartemen, type Departemen } from '../api/departemen';
-import { getJabatan, type Jabatan } from '../api/jabatan';
 import { getCabang, type Cabang } from '../api/cabang';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest';
@@ -16,7 +15,6 @@ interface FormState {
     role: Role;
     nip: string;
     departemen_id: string;
-    jabatan_id: string;
     lokasi_kantor_id: string;
     tanggal_masuk: string;
 }
@@ -32,7 +30,6 @@ const initialForm: FormState = {
     role: 'karyawan',
     nip: '',
     departemen_id: '',
-    jabatan_id: '',
     lokasi_kantor_id: '',
     tanggal_masuk: '',
 };
@@ -42,7 +39,6 @@ export default function CreateKaryawanPage() {
 
     const [form, setForm] = useState<FormState>(initialForm);
     const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
-    const [jabatanList, setJabatanList] = useState<Jabatan[]>([]);
     const [cabangList, setCabangList] = useState<Cabang[]>([]);
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
@@ -52,7 +48,6 @@ export default function CreateKaryawanPage() {
 
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
-        getJabatan().then(setJabatanList).catch(() => {});
         getCabang().then(setCabangList).catch(() => {});
     }, []);
 
@@ -84,7 +79,6 @@ export default function CreateKaryawanPage() {
             const payload = {
                 ...form,
                 departemen_id: form.departemen_id || null,
-                jabatan_id: form.jabatan_id || null,
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
                 tanggal_masuk: form.tanggal_masuk || null,
             };
@@ -193,38 +187,23 @@ export default function CreateKaryawanPage() {
                             </select>
                         </Field>
 
-                        <Field label="Jabatan" error={errors.jabatan_id?.[0]}>
+                        <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]}>
                             <select
-                                value={form.jabatan_id}
-                                onChange={(e) => handleChange('jabatan_id', e.target.value)}
-                                className={`w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10 ${form.jabatan_id === '' ? 'text-gray-400' : 'text-gray-900'}`}
+                                value={form.lokasi_kantor_id}
+                                onChange={(e) => handleChange('lokasi_kantor_id', e.target.value)}
+                                className={`w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10 ${form.lokasi_kantor_id === '' ? 'text-gray-400' : 'text-gray-900'}`}
                             >
-                                <option value="">Pilih jabatan</option>
-                                {jabatanList.map((j) => (
-                                    <option key={j.id} value={j.id}>
-                                        {j.nama}
+                                <option value="">Pilih cabang</option>
+                                {cabangList.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.nama}
                                     </option>
                                 ))}
                             </select>
                         </Field>
                     </div>
 
-                    <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]}>
-                        <select
-                            value={form.lokasi_kantor_id}
-                            onChange={(e) => handleChange('lokasi_kantor_id', e.target.value)}
-                            className={`w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10 ${form.lokasi_kantor_id === '' ? 'text-gray-400' : 'text-gray-900'}`}
-                        >
-                            <option value="">Pilih cabang</option>
-                            {cabangList.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.nama}
-                                </option>
-                            ))}
-                        </select>
-                    </Field>
-
-                    <Field label="Posisi (Role)" error={errors.role?.[0]}>
+                    <Field label="Posisi" error={errors.role?.[0]}>
                         <select
                             value={form.role}
                             onChange={(e) => handleChange('role', e.target.value as Role)}
