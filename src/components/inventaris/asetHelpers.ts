@@ -28,6 +28,35 @@ export function formatTanggalId(iso: string | null): string {
   return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+// Bentuk minimal yang dibutuhkan namaPemakai/userIdPemakai. SENGAJA gak
+// pakai `AsetPemakai` penuh sebagai tipe parameter: AsetPenanganan.pemakai
+// punya bentuk yang lebih ringkas ({ id, pekerja?, user? }) dan gak punya
+// field wajib AsetPemakai lain (created_at, aset_id, dst), jadi kalau
+// helper ini strict ke AsetPemakai, TS bakal nolak dipanggil dengan
+// p.pemakai. AsetPemakai tetap otomatis cocok di sini karena dia superset
+// dari bentuk minimal ini.
+interface PemakaiLike {
+  pekerja?: { user?: { id: number; name: string } } | null;
+  user?: { id: number; name: string } | null;
+}
+
+/**
+ * Ambil nama penerima aset, entah dia karyawan (lewat pekerja.user)
+ * atau akun cabang (lewat user langsung). Terima AsetPemakai penuh
+ * ATAU bentuk ringkas AsetPenanganan.pemakai.
+ */
+export function namaPemakai(pemakai?: PemakaiLike | null): string {
+  return pemakai?.pekerja?.user?.name || pemakai?.user?.name || '-';
+}
+
+/**
+ * Ambil user id penerima aset, dipakai buat cek "apakah aku peminjamnya".
+ * Sama-sama harus cek dua kemungkinan (pekerja.user.id atau user.id).
+ */
+export function userIdPemakai(pemakai?: PemakaiLike | null): number | undefined {
+  return pemakai?.pekerja?.user?.id ?? pemakai?.user?.id ?? undefined;
+}
+
 export function formatRupiah(n: number | null): string {
   if (n == null) return '-';
   return 'Rp ' + n.toLocaleString('id-ID');
