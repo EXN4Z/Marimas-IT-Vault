@@ -126,7 +126,7 @@ export default function Inventaris() {
   return (
     <AppLayout title="Inventaris">
       <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
-        <p className="text-sm text-slate-500">Kelola stok barang, aset IT, dan peminjaman — semua dalam satu tempat.</p>
+        <p className="text-sm text-slate-500">Kelola aset IT</p>
         <button
           onClick={() => {
             setScanError('');
@@ -190,7 +190,7 @@ export default function Inventaris() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Cari nama barang, kode, atau jenis aset..."
-                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none"
               />
             </div>
 

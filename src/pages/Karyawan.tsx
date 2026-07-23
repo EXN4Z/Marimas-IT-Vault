@@ -205,7 +205,7 @@ export default function KaryawanPage() {
                                 placeholder="Cari nama atau email..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
+                                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none"
                             />
                         </div>
                             {isAdmin && (

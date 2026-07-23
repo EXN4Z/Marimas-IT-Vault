@@ -4,6 +4,7 @@ import { User, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { login } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
+import '../index.css';
 
 export default function Login() {
   const [loginId, setLoginId] = useState('');
