@@ -6,7 +6,7 @@ import RouteModal from '../components/RouteModal';
 import { getDepartemen, type Departemen } from '../api/departemen';
 import { getCabang, type Cabang } from '../api/cabang';
 
-type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest';
+type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest' | 'cabang';
 
 interface FormState {
     name: string;
@@ -46,6 +46,8 @@ export default function CreateKaryawanPage() {
     const [generatedPassword, setGeneratedPassword] = useState<string>('');
     const [createdName, setCreatedName] = useState<string>('');
 
+    const isCabang = form.role === 'cabang';
+
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
         getCabang().then(setCabangList).catch(() => {});
@@ -70,6 +72,27 @@ export default function CreateKaryawanPage() {
         }
     }
 
+    function handleRoleChange(value: Role) {
+        setForm((prev) => ({
+            ...prev,
+            role: value,
+            // bersihkan field kepegawaian kalau role diganti ke cabang
+            ...(value === 'cabang'
+                ? { nip: '', departemen_id: '', tanggal_masuk: '' }
+                : {}),
+        }));
+        setErrors((prev) => {
+            const next = { ...prev };
+            delete next.role;
+            if (value === 'cabang') {
+                delete next.nip;
+                delete next.departemen_id;
+                delete next.tanggal_masuk;
+            }
+            return next;
+        });
+    }
+
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
         setSaving(true);
@@ -78,9 +101,10 @@ export default function CreateKaryawanPage() {
         try {
             const payload = {
                 ...form,
-                departemen_id: form.departemen_id || null,
+                nip: isCabang ? null : form.nip,
+                departemen_id: isCabang ? null : form.departemen_id || null,
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
-                tanggal_masuk: form.tanggal_masuk || null,
+                tanggal_masuk: isCabang ? null : form.tanggal_masuk || null,
             };
             const res = await api.post('/karyawan', payload);
             toast.success('Karyawan berhasil dibuat.');
@@ -161,37 +185,57 @@ export default function CreateKaryawanPage() {
                         />
                     </Field>
 
-                    <Field label="NIP" error={errors.nip?.[0]}>
-                        <input
-                            type="text"
-                            value={form.nip}
-                            onChange={(e) => handleChange('nip', e.target.value)}
+                    <Field label="Posisi" error={errors.role?.[0]}>
+                        <select
+                            value={form.role}
+                            onChange={(e) => handleRoleChange(e.target.value as Role)}
                             className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                            required
-                        />
+                        >
+                            <option value="karyawan">Karyawan</option>
+                            <option value="manajer">Manajer</option>
+                            <option value="hr">HR</option>
+                            <option value="admin">Admin</option>
+                            <option value="guest">Guest</option>
+                            <option value="cabang">Cabang</option>
+                        </select>
                     </Field>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <Field label="Departemen" error={errors.departemen_id?.[0]}>
-                            <select
-                                value={form.departemen_id}
-                                onChange={(e) => handleChange('departemen_id', e.target.value)}
-                                className={`w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10 ${form.departemen_id === '' ? 'text-gray-400' : 'text-gray-900'}`}
-                            >
-                                <option value="">Pilih departemen</option>
-                                {departemenList.map((d) => (
-                                    <option key={d.id} value={d.id}>
-                                        {d.nama}
-                                    </option>
-                                ))}
-                            </select>
+                    {!isCabang && (
+                        <Field label="NIP" error={errors.nip?.[0]}>
+                            <input
+                                type="text"
+                                value={form.nip}
+                                onChange={(e) => handleChange('nip', e.target.value)}
+                                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                                required
+                            />
                         </Field>
+                    )}
+
+                    <div className={`grid gap-4 ${!isCabang ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                        {!isCabang && (
+                            <Field label="Departemen" error={errors.departemen_id?.[0]}>
+                                <select
+                                    value={form.departemen_id}
+                                    onChange={(e) => handleChange('departemen_id', e.target.value)}
+                                    className={`w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10 ${form.departemen_id === '' ? 'text-gray-400' : 'text-gray-900'}`}
+                                >
+                                    <option value="">Pilih departemen</option>
+                                    {departemenList.map((d) => (
+                                        <option key={d.id} value={d.id}>
+                                            {d.nama}
+                                        </option>
+                                    ))}
+                                </select>
+                            </Field>
+                        )}
 
                         <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]}>
                             <select
                                 value={form.lokasi_kantor_id}
                                 onChange={(e) => handleChange('lokasi_kantor_id', e.target.value)}
                                 className={`w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10 ${form.lokasi_kantor_id === '' ? 'text-gray-400' : 'text-gray-900'}`}
+                                required={isCabang}
                             >
                                 <option value="">Pilih cabang</option>
                                 {cabangList.map((c) => (
@@ -203,28 +247,16 @@ export default function CreateKaryawanPage() {
                         </Field>
                     </div>
 
-                    <Field label="Posisi" error={errors.role?.[0]}>
-                        <select
-                            value={form.role}
-                            onChange={(e) => handleChange('role', e.target.value as Role)}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                        >
-                            <option value="karyawan">Karyawan</option>
-                            <option value="manajer">Manajer</option>
-                            <option value="hr">HR</option>
-                            <option value="admin">Admin</option>
-                            <option value="guest">Guest</option>
-                        </select>
-                    </Field>
-
-                    <Field label="Tanggal Masuk" error={errors.tanggal_masuk?.[0]}>
-                        <input
-                            type="date"
-                            value={form.tanggal_masuk}
-                            onChange={(e) => handleChange('tanggal_masuk', e.target.value)}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                        />
-                    </Field>
+                    {!isCabang && (
+                        <Field label="Tanggal Masuk" error={errors.tanggal_masuk?.[0]}>
+                            <input
+                                type="date"
+                                value={form.tanggal_masuk}
+                                onChange={(e) => handleChange('tanggal_masuk', e.target.value)}
+                                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                            />
+                        </Field>
+                    )}
 
                     <div className="flex justify-end gap-2 pt-2">
                         <button

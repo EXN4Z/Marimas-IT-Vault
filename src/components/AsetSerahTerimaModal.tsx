@@ -8,11 +8,14 @@ interface AsetSerahTerimaModalProps {
   onSuccess: (pemakai: AsetPemakai) => void;
 }
 
+type PenerimaMode = 'karyawan' | 'cabang';
+
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
 export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetSerahTerimaModalProps) {
+  const [mode, setMode] = useState<PenerimaMode>('karyawan');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<KaryawanUser[]>([]);
   const [searching, setSearching] = useState(false);
@@ -25,6 +28,15 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  function handleModeChange(next: PenerimaMode) {
+    setMode(next);
+    // reset pencarian tiap ganti mode biar nggak ketuker antara akun karyawan & cabang
+    setQuery('');
+    setResults([]);
+    setSelected(null);
+    setError('');
+  }
+
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!query.trim() || selected) {
@@ -34,7 +46,10 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const data = await searchKaryawan(query.trim());
+        // TODO: pastikan searchKaryawan di api/aset.ts menerima param role
+        // dan meneruskannya sebagai query string ke endpoint pencarian,
+        // misal: GET /karyawan/search?q=...&role=cabang
+        const data = await searchKaryawan(query.trim(), mode === 'cabang' ? 'cabang' : undefined);
         setResults(Array.isArray(data) ? data : []);
       } catch {
         setResults([]);
@@ -45,7 +60,7 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [query, selected]);
+  }, [query, selected, mode]);
 
   const pick = (u: KaryawanUser) => {
     setSelected(u);
@@ -54,15 +69,23 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
   };
 
   const handleSubmit = async () => {
-    if (!selected?.pekerja?.id) {
+    if (mode === 'karyawan' && !selected?.pekerja?.id) {
       setError('Pilih karyawan yang datanya sudah lengkap sebagai pekerja.');
       return;
     }
+    if (mode === 'cabang' && !selected?.id) {
+      setError('Pilih akun cabang penerima.');
+      return;
+    }
+
     setSubmitting(true);
     setError('');
     try {
       const res = await serahTerimaAset(aset.id, {
-        pekerja_id: selected.pekerja.id,
+        // karyawan disimpan lewat pekerja_id, cabang lewat user_id
+        ...(mode === 'karyawan'
+          ? { pekerja_id: selected!.pekerja!.id }
+          : { user_id: selected!.id }),
         nomor_penerimaan: nomorPenerimaan.trim() || undefined,
         tanggal_penerimaan: tanggalPenerimaan,
         catatan_penerimaan: catatan.trim() || undefined,
@@ -87,7 +110,37 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
 
         <div className="flex flex-col gap-3 mb-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Karyawan Penerima</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Serahkan Kepada</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleModeChange('karyawan')}
+                className={`text-sm font-medium py-2 rounded-lg border transition ${
+                  mode === 'karyawan'
+                    ? 'bg-slate-900 text-white border-slate-900'
+                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                Karyawan
+              </button>
+              <button
+                type="button"
+                onClick={() => handleModeChange('cabang')}
+                className={`text-sm font-medium py-2 rounded-lg border transition ${
+                  mode === 'cabang'
+                    ? 'bg-slate-900 text-white border-slate-900'
+                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                Cabang
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              {mode === 'karyawan' ? 'Karyawan Penerima' : 'Akun Cabang Penerima'}
+            </label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
@@ -97,7 +150,7 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
                   setSelected(null);
                 }}
                 autoFocus
-                placeholder="Cari nama karyawan..."
+                placeholder={mode === 'karyawan' ? 'Cari nama karyawan...' : 'Cari nama cabang...'}
                 className="w-full pl-9 pr-8 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
               />
               {selected && <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />}
@@ -106,20 +159,27 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
                 <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
                   {searching && <p className="text-xs text-slate-400 px-3 py-2">Mencari...</p>}
                   {!searching &&
-                    results.map((u) => (
-                      <button
-                        key={u.id}
-                        type="button"
-                        onClick={() => pick(u)}
-                        disabled={!u.pekerja}
-                        className="w-full text-left text-sm px-3 py-2 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {u.name}
-                        {!u.pekerja && <span className="text-xs text-slate-400"> — belum ada data pekerja</span>}
-                      </button>
-                    ))}
+                    results.map((u) => {
+                      // untuk karyawan, hanya bisa dipilih kalau punya data pekerja;
+                      // untuk cabang, akun itu sendiri sudah cukup (nggak butuh pekerja)
+                      const disabled = mode === 'karyawan' && !u.pekerja;
+                      return (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() => pick(u)}
+                          disabled={disabled}
+                          className="w-full text-left text-sm px-3 py-2 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {u.name}
+                          {disabled && <span className="text-xs text-slate-400"> — belum ada data pekerja</span>}
+                        </button>
+                      );
+                    })}
                   {!searching && results.length === 0 && (
-                    <p className="text-xs text-slate-400 px-3 py-2">Karyawan tidak ditemukan.</p>
+                    <p className="text-xs text-slate-400 px-3 py-2">
+                      {mode === 'karyawan' ? 'Karyawan tidak ditemukan.' : 'Cabang tidak ditemukan.'}
+                    </p>
                   )}
                 </div>
               )}

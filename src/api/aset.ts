@@ -3,12 +3,13 @@ import type { JenisAset } from './jenisAset';
 import type { Supplier } from './supplier';
 import type { KelengkapanMaster } from './kelengkapanMaster';
 
-export type AsetStatus = 'tersedia' | 'dipakai' | 'rusak' | 'diperbaiki';
+export type AsetStatus = 'tersedia' | 'dipakai' | 'rusak' | 'menunggu_perbaikan' | 'diperbaiki';
 export type AsetPemakaiStatus = 'pending' | 'disetujui' | 'ditolak';
 
 export interface KaryawanUser {
   id: number;
   name: string;
+  role?: string;
   pekerja?: {
     id: number;
     nip: string;
@@ -29,8 +30,11 @@ export interface AsetPemakai {
   created_at: string;
   id: number;
   aset_id: number;
-  pekerja_id: number;
+  // salah satu dari dua ini yang terisi: pekerja_id buat karyawan, user_id buat akun cabang
+  pekerja_id: number | null;
   pekerja?: { id: number; nip: string; user?: { id: number; name: string } };
+  user_id: number | null;
+  user?: { id: number; name: string } | null;
   status: AsetPemakaiStatus;
   requested_by_user_id: number | null;
   nomor_penerimaan: string | null;
@@ -52,6 +56,7 @@ export interface AsetPenanganan {
   jenis_kerusakan: 'software' | 'hardware';
   keluhan: string;
   tanggal_lapor: string;
+  tanggal_diterima: string | null;
   tanggal_selesai: string | null;
   harga_jasa: number | null;
   biaya_komponen: number | null;
@@ -168,19 +173,28 @@ export async function deleteAset(id: number): Promise<{ message: string }> {
 }
 
 /**
- * Cari karyawan (buat dipilih sebagai pemakai aset). Pakai endpoint /karyawan
- * yang sudah ada (UserController::index), yang eager-load relasi pekerja.
+ * Cari karyawan atau akun cabang (buat dipilih sebagai pemakai aset). Pakai
+ * endpoint /karyawan yang sudah ada (UserController::index), yang eager-load
+ * relasi pekerja dan sudah support filter ?role=.
+ *
+ * Kirim role='cabang' buat nampilin akun cabang aja. Kosongkan (undefined)
+ * buat perilaku lama (semua role, biasanya dipakai buat cari karyawan).
  */
-export async function searchKaryawan(query: string): Promise<KaryawanUser[]> {
-  const res = await api.get<KaryawanUser[]>('/karyawan', { params: { search: query } });
+export async function searchKaryawan(query: string, role?: string): Promise<KaryawanUser[]> {
+  const res = await api.get<KaryawanUser[]>('/karyawan', {
+    params: { search: query, ...(role ? { role } : {}) },
+  });
   return res.data;
 }
 
-// POST /aset/{aset}/pemakai — serah-terima aset ke pekerja. Dibatasi backend ke role admin.
+// POST /aset/{aset}/pemakai — serah-terima aset ke pekerja ATAU akun cabang.
+// Kirim salah satu: pekerja_id (karyawan) atau user_id (cabang), jangan dua-duanya.
+// Dibatasi backend ke role admin.
 export async function serahTerimaAset(
   asetId: number,
   payload: {
-    pekerja_id: number;
+    pekerja_id?: number;
+    user_id?: number;
     nomor_penerimaan?: string;
     tanggal_penerimaan: string;
     catatan_penerimaan?: string;
@@ -266,6 +280,13 @@ export async function laporPenangananAset(payload: {
   keluhan: string;
 }): Promise<AsetPenanganan> {
   const res = await api.post<AsetPenanganan>('/aset-penanganan', payload);
+  return res.data;
+}
+
+// POST /aset-penanganan/{id}/terima — admin terima/mulai tangani laporan kerusakan,
+// aset jadi status "diperbaiki". Dibatasi backend ke role admin.
+export async function terimaPenangananAset(asetPenangananId: number): Promise<AsetPenanganan> {
+  const res = await api.post<AsetPenanganan>(`/aset-penanganan/${asetPenangananId}/terima`);
   return res.data;
 }
 
