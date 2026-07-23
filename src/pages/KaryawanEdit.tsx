@@ -8,7 +8,7 @@ import { getJabatan, type Jabatan } from '../api/jabatan';
 import { getCabang, type Cabang } from '../api/cabang';
 import type { Departemen } from '../api/departemen';
 
-type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest';
+type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest' | 'cabang';
 
 interface Pekerja {
     id: number;
@@ -26,6 +26,7 @@ interface User {
     phone: string | null;
     role: Role;
     pekerja: Pekerja | null;
+    lokasi_kantor_id?: number | null;
 }
 
 interface FormState {
@@ -68,6 +69,8 @@ export default function EditKaryawanPage() {
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
 
+    const isCabang = form.role === 'cabang';
+
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
         getJabatan().then(setJabatanList).catch(() => {});
@@ -85,7 +88,11 @@ export default function EditKaryawanPage() {
                     nip: u.pekerja?.nip ?? '',
                     departemen_id: u.pekerja?.departemen_id ? String(u.pekerja.departemen_id) : '',
                     jabatan_id: u.pekerja?.jabatan_id ? String(u.pekerja.jabatan_id) : '',
-                    lokasi_kantor_id: u.pekerja?.lokasi_kantor_id ? String(u.pekerja.lokasi_kantor_id) : '',
+                    lokasi_kantor_id: u.pekerja?.lokasi_kantor_id
+                        ? String(u.pekerja.lokasi_kantor_id)
+                        : u.lokasi_kantor_id
+                          ? String(u.lokasi_kantor_id)
+                          : '',
                     tanggal_masuk: u.pekerja?.tanggal_masuk ?? '',
                 });
             })
@@ -114,6 +121,27 @@ export default function EditKaryawanPage() {
         }
     }
 
+    function handleRoleChange(value: Role) {
+        setForm((prev) => ({
+            ...prev,
+            role: value,
+            ...(value === 'cabang'
+                ? { nip: '', departemen_id: '', jabatan_id: '', tanggal_masuk: '' }
+                : {}),
+        }));
+        setErrors((prev) => {
+            const next = { ...prev };
+            delete next.role;
+            if (value === 'cabang') {
+                delete next.nip;
+                delete next.departemen_id;
+                delete next.jabatan_id;
+                delete next.tanggal_masuk;
+            }
+            return next;
+        });
+    }
+
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
         setSaving(true);
@@ -122,10 +150,11 @@ export default function EditKaryawanPage() {
         try {
             const payload = {
                 ...form,
-                departemen_id: form.departemen_id || null,
-                jabatan_id: form.jabatan_id || null,
+                nip: isCabang ? null : form.nip,
+                departemen_id: isCabang ? null : form.departemen_id || null,
+                jabatan_id: isCabang ? null : form.jabatan_id || null,
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
-                tanggal_masuk: form.tanggal_masuk || null,
+                tanggal_masuk: isCabang ? null : form.tanggal_masuk || null,
             };
             await api.put(`/karyawan/${id}`, payload);
             toast.success('Perubahan berhasil disimpan.');
@@ -201,53 +230,73 @@ export default function EditKaryawanPage() {
                         />
                     </Field>
 
-                    <Field label="NIP" error={errors.nip?.[0]}>
-                        <input
-                            type="text"
-                            value={form.nip}
-                            onChange={(e) => handleChange('nip', e.target.value)}
+                    <Field label="Role" error={errors.role?.[0]}>
+                        <select
+                            value={form.role}
+                            onChange={(e) => handleRoleChange(e.target.value as Role)}
                             className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                            required
-                        />
+                        >
+                            <option value="karyawan">Karyawan</option>
+                            <option value="manajer">Manajer</option>
+                            <option value="hr">HR</option>
+                            <option value="admin">Admin</option>
+                            <option value="guest">Guest</option>
+                            <option value="cabang">Cabang</option>
+                        </select>
                     </Field>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <Field label="Departemen" error={errors.departemen_id?.[0]}>
-                            <select
-                                value={form.departemen_id}
-                                onChange={(e) => handleChange('departemen_id', e.target.value)}
+                    {!isCabang && (
+                        <Field label="NIP" error={errors.nip?.[0]}>
+                            <input
+                                type="text"
+                                value={form.nip}
+                                onChange={(e) => handleChange('nip', e.target.value)}
                                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                            >
-                                <option value="">Pilih departemen</option>
-                                {departemenList.map((d) => (
-                                    <option key={d.id} value={d.id}>
-                                        {d.nama}
-                                    </option>
-                                ))}
-                            </select>
+                                required
+                            />
                         </Field>
+                    )}
 
-                        <Field label="Jabatan" error={errors.jabatan_id?.[0]}>
-                            <select
-                                value={form.jabatan_id}
-                                onChange={(e) => handleChange('jabatan_id', e.target.value)}
-                                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                            >
-                                <option value="">Pilih jabatan</option>
-                                {jabatanList.map((j) => (
-                                    <option key={j.id} value={j.id}>
-                                        {j.nama}
-                                    </option>
-                                ))}
-                            </select>
-                        </Field>
-                    </div>
+                    {!isCabang && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <Field label="Departemen" error={errors.departemen_id?.[0]}>
+                                <select
+                                    value={form.departemen_id}
+                                    onChange={(e) => handleChange('departemen_id', e.target.value)}
+                                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                                >
+                                    <option value="">Pilih departemen</option>
+                                    {departemenList.map((d) => (
+                                        <option key={d.id} value={d.id}>
+                                            {d.nama}
+                                        </option>
+                                    ))}
+                                </select>
+                            </Field>
+
+                            <Field label="Jabatan" error={errors.jabatan_id?.[0]}>
+                                <select
+                                    value={form.jabatan_id}
+                                    onChange={(e) => handleChange('jabatan_id', e.target.value)}
+                                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                                >
+                                    <option value="">Pilih jabatan</option>
+                                    {jabatanList.map((j) => (
+                                        <option key={j.id} value={j.id}>
+                                            {j.nama}
+                                        </option>
+                                    ))}
+                                </select>
+                            </Field>
+                        </div>
+                    )}
 
                     <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]}>
                         <select
                             value={form.lokasi_kantor_id}
                             onChange={(e) => handleChange('lokasi_kantor_id', e.target.value)}
                             className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                            required={isCabang}
                         >
                             <option value="">Pilih cabang</option>
                             {cabangList.map((c) => (
@@ -258,28 +307,16 @@ export default function EditKaryawanPage() {
                         </select>
                     </Field>
 
-                    <Field label="Tanggal Masuk" error={errors.tanggal_masuk?.[0]}>
-                        <input
-                            type="date"
-                            value={form.tanggal_masuk}
-                            onChange={(e) => handleChange('tanggal_masuk', e.target.value)}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                        />
-                    </Field>
-
-                    <Field label="Role" error={errors.role?.[0]}>
-                        <select
-                            value={form.role}
-                            onChange={(e) => handleChange('role', e.target.value as Role)}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                        >
-                            <option value="karyawan">Karyawan</option>
-                            <option value="manajer">Manajer</option>
-                            <option value="hr">HR</option>
-                            <option value="admin">Admin</option>
-                            <option value="guest">Guest</option>
-                        </select>
-                    </Field>
+                    {!isCabang && (
+                        <Field label="Tanggal Masuk" error={errors.tanggal_masuk?.[0]}>
+                            <input
+                                type="date"
+                                value={form.tanggal_masuk}
+                                onChange={(e) => handleChange('tanggal_masuk', e.target.value)}
+                                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                            />
+                        </Field>
+                    )}
 
                     <div className="flex items-center justify-between pt-2">
                         <button
