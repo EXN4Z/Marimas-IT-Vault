@@ -221,6 +221,25 @@ export async function getPendingAsetPemakai(): Promise<AsetPemakai[]> {
   return res.data;
 }
 
+// Satu entri riwayat aktivitas aset — bisa dari peminjaman (pinjam/kembali)
+// atau penanganan kerusakan (lapor_rusak/selesai_perbaikan), digabung backend.
+export interface RiwayatAsetEvent {
+  type: 'pinjam' | 'kembali' | 'lapor_rusak' | 'selesai_perbaikan';
+  waktu: string;
+  nama: string | null;
+  aset: { id: number; kode_aset: string; merek: string | null; tipe: string | null } | null;
+  keluhan?: string | null;
+  hasil?: string | null;
+}
+
+// GET /aset-pemakai/riwayat — riwayat SEMUA aktivitas aset (pinjam, kembali,
+// lapor rusak, selesai perbaikan), terbaru duluan. Dibatasi backend ke role
+// admin. Dipakai panel Riwayat di tab Aset (BUKAN riwayat peminjaman barang).
+export async function getRiwayatAset(limit = 10): Promise<RiwayatAsetEvent[]> {
+  const res = await api.get<RiwayatAsetEvent[]>('/aset-pemakai/riwayat', { params: { limit } });
+  return res.data;
+}
+
 // POST /aset-pemakai/{id}/setujui — approve request pinjam, aset jadi 'dipakai'. Dibatasi backend ke role admin.
 export async function setujuiAsetPemakai(
   asetPemakaiId: number,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type JSX } from 'react';
 import { Package, HandCoins, Undo2, Search, X, AlertTriangle, ScanLine, ClipboardList, Wrench } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import ScanQrModal from '../components/ScanQrModal';
@@ -12,6 +12,7 @@ import TabPersetujuanAset from '../components/inventaris/TabPersetujuanAset';
 import { useAuth } from '../context/AuthContext';
 import { getBarangByKode, type Barang } from '../api/barang';
 import { getRiwayatPeminjaman, type Peminjaman } from '../api/peminjaman';
+import { getRiwayatAset, type RiwayatAsetEvent } from '../api/aset';
 
 function formatWaktu(iso: string): string {
   const date = new Date(iso);
@@ -36,8 +37,28 @@ export default function Inventaris() {
   const [search, setSearch] = useState('');
   const [counts, setCounts] = useState<Partial<Record<TabKey, number>>>({});
 
+  const refreshRiwayatAset = useCallback(() => {
+    if (!isAdmin) {
+      setRiwayatAsetLoading(false);
+      return;
+    }
+    setRiwayatAsetLoading(true);
+    getRiwayatAset(10)
+      .then(setRiwayatAset)
+      .catch(console.error)
+      .finally(() => setRiwayatAsetLoading(false));
+  }, [isAdmin]);
+
+  const handleTabChange = (key: TabKey) => {
+    setActiveTab(key);
+    if (key === 'aset') refreshRiwayatAset();
+  };
+
   const [riwayat, setRiwayat] = useState<Peminjaman[]>([]);
   const [riwayatLoading, setRiwayatLoading] = useState(true);
+
+  const [riwayatAset, setRiwayatAset] = useState<RiwayatAsetEvent[]>([]);
+  const [riwayatAsetLoading, setRiwayatAsetLoading] = useState(true);
 
   const [peminjamanBarang, setPeminjamanBarang] = useState<Barang | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -57,6 +78,11 @@ export default function Inventaris() {
       .catch(console.error)
       .finally(() => setRiwayatLoading(false));
   }, [isAdmin]);
+
+  useEffect(() => {
+    // /aset-pemakai/riwayat juga dibatasi ke role admin
+    refreshRiwayatAset();
+  }, [refreshRiwayatAset]);
 
   // stabil: hindari infinite loop di child (onCount di deps useEffect anak)
   const updateCount = useCallback((key: TabKey, n: number) => {
@@ -120,7 +146,7 @@ export default function Inventaris() {
             .map((t) => (
               <li key={t.key}>
                 <button
-                  onClick={() => setActiveTab(t.key)}
+                  onClick={() => handleTabChange(t.key)}
                   className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
                     activeTab === t.key
                       ? 'border-slate-900 text-slate-900 font-medium'
@@ -173,8 +199,52 @@ export default function Inventaris() {
             {activeTab === 'stok_menipis' && <TabStokMenipis search={search} />}
           </div>
 
-          {/* RIWAYAT PEMINJAMAN — admin only, karena /peminjaman dibatasi role admin di backend */}
-          {isAdmin && (
+          {/* RIWAYAT — admin only (kedua endpoint dibatasi role admin di backend).
+              Ngikutin tab yang lagi aktif: tab Aset nampilin aktivitas aset
+              (pinjam/kembali/lapor rusak/selesai perbaikan), tab lain nampilin
+              riwayat peminjaman barang. Jangan dicampur, beda data beda satuan. */}
+          {isAdmin && activeTab === 'aset' && (
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 h-fit">
+              <h3 className="text-base font-semibold text-slate-900 mb-4">
+                Riwayat Aset <span className="text-slate-400 font-normal">({riwayatAset.length})</span>
+              </h3>
+              {riwayatAsetLoading ? (
+                <p className="text-sm text-slate-400 text-center py-6">Memuat riwayat...</p>
+              ) : (
+                <ul className="flex flex-col gap-4">
+                  {riwayatAset.map((ev, idx) => {
+                    const style: Record<RiwayatAsetEvent['type'], { bg: string; icon: JSX.Element; label: string }> = {
+                      pinjam: { bg: 'bg-amber-50 text-amber-600', icon: <HandCoins size={16} />, label: 'menerima' },
+                      kembali: { bg: 'bg-emerald-50 text-emerald-600', icon: <Undo2 size={16} />, label: 'mengembalikan' },
+                      lapor_rusak: { bg: 'bg-red-50 text-red-600', icon: <AlertTriangle size={16} />, label: 'melaporkan kerusakan' },
+                      selesai_perbaikan: { bg: 'bg-sky-50 text-sky-600', icon: <Wrench size={16} />, label: 'selesai diperbaiki' },
+                    };
+                    const s = style[ev.type];
+                    const kode = ev.aset?.kode_aset || '-';
+                    return (
+                      <li key={`${ev.type}-${idx}`} className="flex items-start gap-3">
+                        <span className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${s.bg}`}>
+                          {s.icon}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm text-slate-800">
+                            {ev.nama ? <span className="font-medium">{ev.nama} </span> : ''}
+                            {s.label} <span className="font-medium">{kode}</span>
+                          </p>
+                          <p className="text-xs text-slate-400">{formatWaktu(ev.waktu)}</p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                  {riwayatAset.length === 0 && (
+                    <p className="text-sm text-slate-400 text-center py-6">Belum ada aktivitas aset.</p>
+                  )}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {isAdmin && activeTab !== 'aset' && (
             <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 h-fit">
               <h3 className="text-base font-semibold text-slate-900 mb-4">
                 Riwayat <span className="text-slate-400 font-normal">({riwayat.length})</span>
