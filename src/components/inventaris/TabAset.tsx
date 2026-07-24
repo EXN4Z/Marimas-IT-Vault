@@ -47,6 +47,19 @@ const STATUS_STYLE: Record<AsetStatus, string> = {
   rusak_berat: 'bg-red-100 text-red-800',
 };
 
+// urutan tampil di tabel: tersedia paling atas, lalu dipakai, lalu status
+// yang lagi dalam proses penanganan, rusak, dan rusak_berat ("jual") paling
+// bawah — dipakai sebagai key sort di filteredAset, BUKAN untuk urutan
+// dropdown filter (dropdown tetap ikut urutan STATUS_LABEL di atas).
+const STATUS_PRIORITY: Record<AsetStatus, number> = {
+  tersedia: 1,
+  dipakai: 2,
+  menunggu_perbaikan: 3,
+  diperbaiki: 4,
+  rusak: 5,
+  rusak_berat: 6,
+};
+
 function formatTanggalId(iso: string | null): string {
   if (!iso) return '-';
   return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -345,7 +358,11 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
       if (isAdmin) return true;
       const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
       return a.status === 'tersedia' || akuPeminjamnya;
-    });
+    })
+    // BARU: urutkan berdasarkan prioritas status — tersedia paling atas,
+    // dipakai, lalu status dalam proses penanganan, rusak, dan rusak_berat
+    // ("jual") paling bawah. Lihat STATUS_PRIORITY di atas.
+    .sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
 
   return (
     <div>
