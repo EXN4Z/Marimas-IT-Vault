@@ -18,10 +18,24 @@ export default function AsetPenangananSelesaiModal({ aset, penanganan, onClose, 
   const [tanggalSelesai, setTanggalSelesai] = useState(todayIso());
   const [hargaJasa, setHargaJasa] = useState(penanganan.harga_jasa != null ? String(penanganan.harga_jasa) : '');
   const [biayaKomponen, setBiayaKomponen] = useState(penanganan.biaya_komponen != null ? String(penanganan.biaya_komponen) : '');
-  const [hasil, setHasil] = useState(penanganan.hasil || '');
+  const [hasil, setHasil] = useState<'diperbaiki' | 'rusak_berat'>(
+    penanganan.hasil === 'rusak_berat' ? 'rusak_berat' : 'diperbaiki'
+  );
   const [catatan, setCatatan] = useState(penanganan.catatan || '');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const isRusakBerat = hasil === 'rusak_berat';
+
+  const handleHasilChange = (value: 'diperbaiki' | 'rusak_berat') => {
+    setHasil(value);
+    // rusak berat = gak ada biaya perbaikan, kosongin biar gak ke-submit
+    // nilai lama yang sempat diisi sebelum ganti pilihan
+    if (value === 'rusak_berat') {
+      setBiayaKomponen('');
+      setHargaJasa('');
+    }
+  };
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -31,7 +45,7 @@ export default function AsetPenangananSelesaiModal({ aset, penanganan, onClose, 
         tanggal_selesai: tanggalSelesai,
         harga_jasa: hargaJasa.trim() ? Number(hargaJasa) : null,
         biaya_komponen: biayaKomponen.trim() ? Number(biayaKomponen) : null,
-        hasil: hasil.trim() || null,
+        hasil,
         catatan: catatan.trim() || null,
       });
       onSuccess();
@@ -77,8 +91,9 @@ export default function AsetPenangananSelesaiModal({ aset, penanganan, onClose, 
                 min={0}
                 value={biayaKomponen}
                 onChange={(e) => setBiayaKomponen(e.target.value)}
-                placeholder="0"
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                placeholder={isRusakBerat ? '-' : '0'}
+                disabled={isRusakBerat}
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
               />
             </div>
             <div>
@@ -88,19 +103,22 @@ export default function AsetPenangananSelesaiModal({ aset, penanganan, onClose, 
                 min={0}
                 value={hargaJasa}
                 onChange={(e) => setHargaJasa(e.target.value)}
-                placeholder="0"
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                placeholder={isRusakBerat ? '-' : '0'}
+                disabled={isRusakBerat}
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
               />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Hasil</label>
-            <input
+            <select
               value={hasil}
-              onChange={(e) => setHasil(e.target.value)}
-              placeholder="cth. Ganti SSD, sudah normal"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-            />
+              onChange={(e) => handleHasilChange(e.target.value as 'diperbaiki' | 'rusak_berat')}
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
+            >
+              <option value="diperbaiki">Diperbaiki</option>
+              <option value="rusak_berat">Rusak Berat (tidak bisa diperbaiki)</option>
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Catatan (opsional)</label>

@@ -94,6 +94,25 @@ export default function TabPenangananAset({ onCount }: Props) {
 
   const handlePrintStruk = (p: AsetPenanganan) => {
     if (!p.no_struk) return;
+    const rusakBerat = p.hasil === 'rusak_berat';
+
+    if (rusakBerat) {
+      // rusak berat: gak ada biaya/proses perbaikan, jadi struknya diringkes
+      // -- cuma hasil & durasi (catatan & no. struk udah otomatis ke-print
+      // di luar rows lewat parameter catatan/noStruk)
+      printStruk({
+        judul: 'Bukti Penanganan Aset',
+        noStruk: p.no_struk,
+        tanggal: formatTanggalId(p.tanggal_selesai),
+        rows: [
+          { label: 'Hasil', value: 'Rusak Berat (tidak bisa diperbaiki)' },
+          { label: 'Durasi', value: p.durasi_hari != null ? `${p.durasi_hari} hari` : '-' },
+        ],
+        catatan: p.catatan,
+      });
+      return;
+    }
+
     const totalBiaya = (Number(p.harga_jasa) || 0) + (Number(p.biaya_komponen) || 0);
     printStruk({
       judul: 'Bukti Penanganan Aset',
@@ -163,10 +182,12 @@ export default function TabPenangananAset({ onCount }: Props) {
             {p.tanggal_selesai ? (
               <div className="mt-3 text-xs text-slate-600 bg-slate-50 rounded-lg p-3 flex flex-col gap-1">
                 <p><span className="font-medium">Hasil:</span> {p.hasil === 'rusak_berat' ? 'Rusak Berat (tidak bisa diperbaiki)' : 'Diperbaiki'}</p>
-                <p>
-                  <span className="font-medium">Biaya:</span> {formatRupiah(p.total_biaya)}
-                  {' '}(komponen {formatRupiah(p.biaya_komponen)} + jasa {formatRupiah(p.harga_jasa)})
-                </p>
+                {p.hasil !== 'rusak_berat' && (
+                  <p>
+                    <span className="font-medium">Biaya:</span> {formatRupiah(p.total_biaya)}
+                    {' '}(komponen {formatRupiah(p.biaya_komponen)} + jasa {formatRupiah(p.harga_jasa)})
+                  </p>
+                )}
                 <p><span className="font-medium">Durasi:</span> {p.durasi_hari != null ? `${p.durasi_hari} hari` : '-'}</p>
                 {p.catatan && <p><span className="font-medium">Catatan:</span> {p.catatan}</p>}
                 {p.no_struk && <p><span className="font-medium">No. Struk:</span> {p.no_struk}</p>}
@@ -234,6 +255,18 @@ function FormPerbaikanModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  const isRusakBerat = hasil === 'rusak_berat';
+
+  const handleHasilChange = (value: 'diperbaiki' | 'rusak_berat') => {
+    setHasil(value);
+    // rusak berat = gak ada biaya perbaikan, kosongin biar gak ke-submit
+    // nilai lama yang sempat diisi sebelum ganti pilihan
+    if (value === 'rusak_berat') {
+      setBiayaKomponen('');
+      setHargaJasa('');
+    }
+  };
+
   const handleSubmit = async () => {
     setSubmitting(true);
     setError('');
@@ -284,7 +317,7 @@ function FormPerbaikanModal({
             <label className="block text-sm font-medium text-slate-700 mb-1">Hasil</label>
             <select
               value={hasil}
-              onChange={(e) => setHasil(e.target.value as 'diperbaiki' | 'rusak_berat')}
+              onChange={(e) => handleHasilChange(e.target.value as 'diperbaiki' | 'rusak_berat')}
               className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
             >
               <option value="diperbaiki">Diperbaiki</option>
@@ -299,8 +332,9 @@ function FormPerbaikanModal({
                 min={0}
                 value={biayaKomponen}
                 onChange={(e) => setBiayaKomponen(e.target.value)}
-                placeholder="0"
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                placeholder={isRusakBerat ? '-' : '0'}
+                disabled={isRusakBerat}
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
               />
             </div>
             <div>
@@ -310,8 +344,9 @@ function FormPerbaikanModal({
                 min={0}
                 value={hargaJasa}
                 onChange={(e) => setHargaJasa(e.target.value)}
-                placeholder="0"
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                placeholder={isRusakBerat ? '-' : '0'}
+                disabled={isRusakBerat}
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
               />
             </div>
           </div>
