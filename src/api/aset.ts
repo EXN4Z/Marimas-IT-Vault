@@ -293,7 +293,7 @@ export async function laporPenangananAset(payload: {
 // POST /aset-penanganan/{id}/terima — admin terima/mulai tangani laporan kerusakan,
 // aset jadi status "diperbaiki". Dibatasi backend ke role admin.
 export async function terimaPenangananAset(asetPenangananId: number): Promise<AsetPenanganan> {
-  const res = await api.post<AsetPenanganan>(`/aset-penanganan/${asetPenangananId}`);
+  const res = await api.post<AsetPenanganan>(`/aset-penanganan/${asetPenangananId}/terima`);
   return res.data;
 }
 
