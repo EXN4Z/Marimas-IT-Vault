@@ -35,6 +35,7 @@ const STATUS_LABEL: Record<AsetStatus, string> = {
   rusak: 'Rusak',
   menunggu_perbaikan: 'Menunggu Perbaikan',
   diperbaiki: 'Sedang Diperbaiki',
+  rusak_berat: 'Rusak Berat',
 };
 
 const STATUS_STYLE: Record<AsetStatus, string> = {
@@ -43,6 +44,7 @@ const STATUS_STYLE: Record<AsetStatus, string> = {
   rusak: 'bg-red-50 text-red-700',
   menunggu_perbaikan: 'bg-yellow-50 text-yellow-700',
   diperbaiki: 'bg-orange-50 text-orange-700',
+  rusak_berat: 'bg-red-100 text-red-800',
 };
 
 function formatTanggalId(iso: string | null): string {
@@ -251,6 +253,22 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
 
   const handlePrintPenanganan = (aset: Aset, p: AsetPenanganan) => {
     if (!p.no_struk) return;
+    const rusakBerat = p.hasil === 'rusak_berat';
+
+    if (rusakBerat) {
+      printStruk({
+        judul: 'Bukti Penanganan Aset',
+        noStruk: p.no_struk,
+        tanggal: formatTanggalId(p.tanggal_selesai),
+        rows: [
+          { label: 'Hasil', value: 'Rusak Berat (tidak bisa diperbaiki)' },
+          { label: 'Durasi', value: p.durasi_hari != null ? `${p.durasi_hari} hari` : '-' },
+        ],
+        catatan: p.catatan,
+      });
+      return;
+    }
+
     const totalBiaya = (Number(p.harga_jasa) || 0) + (Number(p.biaya_komponen) || 0);
     printStruk({
       judul: 'Bukti Penanganan Aset',
@@ -491,7 +509,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                               Lapor Rusak
                             </button>
                           )}
-                          {!isAdmin && akuPeminjamnya && (a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak') && (
+                          {!isAdmin && akuPeminjamnya && (a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak' || a.status === 'rusak_berat') && (
                             <span
                               title="Laporan kerusakan sudah dikirim, menunggu ditangani admin"
                               className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg cursor-default"
