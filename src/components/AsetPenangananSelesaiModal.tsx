@@ -50,7 +50,12 @@ export default function AsetPenangananSelesaiModal({ aset, penanganan, onClose, 
       });
       onSuccess();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal menandai penanganan selesai.');
+      setError(
+        err.response?.data?.errors?.biaya_komponen?.[0] ||
+        err.response?.data?.errors?.harga_jasa?.[0] ||
+        err.response?.data?.message ||
+        'Gagal menandai penanganan selesai.'
+      );
     } finally {
       setSubmitting(false);
     }
