@@ -308,7 +308,15 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
         (a.jenis?.nama || '').toLowerCase().includes(q);
       return matchStatus && matchSearch;
     })
-    .filter((a) => !onlyMenipis || a.status === 'tersedia');
+    .filter((a) => !onlyMenipis || a.status === 'tersedia')
+    // KARYAWAN cuma boleh liat aset yang masih tersedia, atau aset yang lagi
+    // dia pinjam sendiri. Aset yang dipakai/ditangani orang lain kehide total
+    // dari tabel (bukan cuma nama pemakainya doang).
+    .filter((a) => {
+      if (isAdmin) return true;
+      const akuPeminjamnya = a.pemakai_saat_ini?.pekerja?.user?.id === user?.id;
+      return a.status === 'tersedia' || akuPeminjamnya;
+    });
 
   return (
     <div>
@@ -401,6 +409,26 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
 
                           {isAdmin && (
                             <>
+                              {a.status === 'tersedia' && (
+                                <button
+                                  onClick={() => setSerahTerimaAset(a)}
+                                  title="Serahkan ke Karyawan"
+                                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-slate-900 px-3 py-2 rounded-lg hover:bg-slate-800 transition"
+                                >
+                                  <HandCoins size={14} />
+                                  Serahkan
+                                </button>
+                              )}
+                              {a.status === 'dipakai' && a.pemakai_saat_ini && (
+                                <button
+                                  onClick={() => setPengembalianTarget({ aset: a, pemakai: a.pemakai_saat_ini! })}
+                                  title="Terima Kembali"
+                                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-emerald-600 px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
+                                >
+                                  <Undo2 size={14} />
+                                  Terima Kembali
+                                </button>
+                              )}
                               <button
                                 onClick={() => {
                                   setEditingAset(a);
@@ -422,7 +450,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                           )}
 
                           {/* KARYAWAN yang lagi minjem aset ini: kembalikan langsung dari tabel, gak perlu buka detail dulu */}
-                          {!isAdmin && akuPeminjamnya && a.pemakai_saat_ini && (
+                          {!isAdmin && akuPeminjamnya && a.status === 'dipakai' && a.pemakai_saat_ini && (
                             <button
                               onClick={() => setPengembalianTarget({ aset: a, pemakai: a.pemakai_saat_ini! })}
                               title="Kembalikan"
@@ -431,6 +459,29 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                               <Undo2 size={14} />
                               Kembalikan
                             </button>
+                          )}
+
+                          {/* KARYAWAN yang lagi minjem: lapor kerusakan. Begitu lapor, status aset
+                              berubah dari 'dipakai' jadi 'menunggu_perbaikan'/'diperbaiki'/'rusak' —
+                              dipake sebagai sinyal "udah lapor", tombol ganti jadi badge nonaktif */}
+                          {!isAdmin && akuPeminjamnya && a.status === 'dipakai' && (
+                            <button
+                              onClick={() => setPerbaikanAsetTarget(a)}
+                              title="Lapor Kerusakan"
+                              className="flex items-center gap-1.5 text-xs font-semibold text-red-700 bg-red-50 px-3 py-2 rounded-lg hover:bg-red-100 transition"
+                            >
+                              <Wrench size={14} />
+                              Lapor Rusak
+                            </button>
+                          )}
+                          {!isAdmin && akuPeminjamnya && (a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak') && (
+                            <span
+                              title="Laporan kerusakan sudah dikirim, menunggu ditangani admin"
+                              className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg cursor-default"
+                            >
+                              <Wrench size={14} />
+                              Sudah Lapor
+                            </span>
                           )}
 
                           {/* KARYAWAN lain (bukan peminjam, bukan admin): cuma bisa ajukan pinjam kalau lagi tersedia, gak dikasih akses Detail (biar gak keliatan riwayat/kode struk aset ini) */}
@@ -572,78 +623,6 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                     <p className="text-sm text-slate-700">{detail.keterangan}</p>
                   </div>
                 )}
-
-                {/* AKSI KONTEKSTUAL */}
-                {isAdmin && (
-                  <div className="flex flex-wrap gap-2">
-                    {detail.status === 'tersedia' && (
-                      <button
-                        onClick={() => setSerahTerimaAset(detail)}
-                        className="flex items-center gap-1.5 bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-800 transition"
-                      >
-                        <HandCoins size={14} />
-                        Serahkan ke Karyawan
-                      </button>
-                    )}
-                    {detail.status === 'dipakai' && detail.pemakai_saat_ini && (
-                      <button
-                        onClick={() => setPengembalianTarget({ aset: detail, pemakai: detail.pemakai_saat_ini! })}
-                        className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
-                      >
-                        <Undo2 size={14} />
-                        Terima Kembali
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {/* KARYAWAN: ajukan pinjam kalau aset tersedia, atau lapor kerusakan kalau lagi dia pakai sendiri */}
-                {!isAdmin && (() => {
-                  const myPending = detail.pemakai_pending?.find((p) => p.pekerja?.user?.id === user?.id);
-                  const otherPending = detail.pemakai_pending?.find((p) => p.pekerja?.user?.id !== user?.id);
-
-                  return (
-                    <div className="flex flex-wrap items-center gap-2">
-                      {detail.status === 'tersedia' && myPending && (
-                        <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
-                          Menunggu persetujuan admin untuk pengajuanmu.
-                        </span>
-                      )}
-                      {detail.status === 'tersedia' && !myPending && otherPending && (
-                        <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg">
-                          Sedang diajukan karyawan lain, tunggu keputusan admin dulu.
-                        </span>
-                      )}
-                      {detail.status === 'tersedia' && !myPending && !otherPending && (
-                        <button
-                          onClick={() => setPinjamAsetTarget(detail)}
-                          className="flex items-center gap-1.5 bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-800 transition"
-                        >
-                          <HandCoins size={14} />
-                          Ajukan Pinjam
-                        </button>
-                      )}
-                      {detail.status === 'dipakai' && detail.pemakai_saat_ini?.pekerja?.user?.id === user?.id && (
-                        <button
-                          onClick={() => setPengembalianTarget({ aset: detail, pemakai: detail.pemakai_saat_ini! })}
-                          className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
-                        >
-                          <Undo2 size={14} />
-                          Kembalikan
-                        </button>
-                      )}
-                      {detail.status === 'dipakai' && detail.pemakai_saat_ini?.pekerja?.user?.id === user?.id && (
-                        <button
-                          onClick={() => setPerbaikanAsetTarget(detail)}
-                          className="flex items-center gap-1.5 bg-red-50 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-red-100 transition"
-                        >
-                          <Wrench size={14} />
-                          Lapor Kerusakan
-                        </button>
-                      )}
-                    </div>
-                  );
-                })()}
 
                 {/* KELENGKAPAN */}
                 <div>

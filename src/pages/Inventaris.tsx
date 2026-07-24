@@ -181,30 +181,25 @@ export default function Inventaris() {
         </div>
       )}
 
-      {showSearchableGrid ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 flex flex-col gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari nama barang, kode, atau jenis aset..."
-                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none"
-              />
-            </div>
-
-            {activeTab === 'barang' && <TabBarang search={search} onCount={handleCountBarang} />}
-            {activeTab === 'aset' && <TabAset search={search} onCount={handleCountAset} />}
-            {activeTab === 'stok_menipis' && <TabStokMenipis search={search} />}
+      {showSearchableGrid && activeTab === 'aset' ? (
+        <div className="flex flex-col gap-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari nama barang, kode, atau jenis aset..."
+              className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none"
+            />
           </div>
 
-          {/* RIWAYAT — admin only (kedua endpoint dibatasi role admin di backend).
-              Ngikutin tab yang lagi aktif: tab Aset nampilin aktivitas aset
-              (pinjam/kembali/lapor rusak/selesai perbaikan), tab lain nampilin
-              riwayat peminjaman barang. Jangan dicampur, beda data beda satuan. */}
-          {isAdmin && activeTab === 'aset' && (
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 h-fit">
+          <TabAset search={search} onCount={handleCountAset} />
+
+          {/* RIWAYAT ASET — sementara ditaruh di bawah tabel (bukan di samping)
+              soalnya tabel aset kolomnya banyak, kalau dipepetin sidebar jadi
+              kesempitan/ke-scroll horizontal terus. Admin only. */}
+          {isAdmin && (
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
               <h3 className="text-base font-semibold text-slate-900 mb-4">
                 Riwayat Aset <span className="text-slate-400 font-normal">({riwayatAset.length})</span>
               </h3>
@@ -243,8 +238,26 @@ export default function Inventaris() {
               )}
             </div>
           )}
+        </div>
+      ) : showSearchableGrid ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 flex flex-col gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari nama barang, kode, atau jenis aset..."
+                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none"
+              />
+            </div>
 
-          {isAdmin && activeTab !== 'aset' && (
+            {activeTab === 'barang' && <TabBarang search={search} onCount={handleCountBarang} />}
+            {activeTab === 'stok_menipis' && <TabStokMenipis search={search} />}
+          </div>
+
+          {/* RIWAYAT PEMINJAMAN BARANG — admin only, tab barang/stok_menipis */}
+          {isAdmin && (
             <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 h-fit">
               <h3 className="text-base font-semibold text-slate-900 mb-4">
                 Riwayat <span className="text-slate-400 font-normal">({riwayat.length})</span>
