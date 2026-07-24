@@ -3,7 +3,7 @@ import type { JenisAset } from './jenisAset';
 import type { Supplier } from './supplier';
 import type { KelengkapanMaster } from './kelengkapanMaster';
 
-export type AsetStatus = 'tersedia' | 'dipakai' | 'rusak' | 'menunggu_perbaikan' | 'diperbaiki';
+export type AsetStatus = 'tersedia' | 'dipakai' | 'rusak' | 'menunggu_perbaikan' | 'diperbaiki' | 'dijual';
 export type AsetPemakaiStatus = 'pending' | 'disetujui' | 'ditolak';
 
 export interface KaryawanUser {
@@ -176,6 +176,13 @@ export async function updateAset(id: number, values: AsetFormValues): Promise<As
 // DELETE /aset/{id} — dibatasi backend ke role admin.
 export async function deleteAset(id: number): Promise<{ message: string }> {
   const res = await api.delete<{ message: string }>(`/aset/${id}`);
+  return res.data;
+}
+
+// POST /aset/{id}/jual — tandai aset dijual. Dibatasi backend ke role admin,
+// dan cuma boleh dari status 'tersedia'/'rusak' (lihat AsetController::jual).
+export async function jualAset(id: number): Promise<Aset> {
+  const res = await api.post<Aset>(`/aset/${id}/jual`);
   return res.data;
 }
 

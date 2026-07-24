@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Banknote } from 'lucide-react';
 import AsetFormModal from '../AsetFormModal';
 import AsetSerahTerimaModal from '../AsetSerahTerimaModal';
 import AsetPengembalianModal from '../AsetPengembalianModal';
@@ -15,6 +15,7 @@ import {
   getAset,
   getAsetById,
   deleteAset,
+  jualAset,
   deletePenangananAset,
   deletePenggantianSparepart,
   terimaPenangananAset,
@@ -35,6 +36,7 @@ const STATUS_LABEL: Record<AsetStatus, string> = {
   rusak: 'Rusak',
   menunggu_perbaikan: 'Menunggu Perbaikan',
   diperbaiki: 'Sedang Diperbaiki',
+  dijual: 'Dijual',
 };
 
 const STATUS_STYLE: Record<AsetStatus, string> = {
@@ -43,6 +45,7 @@ const STATUS_STYLE: Record<AsetStatus, string> = {
   rusak: 'bg-red-50 text-red-700',
   menunggu_perbaikan: 'bg-yellow-50 text-yellow-700',
   diperbaiki: 'bg-orange-50 text-orange-700',
+  dijual: 'bg-slate-200 text-slate-600',
 };
 
 function formatTanggalId(iso: string | null): string {
@@ -211,6 +214,23 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
     }
   };
 
+  const [jualLoading, setJualLoading] = useState(false);
+
+  const handleJualAset = async (aset: Aset) => {
+    if (!confirm(`Tandai aset ${aset.kode_aset} sebagai dijual? Aset tidak akan bisa dipinjam/ditangani lagi setelah ini.`)) return;
+    setJualLoading(true);
+    setError('');
+    try {
+      const updated = await jualAset(aset.id);
+      setAsetList((prev) => prev.map((a) => (a.id === updated.id ? { ...a, status: updated.status } : a)));
+      setDetail((prev) => (prev && prev.id === updated.id ? { ...prev, status: updated.status } : prev));
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Gagal menandai aset sebagai dijual.');
+    } finally {
+      setJualLoading(false);
+    }
+  };
+
   const [terimaLoadingId, setTerimaLoadingId] = useState<number | null>(null);
 
   const handleTerimaPenanganan = async (id: number) => {
@@ -326,7 +346,9 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
     .filter((a) => {
       if (isAdmin) return true;
       const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
-      return a.status === 'tersedia' || akuPeminjamnya;
+      // 'dijual' bukan data pribadi siapa pun — tetap tampil buat semua,
+      // sama seperti 'tersedia', cuma nggak bisa diapa-apakan lagi.
+      return a.status === 'tersedia' || a.status === 'dijual' || akuPeminjamnya;
     });
 
   return (
@@ -443,6 +465,16 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                                 >
                                   <Undo2 size={14} />
                                   Terima Kembali
+                                </button>
+                              )}
+                              {(a.status === 'tersedia' || a.status === 'rusak') && (
+                                <button
+                                  onClick={() => handleJualAset(a)}
+                                  disabled={jualLoading}
+                                  title="Jual"
+                                  className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition disabled:opacity-40"
+                                >
+                                  <Banknote size={15} />
                                 </button>
                               )}
                               <button
@@ -664,6 +696,16 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                       >
                         <Undo2 size={14} />
                         Terima Kembali
+                      </button>
+                    )}
+                    {(detail.status === 'tersedia' || detail.status === 'rusak') && (
+                      <button
+                        onClick={() => handleJualAset(detail)}
+                        disabled={jualLoading}
+                        className="flex items-center gap-1.5 bg-white text-slate-700 border border-slate-300 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-50 transition disabled:opacity-50"
+                      >
+                        <Banknote size={14} />
+                        {jualLoading ? 'Memproses...' : 'Jual'}
                       </button>
                     )}
                   </div>
