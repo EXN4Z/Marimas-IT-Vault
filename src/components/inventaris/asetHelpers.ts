@@ -39,7 +39,10 @@ interface PemakaiLike {
   pekerja?: { user?: { id: number; name: string } } | null;
   user?: { id: number; name: string } | null;
 }
-
+// di asetHelpers.ts
+export function isCabangPemakai(pemakai?: PemakaiLike | null): boolean {
+  return !pemakai?.pekerja && !!pemakai?.user;
+}
 /**
  * Ambil nama penerima aset, entah dia karyawan (lewat pekerja.user)
  * atau akun cabang (lewat user langsung). Terima AsetPemakai penuh

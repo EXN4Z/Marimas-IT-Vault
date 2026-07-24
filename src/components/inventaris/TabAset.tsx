@@ -10,7 +10,7 @@ import AsetPenangananSelesaiModal from '../AsetPenangananSelesaiModal';
 import AsetSparepartModal from '../AsetSparepartModal';
 import { useAuth } from '../../context/AuthContext';
 import { printStruk } from '../../utils/printStruk';
-import { namaPemakai, userIdPemakai } from './asetHelpers';
+import { namaPemakai, userIdPemakai, isCabangPemakai } from './asetHelpers';
 import {
   getAset,
   getAsetById,
@@ -387,7 +387,12 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-3 text-slate-600">{namaPemakai(a.pemakai_saat_ini)}</td>
+                      <td className="px-6 py-3 text-slate-600">
+                        {namaPemakai(a.pemakai_saat_ini)}
+                        {isCabangPemakai(a.pemakai_saat_ini) && (
+                          <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
+                        )}
+                      </td>
                       <td className="px-6 py-3">
                         <div className="flex items-center justify-end gap-1">
                           {bolehLihatDetail && (
