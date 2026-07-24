@@ -204,7 +204,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
       setDeleteTarget(null);
       if (detailId === deleteTarget.id) closeDetail();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal menghapus aset.');
+      toast.error(err.response?.data?.message || 'Gagal menghapus aset.');
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
@@ -406,8 +406,8 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                         )}
                       </td>
                       <td className="px-6 py-3 text-slate-600">
-                        {namaPemakai(a.pemakai_saat_ini)}
-                        {isCabangPemakai(a.pemakai_saat_ini) && (
+                        {a.status === 'rusak' ? '-' : namaPemakai(a.pemakai_saat_ini)}
+                        {a.status !== 'rusak' && isCabangPemakai(a.pemakai_saat_ini) && (
                           <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
                         )}
                       </td>
