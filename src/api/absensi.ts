@@ -1,6 +1,6 @@
 import api from './axios';
 
-export type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'cabang';
+export type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
 
 export interface Karyawan {
   id: number; // pekerja id
