@@ -68,9 +68,15 @@ export interface AsetPenanganan {
   total_biaya?: number;
   durasi_hari?: number | null;
   // siapa yang lagi pegang aset ini pas dilaporkan rusak (nullable — bisa juga ketauan pas audit gudang)
+  // NOTE: sama seperti AsetPemakai, penerima bisa karyawan (lewat pekerja.user)
+  // ATAU akun cabang (lewat user langsung) — makanya dua-duanya perlu ada di sini.
+  // ⚠️ Pastikan endpoint backend yang isi field ini (aset-penanganan) juga
+  // eager-load relasi `user`, bukan cuma `pekerja.user`, kalau belum, field
+  // ini tetap kosong walau frontend sudah baca dari sini.
   pemakai?: {
     id: number;
     pekerja?: { id: number; user?: { id: number; name: string } };
+    user?: { id: number; name: string } | null;
   } | null;
 }
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { kembalikanAset, type Aset, type AsetPemakai } from '../api/aset';
+import { namaPemakai } from './inventaris/asetHelpers';
 
 interface AsetPengembalianModalProps {
   aset: Aset;
@@ -59,7 +60,7 @@ export default function AsetPengembalianModal({ aset, pemakai, onClose, onSucces
 
         <div className="bg-slate-50 rounded-lg px-3 py-2.5 mb-4 text-sm">
           <p className="text-slate-500 text-xs">Dipakai oleh</p>
-          <p className="text-slate-800 font-medium">{pemakai.pekerja?.user?.name || '-'}</p>
+          <p className="text-slate-800 font-medium">{namaPemakai(pemakai)}</p>
         </div>
 
         <div className="flex flex-col gap-3 mb-4">

@@ -10,6 +10,7 @@ import AsetPenangananSelesaiModal from '../AsetPenangananSelesaiModal';
 import AsetSparepartModal from '../AsetSparepartModal';
 import { useAuth } from '../../context/AuthContext';
 import { printStruk } from '../../utils/printStruk';
+import { namaPemakai, userIdPemakai, isCabangPemakai } from './asetHelpers';
 import {
   getAset,
   getAsetById,
@@ -273,7 +274,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
       tanggal: formatTanggalId(pemakai.tanggal_penerimaan),
       rows: [
         { label: 'Aset', value: `${aset.kode_aset} — ${[aset.merek, aset.tipe].filter(Boolean).join(' ') || '-'}` },
-        { label: 'Diserahkan Kepada', value: pemakai.pekerja?.user?.name || '-' },
+        { label: 'Diserahkan Kepada', value: namaPemakai(pemakai) },
         { label: 'Nomor Penerimaan', value: pemakai.nomor_penerimaan || '-' },
       ],
       catatan: pemakai.catatan_penerimaan,
@@ -288,7 +289,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
       tanggal: formatTanggalId(pemakai.tanggal_pengembalian),
       rows: [
         { label: 'Aset', value: `${aset.kode_aset} — ${[aset.merek, aset.tipe].filter(Boolean).join(' ') || '-'}` },
-        { label: 'Dikembalikan Oleh', value: pemakai.pekerja?.user?.name || '-' },
+        { label: 'Dikembalikan Oleh', value: namaPemakai(pemakai) },
         { label: 'Struk Penerimaan Asli', value: pemakai.no_struk_penerimaan || '-' },
       ],
       catatan: pemakai.catatan_pengembalian,
@@ -375,7 +376,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
               </thead>
               <tbody>
                 {filteredAset.map((a) => {
-                  const akuPeminjamnya = a.pemakai_saat_ini?.pekerja?.user?.id === user?.id;
+                  const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
                   const bolehLihatDetail = isAdmin || akuPeminjamnya;
                   const sudahAdaPengajuan = (a.pemakai_pending?.length ?? 0) > 0;
 
@@ -394,7 +395,12 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-3 text-slate-600">{a.pemakai_saat_ini?.pekerja?.user?.name || '-'}</td>
+                      <td className="px-6 py-3 text-slate-600">
+                        {namaPemakai(a.pemakai_saat_ini)}
+                        {isCabangPemakai(a.pemakai_saat_ini) && (
+                          <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
+                        )}
+                      </td>
                       <td className="px-6 py-3">
                         <div className="flex items-center justify-end gap-1">
                           {bolehLihatDetail && (
@@ -624,6 +630,79 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                   </div>
                 )}
 
+                {/* AKSI KONTEKSTUAL */}
+                {isAdmin && (
+                  <div className="flex flex-wrap gap-2">
+                    {detail.status === 'tersedia' && (
+                      <button
+                        onClick={() => setSerahTerimaAset(detail)}
+                        className="flex items-center gap-1.5 bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-800 transition"
+                      >
+                        <HandCoins size={14} />
+                        Serahkan ke Karyawan
+                      </button>
+                    )}
+                    {detail.status === 'dipakai' && detail.pemakai_saat_ini && (
+                      <button
+                        onClick={() => setPengembalianTarget({ aset: detail, pemakai: detail.pemakai_saat_ini! })}
+                        className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
+                      >
+                        <Undo2 size={14} />
+                        Terima Kembali
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* KARYAWAN: ajukan pinjam kalau aset tersedia, atau lapor kerusakan kalau lagi dia pakai sendiri */}
+                {!isAdmin && (() => {
+                  const myPending = detail.pemakai_pending?.find((p) => userIdPemakai(p) === user?.id);
+                  const otherPending = detail.pemakai_pending?.find((p) => userIdPemakai(p) !== user?.id);
+                  const akuPemakaiSaatIni = userIdPemakai(detail.pemakai_saat_ini) === user?.id;
+
+                  return (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {detail.status === 'tersedia' && myPending && (
+                        <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
+                          Menunggu persetujuan admin untuk pengajuanmu.
+                        </span>
+                      )}
+                      {detail.status === 'tersedia' && !myPending && otherPending && (
+                        <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg">
+                          Sedang diajukan karyawan lain, tunggu keputusan admin dulu.
+                        </span>
+                      )}
+                      {detail.status === 'tersedia' && !myPending && !otherPending && (
+                        <button
+                          onClick={() => setPinjamAsetTarget(detail)}
+                          className="flex items-center gap-1.5 bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-800 transition"
+                        >
+                          <HandCoins size={14} />
+                          Ajukan Pinjam
+                        </button>
+                      )}
+                      {detail.status === 'dipakai' && akuPemakaiSaatIni && (
+                        <button
+                          onClick={() => setPengembalianTarget({ aset: detail, pemakai: detail.pemakai_saat_ini! })}
+                          className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
+                        >
+                          <Undo2 size={14} />
+                          Kembalikan
+                        </button>
+                      )}
+                      {detail.status === 'dipakai' && akuPemakaiSaatIni && (
+                        <button
+                          onClick={() => setPerbaikanAsetTarget(detail)}
+                          className="flex items-center gap-1.5 bg-red-50 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-red-100 transition"
+                        >
+                          <Wrench size={14} />
+                          Lapor Kerusakan
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {/* KELENGKAPAN */}
                 <div>
                   <p className="text-sm font-semibold text-slate-900 mb-2">Kelengkapan</p>
@@ -648,7 +727,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                       <li key={p.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <span className="font-medium text-slate-800">{p.pekerja?.user?.name || '-'}</span>{' '}
+                            <span className="font-medium text-slate-800">{namaPemakai(p)}</span>{' '}
                             <span className="text-slate-500">
                               — {formatTanggalId(p.tanggal_penerimaan)}
                               {p.tanggal_pengembalian ? ` s/d ${formatTanggalId(p.tanggal_pengembalian)}` : ' (masih dipakai)'}
@@ -708,6 +787,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                         : diterima
                         ? 'bg-orange-50 text-orange-700'
                         : 'bg-yellow-50 text-yellow-700';
+                      const namaPelapor = namaPemakai(p.pemakai);
                       return (
                         <li key={p.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2">
                           <div className="flex items-start justify-between gap-2">
@@ -723,7 +803,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                               <p className="text-slate-700">{p.keluhan}</p>
                               {p.hasil && <p className="text-slate-500 mt-0.5">Hasil: {p.hasil}</p>}
                               <p className="text-slate-400 mt-0.5">
-                                Dipinjam oleh: <span className="font-medium">{p.pemakai?.pekerja?.user?.name || 'Tidak ada (audit gudang)'}</span>
+                                Dipinjam oleh: <span className="font-medium">{namaPelapor === '-' ? 'Tidak ada (audit gudang)' : namaPelapor}</span>
                               </p>
                               <p className="text-slate-400 mt-0.5">
                                 Lapor {formatTanggalId(p.tanggal_lapor)}
