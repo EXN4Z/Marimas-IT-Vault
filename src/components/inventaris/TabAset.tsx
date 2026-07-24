@@ -64,6 +64,12 @@ interface Props {
 export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  // BARU: akun cabang gak punya relasi `pekerja`, jadi endpoint requestPinjam
+  // (POST /aset/{aset}/pinjam) bakal selalu nolak 422 buat mereka — cabang
+  // cuma boleh diserahkan aset langsung oleh admin lewat serah-terima, gak
+  // lewat alur ajukan/approve. Makanya tombol "Pinjam" disembunyikan khusus
+  // buat role ini, sisanya (Kembalikan, Lapor Kerusakan) tetap sama kayak karyawan.
+  const isCabang = user?.role === 'cabang';
 
   const [asetList, setAsetList] = useState<Aset[]>([]);
   const [jenisOptions, setJenisOptions] = useState<JenisAset[]>([]);
@@ -310,12 +316,16 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
       return matchStatus && matchSearch;
     })
     .filter((a) => !onlyMenipis || a.status === 'tersedia')
-    // KARYAWAN cuma boleh liat aset yang masih tersedia, atau aset yang lagi
-    // dia pinjam sendiri. Aset yang dipakai/ditangani orang lain kehide total
-    // dari tabel (bukan cuma nama pemakainya doang).
+    // KARYAWAN/CABANG cuma boleh liat aset yang masih tersedia, atau aset yang
+    // lagi dia pinjam sendiri. Aset yang dipakai/ditangani orang lain kehide
+    // total dari tabel (bukan cuma nama pemakainya doang).
+    // FIX: pakai userIdPemakai() (bukan akses langsung .pekerja?.user?.id),
+    // biar akun cabang (yang gak punya pekerja, cuma user langsung) juga
+    // kedeteksi bener sebagai pemilik record, bukan malah aset yang lagi dia
+    // pegang sendiri ikut ke-filter hilang dari tabelnya.
     .filter((a) => {
       if (isAdmin) return true;
-      const akuPeminjamnya = a.pemakai_saat_ini?.pekerja?.user?.id === user?.id;
+      const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
       return a.status === 'tersedia' || akuPeminjamnya;
     });
 
@@ -455,7 +465,8 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                             </>
                           )}
 
-                          {/* KARYAWAN yang lagi minjem aset ini: kembalikan langsung dari tabel, gak perlu buka detail dulu */}
+                          {/* KARYAWAN/CABANG yang lagi minjem aset ini: kembalikan langsung dari
+                              tabel, gak perlu buka detail dulu */}
                           {!isAdmin && akuPeminjamnya && a.status === 'dipakai' && a.pemakai_saat_ini && (
                             <button
                               onClick={() => setPengembalianTarget({ aset: a, pemakai: a.pemakai_saat_ini! })}
@@ -467,8 +478,8 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                             </button>
                           )}
 
-                          {/* KARYAWAN yang lagi minjem: lapor kerusakan. Begitu lapor, status aset
-                              berubah dari 'dipakai' jadi 'menunggu_perbaikan'/'diperbaiki'/'rusak' —
+                          {/* KARYAWAN/CABANG yang lagi minjem: lapor kerusakan. Begitu lapor, status
+                              aset berubah dari 'dipakai' jadi 'menunggu_perbaikan'/'diperbaiki'/'rusak' —
                               dipake sebagai sinyal "udah lapor", tombol ganti jadi badge nonaktif */}
                           {!isAdmin && akuPeminjamnya && a.status === 'dipakai' && (
                             <button
@@ -490,8 +501,12 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                             </span>
                           )}
 
-                          {/* KARYAWAN lain (bukan peminjam, bukan admin): cuma bisa ajukan pinjam kalau lagi tersedia, gak dikasih akses Detail (biar gak keliatan riwayat/kode struk aset ini) */}
-                          {!isAdmin && !akuPeminjamnya && a.status === 'tersedia' && !sudahAdaPengajuan && (
+                          {/* KARYAWAN lain (bukan peminjam, bukan admin, bukan akun cabang): cuma
+                              bisa ajukan pinjam kalau lagi tersedia, gak dikasih akses Detail (biar
+                              gak keliatan riwayat/kode struk aset ini). Akun cabang sengaja dikecualikan
+                              karena backend requestPinjam() wajib punya relasi pekerja, yang cabang
+                              gak punya — cabang cuma bisa terima aset lewat serah-terima admin. */}
+                          {!isAdmin && !isCabang && !akuPeminjamnya && a.status === 'tersedia' && !sudahAdaPengajuan && (
                             <button
                               onClick={() => setPinjamAsetTarget(a)}
                               title="Ajukan Pinjam"
@@ -654,7 +669,9 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                   </div>
                 )}
 
-                {/* KARYAWAN: ajukan pinjam kalau aset tersedia, atau lapor kerusakan kalau lagi dia pakai sendiri */}
+                {/* KARYAWAN/CABANG: ajukan pinjam kalau aset tersedia (khusus karyawan — cabang
+                    dikecualikan, lihat catatan di tombol tabel), atau lapor kerusakan kalau lagi
+                    dia pakai sendiri (berlaku buat keduanya) */}
                 {!isAdmin && (() => {
                   const myPending = detail.pemakai_pending?.find((p) => userIdPemakai(p) === user?.id);
                   const otherPending = detail.pemakai_pending?.find((p) => userIdPemakai(p) !== user?.id);
@@ -662,17 +679,17 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
 
                   return (
                     <div className="flex flex-wrap items-center gap-2">
-                      {detail.status === 'tersedia' && myPending && (
+                      {!isCabang && detail.status === 'tersedia' && myPending && (
                         <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
                           Menunggu persetujuan admin untuk pengajuanmu.
                         </span>
                       )}
-                      {detail.status === 'tersedia' && !myPending && otherPending && (
+                      {!isCabang && detail.status === 'tersedia' && !myPending && otherPending && (
                         <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg">
                           Sedang diajukan karyawan lain, tunggu keputusan admin dulu.
                         </span>
                       )}
-                      {detail.status === 'tersedia' && !myPending && !otherPending && (
+                      {!isCabang && detail.status === 'tersedia' && !myPending && !otherPending && (
                         <button
                           onClick={() => setPinjamAsetTarget(detail)}
                           className="flex items-center gap-1.5 bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-800 transition"
