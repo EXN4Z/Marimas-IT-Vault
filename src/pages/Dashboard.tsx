@@ -27,7 +27,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import AppLayout from '../components/AppLayout';
 import api from '../api/axios';
-import { echo } from '../lib/echo';
+import { getEcho } from '../lib/echo';
 import type { User as UserType } from '../types/user';
 import { getAgendaMendatang, type AgendaItem } from '../api/agenda';
 
@@ -351,7 +351,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!data?.id) return;
-    if (!echo) return; // echo can be null when Pusher key not configured
+    const echo = getEcho();
+    if (!echo) return; // echo can be null when Pusher key not configured / belum login
 
     const channel = echo.private(`App.Models.User.${data.id}`);
 
