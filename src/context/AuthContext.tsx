@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, useRef, type ReactNode 
 import type { User } from '../types/user';
 import api from '../api/axios';
 import { queryClient } from '../lib/queryClient';
+import { disconnectEcho } from '../lib/echo';
+import { unsubscribeThisDevice } from '../api/pushNotifications';
 
 interface AuthContextType {
   user: User | null;
@@ -36,8 +38,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    // best-effort revoke token di server, gak perlu nunggu hasilnya
-    api.post('/logout').catch(() => {});
+    // best-effort revoke token di server, gak perlu nunggu hasilnya.
+    // Skip kalau token udah gak ada (misal interceptor 401 udah bersihin
+    // duluan) -- request tanpa token cuma bakal balik 401 sia-sia.
+    if (localStorage.getItem('token')) {
+      api.post('/logout').catch(() => {});
+    }
+    unsubscribeThisDevice();
+    disconnectEcho();
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     queryClient.clear();

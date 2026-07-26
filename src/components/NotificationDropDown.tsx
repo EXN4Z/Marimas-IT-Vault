@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bell, Check, Trash2, CheckCheck } from 'lucide-react';
 import {
   getNotifications,
@@ -6,6 +7,7 @@ import {
   markAllNotificationsAsRead,
   deleteNotification,
   type AppNotification,
+  type NotificationResponse,
 } from '../api/notifications';
 
 function formatWaktu(iso: string): string {
@@ -20,30 +22,22 @@ function formatWaktu(iso: string): string {
 
 export default function NotificationDropdown() {
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<AppNotification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
-  const loadNotifications = async () => {
-    setLoading(true);
-    try {
-      const res = await getNotifications();
-      setItems(res.data);
-      setUnreadCount(res.unread_count);
-    } catch (err) {
-      console.error('Gagal memuat notifikasi.', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Sama-sama pake query key ['notifications'] kayak Dashboard.tsx, biar satu
+  // sumber data. Sebelum ini komponen punya state lokal sendiri + polling
+  // 30 detik sendiri, gak nyambung ke cache Dashboard -- jadi badge/notif baru
+  // yang masuk lewat push Echo di Dashboard gak pernah nyampe ke bell ini,
+  // dan tandai-dibaca di satu tempat gak sinkron ke tempat lain.
+  const { data, isLoading } = useQuery<NotificationResponse>({
+    queryKey: ['notifications'],
+    queryFn: getNotifications,
+    refetchInterval: 30000,
+  });
 
-  // polling ringan tiap 30 detik biar badge kebaruan gak stale kelamaan
-  useEffect(() => {
-    loadNotifications();
-    const interval = setInterval(loadNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const items = data?.data ?? [];
+  const unreadCount = data?.unread_count ?? 0;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -55,41 +49,54 @@ export default function NotificationDropdown() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleToggle = () => {
-    setOpen((prev) => {
-      if (!prev) loadNotifications();
-      return !prev;
-    });
-  };
+  const handleToggle = () => setOpen((prev) => !prev);
 
   const handleMarkAsRead = async (id: string) => {
-    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)));
-    setUnreadCount((c) => Math.max(0, c - 1));
+    queryClient.setQueryData<NotificationResponse | undefined>(['notifications'], (old) => {
+      if (!old) return old;
+      return {
+        data: old.data.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)),
+        unread_count: Math.max(0, old.unread_count - 1),
+      };
+    });
     try {
       await markNotificationAsRead(id);
     } catch (err) {
       console.error('Gagal menandai notifikasi.', err);
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
     }
   };
 
   const handleMarkAllAsRead = async () => {
-    setItems((prev) => prev.map((n) => ({ ...n, read_at: n.read_at ?? new Date().toISOString() })));
-    setUnreadCount(0);
+    queryClient.setQueryData<NotificationResponse | undefined>(['notifications'], (old) => {
+      if (!old) return old;
+      return {
+        data: old.data.map((n) => ({ ...n, read_at: n.read_at ?? new Date().toISOString() })),
+        unread_count: 0,
+      };
+    });
     try {
       await markAllNotificationsAsRead();
     } catch (err) {
       console.error('Gagal menandai semua notifikasi.', err);
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
     }
   };
 
   const handleDelete = async (id: string) => {
     const target = items.find((n) => n.id === id);
-    setItems((prev) => prev.filter((n) => n.id !== id));
-    if (target && !target.read_at) setUnreadCount((c) => Math.max(0, c - 1));
+    queryClient.setQueryData<NotificationResponse | undefined>(['notifications'], (old) => {
+      if (!old) return old;
+      return {
+        data: old.data.filter((n) => n.id !== id),
+        unread_count: target && !target.read_at ? Math.max(0, old.unread_count - 1) : old.unread_count,
+      };
+    });
     try {
       await deleteNotification(id);
     } catch (err) {
       console.error('Gagal menghapus notifikasi.', err);
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
     }
   };
 
@@ -123,15 +130,15 @@ export default function NotificationDropdown() {
           </div>
 
           <div className="max-h-80 overflow-y-auto">
-            {loading && items.length === 0 && (
+            {isLoading && items.length === 0 && (
               <p className="text-sm text-slate-400 text-center py-8">Memuat...</p>
             )}
 
-            {!loading && items.length === 0 && (
+            {!isLoading && items.length === 0 && (
               <p className="text-sm text-slate-400 text-center py-8">Belum ada notifikasi.</p>
             )}
 
-            {items.map((n) => (
+            {items.map((n: AppNotification) => (
               <div
                 key={n.id}
                 className={`flex items-start gap-2 px-4 py-3 border-b border-slate-50 last:border-0 ${
