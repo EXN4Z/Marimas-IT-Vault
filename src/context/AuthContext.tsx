@@ -9,7 +9,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   setUser: (user: User | null) => void;
-  logout: () => Promise<void>;
+  logout: (opts?: { skipServerRevoke?: boolean }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,11 +37,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = async () => {
+  const logout = async (opts?: { skipServerRevoke?: boolean }) => {
     // best-effort revoke token di server, gak perlu nunggu hasilnya.
     // Skip kalau token udah gak ada (misal interceptor 401 udah bersihin
-    // duluan) -- request tanpa token cuma bakal balik 401 sia-sia.
-    if (localStorage.getItem('token')) {
+    // duluan), atau kalau caller udah revoke sendiri (skipServerRevoke) --
+    // dua-duanya bikin request tanpa/token-invalid yang cuma balik 401 sia-sia.
+    if (!opts?.skipServerRevoke && localStorage.getItem('token')) {
       api.post('/logout').catch(() => {});
     }
     unsubscribeThisDevice();

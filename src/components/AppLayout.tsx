@@ -265,15 +265,19 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
   };
 
 const handleLogout = async () => {
+    // NOTE: revoke token ke server + bersih-bersih localStorage udah ditangani
+    // di dalam logout() (AuthContext) sendiri. Jangan panggil api.post('/logout')
+    // di sini lagi -- itu bikin request kedua yang PASTI 401 (token dari request
+    // pertama udah kehapus duluan di server).
     let passwordReset = false;
     try {
         const res = await api.post('/logout');
-        passwordReset = res.data.password_direset;
+        passwordReset = res.data?.password_direset;
     } catch (err) {
         console.error('Logout di server gagal, lanjut clear session lokal.', err);
     } finally {
         resetChat();
-        logout();
+        await logout({ skipServerRevoke: true });
         navigate('/login', {
             replace: true,
             state: passwordReset ? { passwordReset: true } : undefined,
