@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import api from './axios';
 import { printCsvAsReport } from '../utils/printCsvReport';
 
-type JenisLaporan = 'absensi' | 'izin' | 'inventaris';
+type JenisLaporan = 'absensi' | 'izin';
 
 const bulanLabel = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -13,7 +13,6 @@ const bulanLabel = [
 const laporanTitle: Record<JenisLaporan, string> = {
   absensi: 'Laporan Absensi',
   izin: 'Laporan Pengajuan Izin',
-  inventaris: 'Laporan Mutasi Inventaris',
 };
 
 // Helper generik: hit endpoint /laporan/{jenis}?bulan=&tahun=&... sebagai blob, parse
@@ -148,20 +147,12 @@ export function printLaporanIzin(bulan: number, tahun: number, targetWindow: Win
   return printLaporan('izin', bulan, tahun, targetWindow);
 }
 
-export function printLaporanInventaris(bulan: number, tahun: number, targetWindow: Window): Promise<void> {
-  return printLaporan('inventaris', bulan, tahun, targetWindow);
-}
-
 export function downloadLaporanAbsensiExcel(bulan: number, tahun: number): Promise<void> {
   return downloadLaporanExcel('absensi', bulan, tahun);
 }
 
 export function downloadLaporanIzinExcel(bulan: number, tahun: number): Promise<void> {
   return downloadLaporanExcel('izin', bulan, tahun);
-}
-
-export function downloadLaporanInventarisExcel(bulan: number, tahun: number): Promise<void> {
-  return downloadLaporanExcel('inventaris', bulan, tahun);
 }
 
 // BARU: khusus data karyawan terlambat, dipakai dari chat AI

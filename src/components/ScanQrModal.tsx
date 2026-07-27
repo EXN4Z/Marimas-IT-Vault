@@ -11,7 +11,7 @@ interface ScanQrModalProps {
   onScanSuccess: (decodedText: string) => void;
   title?: string;
   description?: string;
-  isProcessing?: boolean; // BARU: true pas parent lagi lookup barang setelah scan sukses
+  isProcessing?: boolean; // true pas parent lagi memproses hasil scan
 }
 
 const CAMERA_ELEMENT_ID = 'qr-scanner-camera';
@@ -20,8 +20,8 @@ const UPLOAD_ELEMENT_ID = 'qr-scanner-upload';
 export default function ScanQrModal({
   onClose,
   onScanSuccess,
-  title = 'Scan QR Barang',
-  description = 'Arahkan kamera ke QR code pada label barang.',
+  title = 'Scan QR',
+  description = 'Arahkan kamera ke QR code.',
   isProcessing = false,
 }: ScanQrModalProps) {
   const [error, setError] = useState('');
@@ -129,7 +129,7 @@ export default function ScanQrModal({
     }
   };
 
-  const busy = processing || isProcessing; // gabungan: lagi decode file ATAU lagi lookup barang di parent
+  const busy = processing || isProcessing; // gabungan: lagi decode file ATAU lagi diproses parent
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center px-4">
@@ -202,12 +202,12 @@ export default function ScanQrModal({
 
         <p className="text-[11px] text-slate-400 text-center mt-3">{description}</p>
 
-        {/* OVERLAY LOADING — muncul pas decode file jalan ATAU parent lagi lookup barang ke server */}
+        {/* OVERLAY LOADING — muncul pas decode file jalan ATAU parent lagi memproses hasil scan */}
         {busy && (
           <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center gap-3 z-10">
             <div className="w-8 h-8 border-[3px] border-slate-300 border-t-slate-900 rounded-full animate-spin" />
             <p className="text-sm font-medium text-slate-600">
-              {processing ? 'Membaca QR dari file...' : 'Mencari barang...'}
+              {processing ? 'Membaca QR dari file...' : 'Memproses...'}
             </p>
           </div>
         )}
