@@ -9,7 +9,7 @@ import {
   downloadLaporanIzinExcel,
 } from '../api/laporan';
 
-const STAFF_ROLES = ['admin', 'hr', 'manajer', 'manager'];
+const STAFF_ROLES = ['admin', 'hr', 'manajer', 'manager', 'cabang'];
 
 const bulanOptions = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
