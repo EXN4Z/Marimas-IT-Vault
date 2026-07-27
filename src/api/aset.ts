@@ -3,7 +3,7 @@ import type { JenisAset } from './jenisAset';
 import type { Supplier } from './supplier';
 import type { KelengkapanMaster } from './kelengkapanMaster';
 
-export type AsetStatus = 'tersedia' | 'dipakai' | 'rusak' | 'menunggu_perbaikan' | 'diperbaiki' | 'dijual' | 'rusak_berat';
+export type AsetStatus = 'tersedia' | 'dipakai' | 'rusak' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'dijual';
 export type AsetPemakaiStatus = 'pending' | 'disetujui' | 'ditolak';
 
 export interface KaryawanUser {
@@ -179,13 +179,6 @@ export async function deleteAset(id: number): Promise<{ message: string }> {
   return res.data;
 }
 
-// POST /aset/{id}/jual — tandai aset dijual. Dibatasi backend ke role admin,
-// dan cuma boleh dari status 'tersedia'/'rusak' (lihat AsetController::jual).
-export async function jualAset(id: number): Promise<Aset> {
-  const res = await api.post<Aset>(`/aset/${id}/jual`);
-  return res.data;
-}
-
 /**
  * Cari karyawan atau akun cabang (buat dipilih sebagai pemakai aset). Pakai
  * endpoint /karyawan yang sudah ada (UserController::index), yang eager-load
@@ -343,5 +336,14 @@ export async function tambahPenggantianSparepart(
 // DELETE /aset-penggantian-sparepart/{id} — dibatasi backend ke role admin.
 export async function deletePenggantianSparepart(id: number): Promise<{ message: string }> {
   const res = await api.delete<{ message: string }>(`/aset-penggantian-sparepart/${id}`);
+  return res.data;
+}
+
+// BARU: POST /aset/{aset}/jual — tandai aset (status 'tersedia' atau
+// 'rusak_berat') sebagai terjual. Aset pindah status jadi 'dijual'. Cuma
+// tanda status, gak ada input tambahan (harga/catatan) dari frontend.
+// Dibatasi backend ke role admin.
+export async function jualAset(asetId: number): Promise<Aset> {
+  const res = await api.post<Aset>(`/aset/${asetId}/jual`);
   return res.data;
 }

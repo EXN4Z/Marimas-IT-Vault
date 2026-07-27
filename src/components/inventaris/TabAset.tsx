@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Banknote } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag } from 'lucide-react';
 import AsetFormModal from '../AsetFormModal';
 import AsetSerahTerimaModal from '../AsetSerahTerimaModal';
 import AsetPengembalianModal from '../AsetPengembalianModal';
 import AsetLaporKerusakanModal from '../AsetLaporKerusakanModal';
-import AsetPinjamModal from '../AsetPinjamModal';
 import AsetPenangananSelesaiModal from '../AsetPenangananSelesaiModal';
 import AsetSparepartModal from '../AsetSparepartModal';
 import { useAuth } from '../../context/AuthContext';
@@ -15,10 +14,10 @@ import {
   getAset,
   getAsetById,
   deleteAset,
-  jualAset,
   deletePenangananAset,
   deletePenggantianSparepart,
   terimaPenangananAset,
+  jualAset,
   type Aset,
   type AsetStatus,
   type AsetPemakai,
@@ -36,8 +35,8 @@ const STATUS_LABEL: Record<AsetStatus, string> = {
   rusak: 'Rusak',
   menunggu_perbaikan: 'Menunggu Perbaikan',
   diperbaiki: 'Sedang Diperbaiki',
-  dijual: 'Dijual',
   rusak_berat: 'Rusak Berat',
+  dijual: 'Dijual',
 };
 
 const STATUS_STYLE: Record<AsetStatus, string> = {
@@ -46,12 +45,12 @@ const STATUS_STYLE: Record<AsetStatus, string> = {
   rusak: 'bg-red-50 text-red-700',
   menunggu_perbaikan: 'bg-yellow-50 text-yellow-700',
   diperbaiki: 'bg-orange-50 text-orange-700',
-  dijual: 'bg-slate-200 text-slate-600',
   rusak_berat: 'bg-red-100 text-red-800',
+  dijual: 'bg-purple-50 text-purple-700',
 };
 
 // urutan tampil di tabel: tersedia paling atas, lalu dipakai, lalu status
-// yang lagi dalam proses penanganan, rusak, dan rusak_berat ("jual") paling
+// yang lagi dalam proses penanganan, rusak, rusak_berat, dan dijual paling
 // bawah — dipakai sebagai key sort di filteredAset, BUKAN untuk urutan
 // dropdown filter (dropdown tetap ikut urutan STATUS_LABEL di atas).
 const STATUS_PRIORITY: Record<AsetStatus, number> = {
@@ -60,8 +59,8 @@ const STATUS_PRIORITY: Record<AsetStatus, number> = {
   menunggu_perbaikan: 3,
   diperbaiki: 4,
   rusak: 5,
-  dijual: 6,
-  rusak_berat: 7,
+  rusak_berat: 6,
+  dijual: 7,
 };
 
 function formatTanggalId(iso: string | null): string {
@@ -83,12 +82,6 @@ interface Props {
 export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
-  // BARU: akun cabang gak punya relasi `pekerja`, jadi endpoint requestPinjam
-  // (POST /aset/{aset}/pinjam) bakal selalu nolak 422 buat mereka — cabang
-  // cuma boleh diserahkan aset langsung oleh admin lewat serah-terima, gak
-  // lewat alur ajukan/approve. Makanya tombol "Pinjam" disembunyikan khusus
-  // buat role ini, sisanya (Kembalikan, Lapor Kerusakan) tetap sama kayak karyawan.
-  const isCabang = user?.role === 'cabang';
 
   const [asetList, setAsetList] = useState<Aset[]>([]);
   const [jenisOptions, setJenisOptions] = useState<JenisAset[]>([]);
@@ -111,11 +104,16 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   const [serahTerimaAset, setSerahTerimaAset] = useState<Aset | null>(null);
   const [pengembalianTarget, setPengembalianTarget] = useState<{ aset: Aset; pemakai: AsetPemakai } | null>(null);
 
-  const [pinjamAsetTarget, setPinjamAsetTarget] = useState<Aset | null>(null);
   const [perbaikanAsetTarget, setPerbaikanAsetTarget] = useState<Aset | null>(null);
   const [penangananSelesaiTarget, setPenangananSelesaiTarget] = useState<{ aset: Aset; penanganan: AsetPenanganan } | null>(null);
   const [sparepartAsetTarget, setSparepartAsetTarget] = useState<Aset | null>(null);
   const [historyActionError, setHistoryActionError] = useState('');
+
+  // BARU: state untuk aksi "Jual Aset" (aset berstatus tersedia atau rusak_berat) —
+  // cuma tanda/konfirmasi, gak ada form harga/catatan
+  const [jualTarget, setJualTarget] = useState<Aset | null>(null);
+  const [jualLoading, setJualLoading] = useState(false);
+  const [jualError, setJualError] = useState('');
 
   const loadList = async () => {
     setLoading(true);
@@ -230,23 +228,6 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
     }
   };
 
-  const [jualLoading, setJualLoading] = useState(false);
-
-  const handleJualAset = async (aset: Aset) => {
-    if (!confirm(`Tandai aset ${aset.kode_aset} sebagai dijual? Aset tidak akan bisa dipinjam/ditangani lagi setelah ini.`)) return;
-    setJualLoading(true);
-    setError('');
-    try {
-      const updated = await jualAset(aset.id);
-      setAsetList((prev) => prev.map((a) => (a.id === updated.id ? { ...a, status: updated.status } : a)));
-      setDetail((prev) => (prev && prev.id === updated.id ? { ...prev, status: updated.status } : prev));
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal menandai aset sebagai dijual.');
-    } finally {
-      setJualLoading(false);
-    }
-  };
-
   const [terimaLoadingId, setTerimaLoadingId] = useState<number | null>(null);
 
   const handleTerimaPenanganan = async (id: number) => {
@@ -354,6 +335,30 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
     });
   };
 
+  // BARU: buka modal konfirmasi jual
+  const openJual = (a: Aset) => {
+    setJualTarget(a);
+    setJualError('');
+  };
+
+  // BARU: submit aksi jual — tandai aset sebagai 'dijual', gak ada input tambahan
+  const confirmJual = async () => {
+    if (!jualTarget) return;
+    setJualLoading(true);
+    setJualError('');
+    try {
+      const updated = await jualAset(jualTarget.id);
+      setAsetList((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+      if (detailId === updated.id) setDetail(updated);
+      toast.success('Aset berhasil ditandai sebagai dijual.');
+      setJualTarget(null);
+    } catch (err: any) {
+      setJualError(err.response?.data?.message || 'Gagal menandai aset sebagai terjual.');
+    } finally {
+      setJualLoading(false);
+    }
+  };
+
   const filteredAset = asetList
     .filter((a) => {
       const matchStatus = !statusFilter || a.status === statusFilter;
@@ -381,8 +386,8 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
       return a.status === 'tersedia' || akuPeminjamnya;
     })
     // BARU: urutkan berdasarkan prioritas status — tersedia paling atas,
-    // dipakai, lalu status dalam proses penanganan, rusak, dan rusak_berat
-    // ("jual") paling bawah. Lihat STATUS_PRIORITY di atas.
+    // dipakai, lalu status dalam proses penanganan, rusak, rusak_berat, dan
+    // dijual paling bawah. Lihat STATUS_PRIORITY di atas.
     .sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
 
   return (
@@ -429,15 +434,15 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
 
         {!loading && !error && filteredAset.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[760px]">
+            <table className="w-[1080px] text-sm min-w-[760px]">
               <thead>
-                <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
+                <tr className="border-b border-slate-100 text-middle text-xs text-slate-400 uppercase tracking-wide">
                   <th className="px-6 py-3 font-medium">Kode Aset</th>
                   <th className="px-6 py-3 font-medium">Jenis</th>
                   <th className="px-6 py-3 font-medium">Merek / Tipe</th>
                   <th className="px-6 py-3 font-medium">Status</th>
                   <th className="px-6 py-3 font-medium">Dipakai Oleh</th>
-                  <th className="px-6 py-3 font-medium text-right">Aksi</th>
+                  <th className="px-6 py-3 font-medium">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -501,16 +506,9 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                                   Terima Kembali
                                 </button>
                               )}
-                              {(a.status === 'tersedia' || a.status === 'rusak') && (
-                                <button
-                                  onClick={() => handleJualAset(a)}
-                                  disabled={jualLoading}
-                                  title="Jual"
-                                  className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition disabled:opacity-40"
-                                >
-                                  <Banknote size={15} />
-                                </button>
-                              )}
+                              {/* Tombol Jual sengaja TIDAK ditaruh di sini lagi — sekarang cuma
+                                  ada di panel detail (buka lewat ikon mata / "Detail" di atas),
+                                  biar admin liat dulu info lengkap asetnya sebelum jual. */}
                               <button
                                 onClick={() => {
                                   setEditingAset(a);
@@ -565,22 +563,6 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                               <Wrench size={14} />
                               Sudah Lapor
                             </span>
-                          )}
-
-                          {/* KARYAWAN lain (bukan peminjam, bukan admin, bukan akun cabang): cuma
-                              bisa ajukan pinjam kalau lagi tersedia, gak dikasih akses Detail (biar
-                              gak keliatan riwayat/kode struk aset ini). Akun cabang sengaja dikecualikan
-                              karena backend requestPinjam() wajib punya relasi pekerja, yang cabang
-                              gak punya — cabang cuma bisa terima aset lewat serah-terima admin. */}
-                          {!isAdmin && !isCabang && !akuPeminjamnya && a.status === 'tersedia' && !sudahAdaPengajuan && (
-                            <button
-                              onClick={() => setPinjamAsetTarget(a)}
-                              title="Ajukan Pinjam"
-                              className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 bg-slate-100 px-3 py-2 rounded-lg hover:bg-slate-200 transition"
-                            >
-                              <HandCoins size={14} />
-                              Pinjam
-                            </button>
                           )}
                         </div>
                       </td>
@@ -641,16 +623,57 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
         </div>
       )}
 
+      {/* BARU: KONFIRMASI JUAL ASET — cuma tanda, gak ada form */}
+      {jualTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] px-4">
+          <div className="bg-white rounded-xl w-full max-w-sm p-5">
+            <h2 className="text-base font-semibold text-slate-900 mb-1">Tandai aset sebagai dijual?</h2>
+            <p className="text-sm text-slate-500 mb-1">
+              <span className="font-medium text-slate-700">{jualTarget.kode_aset}</span> akan ditandai dengan status{' '}
+              <span className="font-medium">Dijual</span> dan tidak bisa diserahkan/dipinjamkan lagi.
+            </p>
+
+            {(jualTarget.pemakai_pending?.length ?? 0) > 0 && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3 mb-4">
+                Aset ini masih punya pengajuan pinjam yang menunggu persetujuan — pengajuan itu akan otomatis ditolak.
+              </p>
+            )}
+            {!(jualTarget.pemakai_pending?.length) && <div className="mb-4" />}
+
+            {jualError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{jualError}</p>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setJualTarget(null)}
+                disabled={jualLoading}
+                className="text-sm px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmJual}
+                disabled={jualLoading}
+                className="text-sm px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+              >
+                {jualLoading ? 'Menyimpan...' : 'Ya, Dijual'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* DETAIL ASET — disembunyiin sementara kalau ada modal aksi (serah-terima,
-          terima kembali, dst) yang kebuka di atasnya, biar gak numpuk 2 modal
-          + 2 overlay keliatan bareng */}
+          terima kembali, jual, dst) yang kebuka di atasnya, biar gak numpuk 2
+          modal + 2 overlay keliatan bareng */}
       {detailId &&
         !serahTerimaAset &&
         !pengembalianTarget &&
-        !pinjamAsetTarget &&
         !perbaikanAsetTarget &&
         !penangananSelesaiTarget &&
-        !sparepartAsetTarget && (
+        !sparepartAsetTarget &&
+        !jualTarget && (
         <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
@@ -732,48 +755,29 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                         Terima Kembali
                       </button>
                     )}
-                    {(detail.status === 'tersedia' || detail.status === 'rusak') && (
+                    {/* Tombol Jual Aset di panel detail (ikon mata) — muncul buat status
+                        tersedia ATAU rusak_berat. Sekarang ini SATU-SATUNYA tempat aksi
+                        jual bisa dipicu (nggak ada lagi tombol cepat di baris tabel). */}
+                    {(detail.status === 'tersedia' || detail.status === 'rusak_berat') && (
                       <button
-                        onClick={() => handleJualAset(detail)}
-                        disabled={jualLoading}
-                        className="flex items-center gap-1.5 bg-white text-slate-700 border border-slate-300 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-50 transition disabled:opacity-50"
+                        onClick={() => openJual(detail)}
+                        className="flex items-center gap-1.5 bg-purple-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-purple-700 transition"
                       >
-                        <Banknote size={14} />
-                        {jualLoading ? 'Memproses...' : 'Jual'}
+                        <Tag size={14} />
+                        Jual Aset
                       </button>
                     )}
                   </div>
                 )}
 
-                {/* KARYAWAN/CABANG: ajukan pinjam kalau aset tersedia (khusus karyawan — cabang
-                    dikecualikan, lihat catatan di tombol tabel), atau lapor kerusakan kalau lagi
-                    dia pakai sendiri (berlaku buat keduanya) */}
+                {/* KARYAWAN/CABANG: lapor kerusakan kalau lagi dia pakai sendiri.
+                    (Ajukan pinjam sendiri sudah dicabut — aset cuma boleh
+                    diserahkan admin lewat tombol "Serahkan".) */}
                 {!isAdmin && (() => {
-                  const myPending = detail.pemakai_pending?.find((p) => userIdPemakai(p) === user?.id);
-                  const otherPending = detail.pemakai_pending?.find((p) => userIdPemakai(p) !== user?.id);
                   const akuPemakaiSaatIni = userIdPemakai(detail.pemakai_saat_ini) === user?.id;
 
                   return (
                     <div className="flex flex-wrap items-center gap-2">
-                      {!isCabang && detail.status === 'tersedia' && myPending && (
-                        <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
-                          Menunggu persetujuan admin untuk pengajuanmu.
-                        </span>
-                      )}
-                      {!isCabang && detail.status === 'tersedia' && !myPending && otherPending && (
-                        <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg">
-                          Sedang diajukan karyawan lain, tunggu keputusan admin dulu.
-                        </span>
-                      )}
-                      {!isCabang && detail.status === 'tersedia' && !myPending && !otherPending && (
-                        <button
-                          onClick={() => setPinjamAsetTarget(detail)}
-                          className="flex items-center gap-1.5 bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-800 transition"
-                        >
-                          <HandCoins size={14} />
-                          Ajukan Pinjam
-                        </button>
-                      )}
                       {detail.status === 'dipakai' && akuPemakaiSaatIni && (
                         <button
                           onClick={() => setPengembalianTarget({ aset: detail, pemakai: detail.pemakai_saat_ini! })}
@@ -1015,19 +1019,6 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
           onSuccess={(pemakai) => {
             handlePrintPengembalian(pengembalianTarget.aset, pemakai);
             setPengembalianTarget(null);
-            loadList();
-            if (detailId) refreshDetail();
-          }}
-        />
-      )}
-
-      {pinjamAsetTarget && (
-        <AsetPinjamModal
-          aset={pinjamAsetTarget}
-          onClose={() => setPinjamAsetTarget(null)}
-          onSuccess={() => {
-            setPinjamAsetTarget(null);
-            toast.success('Pengajuan pinjam berhasil dikirim, menunggu persetujuan admin.');
             loadList();
             if (detailId) refreshDetail();
           }}
