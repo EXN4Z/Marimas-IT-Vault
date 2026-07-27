@@ -3,11 +3,7 @@ import type { JenisAset } from './jenisAset';
 import type { Supplier } from './supplier';
 import type { KelengkapanMaster } from './kelengkapanMaster';
 
-<<<<<<< HEAD
-export type AsetStatus = 'tersedia' | 'dipakai' | 'rusak' | 'menunggu_perbaikan' | 'diperbaiki' | 'dijual';
-=======
-export type AsetStatus = 'tersedia' | 'dipakai' | 'rusak' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat';
->>>>>>> e3fac25efd9fb1e814c4edffcab2caf81beefd5f
+export type AsetStatus = 'tersedia' | 'dipakai' | 'rusak' | 'menunggu_perbaikan' | 'diperbaiki' | 'dijual' | 'rusak_berat';
 export type AsetPemakaiStatus = 'pending' | 'disetujui' | 'ditolak';
 
 export interface KaryawanUser {

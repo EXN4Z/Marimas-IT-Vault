@@ -36,11 +36,8 @@ const STATUS_LABEL: Record<AsetStatus, string> = {
   rusak: 'Rusak',
   menunggu_perbaikan: 'Menunggu Perbaikan',
   diperbaiki: 'Sedang Diperbaiki',
-<<<<<<< HEAD
   dijual: 'Dijual',
-=======
   rusak_berat: 'Rusak Berat',
->>>>>>> e3fac25efd9fb1e814c4edffcab2caf81beefd5f
 };
 
 const STATUS_STYLE: Record<AsetStatus, string> = {
@@ -49,9 +46,7 @@ const STATUS_STYLE: Record<AsetStatus, string> = {
   rusak: 'bg-red-50 text-red-700',
   menunggu_perbaikan: 'bg-yellow-50 text-yellow-700',
   diperbaiki: 'bg-orange-50 text-orange-700',
-<<<<<<< HEAD
   dijual: 'bg-slate-200 text-slate-600',
-=======
   rusak_berat: 'bg-red-100 text-red-800',
 };
 
@@ -65,8 +60,8 @@ const STATUS_PRIORITY: Record<AsetStatus, number> = {
   menunggu_perbaikan: 3,
   diperbaiki: 4,
   rusak: 5,
-  rusak_berat: 6,
->>>>>>> e3fac25efd9fb1e814c4edffcab2caf81beefd5f
+  dijual: 6,
+  rusak_berat: 7,
 };
 
 function formatTanggalId(iso: string | null): string {
@@ -383,19 +378,12 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
     .filter((a) => {
       if (isAdmin) return true;
       const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
-<<<<<<< HEAD
-      // 'dijual' bukan data pribadi siapa pun — tetap tampil buat semua,
-      // sama seperti 'tersedia', cuma nggak bisa diapa-apakan lagi.
-      return a.status === 'tersedia' || a.status === 'dijual' || akuPeminjamnya;
-    });
-=======
       return a.status === 'tersedia' || akuPeminjamnya;
     })
     // BARU: urutkan berdasarkan prioritas status — tersedia paling atas,
     // dipakai, lalu status dalam proses penanganan, rusak, dan rusak_berat
     // ("jual") paling bawah. Lihat STATUS_PRIORITY di atas.
     .sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
->>>>>>> e3fac25efd9fb1e814c4edffcab2caf81beefd5f
 
   return (
     <div>
