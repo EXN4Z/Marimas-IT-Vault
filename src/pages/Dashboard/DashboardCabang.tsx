@@ -15,7 +15,7 @@ import {
 
 // Dashboard untuk role cabang — dapet sebagian analytics (ringkasan izin,
 // top kehadiran, top pengajuan) yang di-scope ke karyawan cabang tsb, TAPI
-// TIDAK dapet hero chart "Pengajuan Izin Tahun Ini" maupun section Inventaris
+// TIDAK dapet hero chart "Pengajuan Izin Tahun Ini"
 // (itu murni buat admin/hr/manajer).
 export default function DashboardCabang() {
   const {
@@ -32,14 +32,12 @@ export default function DashboardCabang() {
   } = useDashboardCore();
 
   // Cuma nyalain ringkasan izin, top kehadiran, top karyawan — grafik
-  // pengajuan tahunan & inventaris gak dipakai di dashboard cabang.
+  // pengajuan tahunan gak dipakai di dashboard cabang.
   const { ringkasanIzin, topKehadiran, topKaryawan } = useDashboardAnalytics(true, {
     ringkasanIzin: true,
     topKehadiran: true,
     topKaryawan: true,
     grafikPengajuan: false,
-    mutasiBarang: false,
-    totalBarang: false,
   });
 
   const statCards = buildStatCards(statsCard, {

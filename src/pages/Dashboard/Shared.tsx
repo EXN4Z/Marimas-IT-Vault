@@ -10,9 +10,8 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   ReferenceLine,
-  Legend,
 } from 'recharts';
-import { ClipboardList, PackagePlus, PackageCheck, Clock, TrendingUp } from 'lucide-react';
+import { ClipboardList, Clock, TrendingUp } from 'lucide-react';
 import type {
   AccentColor,
   StatCard,
@@ -23,8 +22,6 @@ import type {
   RingkasanIzin,
   TrenPengajuan,
   TopKaryawan,
-  MutasiBulanan,
-  TotalBarang,
 } from './useDashboardData';
 import type { AgendaItem } from '../../api/agenda';
 
@@ -342,46 +339,6 @@ export function TopPengajuanCard({ topKaryawan }: { topKaryawan: TopKaryawan[] }
             <YAxis type="category" dataKey="nama" tick={{ fontSize: 12, fill: '#334155' }} axisLine={false} tickLine={false} width={110} />
             <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 12 }} />
             <Bar dataKey="jumlah" name="Pengajuan" fill={THEME.violet} radius={[0, 8, 8, 0]} barSize={16} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-}
-
-// ==== Inventaris — khusus Admin ====
-export function InventarisCard({
-  mutasiBarang,
-  totalBarang,
-}: {
-  mutasiBarang: MutasiBulanan[];
-  totalBarang?: TotalBarang;
-}) {
-  return (
-    <div className={`${cardClass} mt-6`}>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <h3 className="text-base font-semibold text-slate-900">Inventaris — Barang Masuk vs Keluar</h3>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full">
-            <PackagePlus size={14} />
-            Masuk {(totalBarang?.jumlah_masuk ?? 0).toLocaleString('id-ID')}
-          </div>
-          <div className="flex items-center gap-2 bg-rose-50 text-rose-700 text-xs font-semibold px-3 py-1.5 rounded-full">
-            <PackageCheck size={14} />
-            Keluar {(totalBarang?.jumlah_keluar ?? 0).toLocaleString('id-ID')}
-          </div>
-        </div>
-      </div>
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={mutasiBarang} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={THEME.grid} />
-            <XAxis dataKey="bulan" tick={{ fontSize: 12, fill: THEME.axis }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 12, fill: THEME.axis }} axisLine={false} tickLine={false} allowDecimals={false} />
-            <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 12 }} />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="jumlah_masuk" name="Barang Masuk" fill={THEME.emerald} radius={[4, 4, 0, 0]} barSize={18} />
-            <Bar dataKey="jumlah_keluar" name="Barang Keluar" fill={THEME.rose} radius={[4, 4, 0, 0]} barSize={18} />
           </BarChart>
         </ResponsiveContainer>
       </div>

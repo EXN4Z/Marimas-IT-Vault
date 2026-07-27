@@ -54,24 +54,11 @@ export interface TrenPengajuan {
   pengajuan: number;
 }
 
-export interface MutasiBulanan {
-  bulan: string;
-  jumlah_masuk: number;
-  jumlah_keluar: number;
-}
-
 export interface RingkasanIzin {
   total: number;
   pending: number;
   disetujui: number;
   ditolak: number;
-}
-
-export interface TotalBarang {
-  jumlah_masuk: number;
-  jumlah_keluar: number;
-  update_masuk: string | null;
-  update_keluar: string | null;
 }
 
 export interface NotificationItem {
@@ -153,16 +140,6 @@ export async function fetchTopKehadiran(): Promise<TopKaryawan[]> {
 
 export async function fetchTopKaryawan(): Promise<TopKaryawan[]> {
   const res = await api.get<TopKaryawan[]>('/dashboard-analytics/top-karyawan');
-  return res.data;
-}
-
-export async function fetchMutasiBarang(): Promise<MutasiBulanan[]> {
-  const res = await api.get<MutasiBulanan[]>('/dashboard-analytics/mutasi-barang');
-  return res.data;
-}
-
-export async function fetchTotalBarang(): Promise<TotalBarang> {
-  const res = await api.get<TotalBarang>('/dashboard-analytics/total-barang');
   return res.data;
 }
 
@@ -404,8 +381,6 @@ export function useDashboardAnalytics(
     grafikPengajuan?: boolean;
     topKehadiran?: boolean;
     topKaryawan?: boolean;
-    mutasiBarang?: boolean;
-    totalBarang?: boolean;
   } = {}
 ) {
   const {
@@ -413,8 +388,6 @@ export function useDashboardAnalytics(
     grafikPengajuan: wantGrafik = true,
     topKehadiran: wantTopKehadiran = true,
     topKaryawan: wantTopKaryawan = true,
-    mutasiBarang: wantMutasi = true,
-    totalBarang: wantTotalBarang = true,
   } = include;
 
   const { data: ringkasanIzin } = useQuery({
@@ -445,26 +418,10 @@ export function useDashboardAnalytics(
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: mutasiBarang } = useQuery({
-    queryKey: ['mutasi-barang'],
-    queryFn: fetchMutasiBarang,
-    enabled: enabled && wantMutasi,
-    staleTime: 2 * 60 * 1000,
-  });
-
-  const { data: totalBarang } = useQuery({
-    queryKey: ['total-barang'],
-    queryFn: fetchTotalBarang,
-    enabled: enabled && wantTotalBarang,
-    staleTime: 2 * 60 * 1000,
-  });
-
   return {
     ringkasanIzin,
     grafikPengajuan: grafikPengajuan ?? [],
     topKehadiran: topKehadiran ?? [],
     topKaryawan: topKaryawan ?? [],
-    mutasiBarang: mutasiBarang ?? [],
-    totalBarang,
   };
 }

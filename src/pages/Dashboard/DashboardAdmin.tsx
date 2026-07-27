@@ -12,12 +12,11 @@ import {
   RingkasanIzinCard,
   TopKehadiranCard,
   TopPengajuanCard,
-  InventarisCard,
 } from './Shared';
 
 // Dashboard untuk role admin/hr/manajer — dapet semua section, termasuk
-// hero chart "Pengajuan Izin Tahun Ini" dan Inventaris yang gak ditampilin
-// di DashboardUser maupun DashboardCabang.
+// hero chart "Pengajuan Izin Tahun Ini" yang gak ditampilin di DashboardUser
+// maupun DashboardCabang.
 export default function DashboardAdmin() {
   const {
     loading,
@@ -32,8 +31,7 @@ export default function DashboardAdmin() {
     departemen,
   } = useDashboardCore();
 
-  const { ringkasanIzin, grafikPengajuan, topKehadiran, topKaryawan, mutasiBarang, totalBarang } =
-    useDashboardAnalytics(true);
+  const { ringkasanIzin, grafikPengajuan, topKehadiran, topKaryawan } = useDashboardAnalytics(true);
 
   const statCards = buildStatCards(statsCard, {
     kehadiran: QrCode,
@@ -71,8 +69,6 @@ export default function DashboardAdmin() {
         <TopKehadiranCard topKehadiran={topKehadiran} />
         <TopPengajuanCard topKaryawan={topKaryawan} />
       </div>
-
-      <InventarisCard mutasiBarang={mutasiBarang} totalBarang={totalBarang} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <BebanKerjaCard bebanKerja={bebanKerja} />
