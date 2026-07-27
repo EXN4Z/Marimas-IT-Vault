@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   QrCode,
   CalendarDays,
@@ -234,47 +235,74 @@ const cardClass = 'bg-white rounded-3xl p-5 sm:p-6 shadow-[0_2px_20px_rgba(15,23
 const statCardClass = 'bg-white rounded-3xl p-4 sm:p-4 shadow-[0_2px_20px_rgba(15,23,42,0.06)] border border-slate-100';
 
 export default function Dashboard() {
-  const { user: cachedUser, setUser } = useAuth();
+  const { user: cachedUser, isLoading: authLoading, setUser } = useAuth();
   const [departemenLegacy, setDepartemenLegacy] = useState<departemenDistribusi[]>([]);
   const queryClient = useQueryClient();
 
   const isApprover = REVIEWER_ROLES.includes(cachedUser?.role ?? '');
+
+  // Semua query di bawah nunggu proses validasi token di AuthContext (GET /user
+  // saat app dibuka) kelar dulu (`!authLoading`) DAN emang ada user yang valid
+  // (`!!cachedUser`). Tanpa ini, kalau token expired/invalid, 6+ query ini
+  // nembak paralel bareng validasi token, jadi 401 rame-rame di console
+  // sebelum sempet keredirect ke /login.
+  const sessionReady = !authLoading && !!cachedUser;
+
+  const navigate = useNavigate();
+
+  // Dulu redirect-nya numpang lewat 401 dari salah satu query dashboard
+  // (ditangkep interceptor axios). Sekarang query-query itu di-gate pakai
+  // `sessionReady` biar gak nembak bareng-bareng pas sesi invalid (401 rame
+  // di console) -- konsekuensinya kalau gak ada query yang jalan, gak ada
+  // yang bakal 401 buat men-trigger redirect itu. Jadi redirect-nya dibikin
+  // eksplisit di sini begitu proses cek auth kelar dan ternyata gak ada user.
+  useEffect(() => {
+    if (!authLoading && !cachedUser) {
+      navigate('/login', { replace: true });
+    }
+  }, [authLoading, cachedUser, navigate]);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['user'],
     queryFn: fetchUser,
     staleTime: 5 * 60 * 1000,
     initialData: cachedUser ?? undefined,
+    enabled: sessionReady,
   });
 
   const { data: statsCard } = useQuery({
     queryKey: ['stats-card'],
     queryFn: fetchStatsCard,
     staleTime: 5 * 60 * 1000,
+    enabled: sessionReady,
   });
 
   const { data: notificationsRes } = useQuery({
     queryKey: ['notifications'],
     queryFn: fetchNotifications,
     staleTime: 60 * 1000,
+    enabled: sessionReady,
   });
 
   const { data: kehadiranMingguan } = useQuery({
     queryKey: ['kehadiran-mingguan'],
     queryFn: fetchKehadiranMingguan,
     staleTime: 5 * 60 * 1000,
+    enabled: sessionReady,
   });
 
   const { data: bebanKerja } = useQuery({
     queryKey: ['beban-kerja'],
     queryFn: fetchBebanKerja,
     staleTime: 5 * 60 * 1000,
+    enabled: sessionReady,
   });
 
   const { data: agenda, isLoading: agendaLoading } = useQuery({
     queryKey: ['agenda-mendatang'],
     queryFn: fetchAgenda,
     staleTime: 5 * 60 * 1000,
+    enabled: sessionReady,
   });
 
   const { data: departemen } = useQuery({
@@ -282,49 +310,51 @@ export default function Dashboard() {
     queryFn: fetchDepartemenDistribusi,
     staleTime: 5 * 60 * 1000,
     initialData: departemenLegacy.length ? departemenLegacy : undefined,
+    enabled: sessionReady,
   });
 
-  // Query khusus admin/hr/manajer — cuma jalan kalau isApprover, biar gak
-  // dapet 403 dari backend buat karyawan biasa.
+  // Query khusus admin/hr/manajer — cuma jalan kalau isApprover DAN sesi udah
+  // siap, biar gak dapet 403 (buat karyawan biasa) atau 401 rame (token belum
+  // divalidasi) dari backend.
   const { data: ringkasanIzin } = useQuery({
     queryKey: ['ringkasan-izin'],
     queryFn: fetchRingkasanIzin,
-    enabled: isApprover,
+    enabled: sessionReady && isApprover,
     staleTime: 2 * 60 * 1000,
   });
 
   const { data: grafikPengajuan } = useQuery({
     queryKey: ['grafik-pengajuan'],
     queryFn: fetchGrafikPengajuan,
-    enabled: isApprover,
+    enabled: sessionReady && isApprover,
     staleTime: 2 * 60 * 1000,
   });
 
   const { data: topKehadiran } = useQuery({
     queryKey: ['top-kehadiran'],
     queryFn: fetchTopKehadiran,
-    enabled: isApprover,
+    enabled: sessionReady && isApprover,
     staleTime: 2 * 60 * 1000,
   });
 
   const { data: topKaryawan } = useQuery({
     queryKey: ['top-karyawan'],
     queryFn: fetchTopKaryawan,
-    enabled: isApprover,
+    enabled: sessionReady && isApprover,
     staleTime: 2 * 60 * 1000,
   });
 
   const { data: mutasiBarang } = useQuery({
     queryKey: ['mutasi-barang'],
     queryFn: fetchMutasiBarang,
-    enabled: isApprover,
+    enabled: sessionReady && isApprover,
     staleTime: 2 * 60 * 1000,
   });
 
   const { data: totalBarang } = useQuery({
     queryKey: ['total-barang'],
     queryFn: fetchTotalBarang,
-    enabled: isApprover,
+    enabled: sessionReady && isApprover,
     staleTime: 2 * 60 * 1000,
   });
 
