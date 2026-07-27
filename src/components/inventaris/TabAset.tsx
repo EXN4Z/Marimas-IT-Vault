@@ -400,15 +400,15 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
 
         {!loading && !error && filteredAset.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[760px]">
+            <table className="w-[1080px] text-sm min-w-[760px]">
               <thead>
-                <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
+                <tr className="border-b border-slate-100 text-middle text-xs text-slate-400 uppercase tracking-wide">
                   <th className="px-6 py-3 font-medium">Kode Aset</th>
                   <th className="px-6 py-3 font-medium">Jenis</th>
                   <th className="px-6 py-3 font-medium">Merek / Tipe</th>
                   <th className="px-6 py-3 font-medium">Status</th>
                   <th className="px-6 py-3 font-medium">Dipakai Oleh</th>
-                  <th className="px-6 py-3 font-medium text-right">Aksi</th>
+                  <th className="px-6 py-3 font-medium">Aksi</th>
                 </tr>
               </thead>
               <tbody>
