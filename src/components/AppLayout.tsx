@@ -139,7 +139,7 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
   const location = useLocation();
 
   const STAFF_ROLES = ['admin', 'hr'];
-  const REVIEWER_ROLES = ['admin', 'hr', 'manajer', 'manager'];
+  const REVIEWER_ROLES = ['admin', 'hr', 'manajer', 'manager', 'cabang'];
 
   const roleFilter = (item: NavItem) => {
     // Master Data hanya untuk admin/hr
