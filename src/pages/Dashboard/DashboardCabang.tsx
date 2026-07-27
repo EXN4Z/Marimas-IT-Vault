@@ -38,8 +38,6 @@ export default function DashboardCabang() {
     topKehadiran: true,
     topKaryawan: true,
     grafikPengajuan: true,
-    mutasiBarang: false,
-    totalBarang: false,
   });
 
   const statCards = buildStatCards(statsCard, {

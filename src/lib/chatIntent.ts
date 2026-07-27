@@ -19,10 +19,10 @@ const intents: ChatIntent[] = [
   { label: 'Pengajuan Izin', path: '/izin', keywords: ['izin', 'cuti'] },
   { label: 'Ajukan Izin', path: '/izin/create', keywords: ['ajukan izin', 'buat izin', 'mengajukan cuti', 'ajukan cuti'] },
   { label: 'Ticketing', path: '/ticketing', keywords: ['ticket', 'tiket', 'ticketing'] },
-  { label: 'Inventaris', path: '/inventaris', keywords: ['barang', 'inventaris', 'stok'] },
+  { label: 'Inventaris', path: '/inventaris', keywords: ['inventaris', 'aset'] },
   { label: 'Agenda', path: '/agenda', keywords: ['agenda', 'jadwal', 'meeting'] },
   { label: 'Laporan', path: '/laporan', keywords: ['laporan', 'report'] },
-  { label: 'Master Data', path: '/master-data', keywords: ['master data', 'departemen', 'jabatan', 'kategori barang'] },
+  { label: 'Master Data', path: '/master-data', keywords: ['master data', 'departemen', 'jabatan'] },
   { label: 'Settings', path: '/settings', keywords: ['pengaturan', 'ubah password', 'profil saya', 'setting'] },
 ];
 

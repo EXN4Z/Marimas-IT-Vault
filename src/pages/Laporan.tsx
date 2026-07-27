@@ -1,14 +1,12 @@
 import { useState } from 'react';
-import { FileSpreadsheet, ClipboardList, PackageSearch, Printer, Loader2, Download } from 'lucide-react';
+import { FileSpreadsheet, ClipboardList, Printer, Loader2, Download } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import {
   printLaporanAbsensi,
   printLaporanIzin,
-  printLaporanInventaris,
   downloadLaporanAbsensiExcel,
   downloadLaporanIzinExcel,
-  downloadLaporanInventarisExcel,
 } from '../api/laporan';
 
 const STAFF_ROLES = ['admin', 'hr', 'manajer', 'manager', 'cabang'];
@@ -18,7 +16,7 @@ const bulanOptions = [
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
 ];
 
-type LaporanKey = 'absensi' | 'izin' | 'inventaris';
+type LaporanKey = 'absensi' | 'izin';
 
 const laporanConfig: Record<
   LaporanKey,
@@ -43,13 +41,6 @@ const laporanConfig: Record<
     icon: FileSpreadsheet,
     print: printLaporanIzin,
     exportExcel: downloadLaporanIzinExcel,
-  },
-  inventaris: {
-    label: 'Laporan Mutasi Inventaris',
-    description: 'Rekap mutasi barang masuk dan keluar beserta perubahan stok per bulan.',
-    icon: PackageSearch,
-    print: printLaporanInventaris,
-    exportExcel: downloadLaporanInventarisExcel,
   },
 };
 

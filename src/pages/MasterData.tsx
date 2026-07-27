@@ -1,17 +1,11 @@
 import '../index.css';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, BriefcaseBusiness, Tags, Boxes, Package, Truck, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Building2, BriefcaseBusiness, Boxes, Package, Truck, Plus, Pencil, Trash2, X } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen } from '../api/departemen';
 import { getJabatan, createJabatan, updateJabatan, deleteJabatan } from '../api/jabatan';
-import {
-  getKategoriBarang,
-  createKategoriBarang,
-  updateKategoriBarang,
-  deleteKategoriBarang,
-} from '../api/kategoriBarang';
 import { getJenisAset, createJenisAset, updateJenisAset, deleteJenisAset } from '../api/jenisAset';
 import {
   getKelengkapanMaster,
@@ -21,12 +15,12 @@ import {
 } from '../api/kelengkapanMaster';
 import { getSupplier, createSupplier, updateSupplier, deleteSupplier } from '../api/supplier';
 
-type TabKey = 'departemen' | 'jabatan' | 'kategori' | 'jenis-aset' | 'kelengkapan-master' | 'supplier';
+type TabKey = 'departemen' | 'jabatan' | 'jenis-aset' | 'kelengkapan-master' | 'supplier';
 // alamat & telepon cuma dipakai tab 'supplier' -- tab lain cukup nama
 type Item = { id: number; nama: string; alamat?: string | null; telepon?: string | null };
 type FormPayload = { nama: string; alamat?: string; telepon?: string };
 
-const TAB_KEYS: TabKey[] = ['departemen', 'jabatan', 'kategori', 'jenis-aset', 'kelengkapan-master', 'supplier'];
+const TAB_KEYS: TabKey[] = ['departemen', 'jabatan', 'jenis-aset', 'kelengkapan-master', 'supplier'];
 
 function isTabKey(value: string | null): value is TabKey {
   return !!value && (TAB_KEYS as string[]).includes(value);
@@ -63,15 +57,6 @@ const tabConfig: Record<
     create: createJabatan,
     update: updateJabatan,
     remove: deleteJabatan,
-  },
-  kategori: {
-    label: 'Kategori Barang',
-    icon: Tags,
-    singular: 'Kategori',
-    get: getKategoriBarang as () => Promise<Item[]>,
-    create: (payload) => createKategoriBarang(payload.nama),
-    update: (id, payload) => updateKategoriBarang(id, payload.nama),
-    remove: deleteKategoriBarang,
   },
   'jenis-aset': {
     label: 'Jenis Aset',
@@ -250,7 +235,7 @@ export default function MasterData() {
     <AppLayout title="Master Data">
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-slate-500">
-          Kelola data referensi departemen, jabatan, kategori barang, dan data master aset (jenis, kelengkapan,
+          Kelola data referensi departemen, jabatan, dan data master aset (jenis, kelengkapan,
           supplier) yang dipakai di seluruh sistem.
         </p>
         <button

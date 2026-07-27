@@ -339,9 +339,10 @@ export async function deletePenggantianSparepart(id: number): Promise<{ message:
   return res.data;
 }
 
-// BARU: POST /aset/{aset}/jual — tandai aset (status 'rusak_berat') sebagai
-// terjual. Aset pindah status jadi 'dijual'. Cuma tanda status, gak ada
-// input tambahan (harga/catatan) dari frontend. Dibatasi backend ke role admin.
+// BARU: POST /aset/{aset}/jual — tandai aset (status 'tersedia' atau
+// 'rusak_berat') sebagai terjual. Aset pindah status jadi 'dijual'. Cuma
+// tanda status, gak ada input tambahan (harga/catatan) dari frontend.
+// Dibatasi backend ke role admin.
 export async function jualAset(asetId: number): Promise<Aset> {
   const res = await api.post<Aset>(`/aset/${asetId}/jual`);
   return res.data;

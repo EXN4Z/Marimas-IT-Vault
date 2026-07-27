@@ -109,7 +109,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   const [sparepartAsetTarget, setSparepartAsetTarget] = useState<Aset | null>(null);
   const [historyActionError, setHistoryActionError] = useState('');
 
-  // BARU: state untuk aksi "Jual Aset" (aset dengan status rusak_berat) —
+  // BARU: state untuk aksi "Jual Aset" (aset berstatus tersedia atau rusak_berat) —
   // cuma tanda/konfirmasi, gak ada form harga/catatan
   const [jualTarget, setJualTarget] = useState<Aset | null>(null);
   const [jualLoading, setJualLoading] = useState(false);
@@ -506,17 +506,9 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                                   Terima Kembali
                                 </button>
                               )}
-                              {/* BARU: tombol Jual — cuma muncul buat aset yang statusnya rusak_berat */}
-                              {a.status === 'rusak_berat' && (
-                                <button
-                                  onClick={() => openJual(a)}
-                                  title="Jual Aset"
-                                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-purple-600 px-3 py-2 rounded-lg hover:bg-purple-700 transition"
-                                >
-                                  <Tag size={14} />
-                                  Jual
-                                </button>
-                              )}
+                              {/* Tombol Jual sengaja TIDAK ditaruh di sini lagi — sekarang cuma
+                                  ada di panel detail (buka lewat ikon mata / "Detail" di atas),
+                                  biar admin liat dulu info lengkap asetnya sebelum jual. */}
                               <button
                                 onClick={() => {
                                   setEditingAset(a);
@@ -636,10 +628,17 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] px-4">
           <div className="bg-white rounded-xl w-full max-w-sm p-5">
             <h2 className="text-base font-semibold text-slate-900 mb-1">Tandai aset sebagai dijual?</h2>
-            <p className="text-sm text-slate-500 mb-5">
+            <p className="text-sm text-slate-500 mb-1">
               <span className="font-medium text-slate-700">{jualTarget.kode_aset}</span> akan ditandai dengan status{' '}
-              <span className="font-medium">Dijual</span>.
+              <span className="font-medium">Dijual</span> dan tidak bisa diserahkan/dipinjamkan lagi.
             </p>
+
+            {(jualTarget.pemakai_pending?.length ?? 0) > 0 && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3 mb-4">
+                Aset ini masih punya pengajuan pinjam yang menunggu persetujuan — pengajuan itu akan otomatis ditolak.
+              </p>
+            )}
+            {!(jualTarget.pemakai_pending?.length) && <div className="mb-4" />}
 
             {jualError && (
               <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{jualError}</p>
@@ -756,10 +755,12 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                         Terima Kembali
                       </button>
                     )}
-                    {/* BARU: tombol Jual Aset di panel detail */}
-                    {detail.status === 'rusak_berat' && (
+                    {/* Tombol Jual Aset di panel detail (ikon mata) — muncul buat status
+                        tersedia ATAU rusak_berat. Sekarang ini SATU-SATUNYA tempat aksi
+                        jual bisa dipicu (nggak ada lagi tombol cepat di baris tabel). */}
+                    {(detail.status === 'tersedia' || detail.status === 'rusak_berat') && (
                       <button
-                        onClick={() => setJualTarget(detail)}
+                        onClick={() => openJual(detail)}
                         className="flex items-center gap-1.5 bg-purple-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-purple-700 transition"
                       >
                         <Tag size={14} />

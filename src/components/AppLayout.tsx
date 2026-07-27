@@ -20,7 +20,6 @@ import {
   ChevronDown,
   Building2,
   BriefcaseBusiness,
-  Tags,
   Boxes,
   Package2,
   Truck,
@@ -68,7 +67,6 @@ const navItems: NavItem[] = [
     children: [
       { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen' },
       { label: 'Jabatan', icon: BriefcaseBusiness, path: '/master-data?tab=jabatan' },
-      { label: 'Kategori Barang', icon: Tags, path: '/master-data?tab=kategori' },
       { label: 'Jenis Aset', icon: Boxes, path: '/master-data?tab=jenis-aset' },
       { label: 'Kelengkapan Aset', icon: Package2, path: '/master-data?tab=kelengkapan-master' },
       { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier' },
