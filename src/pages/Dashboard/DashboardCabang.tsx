@@ -8,15 +8,15 @@ import {
   BebanKerjaCard,
   NotifikasiCard,
   AgendaCard,
+  HeroPengajuanChart,
   RingkasanIzinCard,
   TopKehadiranCard,
   TopPengajuanCard,
 } from './Shared';
 
-// Dashboard untuk role cabang — dapet sebagian analytics (ringkasan izin,
-// top kehadiran, top pengajuan) yang di-scope ke karyawan cabang tsb, TAPI
-// TIDAK dapet hero chart "Pengajuan Izin Tahun Ini" maupun section Inventaris
-// (itu murni buat admin/hr/manajer).
+// Dashboard untuk role cabang — dapet analytics yang di-scope ke karyawan
+// cabang tsb (termasuk sekarang "Pengajuan Izin Tahun Ini"), TAPI TIDAK
+// dapet section Inventaris (itu murni buat admin/hr/manajer).
 export default function DashboardCabang() {
   const {
     loading,
@@ -31,13 +31,13 @@ export default function DashboardCabang() {
     departemen,
   } = useDashboardCore();
 
-  // Cuma nyalain ringkasan izin, top kehadiran, top karyawan — grafik
-  // pengajuan tahunan & inventaris gak dipakai di dashboard cabang.
-  const { ringkasanIzin, topKehadiran, topKaryawan } = useDashboardAnalytics(true, {
+  // UBAH: grafikPengajuan sekarang ikut dinyalain -- endpoint-nya sudah
+  // di-scope ke cabang di backend (lihat DashboardController::grafikPengajuan).
+  const { ringkasanIzin, grafikPengajuan, topKehadiran, topKaryawan } = useDashboardAnalytics(true, {
     ringkasanIzin: true,
     topKehadiran: true,
     topKaryawan: true,
-    grafikPengajuan: false,
+    grafikPengajuan: true,
     mutasiBarang: false,
     totalBarang: false,
   });
@@ -47,17 +47,6 @@ export default function DashboardCabang() {
     izinAktif: CalendarDays,
     ticket: Ticket,
   });
-
-  // ⚠️ "Kehadiran Bulan Ini" masih 0 buat akun cabang.
-  // Nilainya datang dari statsCard.kehadiran.value, yaitu field `kehadiran`
-  // dari response GET /dashboard/stats-card. Endpoint ini SAMA persis yang
-  // dipakai admin — jadi query di backend harus dibikin scoped: kalau
-  // auth()->user()->role === 'cabang', hitung total kehadiran bulan berjalan
-  // dari SEMUA karyawan yang cabang_id-nya sama dengan cabang_id user login,
-  // bukan cuma kehadiran user itu sendiri. Ini gak bisa diperbaiki dari sisi
-  // frontend karena frontend cuma nampilin apa yang endpoint balikin — kirim
-  // controller/query yang menangani /dashboard/stats-card biar bisa dibetulin
-  // filter cabang_id-nya.
 
   if (loading) {
     return (
@@ -75,7 +64,10 @@ export default function DashboardCabang() {
 
       <StatCardsGrid statCards={statCards} />
 
-      <div className="grid grid-cols-1 gap-6 mt-6">
+      {/* BARU: hero chart "Pengajuan Izin Tahun Ini", sama pola kayak
+          Dashboard Admin, tapi datanya sudah di-scope ke cabang ini saja. */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+        <HeroPengajuanChart grafikPengajuan={grafikPengajuan} />
         <RingkasanIzinCard ringkasanIzin={ringkasanIzin} compact />
       </div>
 
