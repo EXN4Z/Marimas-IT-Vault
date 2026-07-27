@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag } from 'lucide-react';
 import AsetFormModal from '../AsetFormModal';
 import AsetSerahTerimaModal from '../AsetSerahTerimaModal';
 import AsetPengembalianModal from '../AsetPengembalianModal';
@@ -17,6 +17,7 @@ import {
   deletePenangananAset,
   deletePenggantianSparepart,
   terimaPenangananAset,
+  jualAset,
   type Aset,
   type AsetStatus,
   type AsetPemakai,
@@ -35,6 +36,7 @@ const STATUS_LABEL: Record<AsetStatus, string> = {
   menunggu_perbaikan: 'Menunggu Perbaikan',
   diperbaiki: 'Sedang Diperbaiki',
   rusak_berat: 'Rusak Berat',
+  dijual: 'Dijual',
 };
 
 const STATUS_STYLE: Record<AsetStatus, string> = {
@@ -44,10 +46,11 @@ const STATUS_STYLE: Record<AsetStatus, string> = {
   menunggu_perbaikan: 'bg-yellow-50 text-yellow-700',
   diperbaiki: 'bg-orange-50 text-orange-700',
   rusak_berat: 'bg-red-100 text-red-800',
+  dijual: 'bg-purple-50 text-purple-700',
 };
 
 // urutan tampil di tabel: tersedia paling atas, lalu dipakai, lalu status
-// yang lagi dalam proses penanganan, rusak, dan rusak_berat ("jual") paling
+// yang lagi dalam proses penanganan, rusak, rusak_berat, dan dijual paling
 // bawah — dipakai sebagai key sort di filteredAset, BUKAN untuk urutan
 // dropdown filter (dropdown tetap ikut urutan STATUS_LABEL di atas).
 const STATUS_PRIORITY: Record<AsetStatus, number> = {
@@ -57,6 +60,7 @@ const STATUS_PRIORITY: Record<AsetStatus, number> = {
   diperbaiki: 4,
   rusak: 5,
   rusak_berat: 6,
+  dijual: 7,
 };
 
 function formatTanggalId(iso: string | null): string {
@@ -104,6 +108,12 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   const [penangananSelesaiTarget, setPenangananSelesaiTarget] = useState<{ aset: Aset; penanganan: AsetPenanganan } | null>(null);
   const [sparepartAsetTarget, setSparepartAsetTarget] = useState<Aset | null>(null);
   const [historyActionError, setHistoryActionError] = useState('');
+
+  // BARU: state untuk aksi "Jual Aset" (aset dengan status rusak_berat) —
+  // cuma tanda/konfirmasi, gak ada form harga/catatan
+  const [jualTarget, setJualTarget] = useState<Aset | null>(null);
+  const [jualLoading, setJualLoading] = useState(false);
+  const [jualError, setJualError] = useState('');
 
   const loadList = async () => {
     setLoading(true);
@@ -325,6 +335,30 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
     });
   };
 
+  // BARU: buka modal konfirmasi jual
+  const openJual = (a: Aset) => {
+    setJualTarget(a);
+    setJualError('');
+  };
+
+  // BARU: submit aksi jual — tandai aset sebagai 'dijual', gak ada input tambahan
+  const confirmJual = async () => {
+    if (!jualTarget) return;
+    setJualLoading(true);
+    setJualError('');
+    try {
+      const updated = await jualAset(jualTarget.id);
+      setAsetList((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+      if (detailId === updated.id) setDetail(updated);
+      toast.success('Aset berhasil ditandai sebagai dijual.');
+      setJualTarget(null);
+    } catch (err: any) {
+      setJualError(err.response?.data?.message || 'Gagal menandai aset sebagai terjual.');
+    } finally {
+      setJualLoading(false);
+    }
+  };
+
   const filteredAset = asetList
     .filter((a) => {
       const matchStatus = !statusFilter || a.status === statusFilter;
@@ -352,8 +386,8 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
       return a.status === 'tersedia' || akuPeminjamnya;
     })
     // BARU: urutkan berdasarkan prioritas status — tersedia paling atas,
-    // dipakai, lalu status dalam proses penanganan, rusak, dan rusak_berat
-    // ("jual") paling bawah. Lihat STATUS_PRIORITY di atas.
+    // dipakai, lalu status dalam proses penanganan, rusak, rusak_berat, dan
+    // dijual paling bawah. Lihat STATUS_PRIORITY di atas.
     .sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
 
   return (
@@ -472,6 +506,17 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                                   Terima Kembali
                                 </button>
                               )}
+                              {/* BARU: tombol Jual — cuma muncul buat aset yang statusnya rusak_berat */}
+                              {a.status === 'rusak_berat' && (
+                                <button
+                                  onClick={() => openJual(a)}
+                                  title="Jual Aset"
+                                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-purple-600 px-3 py-2 rounded-lg hover:bg-purple-700 transition"
+                                >
+                                  <Tag size={14} />
+                                  Jual
+                                </button>
+                              )}
                               <button
                                 onClick={() => {
                                   setEditingAset(a);
@@ -586,15 +631,50 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
         </div>
       )}
 
+      {/* BARU: KONFIRMASI JUAL ASET — cuma tanda, gak ada form */}
+      {jualTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] px-4">
+          <div className="bg-white rounded-xl w-full max-w-sm p-5">
+            <h2 className="text-base font-semibold text-slate-900 mb-1">Tandai aset sebagai dijual?</h2>
+            <p className="text-sm text-slate-500 mb-5">
+              <span className="font-medium text-slate-700">{jualTarget.kode_aset}</span> akan ditandai dengan status{' '}
+              <span className="font-medium">Dijual</span>.
+            </p>
+
+            {jualError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{jualError}</p>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setJualTarget(null)}
+                disabled={jualLoading}
+                className="text-sm px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmJual}
+                disabled={jualLoading}
+                className="text-sm px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+              >
+                {jualLoading ? 'Menyimpan...' : 'Ya, Dijual'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* DETAIL ASET — disembunyiin sementara kalau ada modal aksi (serah-terima,
-          terima kembali, dst) yang kebuka di atasnya, biar gak numpuk 2 modal
-          + 2 overlay keliatan bareng */}
+          terima kembali, jual, dst) yang kebuka di atasnya, biar gak numpuk 2
+          modal + 2 overlay keliatan bareng */}
       {detailId &&
         !serahTerimaAset &&
         !pengembalianTarget &&
         !perbaikanAsetTarget &&
         !penangananSelesaiTarget &&
-        !sparepartAsetTarget && (
+        !sparepartAsetTarget &&
+        !jualTarget && (
         <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
@@ -674,6 +754,16 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                       >
                         <Undo2 size={14} />
                         Terima Kembali
+                      </button>
+                    )}
+                    {/* BARU: tombol Jual Aset di panel detail */}
+                    {detail.status === 'rusak_berat' && (
+                      <button
+                        onClick={() => setJualTarget(detail)}
+                        className="flex items-center gap-1.5 bg-purple-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-purple-700 transition"
+                      >
+                        <Tag size={14} />
+                        Jual Aset
                       </button>
                     )}
                   </div>
