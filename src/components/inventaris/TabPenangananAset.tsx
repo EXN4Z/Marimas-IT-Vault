@@ -26,11 +26,14 @@ function formatRupiah(n?: number | null) {
   return `Rp ${n.toLocaleString('id-ID')}`;
 }
 
+type TabStatus = 'menunggu' | 'diperbaiki' | 'selesai';
+
 export default function TabPenangananAset({ onCount }: Props) {
   const [penangananList, setPenangananList] = useState<AsetPenanganan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activePenanganan, setActivePenanganan] = useState<AsetPenanganan | null>(null);
+  const [activeTab, setActiveTab] = useState<TabStatus>('menunggu');
 
   const load = () => {
     setLoading(true);
@@ -138,6 +141,21 @@ export default function TabPenangananAset({ onCount }: Props) {
     return <p className="text-sm text-slate-500">Memuat laporan penanganan aset...</p>;
   }
 
+  // pisah per status: belum diterima admin, lagi diperbaiki, udah selesai
+  // (diperbaiki maupun rusak berat -- dua-duanya "selesai" karena udah gak
+  // butuh aksi lagi dari admin).
+  const menungguList = penangananList.filter((p) => !p.tanggal_selesai && !p.tanggal_diterima);
+  const diperbaikiList = penangananList.filter((p) => !p.tanggal_selesai && !!p.tanggal_diterima);
+  const selesaiList = penangananList.filter((p) => !!p.tanggal_selesai);
+
+  const tabs: { key: TabStatus; label: string; list: AsetPenanganan[] }[] = [
+    { key: 'menunggu', label: 'Menunggu Terima', list: menungguList },
+    { key: 'diperbaiki', label: 'Sedang Diperbaiki', list: diperbaikiList },
+    { key: 'selesai', label: 'Selesai', list: selesaiList },
+  ];
+
+  const displayedList = tabs.find((t) => t.key === activeTab)?.list ?? [];
+
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
       <h3 className="text-base font-semibold text-slate-900 mb-1">Forum Penanganan Aset</h3>
@@ -149,8 +167,31 @@ export default function TabPenangananAset({ onCount }: Props) {
         </div>
       )}
 
+      <div className="flex items-center gap-1 mb-4 border-b border-slate-200">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${
+              activeTab === t.key
+                ? 'border-slate-900 text-slate-900'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            {t.label}
+            <span
+              className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                activeTab === t.key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500'
+              }`}
+            >
+              {t.list.length}
+            </span>
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-col gap-2">
-        {penangananList.map((p) => {
+        {displayedList.map((p) => {
           const selesai = !!p.tanggal_selesai;
           const diterima = !!p.tanggal_diterima;
           const statusLabel = selesai
@@ -222,8 +263,12 @@ export default function TabPenangananAset({ onCount }: Props) {
           </div>
           );
         })}
-        {penangananList.length === 0 && (
-          <p className="text-sm text-slate-400 text-center py-8">Belum ada laporan kerusakan.</p>
+        {displayedList.length === 0 && (
+          <p className="text-sm text-slate-400 text-center py-8">
+            {activeTab === 'menunggu' && 'Tidak ada laporan yang menunggu diterima.'}
+            {activeTab === 'diperbaiki' && 'Tidak ada aset yang sedang diperbaiki.'}
+            {activeTab === 'selesai' && 'Belum ada penanganan yang selesai.'}
+          </p>
         )}
       </div>
 

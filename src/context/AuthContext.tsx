@@ -2,12 +2,14 @@ import { createContext, useContext, useState, useEffect, useRef, type ReactNode 
 import type { User } from '../types/user';
 import api from '../api/axios';
 import { queryClient } from '../lib/queryClient';
+import { disconnectEcho } from '../lib/echo';
+import { unsubscribeThisDevice } from '../api/pushNotifications';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   setUser: (user: User | null) => void;
-  logout: () => Promise<void>;
+  logout: (opts?: { skipServerRevoke?: boolean }) => Promise<{ password_direset?: boolean } | undefined>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,14 +37,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = async () => {
-    // best-effort revoke token di server, gak perlu nunggu hasilnya
-    api.post('/logout').catch(() => {});
+  const logout = async (opts?: { skipServerRevoke?: boolean }): Promise<{ password_direset?: boolean } | undefined> => {
+    let response: { password_direset?: boolean } | undefined;
+    const hasToken = !!localStorage.getItem('token');
+
+    // PENTING: unsubscribe push HARUS jalan SEBELUM token di-revoke -- endpoint
+    // DELETE /push-subscriptions butuh token yang masih valid (auth:sanctum).
+    // Kalau dibalik (revoke dulu baru unsubscribe), request unsubscribe-nya
+    // bakal 401 & gagal diam-diam, dan subscription lama gak pernah kehapus
+    // dari DB (masalah device-sharing yang coba dicegah fitur ini).
+    if (hasToken) {
+      await unsubscribeThisDevice();
+    }
+
+    // best-effort revoke token di server. Skip kalau token udah gak ada
+    // (misal interceptor 401 udah bersihin duluan), atau kalau caller udah
+    // revoke sendiri (skipServerRevoke) -- dua-duanya bikin request
+    // tanpa/token-invalid yang cuma balik 401 sia-sia.
+    if (!opts?.skipServerRevoke && hasToken) {
+      try {
+        const res = await api.post('/logout');
+        response = res.data;
+      } catch {
+        // best-effort, tetep lanjut clear session lokal
+      }
+    }
+
+    disconnectEcho();
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     queryClient.clear();
     lastUserId.current = null;
     setUser(null);
+
+    return response;
   };
 
   // Validasi token ke backend setiap kali app dibuka/refresh
