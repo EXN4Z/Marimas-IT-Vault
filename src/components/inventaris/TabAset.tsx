@@ -36,7 +36,11 @@ const STATUS_LABEL: Record<AsetStatus, string> = {
   rusak: 'Rusak',
   menunggu_perbaikan: 'Menunggu Perbaikan',
   diperbaiki: 'Sedang Diperbaiki',
+<<<<<<< HEAD
   dijual: 'Dijual',
+=======
+  rusak_berat: 'Rusak Berat',
+>>>>>>> e3fac25efd9fb1e814c4edffcab2caf81beefd5f
 };
 
 const STATUS_STYLE: Record<AsetStatus, string> = {
@@ -45,7 +49,24 @@ const STATUS_STYLE: Record<AsetStatus, string> = {
   rusak: 'bg-red-50 text-red-700',
   menunggu_perbaikan: 'bg-yellow-50 text-yellow-700',
   diperbaiki: 'bg-orange-50 text-orange-700',
+<<<<<<< HEAD
   dijual: 'bg-slate-200 text-slate-600',
+=======
+  rusak_berat: 'bg-red-100 text-red-800',
+};
+
+// urutan tampil di tabel: tersedia paling atas, lalu dipakai, lalu status
+// yang lagi dalam proses penanganan, rusak, dan rusak_berat ("jual") paling
+// bawah — dipakai sebagai key sort di filteredAset, BUKAN untuk urutan
+// dropdown filter (dropdown tetap ikut urutan STATUS_LABEL di atas).
+const STATUS_PRIORITY: Record<AsetStatus, number> = {
+  tersedia: 1,
+  dipakai: 2,
+  menunggu_perbaikan: 3,
+  diperbaiki: 4,
+  rusak: 5,
+  rusak_berat: 6,
+>>>>>>> e3fac25efd9fb1e814c4edffcab2caf81beefd5f
 };
 
 function formatTanggalId(iso: string | null): string {
@@ -207,7 +228,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
       setDeleteTarget(null);
       if (detailId === deleteTarget.id) closeDetail();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal menghapus aset.');
+      toast.error(err.response?.data?.message || 'Gagal menghapus aset.');
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
@@ -271,6 +292,22 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
 
   const handlePrintPenanganan = (aset: Aset, p: AsetPenanganan) => {
     if (!p.no_struk) return;
+    const rusakBerat = p.hasil === 'rusak_berat';
+
+    if (rusakBerat) {
+      printStruk({
+        judul: 'Bukti Penanganan Aset',
+        noStruk: p.no_struk,
+        tanggal: formatTanggalId(p.tanggal_selesai),
+        rows: [
+          { label: 'Hasil', value: 'Rusak Berat (tidak bisa diperbaiki)' },
+          { label: 'Durasi', value: p.durasi_hari != null ? `${p.durasi_hari} hari` : '-' },
+        ],
+        catatan: p.catatan,
+      });
+      return;
+    }
+
     const totalBiaya = (Number(p.harga_jasa) || 0) + (Number(p.biaya_komponen) || 0);
     printStruk({
       judul: 'Bukti Penanganan Aset',
@@ -346,10 +383,19 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
     .filter((a) => {
       if (isAdmin) return true;
       const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
+<<<<<<< HEAD
       // 'dijual' bukan data pribadi siapa pun — tetap tampil buat semua,
       // sama seperti 'tersedia', cuma nggak bisa diapa-apakan lagi.
       return a.status === 'tersedia' || a.status === 'dijual' || akuPeminjamnya;
     });
+=======
+      return a.status === 'tersedia' || akuPeminjamnya;
+    })
+    // BARU: urutkan berdasarkan prioritas status — tersedia paling atas,
+    // dipakai, lalu status dalam proses penanganan, rusak, dan rusak_berat
+    // ("jual") paling bawah. Lihat STATUS_PRIORITY di atas.
+    .sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
+>>>>>>> e3fac25efd9fb1e814c4edffcab2caf81beefd5f
 
   return (
     <div>
@@ -428,8 +474,8 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                         )}
                       </td>
                       <td className="px-6 py-3 text-slate-600">
-                        {namaPemakai(a.pemakai_saat_ini)}
-                        {isCabangPemakai(a.pemakai_saat_ini) && (
+                        {a.status === 'rusak' ? '-' : namaPemakai(a.pemakai_saat_ini)}
+                        {a.status !== 'rusak' && isCabangPemakai(a.pemakai_saat_ini) && (
                           <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
                         )}
                       </td>
@@ -523,7 +569,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                               Lapor Rusak
                             </button>
                           )}
-                          {!isAdmin && akuPeminjamnya && (a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak') && (
+                          {!isAdmin && akuPeminjamnya && (a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak' || a.status === 'rusak_berat') && (
                             <span
                               title="Laporan kerusakan sudah dikirim, menunggu ditangani admin"
                               className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg cursor-default"
