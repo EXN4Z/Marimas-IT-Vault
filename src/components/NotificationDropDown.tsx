@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bell, Check, Trash2, CheckCheck } from 'lucide-react';
+import toast from 'react-hot-toast';
 import {
   getNotifications,
   markNotificationAsRead,
@@ -33,11 +34,36 @@ export default function NotificationDropdown() {
   const { data, isLoading } = useQuery<NotificationResponse>({
     queryKey: ['notifications'],
     queryFn: getNotifications,
-    refetchInterval: 30000,
+    refetchInterval: 15000,
   });
 
   const items = data?.data ?? [];
   const unreadCount = data?.unread_count ?? 0;
+
+  // GANTI: dulu notif baru cuma nongol lewat push Pusher (Echo) di Dashboard.tsx,
+  // gagal kalau Pusher gak konek di production. Sekarang polling (di atas) yang
+  // jadi satu-satunya sumber, dan tiap ketemu notif ID baru yang belum pernah
+  // kelihatan sebelumnya, langsung munculin toast alert -- gak butuh Pusher sama sekali.
+  const seenIdsRef = useRef<Set<string> | null>(null);
+
+  useEffect(() => {
+    if (!data) return;
+
+    const currentIds = new Set(items.map((n) => n.id));
+
+    if (seenIdsRef.current) {
+      const belumPernahMuncul = items.filter(
+        (n) => !seenIdsRef.current!.has(n.id) && !n.read_at
+      );
+
+      belumPernahMuncul.forEach((n) => {
+        toast(n.data?.message ?? 'Notifikasi baru.', { icon: '🔔' });
+      });
+    }
+
+    seenIdsRef.current = currentIds;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
