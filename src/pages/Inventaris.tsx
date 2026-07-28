@@ -51,6 +51,15 @@ export default function Inventaris() {
       .finally(() => setRiwayatAsetLoading(false));
   }, [user?.role]);
 
+  // versi diam-diam buat polling -- gak nyalain loading spinner tiap 5 detik,
+  // biar panel gak kedip-kedip pas auto-refresh (sama pola kayak TabPenangananAset).
+  const refreshRiwayatAsetSilent = useCallback(() => {
+    if (user?.role === 'cabang') return;
+    getRiwayatAset(10)
+      .then(setRiwayatAset)
+      .catch(console.error);
+  }, [user?.role]);
+
   const handleTabChange = (key: TabKey) => {
     setActiveTab(key);
     if (key === 'aset') refreshRiwayatAset();
@@ -65,6 +74,13 @@ export default function Inventaris() {
     // difilter cuma riwayat aktivitas milik sendiri (lihat AsetPemakaiController::riwayat)
     refreshRiwayatAset();
   }, [refreshRiwayatAset]);
+
+  // auto-refresh tiap 5 detik biar riwayat langsung update tanpa perlu F5
+  // (sama pola kayak polling di TabPenangananAset).
+  useEffect(() => {
+    const interval = setInterval(refreshRiwayatAsetSilent, 5000);
+    return () => clearInterval(interval);
+  }, [refreshRiwayatAsetSilent]);
 
   // stabil: hindari infinite loop di child (onCount di deps useEffect anak)
   const updateCount = useCallback((key: TabKey, n: number) => {
