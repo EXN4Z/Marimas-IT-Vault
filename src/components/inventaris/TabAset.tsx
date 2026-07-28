@@ -170,11 +170,12 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
 
   const lastCount = useRef<number | null>(null);
   useEffect(() => {
+    if (loading) return; // hindari kedip ke 0 sebelum fetch pertama kelar
     if (lastCount.current !== asetList.length) {
       lastCount.current = asetList.length;
       onCount?.(asetList.length);
     }
-  }, [asetList, onCount]);
+  }, [asetList, loading, onCount]);
 
   const openDetail = async (id: number) => {
     setDetailId(id);

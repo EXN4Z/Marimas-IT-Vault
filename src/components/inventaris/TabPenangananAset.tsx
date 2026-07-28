@@ -67,12 +67,13 @@ export default function TabPenangananAset({ onCount }: Props) {
 
   const lastCount = useRef<number | null>(null);
   useEffect(() => {
+    if (loading) return; // hindari kedip ke 0 sebelum fetch pertama kelar
     const belumDitangani = penangananList.filter((p) => !p.tanggal_selesai).length;
     if (lastCount.current !== belumDitangani) {
       lastCount.current = belumDitangani;
       onCount?.(belumDitangani);
     }
-  }, [penangananList, onCount]);
+  }, [penangananList, loading, onCount]);
 
   const [terimaLoadingId, setTerimaLoadingId] = useState<number | null>(null);
 

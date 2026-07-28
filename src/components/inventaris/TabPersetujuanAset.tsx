@@ -49,11 +49,12 @@ export default function TabPersetujuanAset({ onCount }: Props) {
 
   const lastCount = useRef<number | null>(null);
   useEffect(() => {
+    if (loading) return; // jangan lapor count dulu selagi masih fetch pertama (hindari kedip ke 0)
     if (lastCount.current !== list.length) {
       lastCount.current = list.length;
       onCount?.(list.length);
     }
-  }, [list, onCount]);
+  }, [list, loading, onCount]);
 
   const handleSetujui = async (item: AsetPemakai) => {
     setProcessingId(item.id);
