@@ -4,9 +4,8 @@ import AppLayout from '../components/shared/AppLayout';
 import TabAset from '../components/inventaris/TabAset';
 import TabKelengkapanAset from '../components/inventaris/TabKelengkapanAset';
 import TabPenangananAset from '../components/inventaris/TabPenangananAset';
-import TabPersetujuanAset from '../components/inventaris/TabPersetujuanAset';
 import { useAuth } from '../context/AuthContext';
-import { getRiwayatAset, getAset, getPendingAsetPemakai, type RiwayatAsetEvent, type AsetPenanganan } from '../api/aset';
+import { getRiwayatAset, getAset, type RiwayatAsetEvent, type AsetPenanganan } from '../api/aset';
 import api from '../api/axios';
 
 function formatWaktu(iso: string): string {
@@ -40,7 +39,7 @@ function buatRangeHalaman(current: number, last: number): (number | 'ellipsis')[
   return range;
 }
 
-type TabKey = 'aset' | 'kelengkapan_aset' | 'penanganan_aset' | 'persetujuan_aset';
+type TabKey = 'aset' | 'kelengkapan_aset' | 'penanganan_aset';
 type RiwayatFilter = 'semua' | RiwayatAsetEvent['type'];
 
 const RIWAYAT_FILTER_LABEL: Record<RiwayatAsetEvent['type'], string> = {
@@ -154,7 +153,6 @@ export default function Inventaris() {
 
   const handleCountAset = useCallback((n: number) => updateCount('aset', n), [updateCount]);
   const handleCountPenanganan = useCallback((n: number) => updateCount('penanganan_aset', n), [updateCount]);
-  const handleCountPersetujuan = useCallback((n: number) => updateCount('persetujuan_aset', n), [updateCount]);
 
   // Fetch badge count semua tab di sini (bukan nunggu tab-nya dibuka), biar
   // angka di nav udah kebaca dari awal buka halaman & tetep update walau
@@ -171,12 +169,6 @@ export default function Inventaris() {
         .catch(console.error);
 
       if (isAdmin) {
-        getPendingAsetPemakai()
-          .then((list) => {
-            if (!cancelled) updateCount('persetujuan_aset', list.length);
-          })
-          .catch(console.error);
-
         api
           .get<AsetPenanganan[]>('/aset-penanganan')
           .then((res) => {
@@ -200,7 +192,6 @@ export default function Inventaris() {
   const tabs: { key: TabKey; label: string; icon: typeof Package; adminOnly?: boolean }[] = [
     { key: 'aset', label: 'Aset', icon: Package },
     { key: 'kelengkapan_aset', label: 'Kelengkapan Aset', icon: ClipboardList },
-    { key: 'persetujuan_aset', label: 'Persetujuan Aset', icon: HandCoins, adminOnly: true },
     { key: 'penanganan_aset', label: 'Penanganan Aset', icon: Wrench, adminOnly: true },
   ];
 
@@ -229,7 +220,7 @@ export default function Inventaris() {
                   {counts[t.key] != null && (
                     <span
                       className={`text-xs px-1.5 py-0.5 rounded-full ${
-                        t.key === 'penanganan_aset' || t.key === 'persetujuan_aset'
+                        t.key === 'penanganan_aset'
                           ? 'bg-red-50 text-red-600'
                           : 'bg-slate-100 text-slate-600'
                       }`}
@@ -415,8 +406,6 @@ export default function Inventaris() {
         </div>
       ) : activeTab === 'kelengkapan_aset' ? (
         <TabKelengkapanAset />
-      ) : activeTab === 'persetujuan_aset' ? (
-        <TabPersetujuanAset onCount={handleCountPersetujuan} />
       ) : (
         <TabPenangananAset onCount={handleCountPenanganan} />
       )}

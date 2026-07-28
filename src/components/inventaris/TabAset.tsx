@@ -450,7 +450,6 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                 {filteredAset.map((a) => {
                   const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
                   const bolehLihatDetail = isAdmin || akuPeminjamnya;
-                  const sudahAdaPengajuan = (a.pemakai_pending?.length ?? 0) > 0;
 
                   return (
                     <tr key={a.id} className="text-center border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
@@ -461,11 +460,6 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                         <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_STYLE[a.status]}`}>
                           {STATUS_LABEL[a.status]}
                         </span>
-                        {a.status === 'tersedia' && sudahAdaPengajuan && (
-                          <span className="inline-block ml-1.5 px-2 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700">
-                            Diajukan
-                          </span>
-                        )}
                       </td>
                       <td className="px-6 py-3 text-slate-600">
                         {a.status === 'rusak' ? '-' : namaPemakai(a.pemakai_saat_ini)}
@@ -634,12 +628,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
               <span className="font-medium">Dijual</span> dan tidak bisa diserahkan/dipinjamkan lagi.
             </p>
 
-            {(jualTarget.pemakai_pending?.length ?? 0) > 0 && (
-              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3 mb-4">
-                Aset ini masih punya pengajuan pinjam yang menunggu persetujuan — pengajuan itu akan otomatis ditolak.
-              </p>
-            )}
-            {!(jualTarget.pemakai_pending?.length) && <div className="mb-4" />}
+            <div className="mb-4" />
 
             {jualError && (
               <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{jualError}</p>
