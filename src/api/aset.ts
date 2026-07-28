@@ -283,10 +283,11 @@ export interface PaginatedRiwayatAset {
 export async function getRiwayatAset(
   page = 1,
   perPage = 10,
-  type?: RiwayatAsetEvent['type']
+  type?: RiwayatAsetEvent['type'],
+  search?: string
 ): Promise<PaginatedRiwayatAset> {
   const res = await api.get<PaginatedRiwayatAset>('/aset-pemakai/riwayat', {
-    params: { page, per_page: perPage, type: type || undefined },
+    params: { page, per_page: perPage, type: type || undefined, search: search || undefined },
   });
   return res.data;
 }

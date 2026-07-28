@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState, type JSX } from 'react';
-import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench, PlayCircle, Banknote, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
+import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench, PlayCircle, Banknote, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import AppLayout from '../components/shared/AppLayout';
 import TabAset from '../components/inventaris/TabAset';
 import TabKelengkapanAset from '../components/inventaris/TabKelengkapanAset';
@@ -63,12 +63,14 @@ export default function Inventaris() {
   const [riwayatAset, setRiwayatAset] = useState<RiwayatAsetEvent[]>([]);
   const [riwayatAsetLoading, setRiwayatAsetLoading] = useState(true);
   const [riwayatFilter, setRiwayatFilter] = useState<RiwayatFilter>('semua');
+  const [riwayatSearch, setRiwayatSearch] = useState('');
   const [riwayatPage, setRiwayatPage] = useState(1);
   const [riwayatLastPage, setRiwayatLastPage] = useState(1);
   const [riwayatTotal, setRiwayatTotal] = useState(0);
   const RIWAYAT_PER_PAGE = 10; // minimal 10 data per halaman (dipaksa juga di backend)
+  const riwayatSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const refreshRiwayatAset = useCallback((targetPage = 1, targetFilter: RiwayatFilter = 'semua') => {
+  const refreshRiwayatAset = useCallback((targetPage = 1, targetFilter: RiwayatFilter = 'semua', targetSearch = '') => {
     // 'cabang' gak termasuk role yang diizinin backend buat /aset-pemakai/riwayat
     // (lihat routes/api.php) — skip biar gak nembak API yang bakal 403 percuma.
     if (user?.role === 'cabang') {
@@ -76,7 +78,7 @@ export default function Inventaris() {
       return;
     }
     setRiwayatAsetLoading(true);
-    getRiwayatAset(targetPage, RIWAYAT_PER_PAGE, targetFilter === 'semua' ? undefined : targetFilter)
+    getRiwayatAset(targetPage, RIWAYAT_PER_PAGE, targetFilter === 'semua' ? undefined : targetFilter, targetSearch || undefined)
       .then((res) => {
         setRiwayatAset(res.data);
         setRiwayatPage(res.current_page);
@@ -89,10 +91,11 @@ export default function Inventaris() {
 
   // versi diam-diam buat polling -- gak nyalain loading spinner tiap 5 detik,
   // biar panel gak kedip-kedip pas auto-refresh (sama pola kayak TabPenangananAset).
-  // Tetap di halaman & filter yang lagi dibuka user, bukan balik ke halaman 1.
+  // Tetap di halaman, filter, & kata kunci search yang lagi dibuka user, bukan
+  // balik ke halaman 1 / kosongin search.
   const refreshRiwayatAsetSilent = useCallback(() => {
     if (user?.role === 'cabang') return;
-    getRiwayatAset(riwayatPage, RIWAYAT_PER_PAGE, riwayatFilter === 'semua' ? undefined : riwayatFilter)
+    getRiwayatAset(riwayatPage, RIWAYAT_PER_PAGE, riwayatFilter === 'semua' ? undefined : riwayatFilter, riwayatSearch || undefined)
       .then((res) => {
         setRiwayatAset(res.data);
         setRiwayatPage(res.current_page);
@@ -100,29 +103,42 @@ export default function Inventaris() {
         setRiwayatTotal(res.total);
       })
       .catch(console.error);
-  }, [user?.role, riwayatPage, riwayatFilter]);
+  }, [user?.role, riwayatPage, riwayatFilter, riwayatSearch]);
 
   const handleTabChange = (key: TabKey) => {
     setActiveTab(key);
-    if (key === 'aset') refreshRiwayatAset(riwayatPage, riwayatFilter);
+    if (key === 'aset') refreshRiwayatAset(riwayatPage, riwayatFilter, riwayatSearch);
   };
 
   const gantiRiwayatFilter = (filter: RiwayatFilter) => {
     setRiwayatFilter(filter);
-    refreshRiwayatAset(1, filter);
+    refreshRiwayatAset(1, filter, riwayatSearch);
   };
 
   const gantiRiwayatHalaman = (target: number) => {
     if (target < 1 || target > riwayatLastPage || target === riwayatPage) return;
-    refreshRiwayatAset(target, riwayatFilter);
+    refreshRiwayatAset(target, riwayatFilter, riwayatSearch);
   };
 
   useEffect(() => {
     // backend /aset-pemakai/riwayat: admin lihat semua, role lain otomatis
     // difilter cuma riwayat aktivitas milik sendiri (lihat AsetPemakaiController::riwayat)
-    refreshRiwayatAset(1, 'semua');
+    refreshRiwayatAset(1, 'semua', '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.role]);
+
+  // Ketik di search riwayat -> debounce 400ms baru fetch (sama pola kayak
+  // search di AuditLog.tsx), reset ke halaman 1 tiap kali kata kuncinya ganti.
+  useEffect(() => {
+    if (riwayatSearchDebounceRef.current) clearTimeout(riwayatSearchDebounceRef.current);
+    riwayatSearchDebounceRef.current = setTimeout(() => {
+      refreshRiwayatAset(1, riwayatFilter, riwayatSearch);
+    }, 400);
+    return () => {
+      if (riwayatSearchDebounceRef.current) clearTimeout(riwayatSearchDebounceRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [riwayatSearch]);
 
   // auto-refresh tiap 5 detik biar riwayat langsung update tanpa perlu F5
   // (sama pola kayak polling di TabPenangananAset).
@@ -253,6 +269,26 @@ export default function Inventaris() {
               {isAdmin ? 'Riwayat Aset' : 'Riwayat Aktivitas Saya'}
             </h3>
 
+            <div className="relative mb-3 mt-2">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={riwayatSearch}
+                onChange={(e) => setRiwayatSearch(e.target.value)}
+                placeholder="Cari kode aset, merek/tipe, atau nama peminjam..."
+                className="w-full text-sm border border-slate-200 rounded-lg pl-9 pr-9 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+              />
+              {riwayatSearch && (
+                <button
+                  onClick={() => setRiwayatSearch('')}
+                  aria-label="Hapus pencarian"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+
             <ul className="flex items-center gap-1 mb-4 border-b border-slate-200 overflow-x-auto">
               {([
                 { key: 'semua', label: 'Semua' },
@@ -316,7 +352,9 @@ export default function Inventaris() {
                 })}
                 {riwayatAset.length === 0 && (
                   <p className="text-sm text-slate-400 text-center py-6">
-                    {riwayatFilter !== 'semua'
+                    {riwayatSearch
+                      ? `Tidak ada hasil untuk "${riwayatSearch}".`
+                      : riwayatFilter !== 'semua'
                       ? `Belum ada riwayat "${RIWAYAT_FILTER_LABEL[riwayatFilter]}".`
                       : isAdmin ? 'Belum ada aktivitas aset.' : 'Belum ada aktivitas aset atas namamu.'}
                   </p>
