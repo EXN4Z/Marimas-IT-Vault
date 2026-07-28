@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { User, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { login } from '../api/auth';
