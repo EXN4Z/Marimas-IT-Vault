@@ -130,16 +130,6 @@ export default function Login() {
               />
             </div>
 
-            <div className="flex items-center justify-between text-sm pt-1">
-              <label className="flex items-center gap-2 text-slate-600 cursor-pointer select-none">
-                <input type="checkbox" defaultChecked className="w-4 h-4 accent-slate-900 rounded" />
-                Remember me
-              </label>
-              <a href="#" className="text-slate-500 hover:text-slate-900 underline underline-offset-2">
-                Forgot password?
-              </a>
-            </div>
-
             {error && (
               <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                 {error}
@@ -157,16 +147,8 @@ export default function Login() {
 
           <div className="flex items-center gap-3 my-6">
             <div className="flex-1 h-px bg-slate-200" />
-            <span className="text-xs text-slate-400">Belum punya akun?</span>
             <div className="flex-1 h-px bg-slate-200" />
           </div>
-
-          <Link
-            to="/register"
-            className="block w-full text-center bg-white border border-slate-300 text-slate-700 text-sm font-semibold tracking-wide py-3.5 rounded-lg hover:bg-slate-100 transition-colors"
-          >
-            DAFTAR AKUN BARU
-          </Link>
         </div>
       </div>
     </div>
