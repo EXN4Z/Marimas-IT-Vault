@@ -434,7 +434,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
 
         {!loading && !error && filteredAset.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-[1080px] text-sm min-w-[760px]">
+            <table className="w-[1180px] text-sm min-w-[760px]">
               <thead>
                 <tr className="border-b border-slate-100 text-middle text-xs text-slate-400 uppercase tracking-wide">
                   <th className="px-6 py-3 font-medium">Kode Aset</th>
