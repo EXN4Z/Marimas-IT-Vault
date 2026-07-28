@@ -23,6 +23,11 @@ function formatWaktu(iso: string): string {
 }
 
 type TabKey = 'aset' | 'kelengkapan_aset' | 'penanganan_aset' | 'persetujuan_aset';
+type RiwayatFilter = 'semua' | 'laporan' | 'lainnya';
+
+// laporan = seputar 1 laporan kerusakan (lapor -> mulai -> selesai perbaikan)
+// lainnya = pinjam/kembali/dijual, gak berhubungan sama laporan kerusakan
+const TIPE_LAPORAN: RiwayatAsetEvent['type'][] = ['lapor_rusak', 'mulai_perbaikan', 'selesai_perbaikan'];
 
 export default function Inventaris() {
   const { user } = useAuth();
@@ -53,6 +58,7 @@ export default function Inventaris() {
 
   const [riwayatAset, setRiwayatAset] = useState<RiwayatAsetEvent[]>([]);
   const [riwayatAsetLoading, setRiwayatAsetLoading] = useState(true);
+  const [riwayatFilter, setRiwayatFilter] = useState<RiwayatFilter>('semua');
 
   useEffect(() => {
     // backend /aset-pemakai/riwayat: admin lihat semua, role lain otomatis
@@ -178,15 +184,43 @@ export default function Inventaris() {
               AsetPemakaiController::riwayat), bukan cuma disembunyiin di UI. */}
           {user?.role !== 'cabang' && (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-            <h3 className="text-base font-semibold text-slate-900 mb-4">
-              {isAdmin ? 'Riwayat Aset' : 'Riwayat Aktivitas Saya'}{' '}
-              <span className="text-slate-400 font-normal">({riwayatAset.length})</span>
+            <h3 className="text-base font-semibold text-slate-900 mb-1">
+              {isAdmin ? 'Riwayat Aset' : 'Riwayat Aktivitas Saya'}
             </h3>
+
+            <ul className="flex items-center gap-1 mb-4 border-b border-slate-200">
+              {([
+                { key: 'semua', label: 'Semua' },
+                { key: 'laporan', label: 'Riwayat Laporan' },
+                { key: 'lainnya', label: 'Riwayat Lainnya' },
+              ] as { key: RiwayatFilter; label: string }[]).map((t) => (
+                <li key={t.key}>
+                  <button
+                    onClick={() => setRiwayatFilter(t.key)}
+                    className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition ${
+                      riwayatFilter === t.key
+                        ? 'border-slate-900 text-slate-900'
+                        : 'border-transparent text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+
             {riwayatAsetLoading ? (
               <p className="text-sm text-slate-400 text-center py-6">Memuat riwayat...</p>
-            ) : (
+            ) : (() => {
+              const filteredRiwayat = riwayatAset.filter((ev) => {
+                if (riwayatFilter === 'semua') return true;
+                if (riwayatFilter === 'laporan') return TIPE_LAPORAN.includes(ev.type);
+                return !TIPE_LAPORAN.includes(ev.type);
+              });
+              return (
               <ul className="flex flex-col gap-4">
-                {riwayatAset.map((ev, idx) => {
+                {filteredRiwayat
+                  .map((ev, idx) => {
                   const style: Record<RiwayatAsetEvent['type'], { bg: string; icon: JSX.Element; label: string }> = {
                     pinjam: { bg: 'bg-amber-50 text-amber-600', icon: <HandCoins size={16} />, label: 'menerima' },
                     kembali: { bg: 'bg-emerald-50 text-emerald-600', icon: <Undo2 size={16} />, label: 'mengembalikan' },
@@ -204,7 +238,11 @@ export default function Inventaris() {
                       </span>
                       <div className="min-w-0">
                         <p className="text-sm text-slate-800">
-                          {ev.nama ? <span className="font-medium">{ev.nama} </span> : ''}
+                          {ev.nama ? (
+                            <span className="font-medium">{ev.nama} </span>
+                          ) : (ev.type === 'mulai_perbaikan' || ev.type === 'selesai_perbaikan') ? (
+                            <span className="font-medium">Admin </span>
+                          ) : ''}
                           {s.label} <span className="font-medium">{kode}</span>
                         </p>
                         <p className="text-xs text-slate-400">{formatWaktu(ev.waktu)}</p>
@@ -212,13 +250,16 @@ export default function Inventaris() {
                     </li>
                   );
                 })}
-                {riwayatAset.length === 0 && (
+                {filteredRiwayat.length === 0 && (
                   <p className="text-sm text-slate-400 text-center py-6">
-                    {isAdmin ? 'Belum ada aktivitas aset.' : 'Belum ada aktivitas aset atas namamu.'}
+                    {riwayatFilter !== 'semua'
+                      ? 'Tidak ada riwayat di kategori ini.'
+                      : isAdmin ? 'Belum ada aktivitas aset.' : 'Belum ada aktivitas aset atas namamu.'}
                   </p>
                 )}
               </ul>
-            )}
+              );
+            })()}
           </div>
           )}
         </div>
