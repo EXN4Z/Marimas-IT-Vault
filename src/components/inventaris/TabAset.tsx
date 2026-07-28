@@ -453,7 +453,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                   const sudahAdaPengajuan = (a.pemakai_pending?.length ?? 0) > 0;
 
                   return (
-                    <tr key={a.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
+                    <tr key={a.id} className="text-center border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                       <td className="px-6 py-3 font-medium text-slate-800">{a.kode_aset}</td>
                       <td className="px-6 py-3 text-slate-600">{a.jenis?.nama || '-'}</td>
                       <td className="px-6 py-3 text-slate-600">{[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}</td>

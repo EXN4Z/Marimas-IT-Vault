@@ -26,7 +26,7 @@ function formatRupiah(n?: number | null) {
   return `Rp ${n.toLocaleString('id-ID')}`;
 }
 
-type TabStatus = 'menunggu' | 'diperbaiki' | 'selesai';
+type TabStatus = 'menunggu' | 'diperbaiki' | 'diperbaiki_selesai' | 'rusak_berat';
 
 export default function TabPenangananAset({ onCount }: Props) {
   const [penangananList, setPenangananList] = useState<AsetPenanganan[]>([]);
@@ -142,17 +142,19 @@ export default function TabPenangananAset({ onCount }: Props) {
     return <p className="text-sm text-slate-500">Memuat laporan penanganan aset...</p>;
   }
 
-  // pisah per status: belum diterima admin, lagi diperbaiki, udah selesai
-  // (diperbaiki maupun rusak berat -- dua-duanya "selesai" karena udah gak
-  // butuh aksi lagi dari admin).
+  // pisah per status: belum diterima admin, lagi diperbaiki, dan yang udah
+  // selesai dipecah lagi jadi 2 -- berhasil diperbaiki vs rusak berat --
+  // biar gak nyampur di satu tab.
   const menungguList = penangananList.filter((p) => !p.tanggal_selesai && !p.tanggal_diterima);
   const diperbaikiList = penangananList.filter((p) => !p.tanggal_selesai && !!p.tanggal_diterima);
-  const selesaiList = penangananList.filter((p) => !!p.tanggal_selesai);
+  const diperbaikiSelesaiList = penangananList.filter((p) => !!p.tanggal_selesai && p.hasil !== 'rusak_berat');
+  const rusakBeratList = penangananList.filter((p) => !!p.tanggal_selesai && p.hasil === 'rusak_berat');
 
   const tabs: { key: TabStatus; label: string; list: AsetPenanganan[] }[] = [
     { key: 'menunggu', label: 'Menunggu Terima', list: menungguList },
     { key: 'diperbaiki', label: 'Sedang Diperbaiki', list: diperbaikiList },
-    { key: 'selesai', label: 'Selesai', list: selesaiList },
+    { key: 'diperbaiki_selesai', label: 'Berhasil Diperbaiki', list: diperbaikiSelesaiList },
+    { key: 'rusak_berat', label: 'Rusak Berat', list: rusakBeratList },
   ];
 
   const displayedList = tabs.find((t) => t.key === activeTab)?.list ?? [];
@@ -268,7 +270,8 @@ export default function TabPenangananAset({ onCount }: Props) {
           <p className="text-sm text-slate-400 text-center py-8">
             {activeTab === 'menunggu' && 'Tidak ada laporan yang menunggu diterima.'}
             {activeTab === 'diperbaiki' && 'Tidak ada aset yang sedang diperbaiki.'}
-            {activeTab === 'selesai' && 'Belum ada penanganan yang selesai.'}
+            {activeTab === 'diperbaiki_selesai' && 'Belum ada penanganan yang berhasil diperbaiki.'}
+            {activeTab === 'rusak_berat' && 'Belum ada aset yang dinyatakan rusak berat.'}
           </p>
         )}
       </div>
