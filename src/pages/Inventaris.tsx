@@ -23,11 +23,16 @@ function formatWaktu(iso: string): string {
 }
 
 type TabKey = 'aset' | 'kelengkapan_aset' | 'penanganan_aset' | 'persetujuan_aset';
-type RiwayatFilter = 'semua' | 'laporan' | 'lainnya';
+type RiwayatFilter = 'semua' | RiwayatAsetEvent['type'];
 
-// laporan = seputar 1 laporan kerusakan (lapor -> mulai -> selesai perbaikan)
-// lainnya = pinjam/kembali/dijual, gak berhubungan sama laporan kerusakan
-const TIPE_LAPORAN: RiwayatAsetEvent['type'][] = ['lapor_rusak', 'mulai_perbaikan', 'selesai_perbaikan'];
+const RIWAYAT_FILTER_LABEL: Record<RiwayatAsetEvent['type'], string> = {
+  pinjam: 'Menerima',
+  kembali: 'Mengembalikan',
+  lapor_rusak: 'Lapor Kerusakan',
+  mulai_perbaikan: 'Mulai Diperbaiki',
+  selesai_perbaikan: 'Selesai Diperbaiki',
+  dijual: 'Dijual',
+};
 
 export default function Inventaris() {
   const { user } = useAuth();
@@ -204,16 +209,20 @@ export default function Inventaris() {
               {isAdmin ? 'Riwayat Aset' : 'Riwayat Aktivitas Saya'}
             </h3>
 
-            <ul className="flex items-center gap-1 mb-4 border-b border-slate-200">
+            <ul className="flex items-center gap-1 mb-4 border-b border-slate-200 overflow-x-auto">
               {([
                 { key: 'semua', label: 'Semua' },
-                { key: 'laporan', label: 'Riwayat Laporan' },
-                { key: 'lainnya', label: 'Riwayat Lainnya' },
+                { key: 'pinjam', label: RIWAYAT_FILTER_LABEL.pinjam },
+                { key: 'kembali', label: RIWAYAT_FILTER_LABEL.kembali },
+                { key: 'lapor_rusak', label: RIWAYAT_FILTER_LABEL.lapor_rusak },
+                { key: 'mulai_perbaikan', label: RIWAYAT_FILTER_LABEL.mulai_perbaikan },
+                { key: 'selesai_perbaikan', label: RIWAYAT_FILTER_LABEL.selesai_perbaikan },
+                ...(isAdmin ? [{ key: 'dijual' as const, label: RIWAYAT_FILTER_LABEL.dijual }] : []),
               ] as { key: RiwayatFilter; label: string }[]).map((t) => (
-                <li key={t.key}>
+                <li key={t.key} className="flex-shrink-0">
                   <button
                     onClick={() => setRiwayatFilter(t.key)}
-                    className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition ${
+                    className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap ${
                       riwayatFilter === t.key
                         ? 'border-slate-900 text-slate-900'
                         : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -228,11 +237,9 @@ export default function Inventaris() {
             {riwayatAsetLoading ? (
               <p className="text-sm text-slate-400 text-center py-6">Memuat riwayat...</p>
             ) : (() => {
-              const filteredRiwayat = riwayatAset.filter((ev) => {
-                if (riwayatFilter === 'semua') return true;
-                if (riwayatFilter === 'laporan') return TIPE_LAPORAN.includes(ev.type);
-                return !TIPE_LAPORAN.includes(ev.type);
-              });
+              const filteredRiwayat = riwayatAset.filter((ev) =>
+                riwayatFilter === 'semua' ? true : ev.type === riwayatFilter
+              );
               return (
               <ul className="flex flex-col gap-4">
                 {filteredRiwayat
@@ -243,7 +250,7 @@ export default function Inventaris() {
                     lapor_rusak: { bg: 'bg-red-50 text-red-600', icon: <AlertTriangle size={16} />, label: 'melaporkan kerusakan' },
                     mulai_perbaikan: { bg: 'bg-orange-50 text-orange-600', icon: <PlayCircle size={16} />, label: 'mulai diperbaiki' },
                     selesai_perbaikan: { bg: 'bg-sky-50 text-sky-600', icon: <Wrench size={16} />, label: 'selesai diperbaiki' },
-                    dijual: { bg: 'bg-purple-50 text-purple-600', icon: <Banknote size={16} />, label: 'dijual' },
+                    dijual: { bg: 'bg-purple-50 text-purple-600', icon: <Banknote size={16} />, label: 'menjual' },
                   };
                   const s = style[ev.type];
                   const kode = ev.aset?.kode_aset || '-';
@@ -269,7 +276,7 @@ export default function Inventaris() {
                 {filteredRiwayat.length === 0 && (
                   <p className="text-sm text-slate-400 text-center py-6">
                     {riwayatFilter !== 'semua'
-                      ? 'Tidak ada riwayat di kategori ini.'
+                      ? `Belum ada riwayat "${RIWAYAT_FILTER_LABEL[riwayatFilter]}".`
                       : isAdmin ? 'Belum ada aktivitas aset.' : 'Belum ada aktivitas aset atas namamu.'}
                   </p>
                 )}
