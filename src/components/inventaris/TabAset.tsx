@@ -1016,6 +1016,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
         <AsetPengembalianModal
           aset={pengembalianTarget.aset}
           pemakai={pengembalianTarget.pemakai}
+          isAdmin={isAdmin}
           onClose={() => setPengembalianTarget(null)}
           onSuccess={(pemakai) => {
             handlePrintPengembalian(pengembalianTarget.aset, pemakai);

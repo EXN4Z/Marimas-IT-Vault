@@ -6,6 +6,7 @@ import { namaPemakai } from './asetHelpers';
 interface AsetPengembalianModalProps {
   aset: Aset;
   pemakai: AsetPemakai;
+  isAdmin: boolean;
   onClose: () => void;
   onSuccess: (pemakai: AsetPemakai) => void;
 }
@@ -14,7 +15,7 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export default function AsetPengembalianModal({ aset, pemakai, onClose, onSuccess }: AsetPengembalianModalProps) {
+export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose, onSuccess }: AsetPengembalianModalProps) {
   const [kodeStruk, setKodeStruk] = useState('');
   const [nomorPengembalian, setNomorPengembalian] = useState('');
   const [tanggalPengembalian, setTanggalPengembalian] = useState(todayIso());
@@ -52,14 +53,16 @@ export default function AsetPengembalianModal({ aset, pemakai, onClose, onSucces
     <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold text-slate-900">Terima Kembali Aset {aset.kode_aset}</h3>
+          <h3 className="text-base font-semibold text-slate-900">
+            {isAdmin ? `Terima Kembali Aset ${aset.kode_aset}` : `Kembalikan Aset ${aset.kode_aset}`}
+          </h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
             <X size={20} />
           </button>
         </div>
 
         <div className="bg-slate-50 rounded-lg px-3 py-2.5 mb-4 text-sm">
-          <p className="text-slate-500 text-xs">Dipakai oleh</p>
+          <p className="text-slate-500 text-xs">{isAdmin ? 'Dipakai oleh' : 'Kamu sedang memakai'}</p>
           <p className="text-slate-800 font-medium">{namaPemakai(pemakai)}</p>
         </div>
 
@@ -76,7 +79,9 @@ export default function AsetPengembalianModal({ aset, pemakai, onClose, onSucces
               className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-slate-900"
             />
             <p className="text-xs text-slate-400 mt-1">
-              Minta karyawan menunjukkan struk penerimaan aset, lalu ketik kodenya di sini sebagai bukti pengembalian sah.
+              {isAdmin
+                ? 'Minta karyawan menunjukkan struk penerimaan aset, lalu ketik kodenya di sini sebagai bukti pengembalian sah.'
+                : 'Cek struk penerimaan fisik yang kamu terima waktu serah-terima aset ini, lalu ketik kodenya di sini.'}
             </p>
           </div>
           <div>
@@ -118,7 +123,7 @@ export default function AsetPengembalianModal({ aset, pemakai, onClose, onSucces
           disabled={submitting}
           className="w-full bg-emerald-600 text-white text-sm font-semibold py-3 rounded-lg hover:bg-emerald-700 transition disabled:opacity-40"
         >
-          {submitting ? 'Memproses...' : 'Terima Kembali'}
+          {submitting ? 'Memproses...' : isAdmin ? 'Terima Kembali' : 'Kembalikan'}
         </button>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type JSX } from 'react';
-import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench, PlayCircle, Banknote } from 'lucide-react';
+import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench, PlayCircle, Banknote, ChevronLeft, ChevronRight } from 'lucide-react';
 import AppLayout from '../components/shared/AppLayout';
 import TabAset from '../components/inventaris/TabAset';
 import TabKelengkapanAset from '../components/inventaris/TabKelengkapanAset';
@@ -22,6 +22,24 @@ function formatWaktu(iso: string): string {
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 }
 
+// Menghasilkan array nomor halaman + elipsis, misal: [1, '...', 4, 5, 6, '...', 20]
+// (sama pola kayak di AuditLog.tsx, dipakai buat pager Riwayat Aset di bawah)
+function buatRangeHalaman(current: number, last: number): (number | 'ellipsis')[] {
+  const delta = 1;
+  const range: (number | 'ellipsis')[] = [];
+
+  const start = Math.max(2, current - delta);
+  const end = Math.min(last - 1, current + delta);
+
+  range.push(1);
+  if (start > 2) range.push('ellipsis');
+  for (let i = start; i <= end; i++) range.push(i);
+  if (end < last - 1) range.push('ellipsis');
+  if (last > 1) range.push(last);
+
+  return range;
+}
+
 type TabKey = 'aset' | 'kelengkapan_aset' | 'penanganan_aset' | 'persetujuan_aset';
 type RiwayatFilter = 'semua' | RiwayatAsetEvent['type'];
 
@@ -42,7 +60,15 @@ export default function Inventaris() {
   const [search, setSearch] = useState('');
   const [counts, setCounts] = useState<Partial<Record<TabKey, number>>>({});
 
-  const refreshRiwayatAset = useCallback(() => {
+  const [riwayatAset, setRiwayatAset] = useState<RiwayatAsetEvent[]>([]);
+  const [riwayatAsetLoading, setRiwayatAsetLoading] = useState(true);
+  const [riwayatFilter, setRiwayatFilter] = useState<RiwayatFilter>('semua');
+  const [riwayatPage, setRiwayatPage] = useState(1);
+  const [riwayatLastPage, setRiwayatLastPage] = useState(1);
+  const [riwayatTotal, setRiwayatTotal] = useState(0);
+  const RIWAYAT_PER_PAGE = 10; // minimal 10 data per halaman (dipaksa juga di backend)
+
+  const refreshRiwayatAset = useCallback((targetPage = 1, targetFilter: RiwayatFilter = 'semua') => {
     // 'cabang' gak termasuk role yang diizinin backend buat /aset-pemakai/riwayat
     // (lihat routes/api.php) — skip biar gak nembak API yang bakal 403 percuma.
     if (user?.role === 'cabang') {
@@ -50,35 +76,53 @@ export default function Inventaris() {
       return;
     }
     setRiwayatAsetLoading(true);
-    getRiwayatAset(10)
-      .then(setRiwayatAset)
+    getRiwayatAset(targetPage, RIWAYAT_PER_PAGE, targetFilter === 'semua' ? undefined : targetFilter)
+      .then((res) => {
+        setRiwayatAset(res.data);
+        setRiwayatPage(res.current_page);
+        setRiwayatLastPage(res.last_page);
+        setRiwayatTotal(res.total);
+      })
       .catch(console.error)
       .finally(() => setRiwayatAsetLoading(false));
   }, [user?.role]);
 
   // versi diam-diam buat polling -- gak nyalain loading spinner tiap 5 detik,
   // biar panel gak kedip-kedip pas auto-refresh (sama pola kayak TabPenangananAset).
+  // Tetap di halaman & filter yang lagi dibuka user, bukan balik ke halaman 1.
   const refreshRiwayatAsetSilent = useCallback(() => {
     if (user?.role === 'cabang') return;
-    getRiwayatAset(10)
-      .then(setRiwayatAset)
+    getRiwayatAset(riwayatPage, RIWAYAT_PER_PAGE, riwayatFilter === 'semua' ? undefined : riwayatFilter)
+      .then((res) => {
+        setRiwayatAset(res.data);
+        setRiwayatPage(res.current_page);
+        setRiwayatLastPage(res.last_page);
+        setRiwayatTotal(res.total);
+      })
       .catch(console.error);
-  }, [user?.role]);
+  }, [user?.role, riwayatPage, riwayatFilter]);
 
   const handleTabChange = (key: TabKey) => {
     setActiveTab(key);
-    if (key === 'aset') refreshRiwayatAset();
+    if (key === 'aset') refreshRiwayatAset(riwayatPage, riwayatFilter);
   };
 
-  const [riwayatAset, setRiwayatAset] = useState<RiwayatAsetEvent[]>([]);
-  const [riwayatAsetLoading, setRiwayatAsetLoading] = useState(true);
-  const [riwayatFilter, setRiwayatFilter] = useState<RiwayatFilter>('semua');
+  const gantiRiwayatFilter = (filter: RiwayatFilter) => {
+    setRiwayatFilter(filter);
+    refreshRiwayatAset(1, filter);
+  };
+
+  const gantiRiwayatHalaman = (target: number) => {
+    if (target < 1 || target > riwayatLastPage || target === riwayatPage) return;
+    refreshRiwayatAset(target, riwayatFilter);
+  };
 
   useEffect(() => {
     // backend /aset-pemakai/riwayat: admin lihat semua, role lain otomatis
     // difilter cuma riwayat aktivitas milik sendiri (lihat AsetPemakaiController::riwayat)
-    refreshRiwayatAset();
-  }, [refreshRiwayatAset]);
+    refreshRiwayatAset(1, 'semua');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.role]);
 
   // auto-refresh tiap 5 detik biar riwayat langsung update tanpa perlu F5
   // (sama pola kayak polling di TabPenangananAset).
@@ -221,7 +265,7 @@ export default function Inventaris() {
               ] as { key: RiwayatFilter; label: string }[]).map((t) => (
                 <li key={t.key} className="flex-shrink-0">
                   <button
-                    onClick={() => setRiwayatFilter(t.key)}
+                    onClick={() => gantiRiwayatFilter(t.key)}
                     className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap ${
                       riwayatFilter === t.key
                         ? 'border-slate-900 text-slate-900'
@@ -237,12 +281,9 @@ export default function Inventaris() {
             {riwayatAsetLoading ? (
               <p className="text-sm text-slate-400 text-center py-6">Memuat riwayat...</p>
             ) : (() => {
-              const filteredRiwayat = riwayatAset.filter((ev) =>
-                riwayatFilter === 'semua' ? true : ev.type === riwayatFilter
-              );
               return (
               <ul className="flex flex-col gap-4">
-                {filteredRiwayat
+                {riwayatAset
                   .map((ev, idx) => {
                   const style: Record<RiwayatAsetEvent['type'], { bg: string; icon: JSX.Element; label: string }> = {
                     pinjam: { bg: 'bg-amber-50 text-amber-600', icon: <HandCoins size={16} />, label: 'menerima' },
@@ -273,7 +314,7 @@ export default function Inventaris() {
                     </li>
                   );
                 })}
-                {filteredRiwayat.length === 0 && (
+                {riwayatAset.length === 0 && (
                   <p className="text-sm text-slate-400 text-center py-6">
                     {riwayatFilter !== 'semua'
                       ? `Belum ada riwayat "${RIWAYAT_FILTER_LABEL[riwayatFilter]}".`
@@ -283,6 +324,54 @@ export default function Inventaris() {
               </ul>
               );
             })()}
+
+            {/* Pagination — minimal 10 data riwayat per halaman */}
+            {!riwayatAsetLoading && riwayatAset.length > 0 && riwayatLastPage > 1 && (
+              <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-100">
+                <p className="text-xs text-slate-400">
+                  Halaman {riwayatPage} dari {riwayatLastPage} · {riwayatTotal} total riwayat
+                </p>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => gantiRiwayatHalaman(riwayatPage - 1)}
+                    disabled={riwayatPage <= 1}
+                    aria-label="Halaman sebelumnya"
+                    className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+
+                  {buatRangeHalaman(riwayatPage, riwayatLastPage).map((item, idx) =>
+                    item === 'ellipsis' ? (
+                      <span key={`ellipsis-${idx}`} className="w-7 h-7 flex items-center justify-center text-xs text-slate-300">
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={item}
+                        onClick={() => gantiRiwayatHalaman(item)}
+                        className={`w-7 h-7 flex items-center justify-center text-xs font-medium rounded-lg border transition ${
+                          item === riwayatPage
+                            ? 'bg-slate-900 border-slate-900 text-white'
+                            : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    )
+                  )}
+
+                  <button
+                    onClick={() => gantiRiwayatHalaman(riwayatPage + 1)}
+                    disabled={riwayatPage >= riwayatLastPage}
+                    aria-label="Halaman selanjutnya"
+                    className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           )}
         </div>

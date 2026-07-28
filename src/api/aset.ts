@@ -221,8 +221,9 @@ export async function serahTerimaAset(
   return res.data;
 }
 
-// POST /aset-pemakai/{id}/kembalikan — dibatasi backend ke role admin. Wajib
-// sertain no_struk_penerimaan (struk asli pas serah-terima) buat validasi backend.
+// POST /aset-pemakai/{id}/kembalikan — admin ATAU pemakai yang lagi pegang
+// aset ini sendiri (karyawan/cabang). Wajib sertain no_struk_penerimaan
+// (struk asli pas serah-terima) buat validasi backend.
 export async function kembalikanAset(
   asetPemakaiId: number,
   payload: {
@@ -266,11 +267,27 @@ export interface RiwayatAsetEvent {
   hasil?: string | null;
 }
 
+export interface PaginatedRiwayatAset {
+  data: RiwayatAsetEvent[];
+  current_page: number;
+  last_page: number;
+  total: number;
+  per_page: number;
+}
+
 // GET /aset-pemakai/riwayat — riwayat SEMUA aktivitas aset (pinjam, kembali,
-// lapor rusak, selesai perbaikan), terbaru duluan. Dibatasi backend ke role
-// admin. Dipakai panel Riwayat di tab Aset (BUKAN riwayat peminjaman barang).
-export async function getRiwayatAset(limit = 10): Promise<RiwayatAsetEvent[]> {
-  const res = await api.get<RiwayatAsetEvent[]>('/aset-pemakai/riwayat', { params: { limit } });
+// lapor rusak, selesai perbaikan), terbaru duluan, terpaginasi (minimal 10
+// per halaman, dipaksa di server). Admin lihat riwayat SEMUA aset; role lain
+// cuma lihat riwayat aktivitas MEREKA SENDIRI (difilter di backend, bukan di
+// sini). Dipakai panel Riwayat di tab Aset (BUKAN riwayat peminjaman barang).
+export async function getRiwayatAset(
+  page = 1,
+  perPage = 10,
+  type?: RiwayatAsetEvent['type']
+): Promise<PaginatedRiwayatAset> {
+  const res = await api.get<PaginatedRiwayatAset>('/aset-pemakai/riwayat', {
+    params: { page, per_page: perPage, type: type || undefined },
+  });
   return res.data;
 }
 
