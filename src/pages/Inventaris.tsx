@@ -6,7 +6,8 @@ import TabKelengkapanAset from '../components/inventaris/TabKelengkapanAset';
 import TabPenangananAset from '../components/inventaris/TabPenangananAset';
 import TabPersetujuanAset from '../components/inventaris/TabPersetujuanAset';
 import { useAuth } from '../context/AuthContext';
-import { getRiwayatAset, type RiwayatAsetEvent } from '../api/aset';
+import { getRiwayatAset, getAset, getPendingAsetPemakai, type RiwayatAsetEvent, type AsetPenanganan } from '../api/aset';
+import api from '../api/axios';
 
 function formatWaktu(iso: string): string {
   const date = new Date(iso);
@@ -64,6 +65,47 @@ export default function Inventaris() {
   const handleCountAset = useCallback((n: number) => updateCount('aset', n), [updateCount]);
   const handleCountPenanganan = useCallback((n: number) => updateCount('penanganan_aset', n), [updateCount]);
   const handleCountPersetujuan = useCallback((n: number) => updateCount('persetujuan_aset', n), [updateCount]);
+
+  // Fetch badge count semua tab di sini (bukan nunggu tab-nya dibuka), biar
+  // angka di nav udah kebaca dari awal buka halaman & tetep update walau
+  // user ga pernah klik tab itu. Tab yang lagi aktif tetep lapor count
+  // sendiri lewat onCount (di atas) begitu ada perubahan data real-time.
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCounts = () => {
+      getAset()
+        .then((list) => {
+          if (!cancelled) updateCount('aset', list.length);
+        })
+        .catch(console.error);
+
+      if (isAdmin) {
+        getPendingAsetPemakai()
+          .then((list) => {
+            if (!cancelled) updateCount('persetujuan_aset', list.length);
+          })
+          .catch(console.error);
+
+        api
+          .get<AsetPenanganan[]>('/aset-penanganan')
+          .then((res) => {
+            if (!cancelled) {
+              const belumDitangani = res.data.filter((p) => !p.tanggal_selesai).length;
+              updateCount('penanganan_aset', belumDitangani);
+            }
+          })
+          .catch(console.error);
+      }
+    };
+
+    loadCounts();
+    const interval = setInterval(loadCounts, 30000); // refresh tiap 30 detik
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [isAdmin, updateCount]);
 
   const tabs: { key: TabKey; label: string; icon: typeof Package; adminOnly?: boolean }[] = [
     { key: 'aset', label: 'Aset', icon: Package },
