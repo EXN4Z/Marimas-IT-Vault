@@ -11,7 +11,7 @@ import {
   AlertCircle,
   User as UserIcon,
 } from 'lucide-react';
-import AppLayout from '../components/AppLayout';
+import AppLayout from '../components/shared/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import {
   getTicketsAktif,

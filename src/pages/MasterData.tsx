@@ -2,7 +2,7 @@ import '../index.css';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Building2, BriefcaseBusiness, Boxes, Package, Truck, Plus, Pencil, Trash2, X } from 'lucide-react';
-import AppLayout from '../components/AppLayout';
+import AppLayout from '../components/shared/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen } from '../api/departemen';
 import { getJabatan, createJabatan, updateJabatan, deleteJabatan } from '../api/jabatan';

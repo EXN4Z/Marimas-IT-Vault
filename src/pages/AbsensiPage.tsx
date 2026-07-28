@@ -15,9 +15,9 @@ import {
   QrCode,
   Printer,
 } from 'lucide-react';
-import AppLayout from '../components/AppLayout';
-import FaceCapture from '../components/FaceCapture';
-import DaftarWajahModal from '../components/DaftarWajahModal';
+import AppLayout from '../components/shared/AppLayout';
+import FaceCapture from '../components/absensi/FaceCapture';
+import DaftarWajahModal from '../components/absensi/DaftarWajahModal';
 import {
   scanAbsenFace,
   type Karyawan,

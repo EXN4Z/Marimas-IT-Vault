@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CalendarDays, Plus, Trash2, X } from 'lucide-react';
-import AppLayout from '../components/AppLayout';
+import AppLayout from '../components/shared/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import { getAgendaMendatang, createAgenda, deleteAgenda, type AgendaItem } from '../api/agenda';
 

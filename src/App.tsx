@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, type Location } fr
 import { AuthProvider } from './context/AuthContext';
 import { ChatProvider } from './context/ChatContext';
 import { Toaster } from 'react-hot-toast';
-import AdminRoute from './components/AdminRoute';
+import AdminRoute from './components/shared/AdminRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyOtp from './pages/VerifyOtp';

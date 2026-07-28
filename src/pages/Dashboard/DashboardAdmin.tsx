@@ -1,5 +1,5 @@
 import { QrCode, CalendarDays, Ticket } from 'lucide-react';
-import AppLayout from '../../components/AppLayout';
+import AppLayout from '../../components/shared/AppLayout';
 import { useDashboardCore, useDashboardAnalytics, buildStatCards } from './useDashboardData';
 import {
   StatCardsGrid,

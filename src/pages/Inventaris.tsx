@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type JSX } from 'react';
 import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench } from 'lucide-react';
-import AppLayout from '../components/AppLayout';
+import AppLayout from '../components/shared/AppLayout';
 import TabAset from '../components/inventaris/TabAset';
 import TabKelengkapanAset from '../components/inventaris/TabKelengkapanAset';
 import TabPenangananAset from '../components/inventaris/TabPenangananAset';

@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag } from 'lucide-react';
-import AsetFormModal from '../AsetFormModal';
-import AsetSerahTerimaModal from '../AsetSerahTerimaModal';
-import AsetPengembalianModal from '../AsetPengembalianModal';
-import AsetLaporKerusakanModal from '../AsetLaporKerusakanModal';
-import AsetPenangananSelesaiModal from '../AsetPenangananSelesaiModal';
-import AsetSparepartModal from '../AsetSparepartModal';
+import AsetFormModal from './AsetFormModal';
+import AsetSerahTerimaModal from './AsetSerahTerimaModal';
+import AsetPengembalianModal from './AsetPengembalianModal';
+import AsetLaporKerusakanModal from './AsetLaporKerusakanModal';
+import AsetPenangananSelesaiModal from './AsetPenangananSelesaiModal';
+import AsetSparepartModal from './AsetSparepartModal';
 import { useAuth } from '../../context/AuthContext';
 import { printStruk } from '../../utils/printStruk';
 import { namaPemakai, userIdPemakai, isCabangPemakai } from './asetHelpers';

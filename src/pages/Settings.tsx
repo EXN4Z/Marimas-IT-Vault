@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { User as UserIcon, Mail, Phone, Save, AlertCircle, CheckCircle2, Bell, BellOff } from 'lucide-react';
-import AppLayout from '../components/AppLayout';
+import AppLayout from '../components/shared/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import { updateProfile } from '../api/auth';
 import { usePushNotifications } from '../hooks/usePushNotifications';

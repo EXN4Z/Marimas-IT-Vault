@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { ArrowDownCircle, ArrowUpCircle, CheckCircle2, AlertCircle, Fingerprint, QrCode } from 'lucide-react';
-import AppLayout from '../components/AppLayout';
-import FaceCapture from '../components/FaceCapture';
-import ScanQrModal from '../components/ScanQrModal';
-import DaftarWajahModal from '../components/DaftarWajahModal';
+import AppLayout from '../components/shared/AppLayout';
+import FaceCapture from '../components/absensi/FaceCapture';
+import ScanQrModal from '../components/shared/ScanQrModal';
+import DaftarWajahModal from '../components/absensi/DaftarWajahModal';
 import { getAbsensiSaya, scanAbsenQr, scanAbsenFace, type Karyawan, type Absensi } from '../api/absensi';
 
 // Harus sinkron sama ABSENSI_QR_CUTOFF di backend .env

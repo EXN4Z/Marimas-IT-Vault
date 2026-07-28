@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Building2, MapPin, Phone, Users, Map, Plus, Pencil, Trash2, X } from 'lucide-react';
-import AppLayout from '../components/AppLayout';
+import AppLayout from '../components/shared/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import { getCabang, createCabang, updateCabang, deleteCabang, type Cabang } from '../api/cabang';
 

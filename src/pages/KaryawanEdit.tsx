@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
-import RouteModal from '../components/RouteModal';
+import RouteModal from '../components/shared/RouteModal';
 import { getDepartemen } from '../api/departemen';
 import { getJabatan, type Jabatan } from '../api/jabatan';
 import { getCabang, type Cabang } from '../api/cabang';

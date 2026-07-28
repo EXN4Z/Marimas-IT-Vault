@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FileSpreadsheet, ClipboardList, Printer, Loader2, Download } from 'lucide-react';
-import AppLayout from '../components/AppLayout';
+import AppLayout from '../components/shared/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import {
   printLaporanAbsensi,

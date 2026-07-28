@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ScrollText, Trash2, ArrowDownCircle, ArrowUpCircle, RefreshCw, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
-import AppLayout from '../components/AppLayout';
+import AppLayout from '../components/shared/AppLayout';
 import { getAuditLog, getAuditLogTrash, type AuditLog } from '../api/auditLog';
 
 type TabKey = 'aktif' | 'trash';

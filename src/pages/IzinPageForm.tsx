@@ -2,7 +2,7 @@ import { useMemo, useState, type FormEvent, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
-import RouteModal from '../components/RouteModal';
+import RouteModal from '../components/shared/RouteModal';
 
 type JenisIzin = 'tahunan' | 'pribadi' | 'sakit' | 'terlambat' | 'pulang_cepat' | 'dinas' | 'lahiran' | 'pendamping_lahiran' | 'duka_serumah' | 'duka_keluarga_inti' | 'lainnya';
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
-import AppLayout from '../components/AppLayout';
+import AppLayout from '../components/shared/AppLayout';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
 type Status = 'pending' | 'disetujui' | 'ditolak' | 'revisi' | 'selesai' | 'draft';
