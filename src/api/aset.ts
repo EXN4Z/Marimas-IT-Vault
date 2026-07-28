@@ -114,6 +114,16 @@ export interface Aset {
   penanganan?: AsetPenanganan[]; // riwayat lengkap, cuma keisi di endpoint show()
   penggantian_sparepart?: AsetPenggantianSparepart[];
   penanganan_aktif?: { id: number; jenis_kerusakan: string; keluhan: string; tanggal_lapor: string } | null;
+  // catatan penjualan/writeoff — cuma keisi kalau status aset 'dijual'
+  writeoff?: {
+    id: number;
+    alasan: string;
+    no_berita_acara: string | null;
+    tanggal_writeoff: string;
+    catatan: string | null;
+    penyetuju?: { id: number; name: string } | null;
+    created_at: string;
+  } | null;
 }
 
 export interface AsetFormValues {
@@ -242,14 +252,17 @@ export async function getPendingAsetPemakai(): Promise<AsetPemakai[]> {
   return res.data;
 }
 
-// Satu entri riwayat aktivitas aset — bisa dari peminjaman (pinjam/kembali)
-// atau penanganan kerusakan (lapor_rusak/selesai_perbaikan), digabung backend.
+// Satu entri riwayat aktivitas aset — dari peminjaman (pinjam/kembali),
+// penanganan kerusakan (lapor_rusak/mulai_perbaikan/selesai_perbaikan), atau
+// penjualan/writeoff (dijual), digabung backend. 'waktu' sudah pakai kolom
+// datetime akurat di backend (bukan tanggal doang), jadi aman dipakai
+// langsung buat hitung waktu relatif ("X menit/jam lalu").
 export interface RiwayatAsetEvent {
-  type: 'pinjam' | 'kembali' | 'lapor_rusak' | 'selesai_perbaikan';
+  type: 'pinjam' | 'kembali' | 'lapor_rusak' | 'mulai_perbaikan' | 'selesai_perbaikan' | 'dijual';
   waktu: string;
   nama: string | null;
   aset: { id: number; kode_aset: string; merek: string | null; tipe: string | null } | null;
-  keluhan?: string | null;
+  keluhan?: string | null; // dipakai lapor_rusak (keluhan) & dijual (alasan)
   hasil?: string | null;
 }
 

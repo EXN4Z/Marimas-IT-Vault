@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type JSX } from 'react';
-import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench } from 'lucide-react';
+import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench, PlayCircle, Banknote } from 'lucide-react';
 import AppLayout from '../components/shared/AppLayout';
 import TabAset from '../components/inventaris/TabAset';
 import TabKelengkapanAset from '../components/inventaris/TabKelengkapanAset';
@@ -33,7 +33,9 @@ export default function Inventaris() {
   const [counts, setCounts] = useState<Partial<Record<TabKey, number>>>({});
 
   const refreshRiwayatAset = useCallback(() => {
-    if (!isAdmin) {
+    // 'cabang' gak termasuk role yang diizinin backend buat /aset-pemakai/riwayat
+    // (lihat routes/api.php) — skip biar gak nembak API yang bakal 403 percuma.
+    if (user?.role === 'cabang') {
       setRiwayatAsetLoading(false);
       return;
     }
@@ -42,7 +44,7 @@ export default function Inventaris() {
       .then(setRiwayatAset)
       .catch(console.error)
       .finally(() => setRiwayatAsetLoading(false));
-  }, [isAdmin]);
+  }, [user?.role]);
 
   const handleTabChange = (key: TabKey) => {
     setActiveTab(key);
@@ -53,7 +55,8 @@ export default function Inventaris() {
   const [riwayatAsetLoading, setRiwayatAsetLoading] = useState(true);
 
   useEffect(() => {
-    // /aset-pemakai/riwayat dibatasi ke role admin
+    // backend /aset-pemakai/riwayat: admin lihat semua, role lain otomatis
+    // difilter cuma riwayat aktivitas milik sendiri (lihat AsetPemakaiController::riwayat)
     refreshRiwayatAset();
   }, [refreshRiwayatAset]);
 
@@ -169,46 +172,54 @@ export default function Inventaris() {
 
           {/* RIWAYAT ASET — sementara ditaruh di bawah tabel (bukan di samping)
               soalnya tabel aset kolomnya banyak, kalau dipepetin sidebar jadi
-              kesempitan/ke-scroll horizontal terus. Admin only. */}
-          {isAdmin && (
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-              <h3 className="text-base font-semibold text-slate-900 mb-4">
-                Riwayat Aset <span className="text-slate-400 font-normal">({riwayatAset.length})</span>
-              </h3>
-              {riwayatAsetLoading ? (
-                <p className="text-sm text-slate-400 text-center py-6">Memuat riwayat...</p>
-              ) : (
-                <ul className="flex flex-col gap-4">
-                  {riwayatAset.map((ev, idx) => {
-                    const style: Record<RiwayatAsetEvent['type'], { bg: string; icon: JSX.Element; label: string }> = {
-                      pinjam: { bg: 'bg-amber-50 text-amber-600', icon: <HandCoins size={16} />, label: 'menerima' },
-                      kembali: { bg: 'bg-emerald-50 text-emerald-600', icon: <Undo2 size={16} />, label: 'mengembalikan' },
-                      lapor_rusak: { bg: 'bg-red-50 text-red-600', icon: <AlertTriangle size={16} />, label: 'melaporkan kerusakan' },
-                      selesai_perbaikan: { bg: 'bg-sky-50 text-sky-600', icon: <Wrench size={16} />, label: 'selesai diperbaiki' },
-                    };
-                    const s = style[ev.type];
-                    const kode = ev.aset?.kode_aset || '-';
-                    return (
-                      <li key={`${ev.type}-${idx}`} className="flex items-start gap-3">
-                        <span className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${s.bg}`}>
-                          {s.icon}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="text-sm text-slate-800">
-                            {ev.nama ? <span className="font-medium">{ev.nama} </span> : ''}
-                            {s.label} <span className="font-medium">{kode}</span>
-                          </p>
-                          <p className="text-xs text-slate-400">{formatWaktu(ev.waktu)}</p>
-                        </div>
-                      </li>
-                    );
-                  })}
-                  {riwayatAset.length === 0 && (
-                    <p className="text-sm text-slate-400 text-center py-6">Belum ada aktivitas aset.</p>
-                  )}
-                </ul>
-              )}
-            </div>
+              kesempitan/ke-scroll horizontal terus. Admin lihat riwayat SEMUA
+              aset; role lain (karyawan/manajer/hr) cuma lihat riwayat
+              aktivitas MEREKA SENDIRI — backend yang filter (lihat
+              AsetPemakaiController::riwayat), bukan cuma disembunyiin di UI. */}
+          {user?.role !== 'cabang' && (
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+            <h3 className="text-base font-semibold text-slate-900 mb-4">
+              {isAdmin ? 'Riwayat Aset' : 'Riwayat Aktivitas Saya'}{' '}
+              <span className="text-slate-400 font-normal">({riwayatAset.length})</span>
+            </h3>
+            {riwayatAsetLoading ? (
+              <p className="text-sm text-slate-400 text-center py-6">Memuat riwayat...</p>
+            ) : (
+              <ul className="flex flex-col gap-4">
+                {riwayatAset.map((ev, idx) => {
+                  const style: Record<RiwayatAsetEvent['type'], { bg: string; icon: JSX.Element; label: string }> = {
+                    pinjam: { bg: 'bg-amber-50 text-amber-600', icon: <HandCoins size={16} />, label: 'menerima' },
+                    kembali: { bg: 'bg-emerald-50 text-emerald-600', icon: <Undo2 size={16} />, label: 'mengembalikan' },
+                    lapor_rusak: { bg: 'bg-red-50 text-red-600', icon: <AlertTriangle size={16} />, label: 'melaporkan kerusakan' },
+                    mulai_perbaikan: { bg: 'bg-orange-50 text-orange-600', icon: <PlayCircle size={16} />, label: 'mulai diperbaiki' },
+                    selesai_perbaikan: { bg: 'bg-sky-50 text-sky-600', icon: <Wrench size={16} />, label: 'selesai diperbaiki' },
+                    dijual: { bg: 'bg-purple-50 text-purple-600', icon: <Banknote size={16} />, label: 'dijual' },
+                  };
+                  const s = style[ev.type];
+                  const kode = ev.aset?.kode_aset || '-';
+                  return (
+                    <li key={`${ev.type}-${idx}`} className="flex items-start gap-3">
+                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${s.bg}`}>
+                        {s.icon}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm text-slate-800">
+                          {ev.nama ? <span className="font-medium">{ev.nama} </span> : ''}
+                          {s.label} <span className="font-medium">{kode}</span>
+                        </p>
+                        <p className="text-xs text-slate-400">{formatWaktu(ev.waktu)}</p>
+                      </div>
+                    </li>
+                  );
+                })}
+                {riwayatAset.length === 0 && (
+                  <p className="text-sm text-slate-400 text-center py-6">
+                    {isAdmin ? 'Belum ada aktivitas aset.' : 'Belum ada aktivitas aset atas namamu.'}
+                  </p>
+                )}
+              </ul>
+            )}
+          </div>
           )}
         </div>
       ) : activeTab === 'kelengkapan_aset' ? (
