@@ -4,7 +4,6 @@ import { ChatProvider } from './context/ChatContext';
 import { Toaster } from 'react-hot-toast';
 import AdminRoute from './components/shared/AdminRoute';
 import Login from './pages/Login';
-import Register from './pages/Register';
 import VerifyOtp from './pages/VerifyOtp';
 import Dashboard from './pages/Dashboard';
 import Inventaris from './pages/Inventaris';
@@ -42,7 +41,6 @@ function AppRoutes() {
       <Toaster position='top-center' />
       <Routes location={backgroundLocation || location}>
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
         <Route path="/verify-otp" element={<VerifyOtp />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/inventaris" element={<Inventaris />} />
