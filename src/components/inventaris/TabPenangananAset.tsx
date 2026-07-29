@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { X, Wrench, Printer, PlayCircle } from 'lucide-react';
+import { X, Wrench, Printer, PlayCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../api/axios';
 import { terimaPenangananAset, selesaikanPenangananAset, type AsetPenanganan } from '../../api/aset';
 import { formatTanggalId } from './asetHelpers';
@@ -28,12 +28,20 @@ function formatRupiah(n?: number | null) {
 
 type TabStatus = 'menunggu' | 'diperbaiki' | 'diperbaiki_selesai' | 'rusak_berat';
 
+const ITEMS_PER_PAGE = 5;
+
 export default function TabPenangananAset({ onCount }: Props) {
   const [penangananList, setPenangananList] = useState<AsetPenanganan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activePenanganan, setActivePenanganan] = useState<AsetPenanganan | null>(null);
   const [activeTab, setActiveTab] = useState<TabStatus>('menunggu');
+  const [page, setPage] = useState(1);
+
+  const handleTabChange = (tab: TabStatus) => {
+    setActiveTab(tab);
+    setPage(1); // balik ke halaman 1 tiap ganti tab biar gak nyangkut di halaman kosong
+  };
 
   const load = () => {
     setLoading(true);
@@ -159,6 +167,13 @@ export default function TabPenangananAset({ onCount }: Props) {
 
   const displayedList = tabs.find((t) => t.key === activeTab)?.list ?? [];
 
+  const totalPages = Math.max(1, Math.ceil(displayedList.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedList = displayedList.slice(
+    (safePage - 1) * ITEMS_PER_PAGE,
+    safePage * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
       <h3 className="text-base font-semibold text-slate-900 mb-1">Forum Penanganan Aset</h3>
@@ -174,7 +189,7 @@ export default function TabPenangananAset({ onCount }: Props) {
         {tabs.map((t) => (
           <button
             key={t.key}
-            onClick={() => setActiveTab(t.key)}
+            onClick={() => handleTabChange(t.key)}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${
               activeTab === t.key
                 ? 'border-slate-900 text-slate-900'
@@ -194,7 +209,7 @@ export default function TabPenangananAset({ onCount }: Props) {
       </div>
 
       <div className="flex flex-col gap-2">
-        {displayedList.map((p) => {
+        {paginatedList.map((p) => {
           const selesai = !!p.tanggal_selesai;
           const diterima = !!p.tanggal_diterima;
           const statusLabel = selesai
@@ -275,6 +290,46 @@ export default function TabPenangananAset({ onCount }: Props) {
           </p>
         )}
       </div>
+
+      {displayedList.length > ITEMS_PER_PAGE && (
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
+          <p className="text-xs text-slate-500">
+            Menampilkan {(safePage - 1) * ITEMS_PER_PAGE + 1}–
+            {Math.min(safePage * ITEMS_PER_PAGE, displayedList.length)} dari {displayedList.length}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              aria-label="Halaman sebelumnya"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+              <button
+                key={num}
+                onClick={() => setPage(num)}
+                className={`min-w-[28px] h-[28px] text-xs font-semibold rounded-lg transition ${
+                  num === safePage
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-500 hover:bg-slate-100'
+                }`}
+              >
+                {num}
+              </button>
+            ))}
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              aria-label="Halaman berikutnya"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {activePenanganan && (
         <FormPerbaikanModal
