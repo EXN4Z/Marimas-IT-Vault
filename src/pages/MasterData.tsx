@@ -1,7 +1,7 @@
 import '../index.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, BriefcaseBusiness, Boxes, Package, Truck, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Building2, BriefcaseBusiness, Boxes, Package, Truck, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import AppLayout from '../components/shared/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen } from '../api/departemen';
@@ -114,6 +114,53 @@ export default function MasterData() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  // ===== carousel tab (geser ala Canva) =====
+  // nav-nya lebih lebar dari layar HP (5 tab: Departemen s/d Supplier), jadi
+  // dibikin geser sendiri di dalam boxnya (bukan ndorong seluruh halaman ke
+  // samping) + kasih tombol panah & fade di tepi biar keliatan masih bisa digeser.
+  const tabScrollRef = useRef<HTMLUListElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollState = () => {
+    const el = tabScrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    updateScrollState();
+    const el = tabScrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', updateScrollState, { passive: true });
+    window.addEventListener('resize', updateScrollState);
+    return () => {
+      el.removeEventListener('scroll', updateScrollState);
+      window.removeEventListener('resize', updateScrollState);
+    };
+  }, []);
+
+  // pas ganti tab, pastiin tab yang aktif ikut ke-scroll biar keliatan (mis.
+  // habis klik dari dropdown sidebar ke "Supplier" yang letaknya paling ujung)
+  useEffect(() => {
+    const el = tabScrollRef.current;
+    if (!el) return;
+    const activeBtn = el.querySelector<HTMLButtonElement>(`[data-tab="${activeTab}"]`);
+    activeBtn?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    // updateScrollState dipanggil lagi di sini karena scrollIntoView gak lewat
+    // event 'scroll' listener kalau posisi udah pas (edge case tab pertama/terakhir)
+    const id = setTimeout(updateScrollState, 300);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  const scrollTabs = (direction: 'left' | 'right') => {
+    const el = tabScrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: direction === 'left' ? -140 : 140, behavior: 'smooth' });
+  };
 
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
@@ -247,13 +294,47 @@ export default function MasterData() {
         </button>
       </div>
 
-      <nav className="mb-6">
-        <ul className="flex items-center gap-6 border-b border-slate-200">
+      <nav className="relative mb-6">
+        {/* fade kiri, cuma nongol kalau udah digeser (nandain masih ada tab sebelumnya) */}
+        {canScrollLeft && (
+          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-zinc-100 to-transparent z-10" />
+        )}
+        {/* fade kanan, nongol kalau masih ada tab yang belum keliatan */}
+        {canScrollRight && (
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-zinc-100 to-transparent z-10" />
+        )}
+
+        {canScrollLeft && (
+          <button
+            type="button"
+            onClick={() => scrollTabs('left')}
+            aria-label="Geser tab ke kiri"
+            className="absolute -left-1 top-1/2 -translate-y-1/2 -mt-1.5 z-20 w-6 h-6 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition"
+          >
+            <ChevronLeft size={14} />
+          </button>
+        )}
+        {canScrollRight && (
+          <button
+            type="button"
+            onClick={() => scrollTabs('right')}
+            aria-label="Geser tab ke kanan"
+            className="absolute -right-1 top-1/2 -translate-y-1/2 -mt-1.5 z-20 w-6 h-6 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition"
+          >
+            <ChevronRight size={14} />
+          </button>
+        )}
+
+        <ul
+          ref={tabScrollRef}
+          className="flex items-center gap-6 border-b border-slate-200 overflow-x-auto scroll-smooth"
+        >
           {(Object.keys(tabConfig) as TabKey[]).map((key) => {
             const Icon = tabConfig[key].icon;
             return (
-              <li key={key}>
+              <li key={key} className="shrink-0">
                 <button
+                  data-tab={key}
                   onClick={() => setActiveTab(key)}
                   className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
                     activeTab === key
