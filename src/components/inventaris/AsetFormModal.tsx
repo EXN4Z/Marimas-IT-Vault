@@ -143,7 +143,7 @@ export default function AsetFormModal({
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Merek</label>
               <input
@@ -164,7 +164,7 @@ export default function AsetFormModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Warna</label>
               <input
@@ -230,7 +230,7 @@ export default function AsetFormModal({
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">No. Surat Jalan</label>
               <input

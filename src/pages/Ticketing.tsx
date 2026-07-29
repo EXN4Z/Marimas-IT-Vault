@@ -349,7 +349,7 @@ export default function Ticketing() {
       {/* MODAL BUAT LAPORAN */}
       {createOpen && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-slate-900">Buat Laporan</h3>
               <button onClick={closeCreateModal} className="text-slate-400 hover:text-slate-600">
@@ -417,7 +417,7 @@ export default function Ticketing() {
       {/* MODAL DETAIL LAPORAN */}
       {detailTicket && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-slate-900">Detail Laporan</h3>
               <button onClick={closeDetail} className="text-slate-400 hover:text-slate-600">

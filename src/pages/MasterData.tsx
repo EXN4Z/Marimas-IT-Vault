@@ -233,7 +233,7 @@ export default function MasterData() {
 
   return (
     <AppLayout title="Master Data">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <p className="text-sm text-slate-500">
           Kelola data referensi departemen, jabatan, dan data master aset (jenis, kelengkapan,
           supplier) yang dipakai di seluruh sistem.
@@ -333,7 +333,7 @@ export default function MasterData() {
       {/* MODAL TAMBAH / EDIT */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-slate-900">
                 {editing ? `Edit ${cfg.singular}` : `Tambah ${cfg.singular}`}
@@ -398,7 +398,7 @@ export default function MasterData() {
       {/* MODAL KONFIRMASI HAPUS */}
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-semibold text-slate-900 mb-2">Hapus {cfg.singular}?</h3>
             <p className="text-sm text-slate-500 mb-6">
               Yakin mau hapus "{deleteTarget.nama}"? Tindakan ini tidak bisa dibatalkan.

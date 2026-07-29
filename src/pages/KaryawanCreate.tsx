@@ -212,7 +212,7 @@ export default function CreateKaryawanPage() {
                         </Field>
                     )}
 
-                    <div className={`grid gap-4 ${!isCabang ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    <div className={`grid gap-4 ${!isCabang ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
                         {!isCabang && (
                             <Field label="Departemen" error={errors.departemen_id?.[0]}>
                                 <select

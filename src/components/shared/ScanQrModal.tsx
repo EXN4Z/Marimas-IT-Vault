@@ -133,7 +133,7 @@ export default function ScanQrModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center px-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 relative">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 relative max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
             <ScanLine size={18} />

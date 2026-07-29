@@ -253,14 +253,14 @@ export default function PengajuanIzinPage() {
     return (
         <AppLayout title="Pengajuan Izin">
             <div className="max-w-6xl mx-auto">
-                <div className="mb-6 flex items-center justify-between">
+                <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <h1 className="text-xl font-bold text-gray-900">Pengajuan Izin</h1>
                         <p className="text-sm text-gray-500 mt-1">Kelola dan pantau seluruh pengajuan izin karyawan.</p>
                     </div>
                     <button
                         onClick={() => navigate('/izin/create', { state: { backgroundLocation: location } })}
-                        className="flex items-center justify-center gap-2 bg-black text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800 whitespace-nowrap"
+                        className="flex items-center justify-center gap-2 bg-black text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800 whitespace-nowrap flex-shrink-0"
                     >
                         + Ajukan Izin
                     </button>
