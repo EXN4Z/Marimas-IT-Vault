@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { X, Wrench, Printer, PlayCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Wrench, Printer, PlayCircle, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import api from '../../api/axios';
 import { terimaPenangananAset, selesaikanPenangananAset, type AsetPenanganan } from '../../api/aset';
 import { formatTanggalId } from './asetHelpers';
@@ -37,6 +37,23 @@ export default function TabPenangananAset({ onCount }: Props) {
   const [activePenanganan, setActivePenanganan] = useState<AsetPenanganan | null>(null);
   const [activeTab, setActiveTab] = useState<TabStatus>('menunggu');
   const [page, setPage] = useState(1);
+
+  // BARU: detail (hasil, biaya, durasi, no. struk, catatan) di tab "Berhasil
+  // Diperbaiki" disembunyikan default -- baru muncul kalau tombol "Detail"
+  // dipencet. Simpan id mana aja yang lagi dibuka detailnya.
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+
+  const toggleExpand = (id: number) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   const handleTabChange = (tab: TabStatus) => {
     setActiveTab(tab);
@@ -212,16 +229,46 @@ export default function TabPenangananAset({ onCount }: Props) {
         {paginatedList.map((p) => {
           const selesai = !!p.tanggal_selesai;
           const diterima = !!p.tanggal_diterima;
+          const rusakBerat = p.hasil === 'rusak_berat';
+          const berhasilDiperbaiki = selesai && !rusakBerat;
+          const isExpanded = expandedIds.has(p.id);
           const statusLabel = selesai
-            ? (p.hasil === 'rusak_berat' ? 'Rusak Berat' : 'Berhasil Diperbaiki')
+            ? (rusakBerat ? 'Rusak Berat' : 'Berhasil Diperbaiki')
             : diterima
               ? 'Sedang Diperbaiki'
               : 'Menunggu Perbaikan';
           const statusStyle = selesai
-            ? (p.hasil === 'rusak_berat' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700')
+            ? (rusakBerat ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700')
             : diterima
               ? 'bg-orange-50 text-orange-700'
               : 'bg-yellow-50 text-yellow-700';
+
+          // konten detail (hasil, biaya, durasi, no. struk, catatan + tombol cetak)
+          // dipisah jadi elemen sendiri biar bisa dipakai baik langsung (rusak berat)
+          // maupun disembunyikan di balik tombol Detail (berhasil diperbaiki).
+          const detailContent = (
+            <div className="mt-3 text-xs text-slate-600 bg-slate-50 rounded-lg p-3 flex flex-col gap-1">
+              <p><span className="font-medium">Hasil:</span> {rusakBerat ? 'Rusak Berat (tidak bisa diperbaiki)' : 'Diperbaiki'}</p>
+              {!rusakBerat && (
+                <p>
+                  <span className="font-medium">Biaya:</span> {formatRupiah(p.total_biaya)}
+                  {' '}(komponen {formatRupiah(p.biaya_komponen)} + jasa {formatRupiah(p.harga_jasa)})
+                </p>
+              )}
+              <p><span className="font-medium">Durasi:</span> {p.durasi_hari != null ? `${p.durasi_hari} hari` : '-'}</p>
+              {p.catatan && <p><span className="font-medium">Catatan:</span> {p.catatan}</p>}
+              {p.no_struk && <p><span className="font-medium">No. Struk:</span> {p.no_struk}</p>}
+              {p.no_struk && (
+                <button
+                  onClick={() => handlePrintStruk(p)}
+                  className="mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition flex items-center gap-1.5 w-fit"
+                >
+                  <Printer size={14} />
+                  Cetak Struk
+                </button>
+              )}
+            </div>
+          );
 
           return (
           <div key={p.id} className="border border-slate-200 rounded-lg p-4">
@@ -238,28 +285,21 @@ export default function TabPenangananAset({ onCount }: Props) {
               <span className="font-medium">{p.jenis_kerusakan}</span> — {p.keluhan}
             </p>
 
-            {p.tanggal_selesai ? (
-              <div className="mt-3 text-xs text-slate-600 bg-slate-50 rounded-lg p-3 flex flex-col gap-1">
-                <p><span className="font-medium">Hasil:</span> {p.hasil === 'rusak_berat' ? 'Rusak Berat (tidak bisa diperbaiki)' : 'Diperbaiki'}</p>
-                {p.hasil !== 'rusak_berat' && (
-                  <p>
-                    <span className="font-medium">Biaya:</span> {formatRupiah(p.total_biaya)}
-                    {' '}(komponen {formatRupiah(p.biaya_komponen)} + jasa {formatRupiah(p.harga_jasa)})
-                  </p>
-                )}
-                <p><span className="font-medium">Durasi:</span> {p.durasi_hari != null ? `${p.durasi_hari} hari` : '-'}</p>
-                {p.catatan && <p><span className="font-medium">Catatan:</span> {p.catatan}</p>}
-                {p.no_struk && <p><span className="font-medium">No. Struk:</span> {p.no_struk}</p>}
-                {p.no_struk && (
+            {selesai ? (
+              berhasilDiperbaiki ? (
+                <>
                   <button
-                    onClick={() => handlePrintStruk(p)}
-                    className="mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition flex items-center gap-1.5 w-fit"
+                    onClick={() => toggleExpand(p.id)}
+                    className="mt-3 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 transition flex items-center gap-1.5 w-fit"
                   >
-                    <Printer size={14} />
-                    Cetak Struk
+                    {isExpanded ? <EyeOff size={14} /> : <Eye size={14} />}
+                    {isExpanded ? 'Sembunyikan Detail' : 'Lihat Detail'}
                   </button>
-                )}
-              </div>
+                  {isExpanded && detailContent}
+                </>
+              ) : (
+                detailContent
+              )
             ) : !diterima ? (
               <button
                 onClick={() => handleTerima(p)}
