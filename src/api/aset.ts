@@ -98,6 +98,7 @@ export interface Aset {
   tipe: string | null;
   warna: string | null;
   serial_number: string | null;
+  tanggal_garansi: string | null;
   perusahaan: string | null;
   keterangan: string | null;
   foto: string | null;
@@ -131,6 +132,7 @@ export interface AsetFormValues {
   tipe?: string;
   warna?: string;
   serial_number?: string;
+  tanggal_garansi?: string;
   perusahaan?: string;
   keterangan?: string;
   foto?: File | null;
@@ -148,6 +150,7 @@ function buildAsetFormData(values: AsetFormValues): FormData {
   if (values.tipe) fd.append('tipe', values.tipe);
   if (values.warna) fd.append('warna', values.warna);
   if (values.serial_number) fd.append('serial_number', values.serial_number);
+  if (values.tanggal_garansi) fd.append('tanggal_garansi', values.tanggal_garansi);
   if (values.perusahaan) fd.append('perusahaan', values.perusahaan);
   if (values.keterangan) fd.append('keterangan', values.keterangan);
   if (values.foto) fd.append('foto', values.foto);

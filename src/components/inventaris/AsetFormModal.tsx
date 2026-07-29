@@ -25,6 +25,7 @@ interface FormState {
   tipe: string;
   warna: string;
   serial_number: string;
+  tanggal_garansi: string;
   perusahaan: string;
   keterangan: string;
   supplier_id: string;
@@ -47,6 +48,7 @@ export default function AsetFormModal({
     tipe: aset?.tipe || '',
     warna: aset?.warna || '',
     serial_number: aset?.serial_number || '',
+    tanggal_garansi: aset?.tanggal_garansi ? aset.tanggal_garansi.slice(0, 10) : '',
     perusahaan: aset?.perusahaan || '',
     keterangan: aset?.keterangan || '',
     supplier_id: aset?.supplier_id ? String(aset.supplier_id) : '',
@@ -91,6 +93,7 @@ export default function AsetFormModal({
         tipe: form.tipe.trim() || undefined,
         warna: form.warna.trim() || undefined,
         serial_number: form.serial_number.trim() || undefined,
+        tanggal_garansi: form.tanggal_garansi || undefined,
         perusahaan: form.perusahaan.trim() || undefined,
         keterangan: form.keterangan.trim() || undefined,
         foto,
@@ -181,6 +184,16 @@ export default function AsetFormModal({
                 className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Tanggal Garansi</label>
+            <input
+              type="date"
+              value={form.tanggal_garansi}
+              onChange={set('tanggal_garansi')}
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+            />
           </div>
 
           <div>
