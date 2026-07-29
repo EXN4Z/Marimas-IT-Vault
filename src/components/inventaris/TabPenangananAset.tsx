@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { X, Wrench, Printer, PlayCircle, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { X, Wrench, Printer, PlayCircle, ChevronLeft, ChevronRight, Eye, EyeOff, Search } from 'lucide-react';
 import api from '../../api/axios';
 import { terimaPenangananAset, selesaikanPenangananAset, type AsetPenanganan } from '../../api/aset';
 import { formatTanggalId } from './asetHelpers';
@@ -37,6 +37,11 @@ export default function TabPenangananAset({ onCount }: Props) {
   const [activePenanganan, setActivePenanganan] = useState<AsetPenanganan | null>(null);
   const [activeTab, setActiveTab] = useState<TabStatus>('menunggu');
   const [page, setPage] = useState(1);
+
+  // Search bar khusus tab "Berhasil Diperbaiki" & "Rusak Berat" -- masing-masing
+  // punya state kata kunci sendiri biar gak nyampur pas pindah tab.
+  const [searchSelesai, setSearchSelesai] = useState('');
+  const [searchRusakBerat, setSearchRusakBerat] = useState('');
 
   // BARU: detail untuk item "Rusak Berat" munculnya lewat modal (card yang
   // menutupi layar), beda sama "Berhasil Diperbaiki" yang expand inline.
@@ -179,6 +184,22 @@ export default function TabPenangananAset({ onCount }: Props) {
   const diperbaikiSelesaiList = penangananList.filter((p) => !!p.tanggal_selesai && p.hasil !== 'rusak_berat');
   const rusakBeratList = penangananList.filter((p) => !!p.tanggal_selesai && p.hasil === 'rusak_berat');
 
+  // Cocokin kata kunci ke kode aset, jenis kerusakan, keluhan, dan nama pelapor
+  // -- dipakai buat search bar di tab "Berhasil Diperbaiki" & "Rusak Berat".
+  const matchSearch = (p: AsetPenanganan, keyword: string) => {
+    const q = keyword.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      (p.aset?.kode_aset || '').toLowerCase().includes(q) ||
+      (p.jenis_kerusakan || '').toLowerCase().includes(q) ||
+      (p.keluhan || '').toLowerCase().includes(q) ||
+      (p.pemakai?.pekerja?.user?.name || '').toLowerCase().includes(q)
+    );
+  };
+
+  const diperbaikiSelesaiFiltered = diperbaikiSelesaiList.filter((p) => matchSearch(p, searchSelesai));
+  const rusakBeratFiltered = rusakBeratList.filter((p) => matchSearch(p, searchRusakBerat));
+
   const tabs: { key: TabStatus; label: string; list: AsetPenanganan[] }[] = [
     { key: 'menunggu', label: 'Menunggu Terima', list: menungguList },
     { key: 'diperbaiki', label: 'Sedang Diperbaiki', list: diperbaikiList },
@@ -186,7 +207,15 @@ export default function TabPenangananAset({ onCount }: Props) {
     { key: 'rusak_berat', label: 'Rusak Berat', list: rusakBeratList },
   ];
 
-  const displayedList = tabs.find((t) => t.key === activeTab)?.list ?? [];
+  // displayedList (yang beneran dirender & dipaginasi) pakai versi yang sudah
+  // difilter search untuk 2 tab tsb, sedangkan badge jumlah di tab header
+  // (di atas) tetap pakai jumlah total biar gak bikin bingung pas lagi nyari.
+  const displayedList =
+    activeTab === 'diperbaiki_selesai'
+      ? diperbaikiSelesaiFiltered
+      : activeTab === 'rusak_berat'
+        ? rusakBeratFiltered
+        : tabs.find((t) => t.key === activeTab)?.list ?? [];
 
   const totalPages = Math.max(1, Math.ceil(displayedList.length / ITEMS_PER_PAGE));
   const safePage = Math.min(page, totalPages);
@@ -228,6 +257,31 @@ export default function TabPenangananAset({ onCount }: Props) {
           </button>
         ))}
       </div>
+
+      {(activeTab === 'diperbaiki_selesai' || activeTab === 'rusak_berat') && (
+        <div className="relative mb-4">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={activeTab === 'diperbaiki_selesai' ? searchSelesai : searchRusakBerat}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (activeTab === 'diperbaiki_selesai') {
+                setSearchSelesai(value);
+              } else {
+                setSearchRusakBerat(value);
+              }
+              setPage(1); // balik ke halaman 1 tiap kata kunci berubah
+            }}
+            placeholder={
+              activeTab === 'diperbaiki_selesai'
+                ? 'Cari aset berhasil diperbaiki (kode aset, keluhan, pelapor)...'
+                : 'Cari aset rusak berat (kode aset, keluhan, pelapor)...'
+            }
+            className="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+          />
+        </div>
+      )}
 
       <div className="flex flex-col gap-2">
         {paginatedList.map((p) => {
@@ -337,8 +391,14 @@ export default function TabPenangananAset({ onCount }: Props) {
           <p className="text-sm text-slate-400 text-center py-8">
             {activeTab === 'menunggu' && 'Tidak ada laporan yang menunggu diterima.'}
             {activeTab === 'diperbaiki' && 'Tidak ada aset yang sedang diperbaiki.'}
-            {activeTab === 'diperbaiki_selesai' && 'Belum ada penanganan yang berhasil diperbaiki.'}
-            {activeTab === 'rusak_berat' && 'Belum ada aset yang dinyatakan rusak berat.'}
+            {activeTab === 'diperbaiki_selesai' &&
+              (searchSelesai.trim()
+                ? `Tidak ditemukan hasil untuk "${searchSelesai}".`
+                : 'Belum ada penanganan yang berhasil diperbaiki.')}
+            {activeTab === 'rusak_berat' &&
+              (searchRusakBerat.trim()
+                ? `Tidak ditemukan hasil untuk "${searchRusakBerat}".`
+                : 'Belum ada aset yang dinyatakan rusak berat.')}
           </p>
         )}
       </div>

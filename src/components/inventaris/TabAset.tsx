@@ -715,6 +715,10 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                     <p className="text-xs text-slate-400">No. Surat Jalan / GR</p>
                     <p className="text-slate-800">{detail.no_surat_jalan || '-'} / {detail.no_good_receive || '-'}</p>
                   </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Tanggal Garansi</p>
+                    <p className="text-slate-800">{formatTanggalId(detail.tanggal_garansi)}</p>
+                  </div>
                 </div>
 
                 {detail.keterangan && (
