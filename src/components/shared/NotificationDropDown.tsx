@@ -34,7 +34,8 @@ export default function NotificationDropdown() {
   const { data, isLoading } = useQuery<NotificationResponse>({
     queryKey: ['notifications'],
     queryFn: getNotifications,
-    refetchInterval: 15000,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
   });
 
   const items = data?.data ?? [];
