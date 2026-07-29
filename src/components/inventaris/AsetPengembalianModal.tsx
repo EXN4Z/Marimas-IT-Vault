@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { kembalikanAset, type Aset, type AsetPemakai } from '../../api/aset';
 import { namaPemakai } from './asetHelpers';
+import AsetFotoUpload from './AsetFotoUpload';
 
 interface AsetPengembalianModalProps {
   aset: Aset;
@@ -19,6 +20,7 @@ export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose,
   const [kodeStruk, setKodeStruk] = useState('');
   const [tanggalPengembalian, setTanggalPengembalian] = useState(todayIso());
   const [catatan, setCatatan] = useState('');
+  const [fotoPengembalian, setFotoPengembalian] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -27,18 +29,26 @@ export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose,
       setError('Masukkan kode struk penerimaan yang tertera di struk fisik sebagai bukti pengembalian.');
       return;
     }
+    if (fotoPengembalian.length === 0) {
+      setError('Unggah minimal 1 foto bukti kondisi aset saat dikembalikan (maksimal 3).');
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
-      const res = await kembalikanAset(pemakai.id, {
-        no_struk_penerimaan: kodeStruk.trim(),
-        tanggal_pengembalian: tanggalPengembalian,
-        catatan_pengembalian: catatan.trim() || undefined,
-      });
+      // pakai FormData (bukan JSON) karena ada file foto yang diunggah
+      const formData = new FormData();
+      formData.append('no_struk_penerimaan', kodeStruk.trim());
+      formData.append('tanggal_pengembalian', tanggalPengembalian);
+      if (catatan.trim()) formData.append('catatan_pengembalian', catatan.trim());
+      fotoPengembalian.forEach((file) => formData.append('foto_pengembalian[]', file));
+
+      const res = await kembalikanAset(pemakai.id, formData);
       onSuccess(res);
     } catch (err: any) {
       setError(
         err.response?.data?.errors?.no_struk_penerimaan?.[0] ||
+          err.response?.data?.errors?.foto_pengembalian?.[0] ||
           err.response?.data?.message ||
           'Gagal memproses pengembalian.'
       );
@@ -101,6 +111,13 @@ export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose,
               className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
             />
           </div>
+
+          <AsetFotoUpload
+            files={fotoPengembalian}
+            onChange={setFotoPengembalian}
+            max={3}
+            label="Foto Bukti Kondisi Aset"
+          />
         </div>
 
         {error && (
