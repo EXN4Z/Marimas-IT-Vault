@@ -28,7 +28,7 @@ function formatRupiah(n?: number | null) {
 
 type TabStatus = 'menunggu' | 'diperbaiki' | 'diperbaiki_selesai' | 'rusak_berat';
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 
 export default function TabPenangananAset({ onCount }: Props) {
   const [penangananList, setPenangananList] = useState<AsetPenanganan[]>([]);
