@@ -17,7 +17,6 @@ function todayIso() {
 
 export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose, onSuccess }: AsetPengembalianModalProps) {
   const [kodeStruk, setKodeStruk] = useState('');
-  const [nomorPengembalian, setNomorPengembalian] = useState('');
   const [tanggalPengembalian, setTanggalPengembalian] = useState(todayIso());
   const [catatan, setCatatan] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -33,7 +32,6 @@ export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose,
     try {
       const res = await kembalikanAset(pemakai.id, {
         no_struk_penerimaan: kodeStruk.trim(),
-        nomor_pengembalian: nomorPengembalian.trim() || undefined,
         tanggal_pengembalian: tanggalPengembalian,
         catatan_pengembalian: catatan.trim() || undefined,
       });
@@ -83,15 +81,6 @@ export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose,
                 ? 'Minta karyawan menunjukkan struk penerimaan aset, lalu ketik kodenya di sini sebagai bukti pengembalian sah.'
                 : 'Cek struk penerimaan fisik yang kamu terima waktu serah-terima aset ini, lalu ketik kodenya di sini.'}
             </p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Pengembalian (opsional)</label>
-            <input
-              value={nomorPengembalian}
-              onChange={(e) => setNomorPengembalian(e.target.value)}
-              placeholder="cth. 2026/00001"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-            />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Tanggal Pengembalian</label>
