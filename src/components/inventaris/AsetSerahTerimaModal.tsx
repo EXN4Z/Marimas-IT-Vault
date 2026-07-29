@@ -22,7 +22,7 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
   const [selected, setSelected] = useState<KaryawanUser | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [nomorPenerimaan, setNomorPenerimaan] = useState('');
+  const [nomorPenerimaan] = useState('');
   const [tanggalPenerimaan, setTanggalPenerimaan] = useState(todayIso());
   const [catatan, setCatatan] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -184,16 +184,6 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
                 </div>
               )}
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Penerimaan (opsional)</label>
-            <input
-              value={nomorPenerimaan}
-              onChange={(e) => setNomorPenerimaan(e.target.value)}
-              placeholder="cth. 26/00001"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-            />
           </div>
 
           <div>
