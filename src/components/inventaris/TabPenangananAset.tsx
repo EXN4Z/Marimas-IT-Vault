@@ -38,6 +38,10 @@ export default function TabPenangananAset({ onCount }: Props) {
   const [activeTab, setActiveTab] = useState<TabStatus>('menunggu');
   const [page, setPage] = useState(1);
 
+  // BARU: detail untuk item "Rusak Berat" munculnya lewat modal (card yang
+  // menutupi layar), beda sama "Berhasil Diperbaiki" yang expand inline.
+  const [detailModalTarget, setDetailModalTarget] = useState<AsetPenanganan | null>(null);
+
   // BARU: detail (hasil, biaya, durasi, no. struk, catatan) di tab "Berhasil
   // Diperbaiki" disembunyikan default -- baru muncul kalau tombol "Detail"
   // dipencet. Simpan id mana aja yang lagi dibuka detailnya.
@@ -298,7 +302,15 @@ export default function TabPenangananAset({ onCount }: Props) {
                   {isExpanded && detailContent}
                 </>
               ) : (
-                detailContent
+                // rusak berat: detail munculnya lewat modal (card menutupi
+                // layar), bukan expand inline kayak berhasil diperbaiki
+                <button
+                  onClick={() => setDetailModalTarget(p)}
+                  className="mt-3 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 transition flex items-center gap-1.5 w-fit"
+                >
+                  <Eye size={14} />
+                  Lihat Detail
+                </button>
               )
             ) : !diterima ? (
               <button
@@ -378,6 +390,65 @@ export default function TabPenangananAset({ onCount }: Props) {
           onSuccess={handleSelesai}
         />
       )}
+
+      {detailModalTarget && (
+        <DetailRusakBeratModal
+          penanganan={detailModalTarget}
+          onClose={() => setDetailModalTarget(null)}
+          onPrint={handlePrintStruk}
+        />
+      )}
+    </div>
+  );
+}
+
+function DetailRusakBeratModal({
+  penanganan,
+  onClose,
+  onPrint,
+}: {
+  penanganan: AsetPenanganan;
+  onClose: () => void;
+  onPrint: (p: AsetPenanganan) => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+            <Wrench size={18} className="text-red-600" />
+            Detail Rusak Berat
+          </h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+            <X size={20} />
+          </button>
+        </div>
+
+        <p className="text-xs text-slate-400 mb-4">
+          {penanganan.aset?.kode_aset} · {penanganan.jenis_kerusakan} — {penanganan.keluhan}
+        </p>
+
+        <div className="text-sm text-slate-600 bg-slate-50 rounded-lg p-4 flex flex-col gap-2">
+          <p><span className="font-medium text-slate-800">Hasil:</span> Rusak Berat (tidak bisa diperbaiki)</p>
+          <p><span className="font-medium text-slate-800">Durasi:</span> {penanganan.durasi_hari != null ? `${penanganan.durasi_hari} hari` : '-'}</p>
+          {penanganan.catatan && (
+            <p><span className="font-medium text-slate-800">Catatan:</span> {penanganan.catatan}</p>
+          )}
+          {penanganan.no_struk && (
+            <p><span className="font-medium text-slate-800">No. Struk:</span> {penanganan.no_struk}</p>
+          )}
+        </div>
+
+        {penanganan.no_struk && (
+          <button
+            onClick={() => onPrint(penanganan)}
+            className="mt-4 w-full text-sm font-semibold px-3 py-2.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition flex items-center justify-center gap-1.5"
+          >
+            <Printer size={14} />
+            Cetak Struk
+          </button>
+        )}
+      </div>
     </div>
   );
 }
