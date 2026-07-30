@@ -57,6 +57,7 @@ export interface AsetPenanganan {
   jenis_kerusakan: 'software' | 'hardware';
   keluhan: string;
   tanggal_lapor: string;
+  foto: string | null;
   tanggal_diterima: string | null;
   tanggal_selesai: string | null;
   harga_jasa: number | null;

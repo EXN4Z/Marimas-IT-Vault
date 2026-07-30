@@ -16,6 +16,7 @@ export interface AsetPenanganan {
   jenis_kerusakan: string;
   keluhan: string;
   tanggal_lapor: string;
+  foto: string | null;
   tanggal_selesai: string | null;
   harga_jasa: number | null;
   biaya_komponen: number | null;
@@ -39,8 +40,15 @@ export async function laporKerusakanAset(payload: {
   aset_id: number;
   jenis_kerusakan: string;
   keluhan: string;
+  foto?: File | null;
 }): Promise<AsetPenanganan> {
-  const res = await api.post<AsetPenanganan>('/aset-penanganan', payload);
+  const fd = new FormData();
+  fd.append('aset_id', String(payload.aset_id));
+  fd.append('jenis_kerusakan', payload.jenis_kerusakan);
+  fd.append('keluhan', payload.keluhan);
+  if (payload.foto) fd.append('foto', payload.foto);
+
+  const res = await api.post<AsetPenanganan>('/aset-penanganan', fd);
   return res.data;
 }
 
