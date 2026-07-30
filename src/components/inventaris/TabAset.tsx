@@ -883,13 +883,6 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                         <li key={p.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2">
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              {p.foto && (
-                                <img
-                                  src={STORAGE_BASE_URL + p.foto}
-                                  alt="Foto kerusakan"
-                                  className="w-12 h-12 rounded-md object-cover flex-shrink-0 border border-slate-200"
-                                />
-                              )}
                               <span
                                 className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium mb-1 ${statusStyle}`}
                               >
