@@ -287,15 +287,18 @@ export default function TabPenangananAset({ onCount }: Props) {
                   const rusakBerat = p.hasil === 'rusak_berat';
                   return (
                     <tr key={p.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                      <td className="px-4 py-3 font-medium text-slate-800">{p.aset?.kode_aset}</td>
-                      <td className="px-4 py-3 text-slate-600">
-                        <span className="font-medium">{p.jenis_kerusakan}</span> — {p.keluhan}
+                      <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{p.aset?.kode_aset}</td>
+                      <td className="px-4 py-3 text-slate-600 max-w-[220px]">
+                        <p className="font-medium text-slate-800 truncate">{p.jenis_kerusakan}</p>
+                        <p className="truncate text-slate-500" title={p.keluhan}>{p.keluhan}</p>
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{namaPemakai(p.pemakai)}</td>
-                      <td className="px-4 py-3 text-slate-600">{formatTanggalId(p.tanggal_selesai)}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 text-slate-600 max-w-[160px]">
+                        <p className="truncate" title={namaPemakai(p.pemakai)}>{namaPemakai(p.pemakai)}</p>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatTanggalId(p.tanggal_selesai)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span
-                          className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                          className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
                             rusakBerat ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
                           }`}
                         >

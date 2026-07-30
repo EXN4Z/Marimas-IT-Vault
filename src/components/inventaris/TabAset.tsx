@@ -453,22 +453,30 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
 
                   return (
                     <tr key={a.id} className="text-center border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                      <td className="px-6 py-3 font-medium text-slate-800">{a.kode_aset}</td>
-                      <td className="px-6 py-3 text-slate-600">{a.jenis?.nama || '-'}</td>
-                      <td className="px-6 py-3 text-slate-600">{[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}</td>
-                      <td className="px-6 py-3">
-                        <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_STYLE[a.status]}`}>
+                      <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{a.kode_aset}</td>
+                      <td className="px-6 py-3 text-slate-600 max-w-[140px]">
+                        <p className="truncate" title={a.jenis?.nama || '-'}>{a.jenis?.nama || '-'}</p>
+                      </td>
+                      <td className="px-6 py-3 text-slate-600 max-w-[160px]">
+                        <p className="truncate" title={[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}>
+                          {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}
+                        </p>
+                      </td>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_STYLE[a.status]}`}>
                           {STATUS_LABEL[a.status]}
                         </span>
                       </td>
-                      <td className="px-6 py-3 text-slate-600">
-                        {a.status === 'rusak' ? '-' : namaPemakai(a.pemakai_saat_ini)}
-                        {a.status !== 'rusak' && isCabangPemakai(a.pemakai_saat_ini) && (
-                          <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
-                        )}
+                      <td className="px-6 py-3 text-slate-600 max-w-[160px]">
+                        <p className="truncate" title={a.status === 'rusak' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
+                          {a.status === 'rusak' ? '-' : namaPemakai(a.pemakai_saat_ini)}
+                          {a.status !== 'rusak' && isCabangPemakai(a.pemakai_saat_ini) && (
+                            <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
+                          )}
+                        </p>
                       </td>
                       <td className="px-6 py-3">
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1 flex-nowrap">
                           {bolehLihatDetail && (
                             <button
                               onClick={() => openDetail(a.id)}
