@@ -63,7 +63,7 @@ export default function AsetPenangananSelesaiModal({ aset, penanganan, onClose, 
 
   return (
     <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
             <CheckCircle2 size={18} className="text-emerald-600" />
@@ -88,7 +88,7 @@ export default function AsetPenangananSelesaiModal({ aset, penanganan, onClose, 
               className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Biaya Komponen</label>
               <input

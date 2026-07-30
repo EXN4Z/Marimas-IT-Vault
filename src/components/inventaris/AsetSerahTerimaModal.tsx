@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Search, Check } from 'lucide-react';
 import { serahTerimaAset, searchKaryawan, type Aset, type AsetPemakai, type KaryawanUser } from '../../api/aset';
+import AsetFotoUpload from './AsetFotoUpload';
 
 interface AsetSerahTerimaModalProps {
   aset: Aset;
@@ -22,9 +23,9 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
   const [selected, setSelected] = useState<KaryawanUser | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [nomorPenerimaan, setNomorPenerimaan] = useState('');
   const [tanggalPenerimaan, setTanggalPenerimaan] = useState(todayIso());
   const [catatan, setCatatan] = useState('');
+  const [fotoPenerimaan, setFotoPenerimaan] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -77,22 +78,33 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
       setError('Pilih akun cabang penerima.');
       return;
     }
+    if (fotoPenerimaan.length === 0) {
+      setError('Unggah minimal 1 foto bukti serah-terima (maksimal 3).');
+      return;
+    }
 
     setSubmitting(true);
     setError('');
     try {
-      const res = await serahTerimaAset(aset.id, {
-        // karyawan disimpan lewat pekerja_id, cabang lewat user_id
-        ...(mode === 'karyawan'
-          ? { pekerja_id: selected!.pekerja!.id }
-          : { user_id: selected!.id }),
-        nomor_penerimaan: nomorPenerimaan.trim() || undefined,
-        tanggal_penerimaan: tanggalPenerimaan,
-        catatan_penerimaan: catatan.trim() || undefined,
-      });
+      // pakai FormData (bukan JSON) karena ada file foto yang diunggah
+      const formData = new FormData();
+      if (mode === 'karyawan') {
+        formData.append('pekerja_id', String(selected!.pekerja!.id));
+      } else {
+        formData.append('user_id', String(selected!.id));
+      }
+      formData.append('tanggal_penerimaan', tanggalPenerimaan);
+      if (catatan.trim()) formData.append('catatan_penerimaan', catatan.trim());
+      fotoPenerimaan.forEach((file) => formData.append('foto_penerimaan[]', file));
+
+      const res = await serahTerimaAset(aset.id, formData);
       onSuccess(res);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal mencatat serah-terima. Coba lagi.');
+      setError(
+        err.response?.data?.errors?.foto_penerimaan?.[0] ||
+          err.response?.data?.message ||
+          'Gagal mencatat serah-terima. Coba lagi.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -100,7 +112,7 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
 
   return (
     <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-semibold text-slate-900">Serahkan Aset {aset.kode_aset}</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
@@ -187,16 +199,6 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Penerimaan (opsional)</label>
-            <input
-              value={nomorPenerimaan}
-              onChange={(e) => setNomorPenerimaan(e.target.value)}
-              placeholder="cth. 26/00001"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-            />
-          </div>
-
-          <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Tanggal Penerimaan</label>
             <input
               type="date"
@@ -216,6 +218,8 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
               className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
             />
           </div>
+
+          <AsetFotoUpload files={fotoPenerimaan} onChange={setFotoPenerimaan} max={3} label="Foto Bukti Serah Terima" />
         </div>
 
         {error && (

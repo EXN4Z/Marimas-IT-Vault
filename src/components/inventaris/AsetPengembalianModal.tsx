@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { kembalikanAset, type Aset, type AsetPemakai } from '../../api/aset';
 import { namaPemakai } from './asetHelpers';
+import AsetFotoUpload from './AsetFotoUpload';
 
 interface AsetPengembalianModalProps {
   aset: Aset;
@@ -17,9 +18,9 @@ function todayIso() {
 
 export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose, onSuccess }: AsetPengembalianModalProps) {
   const [kodeStruk, setKodeStruk] = useState('');
-  const [nomorPengembalian, setNomorPengembalian] = useState('');
   const [tanggalPengembalian, setTanggalPengembalian] = useState(todayIso());
   const [catatan, setCatatan] = useState('');
+  const [fotoPengembalian, setFotoPengembalian] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -28,19 +29,26 @@ export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose,
       setError('Masukkan kode struk penerimaan yang tertera di struk fisik sebagai bukti pengembalian.');
       return;
     }
+    if (fotoPengembalian.length === 0) {
+      setError('Unggah minimal 1 foto bukti kondisi aset saat dikembalikan (maksimal 3).');
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
-      const res = await kembalikanAset(pemakai.id, {
-        no_struk_penerimaan: kodeStruk.trim(),
-        nomor_pengembalian: nomorPengembalian.trim() || undefined,
-        tanggal_pengembalian: tanggalPengembalian,
-        catatan_pengembalian: catatan.trim() || undefined,
-      });
+      // pakai FormData (bukan JSON) karena ada file foto yang diunggah
+      const formData = new FormData();
+      formData.append('no_struk_penerimaan', kodeStruk.trim());
+      formData.append('tanggal_pengembalian', tanggalPengembalian);
+      if (catatan.trim()) formData.append('catatan_pengembalian', catatan.trim());
+      fotoPengembalian.forEach((file) => formData.append('foto_pengembalian[]', file));
+
+      const res = await kembalikanAset(pemakai.id, formData);
       onSuccess(res);
     } catch (err: any) {
       setError(
         err.response?.data?.errors?.no_struk_penerimaan?.[0] ||
+          err.response?.data?.errors?.foto_pengembalian?.[0] ||
           err.response?.data?.message ||
           'Gagal memproses pengembalian.'
       );
@@ -51,7 +59,7 @@ export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose,
 
   return (
     <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-semibold text-slate-900">
             {isAdmin ? `Terima Kembali Aset ${aset.kode_aset}` : `Kembalikan Aset ${aset.kode_aset}`}
@@ -85,15 +93,6 @@ export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose,
             </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Pengembalian (opsional)</label>
-            <input
-              value={nomorPengembalian}
-              onChange={(e) => setNomorPengembalian(e.target.value)}
-              placeholder="cth. 2026/00001"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-            />
-          </div>
-          <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Tanggal Pengembalian</label>
             <input
               type="date"
@@ -112,6 +111,13 @@ export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose,
               className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
             />
           </div>
+
+          <AsetFotoUpload
+            files={fotoPengembalian}
+            onChange={setFotoPengembalian}
+            max={3}
+            label="Foto Bukti Kondisi Aset"
+          />
         </div>
 
         {error && (

@@ -386,7 +386,7 @@ interface ConfirmDeleteModalProps {
 function ConfirmDeleteModal({ user, deleting, onCancel, onConfirm }: ConfirmDeleteModalProps) {
     return (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-            <div className="bg-white rounded-xl w-full max-w-sm p-5">
+            <div className="bg-white rounded-xl w-full max-w-sm p-5 max-h-[90vh] overflow-y-auto">
                 <h2 className="text-base font-semibold text-gray-900 mb-1">Hapus karyawan?</h2>
                 <p className="text-sm text-gray-500 mb-5">
                     <span className="font-medium text-gray-700">{user.name}</span> akan dihapus permanen dan

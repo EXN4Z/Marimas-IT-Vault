@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bell, Check, Trash2, CheckCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -25,6 +26,7 @@ export default function NotificationDropdown() {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Sama-sama pake query key ['notifications'] kayak Dashboard.tsx, biar satu
   // sumber data. Sebelum ini komponen punya state lokal sendiri + polling
@@ -127,6 +129,17 @@ export default function NotificationDropdown() {
     }
   };
 
+  // Klik notif (bukan tombol tandai-dibaca/hapus di kanannya) -> tandai dibaca
+  // kalau masih belum dibaca, tutup dropdown, terus arahkan ke halaman yang
+  // dituju sesuai field data.url yang dikirim backend (lihat app/Notifications/*.php).
+  // Notif lama yang belum punya field url (dibuat sebelum fitur ini) dibiarkan
+  // gak ngapa-ngapain -- gak error, cuma gak pindah halaman.
+  const handleNotificationClick = (n: AppNotification) => {
+    if (!n.read_at) handleMarkAsRead(n.id);
+    setOpen(false);
+    if (n.data?.url) navigate(n.data.url);
+  };
+
   return (
     <div className="relative" ref={wrapperRef}>
       <button
@@ -168,7 +181,8 @@ export default function NotificationDropdown() {
             {items.map((n: AppNotification) => (
               <div
                 key={n.id}
-                className={`flex items-start gap-2 px-4 py-3 border-b border-slate-50 last:border-0 ${
+                onClick={() => handleNotificationClick(n)}
+                className={`flex items-start gap-2 px-4 py-3 border-b border-slate-50 last:border-0 cursor-pointer hover:bg-slate-50 transition ${
                   n.read_at ? 'bg-white' : 'bg-slate-50'
                 }`}
               >
@@ -182,7 +196,10 @@ export default function NotificationDropdown() {
                 <div className="flex items-center gap-1 flex-shrink-0">
                   {!n.read_at && (
                     <button
-                      onClick={() => handleMarkAsRead(n.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMarkAsRead(n.id);
+                      }}
                       title="Tandai dibaca"
                       className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
                     >
@@ -190,7 +207,10 @@ export default function NotificationDropdown() {
                     </button>
                   )}
                   <button
-                    onClick={() => handleDelete(n.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(n.id);
+                    }}
                     title="Hapus"
                     className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
                   >

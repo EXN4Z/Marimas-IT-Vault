@@ -12,6 +12,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { ClipboardList, Clock, TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import type {
   AccentColor,
   StatCard,
@@ -383,6 +384,15 @@ export function NotifikasiCard({
   notifications: NotificationItem[];
   onMarkAsRead: (id: string) => void;
 }) {
+  const navigate = useNavigate();
+
+  const handleClick = (n: NotificationItem) => {
+    if (!n.read_at) onMarkAsRead(n.id);
+    // Klik notif langsung arahkan ke halaman terkait (dikirim backend lewat data.url).
+    // Kalau notif lama belum punya field url, diam aja -- gak ngapa-ngapain.
+    if (n.data?.url) navigate(n.data.url);
+  };
+
   return (
     <div className={cardClass}>
       <h3 className="text-base font-semibold text-slate-900 mb-4">Notifikasi</h3>
@@ -393,7 +403,7 @@ export function NotifikasiCard({
           {notifications.map((n) => {
             const unread = !n.read_at;
             return (
-              <li key={n.id} className="flex items-start gap-2 cursor-pointer" onClick={() => unread && onMarkAsRead(n.id)}>
+              <li key={n.id} className="flex items-start gap-2 cursor-pointer" onClick={() => handleClick(n)}>
                 <span className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${unread ? 'bg-[#6D5DFC]' : 'bg-slate-200'}`} />
                 <div>
                   <p className={`text-sm ${unread ? 'text-slate-800 font-medium' : 'text-slate-500'}`}>{n.data.message}</p>

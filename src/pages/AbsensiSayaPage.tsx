@@ -229,7 +229,7 @@ export default function AbsensiSayaPage() {
       {/* MODAL FACE */}
       {showFace && mode === 'face' && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-semibold text-slate-900 mb-4">
               {tipe === 'masuk' ? 'Absen Masuk' : 'Absen Pulang'}
             </h3>

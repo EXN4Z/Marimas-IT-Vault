@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench, PlayCircle, Banknote, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import AppLayout from '../components/shared/AppLayout';
 import TabAset from '../components/inventaris/TabAset';
@@ -54,10 +55,21 @@ const RIWAYAT_FILTER_LABEL: Record<RiwayatAsetEvent['type'], string> = {
 export default function Inventaris() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const [searchParams] = useSearchParams();
 
   const [activeTab, setActiveTab] = useState<TabKey>('aset');
   const [search, setSearch] = useState('');
   const [counts, setCounts] = useState<Partial<Record<TabKey, number>>>({});
+
+  // Klik notif kerusakan aset ngarahin ke /inventaris?tab=penanganan (lihat
+  // AsetKerusakanDilaporkan.php) -- buka langsung tab Penanganan Aset-nya,
+  // gak cuma landing di tab default "Aset".
+  useEffect(() => {
+    if (searchParams.get('tab') === 'penanganan' && isAdmin) {
+      setActiveTab('penanganan_aset');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const [riwayatAset, setRiwayatAset] = useState<RiwayatAsetEvent[]>([]);
   const [riwayatAsetLoading, setRiwayatAsetLoading] = useState(true);

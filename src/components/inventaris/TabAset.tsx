@@ -698,7 +698,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-xs text-slate-400">Perusahaan</p>
                     <p className="text-slate-800">{detail.perusahaan || '-'}</p>
@@ -714,6 +714,10 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                   <div>
                     <p className="text-xs text-slate-400">No. Surat Jalan / GR</p>
                     <p className="text-slate-800">{detail.no_surat_jalan || '-'} / {detail.no_good_receive || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Tanggal Garansi</p>
+                    <p className="text-slate-800">{formatTanggalId(detail.tanggal_garansi)}</p>
                   </div>
                 </div>
 

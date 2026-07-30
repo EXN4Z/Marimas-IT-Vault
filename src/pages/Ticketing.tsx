@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Plus,
   X,
@@ -61,6 +62,7 @@ function formatTanggal(iso: string | null): string {
 export default function Ticketing() {
   const { user } = useAuth();
   const isStaff = !!user && STAFF_ROLES.includes(user.role);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [ticketsAktif, setTicketsAktif] = useState<Ticket[]>([]);
   const [ticketsHistory, setTicketsHistory] = useState<Ticket[]>([]);
@@ -103,6 +105,34 @@ export default function Ticketing() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Klik notif ticket_baru/ticket_status ngarahin ke /ticketing?ticket=<id>
+  // (lihat TicketBaruMasuk.php & TicketStatusUpdated.php) -- begitu data
+  // ticket kelar di-fetch, cari tiket dengan id itu, pindah ke tab yang
+  // sesuai (aktif/history), lalu buka modal detailnya otomatis.
+  useEffect(() => {
+    const ticketIdParam = searchParams.get('ticket');
+    if (!ticketIdParam) return;
+    if (ticketsAktif.length === 0 && ticketsHistory.length === 0) return;
+
+    const ticketId = Number(ticketIdParam);
+    const foundAktif = ticketsAktif.find((t) => t.id === ticketId);
+    const foundHistory = ticketsHistory.find((t) => t.id === ticketId);
+    const found = foundAktif ?? foundHistory;
+
+    if (found) {
+      setActiveTab(foundAktif ? 'aktif' : 'history');
+      openDetail(found);
+    }
+
+    // Buang query param-nya biar refresh/klik ulang gak balik buka modal yang sama terus
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('ticket');
+      return next;
+    }, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticketsAktif, ticketsHistory, searchParams]);
 
   const pendingCount = ticketsAktif.filter((t) => t.status === 'pending').length;
   const diprosesCount = ticketsAktif.filter((t) => t.status === 'diproses').length;
@@ -349,7 +379,7 @@ export default function Ticketing() {
       {/* MODAL BUAT LAPORAN */}
       {createOpen && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-slate-900">Buat Laporan</h3>
               <button onClick={closeCreateModal} className="text-slate-400 hover:text-slate-600">
@@ -417,7 +447,7 @@ export default function Ticketing() {
       {/* MODAL DETAIL LAPORAN */}
       {detailTicket && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-slate-900">Detail Laporan</h3>
               <button onClick={closeDetail} className="text-slate-400 hover:text-slate-600">

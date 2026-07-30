@@ -98,6 +98,7 @@ export interface Aset {
   tipe: string | null;
   warna: string | null;
   serial_number: string | null;
+  tanggal_garansi: string | null;
   perusahaan: string | null;
   keterangan: string | null;
   foto: string | null;
@@ -131,6 +132,7 @@ export interface AsetFormValues {
   tipe?: string;
   warna?: string;
   serial_number?: string;
+  tanggal_garansi?: string;
   perusahaan?: string;
   keterangan?: string;
   foto?: File | null;
@@ -148,6 +150,7 @@ function buildAsetFormData(values: AsetFormValues): FormData {
   if (values.tipe) fd.append('tipe', values.tipe);
   if (values.warna) fd.append('warna', values.warna);
   if (values.serial_number) fd.append('serial_number', values.serial_number);
+  if (values.tanggal_garansi) fd.append('tanggal_garansi', values.tanggal_garansi);
   if (values.perusahaan) fd.append('perusahaan', values.perusahaan);
   if (values.keterangan) fd.append('keterangan', values.keterangan);
   if (values.foto) fd.append('foto', values.foto);
@@ -182,6 +185,7 @@ export async function updateAset(id: number, values: AsetFormValues): Promise<As
   return res.data;
 }
 
+
 // DELETE /aset/{id} — dibatasi backend ke role admin.
 export async function deleteAset(id: number): Promise<{ message: string }> {
   const res = await api.delete<{ message: string }>(`/aset/${id}`);
@@ -206,33 +210,16 @@ export async function searchKaryawan(query: string, role?: string): Promise<Kary
 // POST /aset/{aset}/pemakai — serah-terima aset ke pekerja ATAU akun cabang.
 // Kirim salah satu: pekerja_id (karyawan) atau user_id (cabang), jangan dua-duanya.
 // Dibatasi backend ke role admin.
-export async function serahTerimaAset(
-  asetId: number,
-  payload: {
-    pekerja_id?: number;
-    user_id?: number;
-    nomor_penerimaan?: string;
-    tanggal_penerimaan: string;
-    catatan_penerimaan?: string;
-  }
-): Promise<AsetPemakai> {
-  const res = await api.post<AsetPemakai>(`/aset/${asetId}/pemakai`, payload);
+export async function serahTerimaAset(asetId: number, formData: FormData) {
+  const res = await api.post(`/aset/${asetId}/pemakai`, formData);
   return res.data;
 }
 
 // POST /aset-pemakai/{id}/kembalikan — admin ATAU pemakai yang lagi pegang
 // aset ini sendiri (karyawan/cabang). Wajib sertain no_struk_penerimaan
 // (struk asli pas serah-terima) buat validasi backend.
-export async function kembalikanAset(
-  asetPemakaiId: number,
-  payload: {
-    no_struk_penerimaan: string;
-    nomor_pengembalian?: string;
-    tanggal_pengembalian: string;
-    catatan_pengembalian?: string;
-  }
-): Promise<AsetPemakai> {
-  const res = await api.post<AsetPemakai>(`/aset-pemakai/${asetPemakaiId}/kembalikan`, payload);
+export async function kembalikanAset(pemakaiId: number, formData: FormData) {
+  const res = await api.post(`/aset-pemakai/${pemakaiId}/kembalikan`, formData);
   return res.data;
 }
 
