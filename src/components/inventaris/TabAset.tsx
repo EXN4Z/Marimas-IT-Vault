@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
 import AsetFormModal from './AsetFormModal';
 import AsetSerahTerimaModal from './AsetSerahTerimaModal';
 import AsetPengembalianModal from './AsetPengembalianModal';
@@ -73,6 +73,25 @@ function formatRupiah(n: number | null): string {
   return 'Rp ' + n.toLocaleString('id-ID');
 }
 
+// Menghasilkan array nomor halaman + elipsis, misal: [1, '...', 4, 5, 6, '...', 20]
+// (sama pola kayak pager Riwayat Aset di Inventaris.tsx / AuditLog.tsx — biar
+// konsisten style-nya, dipakai buat pagination tabel aset di sini juga)
+function buatRangeHalaman(current: number, last: number): (number | 'ellipsis')[] {
+  const delta = 1;
+  const range: (number | 'ellipsis')[] = [];
+
+  const start = Math.max(2, current - delta);
+  const end = Math.min(last - 1, current + delta);
+
+  range.push(1);
+  if (start > 2) range.push('ellipsis');
+  for (let i = start; i <= end; i++) range.push(i);
+  if (end < last - 1) range.push('ellipsis');
+  if (last > 1) range.push(last);
+
+  return range;
+}
+
 interface Props {
   search: string;
   onlyMenipis?: boolean;
@@ -91,6 +110,12 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   const [error, setError] = useState('');
 
   const [statusFilter, setStatusFilter] = useState<AsetStatus | ''>('');
+
+  // Pagination tabel aset — style sama kayak pager Riwayat Aset (10 per
+  // halaman, angka + elipsis). Client-side krn /api/aset gak dipaging
+  // di backend, tapi UI-nya ngikut pola yang sama.
+  const [asetPage, setAsetPage] = useState(1);
+  const ASET_PER_PAGE = 10;
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingAset, setEditingAset] = useState<Aset | null>(null);
@@ -398,6 +423,19 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
     // dijual paling bawah. Lihat STATUS_PRIORITY di atas.
     .sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
 
+  const asetLastPage = Math.max(1, Math.ceil(filteredAset.length / ASET_PER_PAGE));
+  const asetPageClamped = Math.min(asetPage, asetLastPage);
+  const pageAset = filteredAset.slice(
+    (asetPageClamped - 1) * ASET_PER_PAGE,
+    asetPageClamped * ASET_PER_PAGE
+  );
+
+  // Balik ke halaman 1 tiap kali search/filter/status atau isi data berubah,
+  // biar gak nyangkut di halaman kosong (sama pola kayak riwayat search).
+  useEffect(() => {
+    setAsetPage(1);
+  }, [search, statusFilter, onlyMenipis]);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
@@ -454,7 +492,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {filteredAset.map((a) => {
+                {pageAset.map((a) => {
                   const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
                   const bolehLihatDetail = isAdmin || akuPeminjamnya;
 
@@ -585,6 +623,54 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination — style sama kayak pager Riwayat Aset */}
+        {!loading && !error && filteredAset.length > 0 && asetLastPage > 1 && (
+          <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100">
+            <p className="text-xs text-slate-400">
+              Halaman {asetPageClamped} dari {asetLastPage} · {filteredAset.length} total aset
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setAsetPage((p) => Math.max(1, p - 1))}
+                disabled={asetPageClamped <= 1}
+                aria-label="Halaman sebelumnya"
+                className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                <ChevronLeft size={14} />
+              </button>
+
+              {buatRangeHalaman(asetPageClamped, asetLastPage).map((item, idx) =>
+                item === 'ellipsis' ? (
+                  <span key={`ellipsis-${idx}`} className="w-7 h-7 flex items-center justify-center text-xs text-slate-300">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => setAsetPage(item)}
+                    className={`w-7 h-7 flex items-center justify-center text-xs font-medium rounded-lg border transition ${
+                      item === asetPageClamped
+                        ? 'bg-slate-900 border-slate-900 text-white'
+                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
+
+              <button
+                onClick={() => setAsetPage((p) => Math.min(asetLastPage, p + 1))}
+                disabled={asetPageClamped >= asetLastPage}
+                aria-label="Halaman selanjutnya"
+                className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
           </div>
         )}
       </div>
