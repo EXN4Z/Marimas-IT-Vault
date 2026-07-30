@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { X, Wrench, Printer, PlayCircle, ChevronLeft, ChevronRight, Eye, Search } from 'lucide-react';
+import { X, Wrench, Printer, PlayCircle, ChevronLeft, ChevronRight, Eye, Search, ImageOff } from 'lucide-react';
 import api from '../../api/axios';
 import { terimaPenangananAset, selesaikanPenangananAset, type AsetPenanganan } from '../../api/aset';
 import { formatTanggalId, namaPemakai } from './asetHelpers';
 import { printStruk } from '../../utils/printStruk';
+
+const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 
 // pakai tipe dari api/aset.ts (yang sudah punya tanggal_diterima), tapi hit
 // endpoint yang sama '/aset-penanganan' — konsisten sama tab Aset & backend.
@@ -46,6 +48,12 @@ export default function TabPenangananAset({ onCount }: Props) {
   // Detail utk "Berhasil Diperbaiki" & "Rusak Berat" sama-sama munculnya
   // lewat modal kecil (absolute, nutupin layar), bukan expand inline lagi.
   const [detailModalTarget, setDetailModalTarget] = useState<AsetPenanganan | null>(null);
+
+  // BARU: laporan yang lagi direview sebelum diterima -- klik "Terima Laporan"
+  // di card gak langsung nembak API lagi, tapi buka modal detail (termasuk
+  // foto bukti kerusakan) dulu. Aksi terima yang sebenarnya dipicu dari
+  // tombol konfirmasi di dalam modal ini.
+  const [terimaTarget, setTerimaTarget] = useState<AsetPenanganan | null>(null);
 
   const handleTabChange = (tab: TabStatus) => {
     setActiveTab(tab);
@@ -94,12 +102,14 @@ export default function TabPenangananAset({ onCount }: Props) {
 
   const [terimaLoadingId, setTerimaLoadingId] = useState<number | null>(null);
 
+  // dipanggil dari dalam modal TerimaLaporanModal, bukan langsung dari card lagi
   const handleTerima = async (p: AsetPenanganan) => {
     setTerimaLoadingId(p.id);
     try {
       const updated = await terimaPenangananAset(p.id);
       setPenangananList((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
       toast.success('Laporan diterima, aset ditandai sedang diperbaiki.');
+      setTerimaTarget(null);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Gagal menerima laporan.');
     } finally {
@@ -357,13 +367,14 @@ export default function TabPenangananAset({ onCount }: Props) {
                 </p>
 
                 {!diterima ? (
+                  // BARU: gak langsung terima -- buka modal detail (+ foto) dulu,
+                  // aksi terima yang sebenarnya dipicu dari dalam modal itu.
                   <button
-                    onClick={() => handleTerima(p)}
-                    disabled={terimaLoadingId === p.id}
-                    className="mt-3 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition flex items-center gap-1.5 w-fit disabled:opacity-40"
+                    onClick={() => setTerimaTarget(p)}
+                    className="mt-3 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition flex items-center gap-1.5 w-fit"
                   >
                     <PlayCircle size={14} />
-                    {terimaLoadingId === p.id ? 'Memproses...' : 'Terima Laporan'}
+                    Terima Laporan
                   </button>
                 ) : (
                   <button
@@ -441,6 +452,91 @@ export default function TabPenangananAset({ onCount }: Props) {
           onPrint={handlePrintStruk}
         />
       )}
+
+      {/* BARU: modal review sebelum terima laporan -- nampilin detail lengkap
+          laporan (termasuk foto bukti kerusakan kalau ada) sebelum admin
+          benar-benar konfirmasi terima. */}
+      {terimaTarget && (
+        <TerimaLaporanModal
+          penanganan={terimaTarget}
+          loading={terimaLoadingId === terimaTarget.id}
+          onClose={() => setTerimaTarget(null)}
+          onConfirm={() => handleTerima(terimaTarget)}
+        />
+      )}
+    </div>
+  );
+}
+
+// BARU: modal yang muncul begitu admin klik "Terima Laporan" di tab
+// "Menunggu Terima" -- nampilin detail laporan (jenis kerusakan, keluhan,
+// pelapor, tanggal lapor, dan foto bukti kalau ada) sebelum admin konfirmasi
+// terima. Fotonya diambil dari kolom `foto` (path relatif disk `public`),
+// sama pola kayak foto aset & thumbnail di Riwayat Perbaikan (TabAset.tsx).
+function TerimaLaporanModal({
+  penanganan,
+  loading,
+  onClose,
+  onConfirm,
+}: {
+  penanganan: AsetPenanganan;
+  loading: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+            <PlayCircle size={18} className="text-amber-600" />
+            Terima Laporan Kerusakan
+          </h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="w-full h-40 rounded-lg bg-slate-100 overflow-hidden flex items-center justify-center mb-4">
+          {(penanganan as any).foto ? (
+            <img
+              src={STORAGE_BASE_URL + (penanganan as any).foto}
+              alt="Foto kerusakan"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="flex flex-col items-center gap-1.5 text-slate-300">
+              <ImageOff size={24} />
+              <span className="text-xs">Tidak ada foto</span>
+            </div>
+          )}
+        </div>
+
+        <div className="text-sm text-slate-600 bg-slate-50 rounded-lg p-4 flex flex-col gap-2 mb-4">
+          <p><span className="font-medium text-slate-800">Aset:</span> {penanganan.aset?.kode_aset || '-'}</p>
+          <p><span className="font-medium text-slate-800">Jenis Kerusakan:</span> {penanganan.jenis_kerusakan}</p>
+          <p><span className="font-medium text-slate-800">Keluhan:</span> {penanganan.keluhan}</p>
+          <p><span className="font-medium text-slate-800">Dilaporkan Oleh:</span> {namaPemakai(penanganan.pemakai)}</p>
+          <p><span className="font-medium text-slate-800">Tanggal Lapor:</span> {formatTanggalId(penanganan.tanggal_lapor)}</p>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1 text-sm font-medium px-4 py-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+          >
+            Batal
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className="flex-1 text-sm font-semibold px-4 py-2.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition disabled:opacity-40"
+          >
+            {loading ? 'Memproses...' : 'Ya, Terima'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -468,6 +564,16 @@ function DetailPenangananModal({
             <X size={20} />
           </button>
         </div>
+
+        {(penanganan as any).foto && (
+          <div className="w-full h-40 rounded-lg overflow-hidden mb-4 bg-slate-100">
+            <img
+              src={STORAGE_BASE_URL + (penanganan as any).foto}
+              alt="Foto kerusakan"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
 
         <p className="text-xs text-slate-400 mb-4">
           {penanganan.aset?.kode_aset} · {penanganan.jenis_kerusakan} — {penanganan.keluhan}
