@@ -188,8 +188,9 @@ export async function updateAset(id: number, values: AsetFormValues): Promise<As
 
 
 // DELETE /aset/{id} — dibatasi backend ke role admin.
-export async function deleteAset(id: number): Promise<{ message: string }> {
-  const res = await api.delete<{ message: string }>(`/aset/${id}`);
+// force=true lewatin guard riwayat pemakai/penanganan (buat bersihin data lama/test).
+export async function deleteAset(id: number, force = false): Promise<{ message: string }> {
+  const res = await api.delete<{ message: string }>(`/aset/${id}`, { params: force ? { force: 1 } : undefined });
   return res.data;
 }
 

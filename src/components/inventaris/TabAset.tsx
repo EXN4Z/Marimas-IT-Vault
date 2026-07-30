@@ -96,6 +96,11 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   const [editingAset, setEditingAset] = useState<Aset | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Aset | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  // BARU: kalau delete normal gagal krn aset punya riwayat pemakai/penanganan
+  // (data lama/test yang "kecantol"), backend balikin force_available: true —
+  // munculin opsi hapus paksa di modal yang sama, gak perlu klik ulang.
+  const [deleteForceAvailable, setDeleteForceAvailable] = useState(false);
 
   const [detailId, setDetailId] = useState<number | null>(null);
   const [detail, setDetail] = useState<Aset | null>(null);
@@ -213,17 +218,19 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
     }
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = async (force = false) => {
     if (!deleteTarget) return;
     setDeleting(true);
+    setDeleteError('');
     try {
-      await deleteAset(deleteTarget.id);
+      await deleteAset(deleteTarget.id, force);
       setAsetList((prev) => prev.filter((a) => a.id !== deleteTarget.id));
       setDeleteTarget(null);
+      setDeleteForceAvailable(false);
       if (detailId === deleteTarget.id) closeDetail();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Gagal menghapus aset.');
-      setDeleteTarget(null);
+      setDeleteError(err.response?.data?.message || 'Gagal menghapus aset.');
+      setDeleteForceAvailable(!!err.response?.data?.force_available);
     } finally {
       setDeleting(false);
     }
@@ -523,7 +530,11 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                                 <Pencil size={15} />
                               </button>
                               <button
-                                onClick={() => setDeleteTarget(a)}
+                                onClick={() => {
+                                  setDeleteError('');
+                                  setDeleteForceAvailable(false);
+                                  setDeleteTarget(a);
+                                }}
                                 title="Hapus"
                                 className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
                               >
@@ -602,25 +613,44 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] px-4">
           <div className="bg-white rounded-xl w-full max-w-sm p-5">
             <h2 className="text-base font-semibold text-slate-900 mb-1">Hapus aset?</h2>
-            <p className="text-sm text-slate-500 mb-5">
+            <p className="text-sm text-slate-500 mb-3">
               <span className="font-medium text-slate-700">{deleteTarget.kode_aset}</span> akan dihapus permanen
               beserta riwayatnya, dan tidak bisa dikembalikan.
             </p>
+            {deleteError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
+                {deleteError}
+                {deleteForceAvailable && ' Aset ini punya riwayat, tapi bisa dihapus paksa kalau memang data lama/test.'}
+              </p>
+            )}
             <div className="flex justify-end gap-2">
               <button
-                onClick={() => setDeleteTarget(null)}
+                onClick={() => {
+                  setDeleteTarget(null);
+                  setDeleteError('');
+                  setDeleteForceAvailable(false);
+                }}
                 disabled={deleting}
                 className="text-sm px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
               >
                 Batal
               </button>
               <button
-                onClick={confirmDelete}
+                onClick={() => confirmDelete(false)}
                 disabled={deleting}
                 className="text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
               >
                 {deleting ? 'Menghapus...' : 'Ya, hapus'}
               </button>
+              {deleteForceAvailable && (
+                <button
+                  onClick={() => confirmDelete(true)}
+                  disabled={deleting}
+                  className="text-sm px-4 py-2 rounded-lg bg-red-800 text-white hover:bg-red-900 disabled:opacity-50"
+                >
+                  {deleting ? 'Menghapus...' : 'Hapus Paksa'}
+                </button>
+              )}
             </div>
           </div>
         </div>
