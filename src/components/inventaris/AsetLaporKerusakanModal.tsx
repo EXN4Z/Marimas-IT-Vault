@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle, ImagePlus } from 'lucide-react';
 import { laporKerusakanAset } from '../../api/asetPenanganan';
 import type { Aset } from '../../api/aset';
 
@@ -12,8 +12,16 @@ interface Props {
 export default function AsetLaporKerusakanModal({ aset, onClose, onSuccess }: Props) {
   const [jenisKerusakan, setJenisKerusakan] = useState('');
   const [keluhan, setKeluhan] = useState('');
+  const [foto, setFoto] = useState<File | null>(null);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setFoto(file);
+    setFotoPreview(file ? URL.createObjectURL(file) : null);
+  };
 
   const handleSubmit = async () => {
     if (!jenisKerusakan.trim() || !keluhan.trim()) {
@@ -27,6 +35,7 @@ export default function AsetLaporKerusakanModal({ aset, onClose, onSuccess }: Pr
         aset_id: aset.id,
         jenis_kerusakan: jenisKerusakan.trim(),
         keluhan: keluhan.trim(),
+        foto,
       });
       onSuccess();
     } catch (err: any) {
@@ -75,6 +84,31 @@ export default function AsetLaporKerusakanModal({ aset, onClose, onSuccess }: Pr
               placeholder="Jelasin kondisi & kejadiannya..."
               className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
             />
+          </div>
+
+          {/* BARU: upload foto bukti kerusakan — opsional */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Foto Kerusakan (opsional)</label>
+            {fotoPreview ? (
+              <div className="relative w-full h-36 rounded-lg overflow-hidden border border-slate-200">
+                <img src={fotoPreview} alt="Preview" className="w-full h-full object-cover" />
+                <button
+                  onClick={() => {
+                    setFoto(null);
+                    setFotoPreview(null);
+                  }}
+                  className="absolute top-1.5 right-1.5 bg-black/50 text-white rounded-full p-1 hover:bg-black/70"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center gap-1.5 w-full h-24 border-2 border-dashed border-slate-200 rounded-lg cursor-pointer text-slate-400 hover:border-slate-300 hover:text-slate-500 transition">
+                <ImagePlus size={20} />
+                <span className="text-xs">Klik untuk pilih foto</span>
+                <input type="file" accept="image/*" onChange={handleFotoChange} className="hidden" />
+              </label>
+            )}
           </div>
         </div>
 
