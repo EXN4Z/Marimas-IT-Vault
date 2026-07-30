@@ -32,7 +32,6 @@ const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000
 const STATUS_LABEL: Record<AsetStatus, string> = {
   tersedia: 'Tersedia',
   dipakai: 'Dipakai',
-  rusak: 'Rusak',
   menunggu_perbaikan: 'Menunggu Perbaikan',
   diperbaiki: 'Sedang Diperbaiki',
   rusak_berat: 'Rusak Berat',
@@ -42,7 +41,6 @@ const STATUS_LABEL: Record<AsetStatus, string> = {
 const STATUS_STYLE: Record<AsetStatus, string> = {
   tersedia: 'bg-emerald-50 text-emerald-700',
   dipakai: 'bg-amber-50 text-amber-700',
-  rusak: 'bg-red-50 text-red-700',
   menunggu_perbaikan: 'bg-yellow-50 text-yellow-700',
   diperbaiki: 'bg-orange-50 text-orange-700',
   rusak_berat: 'bg-red-100 text-red-800',
@@ -58,9 +56,8 @@ const STATUS_PRIORITY: Record<AsetStatus, number> = {
   dipakai: 2,
   menunggu_perbaikan: 3,
   diperbaiki: 4,
-  rusak: 5,
-  rusak_berat: 6,
-  dijual: 7,
+  rusak_berat: 5,
+  dijual: 6,
 };
 
 function formatTanggalId(iso: string | null): string {
@@ -419,7 +416,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
       return a.status === 'tersedia' || akuPeminjamnya;
     })
     // BARU: urutkan berdasarkan prioritas status — tersedia paling atas,
-    // dipakai, lalu status dalam proses penanganan, rusak, rusak_berat, dan
+    // dipakai, lalu status dalam proses penanganan, rusak_berat, dan
     // dijual paling bawah. Lihat STATUS_PRIORITY di atas.
     .sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
 
@@ -513,9 +510,9 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                         </span>
                       </td>
                       <td className="px-6 py-3 text-slate-600 max-w-[160px]">
-                        <p className="truncate" title={a.status === 'rusak' || a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
-                          {a.status === 'rusak' || a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}
-                          {a.status !== 'rusak' && a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && (
+                        <p className="truncate" title={a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
+                          {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}
+                          {a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && (
                             <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
                           )}
                         </p>
@@ -595,7 +592,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                           )}
 
                           {/* KARYAWAN/CABANG yang lagi minjem: lapor kerusakan. Begitu lapor, status
-                              aset berubah dari 'dipakai' jadi 'menunggu_perbaikan'/'diperbaiki'/'rusak' —
+                              aset berubah dari 'dipakai' jadi 'menunggu_perbaikan'/'diperbaiki' —
                               dipake sebagai sinyal "udah lapor", tombol ganti jadi badge nonaktif */}
                           {!isAdmin && akuPeminjamnya && a.status === 'dipakai' && (
                             <button
@@ -607,7 +604,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                               Lapor Rusak
                             </button>
                           )}
-                          {!isAdmin && akuPeminjamnya && (a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak' || a.status === 'rusak_berat') && (
+                          {!isAdmin && akuPeminjamnya && (a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak_berat') && (
                             <span
                               title="Laporan kerusakan sudah dikirim, menunggu ditangani admin"
                               className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg cursor-default"
