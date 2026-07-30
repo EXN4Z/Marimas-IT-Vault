@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import { X, Wrench, Printer, PlayCircle, ChevronLeft, ChevronRight, Eye, Search } from 'lucide-react';
 import api from '../../api/axios';
 import { terimaPenangananAset, selesaikanPenangananAset, type AsetPenanganan } from '../../api/aset';
-import { formatTanggalId } from './asetHelpers';
+import { formatTanggalId, namaPemakai } from './asetHelpers';
 import { printStruk } from '../../utils/printStruk';
 
 // pakai tipe dari api/aset.ts (yang sudah punya tanggal_diterima), tapi hit
@@ -176,7 +176,7 @@ export default function TabPenangananAset({ onCount }: Props) {
       (p.aset?.kode_aset || '').toLowerCase().includes(q) ||
       (p.jenis_kerusakan || '').toLowerCase().includes(q) ||
       (p.keluhan || '').toLowerCase().includes(q) ||
-      (p.pemakai?.pekerja?.user?.name || '').toLowerCase().includes(q)
+      (namaPemakai(p.pemakai)).toLowerCase().includes(q)
     );
   };
 
@@ -291,7 +291,7 @@ export default function TabPenangananAset({ onCount }: Props) {
                       <td className="px-4 py-3 text-slate-600">
                         <span className="font-medium">{p.jenis_kerusakan}</span> — {p.keluhan}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{p.pemakai?.pekerja?.user?.name || '-'}</td>
+                      <td className="px-4 py-3 text-slate-600">{namaPemakai(p.pemakai)}</td>
                       <td className="px-4 py-3 text-slate-600">{formatTanggalId(p.tanggal_selesai)}</td>
                       <td className="px-4 py-3">
                         <span
@@ -347,7 +347,7 @@ export default function TabPenangananAset({ onCount }: Props) {
                   </span>
                 </div>
                 <p className="text-xs text-slate-500">
-                  Dilaporkan oleh <span className="font-medium">{p.pemakai?.pekerja?.user?.name || '-'}</span> · {formatTanggalId(p.tanggal_lapor)}
+                  Dilaporkan oleh <span className="font-medium">{namaPemakai(p.pemakai)}</span> · {formatTanggalId(p.tanggal_lapor)}
                 </p>
                 <p className="text-sm text-slate-700 mt-2">
                   <span className="font-medium">{p.jenis_kerusakan}</span> — {p.keluhan}
