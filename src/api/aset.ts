@@ -143,6 +143,28 @@ export interface AsetFormValues {
   no_good_receive?: string;
   kelengkapan?: { kelengkapan_master_id: number; keterangan?: string }[];
 }
+export interface FotoPemakaiEntry {
+  id: number;
+  aset_id: number;
+  aset?: { id: number; kode_aset: string; merek: string | null; tipe: string | null } | null;
+  pekerja_id: number | null;
+  pekerja?: { user?: { id: number; name: string } };
+  user_id: number | null;
+  user?: { id: number; name: string } | null;
+  tanggal_penerimaan: string | null;
+  tanggal_pengembalian: string | null;
+  foto_penerimaan: string[] | null;
+  foto_pengembalian: string[] | null;
+  created_at: string;
+}
+
+export interface PaginatedFotoPemakai {
+  data: FotoPemakaiEntry[];
+  current_page: number;
+  last_page: number;
+  total: number;
+  per_page: number;
+}
 
 function buildAsetFormData(values: AsetFormValues): FormData {
   const fd = new FormData();
@@ -172,7 +194,16 @@ export async function getAsetById(id: number): Promise<Aset> {
   const res = await api.get<Aset>(`/aset/${id}`);
   return res.data;
 }
-
+export async function getFotoPemakaiAset(
+  page = 1,
+  perPage = 12,
+  search?: string
+): Promise<PaginatedFotoPemakai> {
+  const res = await api.get<PaginatedFotoPemakai>('/aset-pemakai/foto', {
+    params: { page, per_page: perPage, search: search || undefined },
+  });
+  return res.data;
+}
 // POST /aset (multipart) — dibatasi backend ke role admin.
 export async function createAset(values: AsetFormValues): Promise<Aset> {
   const res = await api.post<Aset>('/aset', buildAsetFormData(values));

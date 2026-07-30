@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench, PlayCircle, Banknote, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench, PlayCircle, Banknote, ChevronLeft, ChevronRight, X, Images } from 'lucide-react';
 import AppLayout from '../components/shared/AppLayout';
 import TabAset from '../components/inventaris/TabAset';
 import TabKelengkapanAset from '../components/inventaris/TabKelengkapanAset';
 import TabPenangananAset from '../components/inventaris/TabPenangananAset';
+import TabFotoAset from '../components/inventaris/TabFotoAset';
 import { useAuth } from '../context/AuthContext';
 import { getRiwayatAset, getAset, type RiwayatAsetEvent, type AsetPenanganan } from '../api/aset';
 import api from '../api/axios';
@@ -40,7 +41,7 @@ function buatRangeHalaman(current: number, last: number): (number | 'ellipsis')[
   return range;
 }
 
-type TabKey = 'aset' | 'kelengkapan_aset' | 'penanganan_aset';
+type TabKey = 'aset' | 'kelengkapan_aset' | 'penanganan_aset' | 'foto_aset';
 type RiwayatFilter = 'semua' | RiwayatAsetEvent['type'];
 
 const RIWAYAT_FILTER_LABEL: Record<RiwayatAsetEvent['type'], string> = {
@@ -166,6 +167,7 @@ export default function Inventaris() {
 
   const handleCountAset = useCallback((n: number) => updateCount('aset', n), [updateCount]);
   const handleCountPenanganan = useCallback((n: number) => updateCount('penanganan_aset', n), [updateCount]);
+  const handleCountFoto = useCallback((n: number) => updateCount('foto_aset', n), [updateCount]);
 
   // Fetch badge count semua tab di sini (bukan nunggu tab-nya dibuka), biar
   // angka di nav udah kebaca dari awal buka halaman & tetep update walau
@@ -206,6 +208,7 @@ export default function Inventaris() {
     { key: 'aset', label: 'Aset', icon: Package },
     { key: 'kelengkapan_aset', label: 'Kelengkapan Aset', icon: ClipboardList },
     { key: 'penanganan_aset', label: 'Penanganan Aset', icon: Wrench, adminOnly: true },
+    { key: 'foto_aset', label: 'Foto Aset', icon: Images, adminOnly: true },
   ];
 
   return (
@@ -417,8 +420,10 @@ export default function Inventaris() {
         </div>
       ) : activeTab === 'kelengkapan_aset' ? (
         <TabKelengkapanAset />
-      ) : (
+      ) : activeTab === 'penanganan_aset' ? (
         <TabPenangananAset onCount={handleCountPenanganan} />
+      ) : (
+        <TabFotoAset onCount={handleCountFoto} />
       )}
     </AppLayout>
   );
