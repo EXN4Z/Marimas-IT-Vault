@@ -300,7 +300,6 @@ export default function TabPenangananAset({ onCount }: Props) {
                       <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{p.aset?.kode_aset}</td>
                       <td className="px-4 py-3 text-slate-600 max-w-[220px]">
                         <p className="font-medium text-slate-800 truncate">{p.jenis_kerusakan}</p>
-                        <p className="truncate text-slate-500" title={p.keluhan}>{p.keluhan}</p>
                       </td>
                       <td className="px-4 py-3 text-slate-600 max-w-[160px]">
                         <p className="truncate" title={namaPemakai(p.pemakai)}>{namaPemakai(p.pemakai)}</p>
