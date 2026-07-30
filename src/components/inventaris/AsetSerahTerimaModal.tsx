@@ -78,8 +78,8 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
       setError('Pilih akun cabang penerima.');
       return;
     }
-    if (fotoPenerimaan.length === 0) {
-      setError('Unggah minimal 1 foto bukti serah-terima (maksimal 3).');
+    if (fotoPenerimaan.length !== 3) {
+      setError('Harus Kirim 3 foto');
       return;
     }
 
@@ -219,7 +219,7 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
             />
           </div>
 
-          <AsetFotoUpload files={fotoPenerimaan} onChange={setFotoPenerimaan} max={3} label="Foto Bukti Serah Terima" />
+          <AsetFotoUpload files={fotoPenerimaan} onChange={setFotoPenerimaan} max={3} label="Foto Bukti Serah Terima (3 Foto)" />
         </div>
 
         {error && (

@@ -29,8 +29,8 @@ export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose,
       setError('Masukkan kode struk penerimaan yang tertera di struk fisik sebagai bukti pengembalian.');
       return;
     }
-    if (fotoPengembalian.length === 0) {
-      setError('Unggah minimal 1 foto bukti kondisi aset saat dikembalikan (maksimal 3).');
+    if (fotoPengembalian.length !== 3) {
+      setError('Harus 3 Foto.');
       return;
     }
     setSubmitting(true);
@@ -116,7 +116,7 @@ export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose,
             files={fotoPengembalian}
             onChange={setFotoPengembalian}
             max={3}
-            label="Foto Bukti Kondisi Aset"
+            label="Foto Bukti Kondisi Aset (3 Foto)"
           />
         </div>
 
