@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { X, AlertTriangle, ImagePlus } from 'lucide-react';
+import { X, AlertTriangle } from 'lucide-react';
 import { laporKerusakanAset } from '../../api/asetPenanganan';
 import type { Aset } from '../../api/aset';
+import AsetFotoUpload from './AsetFotoUpload';
 
 interface Props {
   aset: Aset;
@@ -12,20 +13,17 @@ interface Props {
 export default function AsetLaporKerusakanModal({ aset, onClose, onSuccess }: Props) {
   const [jenisKerusakan, setJenisKerusakan] = useState('');
   const [keluhan, setKeluhan] = useState('');
-  const [foto, setFoto] = useState<File | null>(null);
-  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+  const [fotoKerusakan, setFotoKerusakan] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-
-  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setFoto(file);
-    setFotoPreview(file ? URL.createObjectURL(file) : null);
-  };
 
   const handleSubmit = async () => {
     if (!jenisKerusakan.trim() || !keluhan.trim()) {
       setError('Jenis kerusakan dan keluhan wajib diisi.');
+      return;
+    }
+    if (fotoKerusakan.length === 0) {
+      setError('Unggah minimal 1 foto bukti kerusakan.');
       return;
     }
     setSubmitting(true);
@@ -35,11 +33,15 @@ export default function AsetLaporKerusakanModal({ aset, onClose, onSuccess }: Pr
         aset_id: aset.id,
         jenis_kerusakan: jenisKerusakan.trim(),
         keluhan: keluhan.trim(),
-        foto,
+        foto: fotoKerusakan[0], // ambil 1 file pertama, sesuai kolom foto di backend
       });
       onSuccess();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal mengirim laporan. Coba lagi.');
+      setError(
+        err.response?.data?.errors?.foto?.[0] ||
+          err.response?.data?.message ||
+          'Gagal mengirim laporan. Coba lagi.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -86,30 +88,12 @@ export default function AsetLaporKerusakanModal({ aset, onClose, onSuccess }: Pr
             />
           </div>
 
-          {/* BARU: upload foto bukti kerusakan — opsional */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Foto Kerusakan (opsional)</label>
-            {fotoPreview ? (
-              <div className="relative w-full h-36 rounded-lg overflow-hidden border border-slate-200">
-                <img src={fotoPreview} alt="Preview" className="w-full h-full object-cover" />
-                <button
-                  onClick={() => {
-                    setFoto(null);
-                    setFotoPreview(null);
-                  }}
-                  className="absolute top-1.5 right-1.5 bg-black/50 text-white rounded-full p-1 hover:bg-black/70"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center gap-1.5 w-full h-24 border-2 border-dashed border-slate-200 rounded-lg cursor-pointer text-slate-400 hover:border-slate-300 hover:text-slate-500 transition">
-                <ImagePlus size={20} />
-                <span className="text-xs">Klik untuk pilih foto</span>
-                <input type="file" accept="image/*" onChange={handleFotoChange} className="hidden" />
-              </label>
-            )}
-          </div>
+          <AsetFotoUpload
+            files={fotoKerusakan}
+            onChange={setFotoKerusakan}
+            max={1}
+            label="Foto Bukti Kerusakan"
+          />
         </div>
 
         {error && (
