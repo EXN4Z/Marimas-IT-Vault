@@ -468,9 +468,9 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                         </span>
                       </td>
                       <td className="px-6 py-3 text-slate-600 max-w-[160px]">
-                        <p className="truncate" title={a.status === 'rusak' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
-                          {a.status === 'rusak' ? '-' : namaPemakai(a.pemakai_saat_ini)}
-                          {a.status !== 'rusak' && isCabangPemakai(a.pemakai_saat_ini) && (
+                        <p className="truncate" title={a.status === 'rusak' || a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
+                          {a.status === 'rusak' || a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}
+                          {a.status !== 'rusak' && a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && (
                             <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
                           )}
                         </p>
