@@ -82,12 +82,14 @@ export default function Inventaris() {
   const riwayatSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refreshRiwayatAset = useCallback((targetPage = 1, targetFilter: RiwayatFilter = 'semua', targetSearch = '') => {
-    // 'cabang' gak termasuk role yang diizinin backend buat /aset-pemakai/riwayat
-    // (lihat routes/api.php) — skip biar gak nembak API yang bakal 403 percuma.
-    if (user?.role === 'cabang') {
-      setRiwayatAsetLoading(false);
-      return;
-    }
+    // CATATAN: dulu di sini ada pengecualian khusus role 'cabang' (skip fetch,
+    // dianggap bakal 403). Itu KELIRU — route /aset-pemakai/riwayat pakai
+    // middleware 'role:karyawan,manajer,hr,admin' yang jalan berdasarkan LEVEL
+    // (lihat User::$roleLevels & hasRoleAtLeast di backend), dan level 'cabang'
+    // (2) lebih tinggi dari 'karyawan' (1) — jadi cabang tetap lolos middleware,
+    // dan controller riwayat() sudah otomatis batasin datanya ke milik akun
+    // cabang itu sendiri (lewat user_id). Jadi cabang HARUS bisa lihat riwayat
+    // aktivitasnya sendiri juga, sama kayak karyawan.
     setRiwayatAsetLoading(true);
     getRiwayatAset(targetPage, RIWAYAT_PER_PAGE, targetFilter === 'semua' ? undefined : targetFilter, targetSearch || undefined)
       .then((res) => {
@@ -105,7 +107,6 @@ export default function Inventaris() {
   // Tetap di halaman, filter, & kata kunci search yang lagi dibuka user, bukan
   // balik ke halaman 1 / kosongin search.
   const refreshRiwayatAsetSilent = useCallback(() => {
-    if (user?.role === 'cabang') return;
     getRiwayatAset(riwayatPage, RIWAYAT_PER_PAGE, riwayatFilter === 'semua' ? undefined : riwayatFilter, riwayatSearch || undefined)
       .then((res) => {
         setRiwayatAset(res.data);
@@ -263,10 +264,9 @@ export default function Inventaris() {
           {/* RIWAYAT ASET — sementara ditaruh di bawah tabel (bukan di samping)
               soalnya tabel aset kolomnya banyak, kalau dipepetin sidebar jadi
               kesempitan/ke-scroll horizontal terus. Admin lihat riwayat SEMUA
-              aset; role lain (karyawan/manajer/hr) cuma lihat riwayat
+              aset; role lain (karyawan/cabang/manajer/hr) cuma lihat riwayat
               aktivitas MEREKA SENDIRI — backend yang filter (lihat
               AsetPemakaiController::riwayat), bukan cuma disembunyiin di UI. */}
-          {user?.role !== 'cabang' && (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
             <h3 className="text-base font-semibold text-slate-900 mb-1">
               {isAdmin ? 'Riwayat Aset' : 'Riwayat Aktivitas Saya'}
@@ -414,7 +414,6 @@ export default function Inventaris() {
               </div>
             )}
           </div>
-          )}
         </div>
       ) : activeTab === 'kelengkapan_aset' ? (
         <TabKelengkapanAset />
