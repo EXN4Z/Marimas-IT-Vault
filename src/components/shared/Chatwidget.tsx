@@ -81,9 +81,9 @@ export default function ChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
       {isOpen ? (
-        <div className="w-80 h-96 bg-white rounded-xl shadow-xl border border-slate-200 flex flex-col overflow-hidden">
+        <div className="w-80 max-w-[calc(100vw-2rem)] h-[70vh] max-h-96 bg-white rounded-xl shadow-xl border border-slate-200 flex flex-col overflow-hidden">
           <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
             <span className="text-sm font-semibold">AI Assistant</span>
             <button onClick={() => setIsOpen(false)}>

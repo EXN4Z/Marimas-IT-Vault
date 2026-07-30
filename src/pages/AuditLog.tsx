@@ -124,7 +124,7 @@ export default function AuditLogPage() {
       </div>
 
       <nav className="mb-6 mt-4">
-        <ul className="flex items-center gap-6 border-b border-slate-200">
+        <ul className="flex items-center gap-6 border-b border-slate-200 overflow-x-auto">
           <li>
             <button
               onClick={() => gantiTab('aktif')}

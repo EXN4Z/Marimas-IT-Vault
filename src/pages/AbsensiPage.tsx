@@ -317,7 +317,7 @@ export default function AbsensiPage() {
       </div>
 
       <nav className="mb-6">
-        <ul className="flex items-center gap-6 border-b border-slate-200">
+        <ul className="flex items-center gap-6 border-b border-slate-200 overflow-x-auto">
           <li>
             <button
               onClick={() => setActiveTab('semua')}
