@@ -94,10 +94,14 @@ export function StatCardsGrid({ statCards }: { statCards: StatCard[] }) {
     <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
       {statCards.length === 0
         ? Array.from({ length: 3 }).map((_, i) => <div key={i} className={`${statCardClass} animate-pulse h-24`} />)
-        : statCards.map((stat) => {
+        : statCards.map((stat, index) => {
             const Icon = stat.icon;
+            const isLastOdd = statCards.length % 2 !== 0 && index === statCards.length - 1;
             return (
-              <div key={stat.label} className={statCardClass}>
+              <div
+                key={stat.label}
+                className={`${statCardClass} ${isLastOdd ? 'col-span-2 lg:col-span-1' : ''}`}
+              >
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm text-slate-500 font-medium">{stat.label}</p>
                   <StatBadge accent={stat.accent}>
