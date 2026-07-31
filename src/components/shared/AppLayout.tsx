@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -121,11 +121,11 @@ interface SearchEntry {
 }
 
 interface AppLayoutProps {
-  title: string;
-  children: ReactNode;
+  title?: string;
+  children?: ReactNode;
 }
 
-export default function AppLayout({ title, children }: AppLayoutProps) {
+export default function AppLayout({ title, children }: AppLayoutProps = {}) {
   const { user, logout } = useAuth();
   const { resetChat } = useChat();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -163,6 +163,26 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
     ...(showAuditLog ? [auditLogNavItem!] : []),
     ...(settingsNavItem ? [settingsNavItem] : []),
   ];
+
+  // fallback judul header: dipake kalau AppLayout jadi layout route (lewat
+  // <Outlet />, gak ada prop title dikirim). Cari nav item (termasuk child
+  // dropdown) yang path/matchPrefix-nya cocok sama URL sekarang.
+  const derivedTitle = (() => {
+    for (const item of visibleNavItems) {
+      if (item.children) {
+        const match = item.children.find(
+          (child) => location.pathname === child.path.split('?')[0]
+        );
+        if (match) return match.label;
+        continue;
+      }
+      if (item.matchPrefix && location.pathname.startsWith(item.matchPrefix)) return item.label;
+      if (item.path && item.path === location.pathname) return item.label;
+    }
+    return '';
+  })();
+
+  const pageTitle = title ?? derivedTitle;
 
   // ratain semua halaman sidebar (termasuk sub-menu dropdown) jadi satu daftar
   // flat buat kebutuhan search -- ikut role filter yang sama kayak sidebar,
@@ -453,7 +473,7 @@ const handleLogout = async () => {
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-600">
               <Menu size={22} />
             </button>
-            <h1 className="text-xl font-bold text-slate-900 hidden sm:block">{title}</h1>
+            <h1 className="text-xl font-bold text-slate-900 hidden sm:block">{pageTitle}</h1>
           </div>
 
           <div ref={searchBoxRef} className="hidden md:flex items-center flex-1 max-w-sm mx-6 relative">
@@ -517,7 +537,7 @@ const handleLogout = async () => {
             dari chrome putih di sidebar & topbar */}
         <main className="flex-1 p-3 md:p-6">
           <div className="bg-zinc-100 rounded-3xl min-h-[calc(100vh-6.5rem)] p-4 md:p-8">
-            {children}
+            {children ?? <Outlet />}
           </div>
         </main>
       </div>
