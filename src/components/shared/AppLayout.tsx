@@ -51,7 +51,7 @@ const navItems: NavItem[] = [
   // udah ada di dalam halaman list-nya sendiri (tombol di header / query ?action=),
   // jadi gak perlu link duplikat di sidebar.
   { label: 'Data Karyawan', icon: Users, path: '/karyawan', matchPrefix: '/karyawan' },
-  { label: 'Absensi QR', icon: QrCode, path: '/absensi', matchPrefix: '/absensi' },
+  { label: 'Absensi', icon: QrCode, path: '/absensi', matchPrefix: '/absensi' },
   { label: 'Pengajuan Izin', icon: FileText, path: '/izin', matchPrefix: '/izin' },
   { label: 'Ticketing', icon: Ticket, path: '/ticketing', matchPrefix: '/ticketing' },
   { label: 'Inventaris', icon: Package, path: '/inventaris', matchPrefix: '/inventaris' },
@@ -138,10 +138,14 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
 
   const STAFF_ROLES = ['admin', 'hr'];
   const REVIEWER_ROLES = ['admin', 'hr', 'manajer', 'manager', 'cabang'];
+  const ABSENSI_ROLES = ['admin', 'hr', 'manajer', 'manager'];
 
   const roleFilter = (item: NavItem) => {
     // Master Data hanya untuk admin/hr
     if (item.label === 'Master Data' && !STAFF_ROLES.includes(user?.role ?? '')) {
+      return false;
+    }
+    if (item.label === 'Absensi' && !ABSENSI_ROLES.includes(user?.role ?? '')) {
       return false;
     }
     // Laporan untuk admin/hr/manajer
