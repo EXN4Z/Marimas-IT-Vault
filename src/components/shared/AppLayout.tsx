@@ -366,7 +366,7 @@ export default function AppLayout() {
     // sidebar & topbar biar nyatu tanpa garis, sedangkan panel dashboard
     // di bawah dikasih "bg-slate-50" + rounded biar keliatan sebagai
     // panel/card sendiri yang mengambang di atas chrome putih.
-    <div className="min-h-screen bg-white flex">
+    <div className="h-screen bg-white flex overflow-hidden">
       {/* ===== MOBILE OVERLAY ===== */}
       {sidebarOpen && (
         <div
@@ -376,8 +376,14 @@ export default function AppLayout() {
       )}
 
       {/* ===== SIDEBAR ===== */}
+      {/* PENAMBAHAN: dulu pakai "lg:sticky" + parent "min-h-screen" -- itu yang
+          bikin sidebar ikut kebawa scroll dokumen & ikut berubah tinggi waktu
+          konten page berubah. Sekarang parent-nya "h-screen overflow-hidden"
+          (tinggi terkunci ke viewport), jadi sidebar cukup "lg:static" aja --
+          dia otomatis diam karena dia bagian dari flex container yang gak
+          pernah discroll sama sekali, cuma <main> di bawah yang scroll sendiri. */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-white flex flex-col z-50 transition-transform duration-300 ${
+        className={`fixed lg:static top-0 left-0 h-screen w-64 bg-white flex flex-col z-50 transition-transform duration-300 flex-shrink-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
       >
@@ -495,11 +501,17 @@ export default function AppLayout() {
       </aside>
 
       {/* ===== MAIN AREA ===== */}
-      <div className="flex-1 min-w-0 flex flex-col">
+      {/* PENAMBAHAN: "overflow-hidden" di sini + "overflow-y-auto" di <main>
+          bikin kolom ini jadi container scroll-nya sendiri, terpisah total
+          dari sidebar. Sidebar & header nggak akan pernah ikut scroll lagi,
+          apapun yang terjadi di konten <Outlet /> di bawahnya. */}
+      <div className="flex-1 min-w-0 flex flex-col h-screen overflow-hidden">
         {/* TOPBAR — bg sama kayak sidebar (bg-white), garis pemisah (border-b)
             sengaja dihilangin biar sidebar & topbar keliatan nyatu jadi satu
-            panel chrome tanpa garis */}
-        <header className="h-20 bg-white/70 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
+            panel chrome tanpa garis. "sticky" udah gak wajib lagi karena kolom
+            ini gak discroll (yang scroll cuma <main> di bawahnya), tapi tetap
+            dibiarin sebagai jaga-jaga/tidak masalah kalau ada perubahan lain. */}
+        <header className="h-20 flex-shrink-0 bg-white/70 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-600">
               <Menu size={22} />
@@ -566,8 +578,8 @@ export default function AppLayout() {
         {/* CONTENT — panel dashboard sendiri: bg-slate-50 + rounded-3xl,
             dikasih margin (p-3/p-6) biar keliatan "mengambang" terpisah
             dari chrome putih di sidebar & topbar */}
-        <main className="flex-1 p-3 md:p-6">
-          <div className="bg-zinc-100 rounded-3xl min-h-[calc(100vh-6.5rem)] p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto p-3 md:p-6">
+          <div className="bg-zinc-100 rounded-3xl min-h-[calc(100%-0px)] p-4 md:p-8">
             {/* PENAMBAHAN: Outlet menggantikan {children} -- ini yang bikin
                 AppLayout tetap satu instance yang sama waktu pindah antar
                 halaman child, karena AppLayout sekarang dipasang sekali di
