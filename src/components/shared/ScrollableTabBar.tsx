@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { isValidElement, useEffect, useRef, useState, type ReactNode, type ComponentType } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Tab bar horizontal yang bisa digeser sendiri di dalam boxnya (bukan
@@ -19,7 +19,7 @@ export interface ScrollableTabItem<T extends string> {
   // ukurannya konsisten diatur di sini), ATAU elemen JSX yang udah jadi
   // (mis. `<Users size={16} />`) buat halaman yang sebelumnya udah render
   // icon-nya sendiri.
-  icon?: React.ComponentType<{ size?: number | string; className?: string }> | React.ReactNode;
+  icon?: ComponentType<{ size?: number | string; className?: string }> | ReactNode;
   badge?: number | null;
   badgeClassName?: string;
 }
@@ -114,10 +114,15 @@ export default function ScrollableTabBar<T extends string>({
         className="flex items-center gap-6 border-b border-slate-200 overflow-x-auto scroll-smooth snap-x snap-proximity touch-pan-x"
       >
         {tabs.map((t) => {
-          const isComponent = typeof t.icon === 'function';
-          const IconComponent = isComponent
-            ? (t.icon as React.ComponentType<{ size?: number | string; className?: string }>)
-            : null;
+          // Elemen JSX yang udah jadi (mis. `<Users size={16} />`) harus dirender
+          // apa adanya. Selain itu dianggap referensi komponen (function ATAU
+          // objek forwardRef -- semua icon lucide-react itu forwardRef, jadi
+          // `typeof` doang gak cukup buat bedain) dan perlu di-render via JSX.
+          const iconIsElement = isValidElement(t.icon);
+          const IconComponent =
+            t.icon != null && !iconIsElement
+              ? (t.icon as ComponentType<{ size?: number | string; className?: string }>)
+              : null;
           return (
             <li key={t.key} className="shrink-0 snap-start">
               <button
@@ -130,7 +135,7 @@ export default function ScrollableTabBar<T extends string>({
                     : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
               >
-                {IconComponent ? <IconComponent size={16} /> : (t.icon as React.ReactNode)}
+                {IconComponent ? <IconComponent size={16} /> : iconIsElement ? (t.icon as ReactNode) : null}
                 {t.label}
                 {t.badge != null && (
                   <span
