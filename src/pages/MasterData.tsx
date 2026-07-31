@@ -2,7 +2,6 @@ import '../index.css';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Building2, BriefcaseBusiness, Boxes, Package, Truck, Plus, Pencil, Trash2, X } from 'lucide-react';
-import AppLayout from '../components/shared/AppLayout';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen } from '../api/departemen';
@@ -224,16 +223,14 @@ export default function MasterData() {
 
   if (!isStaff) {
     return (
-      <AppLayout title="Master Data">
         <div className="bg-white rounded-xl p-8 shadow-sm border border-slate-200 text-center">
           <p className="text-sm text-slate-500">Anda tidak punya akses ke halaman ini.</p>
         </div>
-      </AppLayout>
     );
   }
 
   return (
-    <AppLayout title="Master Data">
+    <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <p className="text-sm text-slate-500">
           Kelola data referensi departemen, jabatan, dan data master aset (jenis, kelengkapan,
@@ -411,6 +408,6 @@ export default function MasterData() {
           </div>
         </div>
       )}
-    </AppLayout>
+    </>
   );
 }

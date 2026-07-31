@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { FileSpreadsheet, ClipboardList, Printer, Loader2, Download } from 'lucide-react';
-import AppLayout from '../components/shared/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import {
   printLaporanAbsensi,
@@ -102,16 +101,14 @@ export default function Laporan() {
 
   if (!isStaff) {
     return (
-      <AppLayout title="Laporan">
         <div className="bg-white rounded-xl p-8 shadow-sm border border-slate-200 text-center">
           <p className="text-sm text-slate-500">Anda tidak punya akses ke halaman ini.</p>
         </div>
-      </AppLayout>
     );
   }
 
   return (
-    <AppLayout title="Laporan">
+    <>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
         <p className="text-sm text-slate-500 max-w-lg">
           Cetak rekap bulanan sebagai PDF, atau unduh sebagai file Excel.
@@ -179,6 +176,6 @@ export default function Laporan() {
           );
         })}
       </div>
-    </AppLayout>
+    </>
   );
 }

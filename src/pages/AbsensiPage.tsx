@@ -14,7 +14,6 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import AppLayout from '../components/shared/AppLayout';
 import FaceCapture from '../components/absensi/FaceCapture';
 import DaftarWajahModal from '../components/absensi/DaftarWajahModal';
 import {
@@ -262,7 +261,7 @@ export default function AbsensiPage() {
   };
 
   return (
-    <AppLayout title="Absensi (Admin)">
+    <>
       <div className="mb-2">
         <p className="text-sm text-slate-500">
           Kelola & pantau absen seluruh karyawan. Sebagai Admin, kamu bisa menandai absen atas nama karyawan lain.
@@ -648,6 +647,6 @@ export default function AbsensiPage() {
           }}
         />
       )}
-    </AppLayout>
+    </>
   );
 }

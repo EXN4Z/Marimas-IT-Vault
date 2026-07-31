@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
-import AppLayout from '../components/shared/AppLayout';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
@@ -162,7 +161,7 @@ export default function KaryawanPage() {
     const activeTabLabel = tabs.find((t) => t.key === activeTab)?.label ?? 'Pekerja';
 
     return (
-        <AppLayout title="Data Karyawan">
+        <>
             <div className="max-w-6xl mx-auto">
                 <div className="mb-6">
                     <h1 className="text-xl font-bold text-gray-900">Data Karyawan</h1>
@@ -250,7 +249,7 @@ export default function KaryawanPage() {
                     onConfirm={confirmDelete}
                 />
             )}
-        </AppLayout>
+        </>
     );
 }
 

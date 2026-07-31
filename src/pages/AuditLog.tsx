@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { ScrollText, Trash2, ArrowDownCircle, ArrowUpCircle, RefreshCw, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
-import AppLayout from '../components/shared/AppLayout';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import { getAuditLog, getAuditLogTrash, type AuditLog } from '../api/auditLog';
 
@@ -109,7 +108,7 @@ export default function AuditLogPage() {
   }
 
   return (
-    <AppLayout title="Audit Log">
+    <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
         <p className="text-sm text-slate-500">
           Riwayat aktivitas pengguna sistem. Log otomatis pindah ke trash setelah 24 jam, dan
@@ -251,6 +250,6 @@ export default function AuditLogPage() {
           </div>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 }

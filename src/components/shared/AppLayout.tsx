@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, type ReactNode } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -99,6 +99,59 @@ const otherNavItems = navItems.filter((i) => i.label !== 'Audit Log' && i.label 
 
 const interleavedNavItems = interleaveByChildren(otherNavItems);
 
+// PENAMBAHAN: title lookup buat header, dipetakan dari navItems (termasuk
+// children dropdown) supaya AppLayout bisa nentuin judul halaman sendiri
+// berdasarkan pathname, tanpa perlu tiap page kirim prop `title` lagi.
+// Ini penting karena sekarang AppLayout jadi layout route (dipasang sekali
+// di router, bukan dibungkus ulang di tiap page) -- lihat catatan di bawah.
+interface TitleEntry {
+  label: string;
+  path: string; // pathname murni, tanpa query string
+  matchPrefix?: string;
+}
+
+const titleEntries: TitleEntry[] = navItems.flatMap((item) => {
+  const entries: TitleEntry[] = [];
+  if (item.path) {
+    entries.push({ label: item.label, path: item.path, matchPrefix: item.matchPrefix });
+  } else if (item.matchPrefix) {
+    // parent dropdown tanpa path sendiri (mis. Master Data) tetap butuh entry
+    // biar matchPrefix-nya kepakai buat halaman itu & child-child-nya
+    entries.push({ label: item.label, path: item.matchPrefix, matchPrefix: item.matchPrefix });
+  }
+  if (item.children) {
+    item.children.forEach((child) => {
+      const [childPath] = child.path.split('?');
+      entries.push({ label: child.label, path: childPath, matchPrefix: item.matchPrefix });
+    });
+  }
+  return entries;
+});
+
+// Tambahkan di sini kalau ada halaman yang judulnya beda dari label sidebar
+// atau gak ada di navItems sama sekali (mis. halaman detail/edit dinamis).
+// key = matchPrefix atau pathname persis, value = title yang ditampilkan.
+const titleOverrides: Record<string, string> = {
+  '/login': 'Masuk',
+  // '/karyawan/:id/edit' -> pakai matchPrefix '/karyawan' dari titleEntries di atas
+};
+
+function resolveTitle(pathname: string): string {
+  if (titleOverrides[pathname]) return titleOverrides[pathname];
+
+  // cocokin exact pathname dulu
+  const exact = titleEntries.find((e) => e.path === pathname);
+  if (exact) return exact.label;
+
+  // fallback: cocokin matchPrefix terpanjang (buat route dinamis kayak /karyawan/5/edit)
+  const prefixMatches = titleEntries
+    .filter((e) => e.matchPrefix && pathname.startsWith(e.matchPrefix))
+    .sort((a, b) => (b.matchPrefix?.length ?? 0) - (a.matchPrefix?.length ?? 0));
+  if (prefixMatches[0]) return prefixMatches[0].label;
+
+  return 'Dashboard';
+}
+
 function initials(name?: string) {
   if (!name) return '?';
   return name
@@ -120,12 +173,7 @@ interface SearchEntry {
   path: string;
 }
 
-interface AppLayoutProps {
-  title: string;
-  children: ReactNode;
-}
-
-export default function AppLayout({ title, children }: AppLayoutProps) {
+export default function AppLayout() {
   const { user, logout } = useAuth();
   const { resetChat } = useChat();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -135,6 +183,9 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
   const searchBoxRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // PENAMBAHAN: title sekarang di-derive dari pathname, bukan prop lagi
+  const title = useMemo(() => resolveTitle(location.pathname), [location.pathname]);
 
   const STAFF_ROLES = ['admin', 'hr'];
   const REVIEWER_ROLES = ['admin', 'hr', 'manajer', 'manager', 'cabang'];
@@ -265,7 +316,7 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
     });
   };
 
-const handleLogout = async () => {
+  const handleLogout = async () => {
     // NOTE: revoke token ke server, unsubscribe push, & bersih-bersih localStorage
     // semua udah ditangani di dalam logout() (AuthContext), dalam urutan yang benar
     // (unsubscribe push dulu selagi token masih valid, baru revoke). Jangan panggil
@@ -274,10 +325,10 @@ const handleLogout = async () => {
     resetChat();
     const res = await logout();
     navigate('/login', {
-        replace: true,
-        state: res?.password_direset ? { passwordReset: true } : undefined,
+      replace: true,
+      state: res?.password_direset ? { passwordReset: true } : undefined,
     });
-};
+  };
 
   // Route yang sekarang dirender sebagai overlay absolute (RouteModal) di App.tsx,
   // bukan halaman penuh lagi — jadi navigasi ke sini WAJIB bawa state.backgroundLocation
@@ -517,7 +568,12 @@ const handleLogout = async () => {
             dari chrome putih di sidebar & topbar */}
         <main className="flex-1 p-3 md:p-6">
           <div className="bg-zinc-100 rounded-3xl min-h-[calc(100vh-6.5rem)] p-4 md:p-8">
-            {children}
+            {/* PENAMBAHAN: Outlet menggantikan {children} -- ini yang bikin
+                AppLayout tetap satu instance yang sama waktu pindah antar
+                halaman child, karena AppLayout sekarang dipasang sekali di
+                router sebagai parent route, bukan dibungkus ulang di tiap
+                page. Lihat catatan router di bawah file ini. */}
+            <Outlet />
           </div>
         </main>
       </div>
