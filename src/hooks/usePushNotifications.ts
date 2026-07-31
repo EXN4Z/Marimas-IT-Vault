@@ -21,6 +21,7 @@ export function usePushNotifications() {
   const [status, setStatus] = useState<PushStatus>('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const isSupported = 'serviceWorker' in navigator && 'PushManager' in window;
 
@@ -35,7 +36,8 @@ export function usePushNotifications() {
       const registration = await navigator.serviceWorker.getRegistration();
       const sub = await registration?.pushManager.getSubscription();
       setIsSubscribed(!!sub);
-    } catch {
+    } catch (err) {
+      console.error('[usePushNotifications] refreshStatus failed:', err);
       setIsSubscribed(false);
     }
   }, [isSupported]);
@@ -45,7 +47,22 @@ export function usePushNotifications() {
   }, [refreshStatus]);
 
   const subscribe = useCallback(async () => {
-    if (!isSupported || !VAPID_PUBLIC_KEY) return;
+    setError(null);
+
+    if (!isSupported) {
+      const msg = 'Browser ini tidak mendukung push notification (serviceWorker/PushManager tidak tersedia).';
+      console.error('[usePushNotifications]', msg);
+      setError(msg);
+      return;
+    }
+
+    if (!VAPID_PUBLIC_KEY) {
+      const msg = 'VITE_VAPID_PUBLIC_KEY tidak ditemukan. Cek environment variable saat build (mis. di Railway, pastikan di-set sebagai build-time env var, bukan hanya di .env lokal).';
+      console.error('[usePushNotifications]', msg);
+      setError(msg);
+      return;
+    }
+
     setLoading(true);
     try {
       const registration = await navigator.serviceWorker.register('/sw.js');
@@ -53,24 +70,36 @@ export function usePushNotifications() {
 
       const permission = await Notification.requestPermission();
       setStatus(permission as PushStatus);
-      if (permission !== 'granted') return;
+      if (permission !== 'granted') {
+        console.warn('[usePushNotifications] permission tidak granted:', permission);
+        return;
+      }
 
       let subscription = await registration.pushManager.getSubscription();
       if (!subscription) {
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY!) as BufferSource,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
         });
       }
 
       await savePushSubscription(subscription);
       setIsSubscribed(true);
+    } catch (err) {
+      // Ini bagian yang tadinya hilang — tanpa catch, error di sini
+      // (mis. savePushSubscription gagal, subscribe() ditolak browser,
+      // atau applicationServerKey invalid) akan silent-fail: loading
+      // balik ke false tanpa tanda apapun bahwa proses gagal.
+      console.error('[usePushNotifications] subscribe failed:', err);
+      setError(err instanceof Error ? err.message : 'Gagal subscribe push notification.');
+      setIsSubscribed(false);
     } finally {
       setLoading(false);
     }
   }, [isSupported]);
 
   const unsubscribe = useCallback(async () => {
+    setError(null);
     setLoading(true);
     try {
       const registration = await navigator.serviceWorker.getRegistration();
@@ -80,10 +109,13 @@ export function usePushNotifications() {
         await subscription.unsubscribe();
       }
       setIsSubscribed(false);
+    } catch (err) {
+      console.error('[usePushNotifications] unsubscribe failed:', err);
+      setError(err instanceof Error ? err.message : 'Gagal unsubscribe push notification.');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  return { status, isSubscribed, loading, isSupported, subscribe, unsubscribe };
+  return { status, isSubscribed, loading, error, isSupported, subscribe, unsubscribe };
 }
