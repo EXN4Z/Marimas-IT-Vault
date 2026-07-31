@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench, PlayCircle, Banknote, ChevronLeft, ChevronRight, X, Images } from 'lucide-react';
 import AppLayout from '../components/shared/AppLayout';
+import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import TabAset from '../components/inventaris/TabAset';
 import TabKelengkapanAset from '../components/inventaris/TabKelengkapanAset';
 import TabPenangananAset from '../components/inventaris/TabPenangananAset';
@@ -217,38 +218,20 @@ export default function Inventaris() {
         <p className="text-sm text-slate-500">Kelola aset IT</p>
       </div>
 
-      <nav className="mb-6">
-        <ul className="flex items-center gap-6 border-b border-slate-200 overflow-x-auto">
-          {tabs
-            .filter((t) => !t.adminOnly || isAdmin)
-            .map((t) => (
-              <li key={t.key}>
-                <button
-                  onClick={() => handleTabChange(t.key)}
-                  className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
-                    activeTab === t.key
-                      ? 'border-slate-900 text-slate-900 font-medium'
-                      : 'border-transparent text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  <t.icon size={16} />
-                  {t.label}
-                  {counts[t.key] != null && (
-                    <span
-                      className={`text-xs px-1.5 py-0.5 rounded-full ${
-                        t.key === 'penanganan_aset'
-                          ? 'bg-red-50 text-red-600'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      {counts[t.key]}
-                    </span>
-                  )}
-                </button>
-              </li>
-            ))}
-        </ul>
-      </nav>
+      <ScrollableTabBar
+        className="mb-6"
+        activeTab={activeTab}
+        onChange={handleTabChange}
+        tabs={tabs
+          .filter((t) => !t.adminOnly || isAdmin)
+          .map((t) => ({
+            key: t.key,
+            label: t.label,
+            icon: t.icon,
+            badge: counts[t.key] ?? null,
+            badgeClassName: t.key === 'penanganan_aset' ? 'bg-red-50 text-red-600' : undefined,
+          }))}
+      />
 
       {activeTab === 'aset' ? (
         <div className="flex flex-col gap-6">

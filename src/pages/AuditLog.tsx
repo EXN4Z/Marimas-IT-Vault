@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ScrollText, Trash2, ArrowDownCircle, ArrowUpCircle, RefreshCw, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import AppLayout from '../components/shared/AppLayout';
+import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import { getAuditLog, getAuditLogTrash, type AuditLog } from '../api/auditLog';
 
 type TabKey = 'aktif' | 'trash';
@@ -123,36 +124,15 @@ export default function AuditLogPage() {
         </button>
       </div>
 
-      <nav className="mb-6 mt-4">
-        <ul className="flex items-center gap-6 border-b border-slate-200 overflow-x-auto">
-          <li>
-            <button
-              onClick={() => gantiTab('aktif')}
-              className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
-                activeTab === 'aktif'
-                  ? 'border-slate-900 text-slate-900 font-medium'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <ScrollText size={16} />
-              Log Aktif
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => gantiTab('trash')}
-              className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
-                activeTab === 'trash'
-                  ? 'border-slate-900 text-slate-900 font-medium'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <Trash2 size={16} />
-              Trash
-            </button>
-          </li>
-        </ul>
-      </nav>
+      <ScrollableTabBar
+        className="mb-6 mt-4"
+        activeTab={activeTab}
+        onChange={gantiTab}
+        tabs={[
+          { key: 'aktif', label: 'Log Aktif', icon: ScrollText },
+          { key: 'trash', label: 'Trash', icon: Trash2 },
+        ]}
+      />
 
       <div className="relative mb-4">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />

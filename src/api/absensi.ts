@@ -5,7 +5,6 @@ export type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
 export interface Karyawan {
   id: number; // pekerja id
   nip: string;
-  qr_code: string;
   face_descriptor: number[] | null;
   user: {
     id: number;
@@ -24,7 +23,7 @@ export interface Absensi {
   jam_pulang: string | null;
   status: 'tepat_waktu' | 'telat' | null;
   status_pulang: 'pulang_cepat' | 'pulang_normal' | null;
-  // BARU: koordinat GPS saat absen (bisa null untuk data lama / absen via QR tanpa GPS).
+  // Koordinat GPS saat absen (bisa null untuk data lama).
   // PENTING: field ini hanya akan terisi kalau endpoint backend /absensi/hari-ini
   // dan /absensi/riwayat benar-benar mengembalikan kolom latitude/longitude ini.
   latitude?: number | null;
@@ -63,13 +62,7 @@ export async function getAbsensiSaya(): Promise<{ pekerja: Karyawan; absensi_har
   return res.data;
 }
 
-// Mode QR — dipakai sebelum jam cutoff (config di backend: ABSENSI_QR_CUTOFF)
-export async function scanAbsenQr(qrCode: string): Promise<ScanResult> {
-  const res = await api.post<ScanResult>('/absensi/scan', { qr_code: qrCode });
-  return res.data;
-}
-
-// Mode Face + GPS — dipakai setelah jam cutoff.
+// Mode Face + GPS — satu-satunya mode absen saat ini.
 // karyawanId opsional, cuma dipakai kalau requester Admin (override absen orang lain).
 export async function scanAbsenFace(
   photo: Blob,

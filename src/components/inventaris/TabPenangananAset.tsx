@@ -4,6 +4,7 @@ import { X, Wrench, Printer, PlayCircle, ChevronLeft, ChevronRight, Eye, Search,
 import api from '../../api/axios';
 import { terimaPenangananAset, selesaikanPenangananAset, type AsetPenanganan } from '../../api/aset';
 import { formatTanggalId, namaPemakai } from './asetHelpers';
+import ScrollableTabBar from '../shared/ScrollableTabBar';
 import { printStruk } from '../../utils/printStruk';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
@@ -228,28 +229,17 @@ export default function TabPenangananAset({ onCount }: Props) {
         </div>
       )}
 
-      <div className="flex items-center gap-1 mb-4 border-b border-slate-200 overflow-x-auto">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => handleTabChange(t.key)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap ${
-              activeTab === t.key
-                ? 'border-slate-900 text-slate-900'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            {t.label}
-            <span
-              className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                activeTab === t.key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500'
-              }`}
-            >
-              {t.list.length}
-            </span>
-          </button>
-        ))}
-      </div>
+      <ScrollableTabBar
+        className="mb-4"
+        activeTab={activeTab}
+        onChange={handleTabChange}
+        tabs={tabs.map((t) => ({
+          key: t.key,
+          label: t.label,
+          badge: t.list.length,
+          badgeClassName: activeTab === t.key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
+        }))}
+      />
 
       {(activeTab === 'diperbaiki_selesai' || activeTab === 'rusak_berat') && (
         <div className="relative mb-4">

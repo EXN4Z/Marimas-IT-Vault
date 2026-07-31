@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import AppLayout from '../components/shared/AppLayout';
+import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
 type Status = 'pending' | 'disetujui' | 'ditolak' | 'revisi' | 'selesai' | 'draft';
@@ -267,24 +268,12 @@ export default function PengajuanIzinPage() {
                 </div>
 
                 <div className="bg-white border border-gray-200 rounded-xl p-4 mt-6">
-                    <nav className="mb-4">
-                        <ul className="flex items-center gap-6 border-b border-gray-200 overflow-x-auto">
-                            {tabs.map((tab) => (
-                                <li key={tab.key}>
-                                    <button
-                                        onClick={() => setActiveTab(tab.key)}
-                                        className={`pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
-                                            activeTab === tab.key
-                                                ? 'border-black text-black font-medium'
-                                                : 'border-transparent text-gray-500 hover:text-gray-700'
-                                        }`}
-                                    >
-                                        {tab.label}
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    </nav>
+                    <ScrollableTabBar
+                        className="mb-4"
+                        activeTab={activeTab}
+                        onChange={setActiveTab}
+                        tabs={tabs}
+                    />
 
                     <div className="relative mb-4">
                         <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

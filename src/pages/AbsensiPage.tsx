@@ -16,6 +16,7 @@ import {
   Printer,
 } from 'lucide-react';
 import AppLayout from '../components/shared/AppLayout';
+import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import FaceCapture from '../components/absensi/FaceCapture';
 import DaftarWajahModal from '../components/absensi/DaftarWajahModal';
 import {
@@ -316,58 +317,28 @@ export default function AbsensiPage() {
         </p>
       </div>
 
-      <nav className="mb-6">
-        <ul className="flex items-center gap-6 border-b border-slate-200 overflow-x-auto">
-          <li>
-            <button
-              onClick={() => setActiveTab('semua')}
-              className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
-                activeTab === 'semua'
-                  ? 'border-slate-900 text-slate-900 font-medium'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <Users size={16} />
-              Semua Karyawan
-              <span className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full">
-                {totalKaryawan}
-              </span>
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => setActiveTab('sudah_absen')}
-              className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
-                activeTab === 'sudah_absen'
-                  ? 'border-slate-900 text-slate-900 font-medium'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <UserCheck size={16} />
-              Sudah Absen
-              <span className="text-xs bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-full">
-                {sudahAbsenCount}
-              </span>
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => setActiveTab('belum_absen')}
-              className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
-                activeTab === 'belum_absen'
-                  ? 'border-slate-900 text-slate-900 font-medium'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <UserX size={16} />
-              Belum Absen
-              <span className="text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded-full">
-                {belumAbsenCount}
-              </span>
-            </button>
-          </li>
-        </ul>
-      </nav>
+      <ScrollableTabBar
+        className="mb-6"
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        tabs={[
+          { key: 'semua', label: 'Semua Karyawan', icon: Users, badge: totalKaryawan },
+          {
+            key: 'sudah_absen',
+            label: 'Sudah Absen',
+            icon: UserCheck,
+            badge: sudahAbsenCount,
+            badgeClassName: 'bg-emerald-50 text-emerald-600',
+          },
+          {
+            key: 'belum_absen',
+            label: 'Belum Absen',
+            icon: UserX,
+            badge: belumAbsenCount,
+            badgeClassName: 'bg-red-50 text-red-600',
+          },
+        ]}
+      />
 
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">

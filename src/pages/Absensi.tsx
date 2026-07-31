@@ -6,7 +6,6 @@ import AbsensiSaya from './AbsensiSayaPage';
 // role lain (hr/manajer/karyawan) cuma dapet halaman self-service (absen diri sendiri).
 export default function Absensi() {
   const { user } = useAuth();
-  console.log('DEBUG role:', user?.role, user); // BARU sementara
 
   if (user?.role === 'admin') {
     return <AbsensiAdmin />;

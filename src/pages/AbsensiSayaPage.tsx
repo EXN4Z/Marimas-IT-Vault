@@ -1,23 +1,13 @@
-import { useEffect, useState, useCallback } from 'react';
-import { ArrowDownCircle, ArrowUpCircle, CheckCircle2, AlertCircle, Fingerprint, QrCode } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowDownCircle, ArrowUpCircle, CheckCircle2, AlertCircle, Fingerprint } from 'lucide-react';
 import AppLayout from '../components/shared/AppLayout';
 import FaceCapture from '../components/absensi/FaceCapture';
-import ScanQrModal from '../components/shared/ScanQrModal';
 import DaftarWajahModal from '../components/absensi/DaftarWajahModal';
-import { getAbsensiSaya, scanAbsenQr, scanAbsenFace, type Karyawan, type Absensi } from '../api/absensi';
-
-// Harus sinkron sama ABSENSI_QR_CUTOFF di backend .env
-const QR_CUTOFF = '08:00';
+import { getAbsensiSaya, scanAbsenFace, type Karyawan, type Absensi } from '../api/absensi';
 
 function formatJam(time: string | null | undefined): string {
   if (!time) return '-';
   return time.slice(0, 5);
-}
-
-function isBeforeCutoff(): boolean {
-  const now = new Date();
-  const jam = now.toTimeString().slice(0, 5); // "HH:MM"
-  return jam < QR_CUTOFF;
 }
 
 export default function AbsensiSayaPage() {
@@ -26,11 +16,7 @@ export default function AbsensiSayaPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const [mode, setMode] = useState<'qr' | 'face'>(isBeforeCutoff() ? 'qr' : 'face');
   const [now, setNow] = useState(new Date());
-
-  const [showQr, setShowQr] = useState(false);
-  const [qrProcessing, setQrProcessing] = useState(false);
 
   const [showFace, setShowFace] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState<Blob | null>(null);
@@ -58,11 +44,10 @@ export default function AbsensiSayaPage() {
     muatData();
   }, []);
 
-  // Jam berjalan tiap detik, dan sekaligus jadi acuan buat cek cutoff QR/Wajah
+  // Jam berjalan tiap detik
   useEffect(() => {
     const interval = setInterval(() => {
       setNow(new Date());
-      setMode(isBeforeCutoff() ? 'qr' : 'face');
     }, 1_000);
     return () => clearInterval(interval);
   }, []);
@@ -80,10 +65,6 @@ export default function AbsensiSayaPage() {
   });
 
   const bukaAbsen = () => {
-    if (mode === 'qr') {
-      setShowQr(true);
-      return;
-    }
     setCapturedPhoto(null);
     setGps(null);
     setFaceResult(null);
@@ -114,21 +95,6 @@ export default function AbsensiSayaPage() {
     }
   };
 
-  const handleQrScan = useCallback(async (decodedText: string) => {
-    setQrProcessing(true);
-    try {
-      const result = await scanAbsenQr(decodedText);
-      setAbsensi(result.absensi);
-      setShowQr(false);
-    } catch (err: any) {
-      // ScanQrModal nggak punya prop buat nampilin server error secara eksplisit,
-      // jadi biar user tau, kita alert dulu; modal tetap kebuka biar bisa coba scan ulang
-      alert(err.response?.data?.message || 'QR tidak valid atau gagal diproses.');
-    } finally {
-      setQrProcessing(false);
-    }
-  }, []);
-
   if (loading) {
     return (
       <AppLayout title="Absensi">
@@ -157,8 +123,8 @@ export default function AbsensiSayaPage() {
           <h2 className="text-lg font-semibold text-slate-900">{pekerja.user.name}</h2>
           <p className="text-sm text-slate-400 mb-1">{pekerja.nip}</p>
           <p className="text-xs text-slate-400 mb-6 flex items-center justify-center gap-1">
-            {mode === 'qr' ? <QrCode size={12} /> : <Fingerprint size={12} />}
-            Mode absen saat ini: {mode === 'qr' ? 'QR Code' : 'Wajah + Lokasi'}
+            <Fingerprint size={12} />
+            Mode absen: Wajah + Lokasi
           </p>
 
           <div className="grid grid-cols-2 gap-3 mb-6">
@@ -177,16 +143,6 @@ export default function AbsensiSayaPage() {
               <CheckCircle2 size={16} className="text-slate-400" />
               <span>Kamu sudah absen masuk & pulang hari ini.</span>
             </div>
-          ) : mode === 'qr' ? (
-            <button
-              onClick={bukaAbsen}
-              className={`w-full flex items-center justify-center gap-2 text-white text-sm font-semibold py-3 rounded-lg transition ${
-                tipe === 'masuk' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'
-              }`}
-            >
-              <QrCode size={18} />
-              {tipe === 'masuk' ? 'Scan QR Masuk' : 'Scan QR Pulang'}
-            </button>
           ) : !pekerja.face_descriptor ? (
             <div className="flex flex-col items-center gap-3">
               <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-3 text-left">
@@ -215,19 +171,8 @@ export default function AbsensiSayaPage() {
         </div>
       </div>
 
-      {/* MODAL QR — reuse komponen yang sudah ada */}
-      {showQr && (
-        <ScanQrModal
-          onClose={() => setShowQr(false)}
-          onScanSuccess={handleQrScan}
-          title={tipe === 'masuk' ? 'Scan QR Masuk' : 'Scan QR Pulang'}
-          description="Arahkan kamera ke QR code kartu absen kamu."
-          isProcessing={qrProcessing}
-        />
-      )}
-
       {/* MODAL FACE */}
-      {showFace && mode === 'face' && (
+      {showFace && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-semibold text-slate-900 mb-4">
