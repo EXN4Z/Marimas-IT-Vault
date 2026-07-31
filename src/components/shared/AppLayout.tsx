@@ -138,7 +138,7 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
 
   const STAFF_ROLES = ['admin', 'hr'];
   const REVIEWER_ROLES = ['admin', 'hr', 'manajer', 'manager', 'cabang'];
-  const ABSENSI_ROLES = ['admin', 'hr', 'manajer', 'manager', 'karyawan'];
+  const ABSENSI_ROLES = ['admin', 'hr', 'manajer', 'manager'];
 
   const roleFilter = (item: NavItem) => {
     // Master Data hanya untuk admin/hr
@@ -350,7 +350,7 @@ const handleLogout = async () => {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
       >
-        <div className="flex items-center justify-between px-6 h-24">
+        <div className="flex items-center justify-between px-6 h-24 shrink-0">
           <div className="flex p-1 items-center mx-auto gap-2">
             <img src="/logo.png" alt="Marimas One" className="h-18 w-auto p-1" />
           </div>
@@ -468,7 +468,7 @@ const handleLogout = async () => {
         {/* TOPBAR — bg sama kayak sidebar (bg-white), garis pemisah (border-b)
             sengaja dihilangin biar sidebar & topbar keliatan nyatu jadi satu
             panel chrome tanpa garis */}
-        <header className="h-24 bg-white/70 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
+        <header className="h-18 min-h-18 shrink-0 bg-white/70 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-600">
               <Menu size={22} />
