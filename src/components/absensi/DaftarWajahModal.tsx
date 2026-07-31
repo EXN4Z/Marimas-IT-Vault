@@ -9,6 +9,56 @@ type Props = {
   onSuccess: (karyawan: Karyawan) => void;
 };
 
+// Canvas hasil capture (dipakai buat extract descriptor) dipaksa selalu rasio 4:3,
+// SAMA kayak container <video> yang ditampilkan (aspectRatio: '4/3' + CSS object-cover),
+// dan SAMA kayak yang dipakai FaceCapture.tsx saat verifikasi/absen — supaya deskriptor
+// yang dibandingkan konsisten dari sisi rasio & crop.
+const CAPTURE_W = 320;
+const CAPTURE_H = 240;
+
+// PERBAIKAN (fix "wajah gepeng" saat daftar wajah, sama kayak fix di FaceCapture.tsx):
+// Sebelumnya `ctx.drawImage(video, 0, 0, 320, 240)` men-STRETCH seluruh frame video
+// paksa ke ukuran tujuan tanpa peduli rasio asli video dari kamera. Kamera HP hampir
+// selalu BUKAN 4:3 (umumnya 16:9 atau lainnya), jadi wajah "diperas" jadi gepeng, dan
+// descriptor yang tersimpan sebagai referensi jadi cacat dari awal — akibatnya proses
+// absen (FaceCapture.tsx) nanti dibandingkan ke referensi yang salah bentuk, walau
+// capture di sisi absen sendiri sudah benar.
+//
+// Fungsi ini meniru CSS object-fit:cover: crop bagian TENGAH frame video sesuai rasio
+// tujuan, baru digambar penuh ke canvas — wajah tetap proporsional, cuma tepi gambar
+// yang kepotong (bukan diperas).
+function drawVideoFrameCover(
+  ctx: CanvasRenderingContext2D,
+  video: HTMLVideoElement,
+  destW: number,
+  destH: number
+) {
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+  if (!vw || !vh) return;
+
+  const videoRatio = vw / vh;
+  const destRatio = destW / destH;
+
+  let sx: number, sy: number, sw: number, sh: number;
+
+  if (videoRatio > destRatio) {
+    // Video lebih "lebar" dari target -> crop sisi kiri-kanan, tinggi dipakai penuh
+    sh = vh;
+    sw = vh * destRatio;
+    sy = 0;
+    sx = (vw - sw) / 2;
+  } else {
+    // Video lebih "tinggi"/sempit dari target -> crop atas-bawah, lebar dipakai penuh
+    sw = vw;
+    sh = vw / destRatio;
+    sx = 0;
+    sy = (vh - sh) / 2;
+  }
+
+  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, destW, destH);
+}
+
 export default function DaftarWajahModal({ karyawan, onClose, onSuccess }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -49,7 +99,7 @@ export default function DaftarWajahModal({ karyawan, onClose, onSuccess }: Props
 
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
-    ctx.drawImage(videoRef.current, 0, 0, 320, 240);
+    drawVideoFrameCover(ctx, videoRef.current, CAPTURE_W, CAPTURE_H);
 
     try {
       const desc = await getFaceDescriptor(canvasRef.current);
@@ -114,7 +164,7 @@ export default function DaftarWajahModal({ karyawan, onClose, onSuccess }: Props
           />
           {captured && <img src={captured} alt="Wajah karyawan" className="w-full h-full object-cover" />}
         </div>
-        <canvas ref={canvasRef} width={320} height={240} className="hidden" />
+        <canvas ref={canvasRef} width={CAPTURE_W} height={CAPTURE_H} className="hidden" />
 
         {error && (
           <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mt-3">
@@ -148,7 +198,7 @@ export default function DaftarWajahModal({ karyawan, onClose, onSuccess }: Props
             >
               <RotateCcw size={14} />
               Ambil ulang
-            </button>
+            </button> 
           </div>
         )}
       </div>

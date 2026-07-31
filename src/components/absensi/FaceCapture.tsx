@@ -69,6 +69,13 @@ const GUIDE_SIZE_MIN_RATIO = 0.55; // wajah dianggap "kejauhan" kalau ukurannya 
 const GUIDE_SIZE_MAX_RATIO = 1.55; // wajah dianggap "kedekatan" kalau ukurannya di atas ini
 // (rasio dihitung dari ukuran box wajah dibanding diameter bundaran)
 
+// Canvas hasil capture (dipakai buat extract descriptor & foto final) dipaksa selalu
+// rasio 4:3, SAMA kayak container <video> yang ditampilkan (aspectRatio: '4/3' + CSS
+// object-cover). Ini penting: dua-duanya HARUS pakai rasio & crop yang sama, biar posisi
+// wajah yang dianalisis face-api konsisten dengan apa yang user lihat di layar.
+const CAPTURE_W = 320;
+const CAPTURE_H = 240;
+
 // Video ditampilkan pakai CSS object-cover di dalam container, jadi koordinat px dari
 // faceapi (yang dalam skala resolusi ASLI kamera, video.videoWidth/Height) TIDAK sama
 // dengan posisi visual di layar — perlu di-mapping dulu ke ruang 400x300 di atas biar
@@ -78,6 +85,49 @@ function mapVideoPointToGuideSpace(px: number, py: number, videoWidth: number, v
   const offsetX = (GUIDE_VIEW_W - videoWidth * scale) / 2;
   const offsetY = (GUIDE_VIEW_H - videoHeight * scale) / 2;
   return { x: px * scale + offsetX, y: py * scale + offsetY, scale };
+}
+
+// PERBAIKAN UTAMA (fix "wajah gepeng" + gagal match di HP):
+// Sebelumnya kode langsung `ctx.drawImage(video, 0, 0, 320, 240)` — versi 5-parameter
+// ini men-STRETCH seluruh frame video paksa ke ukuran tujuan tanpa peduli rasio asli
+// video. Kamera laptop kebetulan sering dekat 4:3, tapi kamera HP (apalagi depan)
+// hampir selalu 16:9 atau rasio lain — hasilnya wajah "diperas" jadi gepeng, dan
+// deskriptor wajah yang dihasilkan jadi tidak konsisten antar device (bikin distance
+// ke referenceDescriptor gampang meleset dari FACE_MATCH_THRESHOLD, alias gagal match).
+//
+// Fungsi ini meniru cara kerja CSS object-fit:cover: crop bagian TENGAH frame video
+// sesuai rasio tujuan (CAPTURE_W x CAPTURE_H), baru digambar penuh ke canvas — jadi
+// wajah tetap proporsional, cuma bagian tepi gambar yang kepotong (bukan diperas).
+function drawVideoFrameCover(
+  ctx: CanvasRenderingContext2D,
+  video: HTMLVideoElement,
+  destW: number,
+  destH: number
+) {
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+  if (!vw || !vh) return;
+
+  const videoRatio = vw / vh;
+  const destRatio = destW / destH;
+
+  let sx: number, sy: number, sw: number, sh: number;
+
+  if (videoRatio > destRatio) {
+    // Video lebih "lebar" dari target -> crop sisi kiri-kanan, tinggi dipakai penuh
+    sh = vh;
+    sw = vh * destRatio;
+    sy = 0;
+    sx = (vw - sw) / 2;
+  } else {
+    // Video lebih "tinggi"/sempit dari target -> crop atas-bawah, lebar dipakai penuh
+    sw = vw;
+    sh = vw / destRatio;
+    sx = 0;
+    sy = (vh - sh) / 2;
+  }
+
+  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, destW, destH);
 }
 
 // PENTING: kode di bawah pakai faceapi.detectSingleFace(...).withFaceLandmarks() langsung
@@ -157,7 +207,7 @@ export default function FaceCapture({ referenceDescriptor, onCapture, onReset }:
 
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
-    ctx.drawImage(videoRef.current, 0, 0, 320, 240);
+    drawVideoFrameCover(ctx, videoRef.current, CAPTURE_W, CAPTURE_H);
 
     try {
       const descriptor = await getFaceDescriptor(canvasRef.current);
@@ -201,7 +251,7 @@ export default function FaceCapture({ referenceDescriptor, onCapture, onReset }:
 
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
-    ctx.drawImage(videoRef.current, 0, 0, 320, 240);
+    drawVideoFrameCover(ctx, videoRef.current, CAPTURE_W, CAPTURE_H);
 
     setCaptured(canvasRef.current.toDataURL('image/jpeg', 0.9));
     setStage('captured');
@@ -497,7 +547,7 @@ export default function FaceCapture({ referenceDescriptor, onCapture, onReset }:
           </div>
         )}
       </div>
-      <canvas ref={canvasRef} width={320} height={240} className="hidden" />
+      <canvas ref={canvasRef} width={CAPTURE_W} height={CAPTURE_H} className="hidden" />
 
       {!modelsReady && <p className="text-xs text-slate-400 text-center">Memuat model deteksi wajah...</p>}
 
