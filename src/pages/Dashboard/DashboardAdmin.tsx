@@ -8,7 +8,7 @@ import {
   NotifikasiCard,
   AgendaCard,
   HeroPengajuanChart,
-  RingkasanIzinCard,
+  RingkasanAsetCard,
   TopKehadiranCard,
   TopPengajuanCard,
 } from './Shared';
@@ -30,7 +30,9 @@ export default function DashboardAdmin() {
     departemen,
   } = useDashboardCore();
 
-  const { ringkasanIzin, grafikPengajuan, topKehadiran, topKaryawan } = useDashboardAnalytics(true);
+  const { ringkasanAset, grafikPengajuan, topKehadiran, topKaryawan } = useDashboardAnalytics(true, {
+    ringkasanIzin: false,
+  });
 
   const statCards = buildStatCards(statsCard, {
     kehadiran: QrCode,
@@ -56,7 +58,7 @@ export default function DashboardAdmin() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
         <HeroPengajuanChart grafikPengajuan={grafikPengajuan} />
-        <RingkasanIzinCard ringkasanIzin={ringkasanIzin} />
+        <RingkasanAsetCard ringkasanAset={ringkasanAset} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">

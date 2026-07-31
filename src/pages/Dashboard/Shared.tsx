@@ -11,7 +11,7 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
-import { ClipboardList, Clock, TrendingUp } from 'lucide-react';
+import { ClipboardList, Clock, TrendingUp, Boxes } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type {
   AccentColor,
@@ -21,6 +21,7 @@ import type {
   DepartemenDistribusi,
   BebanDepartemen,
   RingkasanIzin,
+  RingkasanAset,
   TrenPengajuan,
   TopKaryawan,
 } from './useDashboardData';
@@ -201,7 +202,7 @@ export function HeroPengajuanChart({ grafikPengajuan }: { grafikPengajuan: TrenP
   );
 }
 
-// ==== Ringkasan Status Izin — dipakai Admin & Cabang ====
+// ==== Ringkasan Status Izin — dipakai Cabang ====
 export function RingkasanIzinCard({
   ringkasanIzin,
   compact,
@@ -254,6 +255,70 @@ export function RingkasanIzinCard({
         <LegendDot color={THEME.violet} label="Disetujui" value={izinDisetujui} />
         <LegendDot color={THEME.amber} label="Menunggu" value={izinPending} />
         <LegendDot color="#CBD5E1" label="Ditolak" value={izinDitolak} />
+      </div>
+    </div>
+  );
+}
+
+// ==== Ringkasan Status Aset — dipakai Admin ====
+// Mencatat semua status barang di Inventaris: Tersedia, Dipakai, Rusak Berat,
+// Dijual. Persentase badge dihitung dari proporsi aset yang "Tersedia".
+export function RingkasanAsetCard({
+  ringkasanAset,
+  compact,
+}: {
+  ringkasanAset?: RingkasanAset;
+  /** true kalau tampil sendirian (tanpa hero chart di sebelahnya), misal dashboard cabang */
+  compact?: boolean;
+}) {
+  const asetTotal = ringkasanAset?.total ?? 0;
+  const asetTersedia = ringkasanAset?.tersedia ?? 0;
+  const asetDipakai = ringkasanAset?.dipakai ?? 0;
+  const asetRusakBerat = ringkasanAset?.rusakBerat ?? 0;
+  const asetDijual = ringkasanAset?.dijual ?? 0;
+  const tersediaPct = asetTotal > 0 ? (asetTersedia / asetTotal) * 100 : 0;
+  const dipakaiPct = asetTotal > 0 ? (asetDipakai / asetTotal) * 100 : 0;
+  const rusakBeratPct = asetTotal > 0 ? (asetRusakBerat / asetTotal) * 100 : 0;
+  const dijualPct = asetTotal > 0 ? (asetDijual / asetTotal) * 100 : 0;
+  const tersediaRatePct = asetTotal > 0 ? Math.round((asetTersedia / asetTotal) * 100) : null;
+
+  return (
+    <div className={`${cardClass} ${compact ? 'lg:max-w-md' : ''}`}>
+      <div className="flex items-center gap-2.5 mb-4">
+        <div className="w-9 h-9 rounded-xl bg-[#EEECFF] flex items-center justify-center text-[#6D5DFC]">
+          <Boxes size={18} />
+        </div>
+        <h3 className="text-sm font-semibold text-slate-900">Ringkasan Status Aset</h3>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <p className="text-3xl font-extrabold text-slate-900">{asetTotal}</p>
+        {tersediaRatePct !== null && (
+          <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+            {tersediaRatePct}% tersedia
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-slate-400 mt-1">Total aset tercatat</p>
+
+      <div className="flex w-full h-2.5 rounded-full overflow-hidden mt-5 bg-slate-100">
+        {asetTotal > 0 ? (
+          <>
+            <div style={{ width: `${tersediaPct}%`, background: THEME.violet }} />
+            <div style={{ width: `${dipakaiPct}%`, background: THEME.amber }} />
+            <div style={{ width: `${rusakBeratPct}%`, background: THEME.rose }} />
+            <div style={{ width: `${dijualPct}%`, background: '#E2E8F0' }} />
+          </>
+        ) : (
+          <div className="w-full h-full bg-slate-100" />
+        )}
+      </div>
+
+      <div className="flex flex-col gap-3 mt-5">
+        <LegendDot color={THEME.violet} label="Tersedia" value={asetTersedia} />
+        <LegendDot color={THEME.amber} label="Dipakai" value={asetDipakai} />
+        <LegendDot color={THEME.rose} label="Rusak Berat" value={asetRusakBerat} />
+        <LegendDot color="#CBD5E1" label="Dijual" value={asetDijual} />
       </div>
     </div>
   );
