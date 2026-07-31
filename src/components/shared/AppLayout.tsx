@@ -506,7 +506,7 @@ const handleLogout = async () => {
             <h1 className="text-xl font-bold text-slate-900 hidden sm:block">{pageTitle}</h1>
           </div>
 
-          <div ref={searchBoxRef} className="hidden md:flex items-center flex-1 max-w-md mx-6 relative">
+          <div ref={searchBoxRef} className="flex items-center flex-1 max-w-md mx-6 relative">
             <Search className="absolute left-3 w-4 h-4 text-slate-400" />
             <input
               value={searchQuery}
