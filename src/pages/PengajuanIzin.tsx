@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import AppLayout from '../components/shared/AppLayout';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
+import Pagination from '../components/shared/Pagination';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
 type Status = 'pending' | 'disetujui' | 'ditolak' | 'revisi' | 'selesai' | 'draft';
@@ -349,6 +350,8 @@ export default function PengajuanIzinPage() {
                                 currentPage={currentPage}
                                 totalPages={totalPages}
                                 onPageChange={setCurrentPage}
+                                totalItems={filtered.length}
+                                itemLabel="pengajuan"
                             />
                         </>
                     )}
@@ -401,71 +404,7 @@ export default function PengajuanIzinPage() {
     );
 }
 
-interface PaginationProps {
-    currentPage: number;
-    totalPages: number;
-    onPageChange: (page: number) => void;
-}
 
-function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
-    const pageNumbers = useMemo<(number | 'ellipsis')[]>(() => {
-        const pages: (number | 'ellipsis')[] = [];
-        const delta = 1;
-
-        for (let i = 1; i <= totalPages; i++) {
-            const isEdge = i === 1 || i === totalPages;
-            const isNearCurrent = Math.abs(i - currentPage) <= delta;
-            if (isEdge || isNearCurrent) {
-                pages.push(i);
-            } else if (pages[pages.length - 1] !== 'ellipsis') {
-                pages.push('ellipsis');
-            }
-        }
-        return pages;
-    }, [currentPage, totalPages]);
-
-    if (totalPages <= 1) return null;
-
-    return (
-        <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-gray-100">
-            <button
-                onClick={() => onPageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-            >
-                Sebelumnya
-            </button>
-
-            {pageNumbers.map((p, idx) =>
-                p === 'ellipsis' ? (
-                    <span key={`ellipsis-${idx}`} className="px-2 text-sm text-gray-400">
-                        ...
-                    </span>
-                ) : (
-                    <button
-                        key={p}
-                        onClick={() => onPageChange(p)}
-                        className={`min-w-[2rem] px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                            p === currentPage
-                                ? 'bg-black text-white font-medium'
-                                : 'text-gray-600 hover:bg-gray-50 border border-gray-200'
-                        }`}
-                    >
-                        {p}
-                    </button>
-                )
-            )}
-
-            <button
-                onClick={() => onPageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-            >
-                Selanjutnya
-            </button>
-        </div>
-    );
-}
 
 interface DetailModalProps {
     data: Izin | null;

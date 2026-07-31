@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag } from 'lucide-react';
+import Pagination from '../shared/Pagination';
 import AsetFormModal from './AsetFormModal';
 import AsetSerahTerimaModal from './AsetSerahTerimaModal';
 import AsetPengembalianModal from './AsetPengembalianModal';
@@ -70,24 +71,6 @@ function formatRupiah(n: number | null): string {
   return 'Rp ' + n.toLocaleString('id-ID');
 }
 
-// Menghasilkan array nomor halaman + elipsis, misal: [1, '...', 4, 5, 6, '...', 20]
-// (sama pola kayak pager Riwayat Aset di Inventaris.tsx / AuditLog.tsx — biar
-// konsisten style-nya, dipakai buat pagination tabel aset di sini juga)
-function buatRangeHalaman(current: number, last: number): (number | 'ellipsis')[] {
-  const delta = 1;
-  const range: (number | 'ellipsis')[] = [];
-
-  const start = Math.max(2, current - delta);
-  const end = Math.min(last - 1, current + delta);
-
-  range.push(1);
-  if (start > 2) range.push('ellipsis');
-  for (let i = start; i <= end; i++) range.push(i);
-  if (end < last - 1) range.push('ellipsis');
-  if (last > 1) range.push(last);
-
-  return range;
-}
 
 interface Props {
   search: string;
@@ -623,51 +606,17 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
           </div>
         )}
 
-        {/* Pagination — style sama kayak pager Riwayat Aset */}
+        {/* Pagination */}
         {!loading && !error && filteredAset.length > 0 && asetLastPage > 1 && (
-          <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100">
-            <p className="text-xs text-slate-400">
-              Halaman {asetPageClamped} dari {asetLastPage} · {filteredAset.length} total aset
-            </p>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setAsetPage((p) => Math.max(1, p - 1))}
-                disabled={asetPageClamped <= 1}
-                aria-label="Halaman sebelumnya"
-                className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-              >
-                <ChevronLeft size={14} />
-              </button>
-
-              {buatRangeHalaman(asetPageClamped, asetLastPage).map((item, idx) =>
-                item === 'ellipsis' ? (
-                  <span key={`ellipsis-${idx}`} className="w-7 h-7 flex items-center justify-center text-xs text-slate-300">
-                    …
-                  </span>
-                ) : (
-                  <button
-                    key={item}
-                    onClick={() => setAsetPage(item)}
-                    className={`w-7 h-7 flex items-center justify-center text-xs font-medium rounded-lg border transition ${
-                      item === asetPageClamped
-                        ? 'bg-slate-900 border-slate-900 text-white'
-                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    {item}
-                  </button>
-                )
-              )}
-
-              <button
-                onClick={() => setAsetPage((p) => Math.min(asetLastPage, p + 1))}
-                disabled={asetPageClamped >= asetLastPage}
-                aria-label="Halaman selanjutnya"
-                className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-              >
-                <ChevronRight size={14} />
-              </button>
-            </div>
+          <div className="px-6 py-3 border-t border-slate-100">
+            <Pagination
+              currentPage={asetPageClamped}
+              totalPages={asetLastPage}
+              onPageChange={setAsetPage}
+              totalItems={filteredAset.length}
+              itemLabel="aset"
+              className="pt-0 mt-0 border-t-0"
+            />
           </div>
         )}
       </div>

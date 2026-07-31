@@ -13,6 +13,7 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import AppLayout from '../components/shared/AppLayout';
+import Pagination from '../components/shared/Pagination';
 import { useAuth } from '../context/AuthContext';
 import {
   getTicketsAktif,
@@ -371,7 +372,13 @@ export default function Ticketing() {
             )}
           </div>
 
-          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredList.length}
+            itemLabel="tiket"
+          />
         </div>
       </div>
 
@@ -563,71 +570,5 @@ export default function Ticketing() {
         </div>
       )}
     </AppLayout>
-  );
-}
-
-interface PaginationProps {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-}
-
-function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
-  const pageNumbers = useMemo<(number | 'ellipsis')[]>(() => {
-    const pages: (number | 'ellipsis')[] = [];
-    const delta = 1;
-
-    for (let i = 1; i <= totalPages; i++) {
-      const isEdge = i === 1 || i === totalPages;
-      const isNearCurrent = Math.abs(i - currentPage) <= delta;
-      if (isEdge || isNearCurrent) {
-        pages.push(i);
-      } else if (pages[pages.length - 1] !== 'ellipsis') {
-        pages.push('ellipsis');
-      }
-    }
-    return pages;
-  }, [currentPage, totalPages]);
-
-  if (totalPages <= 1) return null;
-
-  return (
-    <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-slate-100">
-      <button
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-      >
-        Sebelumnya
-      </button>
-
-      {pageNumbers.map((p, idx) =>
-        p === 'ellipsis' ? (
-          <span key={`ellipsis-${idx}`} className="px-2 text-sm text-slate-400">
-            ...
-          </span>
-        ) : (
-          <button
-            key={p}
-            onClick={() => onPageChange(p)}
-            className={`min-w-[2rem] px-3 py-1.5 text-sm rounded-lg transition-colors ${
-              p === currentPage
-                ? 'bg-slate-900 text-white font-medium'
-                : 'text-slate-600 hover:bg-slate-50 border border-slate-200'
-            }`}
-          >
-            {p}
-          </button>
-        )
-      )}
-
-      <button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-      >
-        Selanjutnya
-      </button>
-    </div>
   );
 }

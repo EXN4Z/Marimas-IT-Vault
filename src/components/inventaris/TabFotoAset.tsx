@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Images, Search, X, ChevronLeft, ChevronRight, HandCoins, Undo2 } from 'lucide-react';
+import Pagination from '../shared/Pagination';
 import { getFotoPemakaiAset, type FotoPemakaiEntry } from '../../api/aset';
 import { namaPemakai } from './asetHelpers';
 
@@ -8,19 +9,6 @@ const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000
 function formatTanggalId(iso: string | null): string {
   if (!iso) return '-';
   return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-function buatRangeHalaman(current: number, last: number): (number | 'ellipsis')[] {
-  const delta = 1;
-  const range: (number | 'ellipsis')[] = [];
-  const start = Math.max(2, current - delta);
-  const end = Math.min(last - 1, current + delta);
-  range.push(1);
-  if (start > 2) range.push('ellipsis');
-  for (let i = start; i <= end; i++) range.push(i);
-  if (end < last - 1) range.push('ellipsis');
-  if (last > 1) range.push(last);
-  return range;
 }
 
 interface Props {
@@ -160,42 +148,14 @@ export default function TabFotoAset({ onCount }: Props) {
           ))}
 
           {lastPage > 1 && (
-            <div className="flex items-center justify-between pt-2">
-              <p className="text-xs text-slate-400">
-                Halaman {page} dari {lastPage} · {total} total
-              </p>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => gantiHalaman(page - 1)}
-                  disabled={page <= 1}
-                  className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 transition"
-                >
-                  <ChevronLeft size={14} />
-                </button>
-                {buatRangeHalaman(page, lastPage).map((item, idx) =>
-                  item === 'ellipsis' ? (
-                    <span key={`e-${idx}`} className="w-7 h-7 flex items-center justify-center text-xs text-slate-300">…</span>
-                  ) : (
-                    <button
-                      key={item}
-                      onClick={() => gantiHalaman(item)}
-                      className={`w-7 h-7 flex items-center justify-center text-xs font-medium rounded-lg border transition ${
-                        item === page ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      {item}
-                    </button>
-                  )
-                )}
-                <button
-                  onClick={() => gantiHalaman(page + 1)}
-                  disabled={page >= lastPage}
-                  className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 transition"
-                >
-                  <ChevronRight size={14} />
-                </button>
-              </div>
-            </div>
+            <Pagination
+              currentPage={page}
+              totalPages={lastPage}
+              onPageChange={gantiHalaman}
+              totalItems={total}
+              itemLabel="foto"
+              className="pt-2 mt-0 border-t-0"
+            />
           )}
         </div>
       )}

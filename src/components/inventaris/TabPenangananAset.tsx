@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { X, Wrench, Printer, PlayCircle, ChevronLeft, ChevronRight, Eye, Search, ImageOff } from 'lucide-react';
+import { X, Wrench, Printer, PlayCircle, Eye, Search, ImageOff } from 'lucide-react';
+import Pagination from '../shared/Pagination';
 import api from '../../api/axios';
 import { terimaPenangananAset, selesaikanPenangananAset, type AsetPenanganan } from '../../api/aset';
 import { formatTanggalId, namaPemakai } from './asetHelpers';
@@ -387,43 +388,13 @@ export default function TabPenangananAset({ onCount }: Props) {
       )}
 
       {displayedList.length > ITEMS_PER_PAGE && (
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
-          <p className="text-xs text-slate-500">
-            Menampilkan {(safePage - 1) * ITEMS_PER_PAGE + 1}–
-            {Math.min(safePage * ITEMS_PER_PAGE, displayedList.length)} dari {displayedList.length}
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={safePage === 1}
-              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-              aria-label="Halaman sebelumnya"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
-              <button
-                key={num}
-                onClick={() => setPage(num)}
-                className={`min-w-[28px] h-[28px] text-xs font-semibold rounded-lg transition ${
-                  num === safePage
-                    ? 'bg-slate-900 text-white'
-                    : 'text-slate-500 hover:bg-slate-100'
-                }`}
-              >
-                {num}
-              </button>
-            ))}
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={safePage === totalPages}
-              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-              aria-label="Halaman berikutnya"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={safePage}
+          totalPages={totalPages}
+          onPageChange={(p) => setPage(p)}
+          totalItems={displayedList.length}
+          itemLabel="data"
+        />
       )}
 
       {activePenanganan && (

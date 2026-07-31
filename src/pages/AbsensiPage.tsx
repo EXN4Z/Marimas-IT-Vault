@@ -11,10 +11,9 @@ import {
   AlertCircle,
   CheckCircle2,
   MapPin,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import AppLayout from '../components/shared/AppLayout';
+import Pagination from '../components/shared/Pagination';
 import FaceCapture from '../components/absensi/FaceCapture';
 import DaftarWajahModal from '../components/absensi/DaftarWajahModal';
 import {
@@ -71,71 +70,6 @@ function formatWaktu(tanggal: string): string {
   const diffDay = Math.floor(diffHour / 24);
   if (diffDay === 1) return 'Kemarin';
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-}
-
-interface PaginationAbsensiProps {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-}
-
-function PaginationAbsensi({ currentPage, totalPages, onPageChange }: PaginationAbsensiProps) {
-  const pageNumbers: (number | 'ellipsis')[] = [];
-  const delta = 1;
-
-  for (let i = 1; i <= totalPages; i++) {
-    const isEdge = i === 1 || i === totalPages;
-    const isNearCurrent = Math.abs(i - currentPage) <= delta;
-    if (isEdge || isNearCurrent) {
-      pageNumbers.push(i);
-    } else if (pageNumbers[pageNumbers.length - 1] !== 'ellipsis') {
-      pageNumbers.push('ellipsis');
-    }
-  }
-
-  if (totalPages <= 1) return null;
-
-  return (
-    <div className="flex items-center justify-center gap-1 pt-4 mt-2 border-t border-slate-100 flex-wrap">
-      <button
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-      >
-        <ChevronLeft size={14} />
-        <span className="hidden sm:inline">Sebelumnya</span>
-      </button>
-
-      {pageNumbers.map((p, idx) =>
-        p === 'ellipsis' ? (
-          <span key={`ellipsis-${idx}`} className="px-1.5 sm:px-2 text-sm text-slate-400">
-            ...
-          </span>
-        ) : (
-          <button
-            key={p}
-            onClick={() => onPageChange(p)}
-            className={`min-w-[2rem] px-2.5 sm:px-3 py-1.5 text-sm rounded-lg transition-colors ${
-              p === currentPage
-                ? 'bg-slate-900 text-white font-medium'
-                : 'text-slate-600 hover:bg-slate-50 border border-slate-200'
-            }`}
-          >
-            {p}
-          </button>
-        )
-      )}
-
-      <button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-      >
-        <span className="hidden sm:inline">Selanjutnya</span>
-        <ChevronRight size={14} />
-      </button>
-    </div>
-  );
 }
 
 export default function AbsensiPage() {
@@ -465,10 +399,12 @@ export default function AbsensiPage() {
                 )}
 
                 {filteredKaryawan.length > 0 && (
-                  <PaginationAbsensi
+                  <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
                     onPageChange={setCurrentPage}
+                    totalItems={filteredKaryawan.length}
+                    itemLabel="karyawan"
                   />
                 )}
               </>

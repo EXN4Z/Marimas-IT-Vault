@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench, PlayCircle, Banknote, ChevronLeft, ChevronRight, X, Images } from 'lucide-react';
+import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench, PlayCircle, Banknote, X, Images } from 'lucide-react';
 import AppLayout from '../components/shared/AppLayout';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
+import Pagination from '../components/shared/Pagination';
 import TabAset from '../components/inventaris/TabAset';
 import TabKelengkapanAset from '../components/inventaris/TabKelengkapanAset';
 import TabPenangananAset from '../components/inventaris/TabPenangananAset';
@@ -22,24 +23,6 @@ function formatWaktu(iso: string): string {
   const diffDay = Math.floor(diffHour / 24);
   if (diffDay === 1) return 'Kemarin';
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-}
-
-// Menghasilkan array nomor halaman + elipsis, misal: [1, '...', 4, 5, 6, '...', 20]
-// (sama pola kayak di AuditLog.tsx, dipakai buat pager Riwayat Aset di bawah)
-function buatRangeHalaman(current: number, last: number): (number | 'ellipsis')[] {
-  const delta = 1;
-  const range: (number | 'ellipsis')[] = [];
-
-  const start = Math.max(2, current - delta);
-  const end = Math.min(last - 1, current + delta);
-
-  range.push(1);
-  if (start > 2) range.push('ellipsis');
-  for (let i = start; i <= end; i++) range.push(i);
-  if (end < last - 1) range.push('ellipsis');
-  if (last > 1) range.push(last);
-
-  return range;
 }
 
 type TabKey = 'aset' | 'kelengkapan_aset' | 'penanganan_aset' | 'foto_aset';
@@ -354,50 +337,13 @@ export default function Inventaris() {
 
             {/* Pagination — minimal 10 data riwayat per halaman */}
             {!riwayatAsetLoading && riwayatAset.length > 0 && riwayatLastPage > 1 && (
-              <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-100">
-                <p className="text-xs text-slate-400">
-                  Halaman {riwayatPage} dari {riwayatLastPage} · {riwayatTotal} total riwayat
-                </p>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => gantiRiwayatHalaman(riwayatPage - 1)}
-                    disabled={riwayatPage <= 1}
-                    aria-label="Halaman sebelumnya"
-                    className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                  >
-                    <ChevronLeft size={14} />
-                  </button>
-
-                  {buatRangeHalaman(riwayatPage, riwayatLastPage).map((item, idx) =>
-                    item === 'ellipsis' ? (
-                      <span key={`ellipsis-${idx}`} className="w-7 h-7 flex items-center justify-center text-xs text-slate-300">
-                        …
-                      </span>
-                    ) : (
-                      <button
-                        key={item}
-                        onClick={() => gantiRiwayatHalaman(item)}
-                        className={`w-7 h-7 flex items-center justify-center text-xs font-medium rounded-lg border transition ${
-                          item === riwayatPage
-                            ? 'bg-slate-900 border-slate-900 text-white'
-                            : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                        }`}
-                      >
-                        {item}
-                      </button>
-                    )
-                  )}
-
-                  <button
-                    onClick={() => gantiRiwayatHalaman(riwayatPage + 1)}
-                    disabled={riwayatPage >= riwayatLastPage}
-                    aria-label="Halaman selanjutnya"
-                    className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                  >
-                    <ChevronRight size={14} />
-                  </button>
-                </div>
-              </div>
+              <Pagination
+                currentPage={riwayatPage}
+                totalPages={riwayatLastPage}
+                onPageChange={gantiRiwayatHalaman}
+                totalItems={riwayatTotal}
+                itemLabel="riwayat"
+              />
             )}
           </div>
         </div>
