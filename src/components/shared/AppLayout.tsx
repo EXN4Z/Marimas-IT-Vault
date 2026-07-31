@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -99,59 +99,6 @@ const otherNavItems = navItems.filter((i) => i.label !== 'Audit Log' && i.label 
 
 const interleavedNavItems = interleaveByChildren(otherNavItems);
 
-// PENAMBAHAN: title lookup buat header, dipetakan dari navItems (termasuk
-// children dropdown) supaya AppLayout bisa nentuin judul halaman sendiri
-// berdasarkan pathname, tanpa perlu tiap page kirim prop `title` lagi.
-// Ini penting karena sekarang AppLayout jadi layout route (dipasang sekali
-// di router, bukan dibungkus ulang di tiap page) -- lihat catatan di bawah.
-interface TitleEntry {
-  label: string;
-  path: string; // pathname murni, tanpa query string
-  matchPrefix?: string;
-}
-
-const titleEntries: TitleEntry[] = navItems.flatMap((item) => {
-  const entries: TitleEntry[] = [];
-  if (item.path) {
-    entries.push({ label: item.label, path: item.path, matchPrefix: item.matchPrefix });
-  } else if (item.matchPrefix) {
-    // parent dropdown tanpa path sendiri (mis. Master Data) tetap butuh entry
-    // biar matchPrefix-nya kepakai buat halaman itu & child-child-nya
-    entries.push({ label: item.label, path: item.matchPrefix, matchPrefix: item.matchPrefix });
-  }
-  if (item.children) {
-    item.children.forEach((child) => {
-      const [childPath] = child.path.split('?');
-      entries.push({ label: child.label, path: childPath, matchPrefix: item.matchPrefix });
-    });
-  }
-  return entries;
-});
-
-// Tambahkan di sini kalau ada halaman yang judulnya beda dari label sidebar
-// atau gak ada di navItems sama sekali (mis. halaman detail/edit dinamis).
-// key = matchPrefix atau pathname persis, value = title yang ditampilkan.
-const titleOverrides: Record<string, string> = {
-  '/login': 'Masuk',
-  // '/karyawan/:id/edit' -> pakai matchPrefix '/karyawan' dari titleEntries di atas
-};
-
-function resolveTitle(pathname: string): string {
-  if (titleOverrides[pathname]) return titleOverrides[pathname];
-
-  // cocokin exact pathname dulu
-  const exact = titleEntries.find((e) => e.path === pathname);
-  if (exact) return exact.label;
-
-  // fallback: cocokin matchPrefix terpanjang (buat route dinamis kayak /karyawan/5/edit)
-  const prefixMatches = titleEntries
-    .filter((e) => e.matchPrefix && pathname.startsWith(e.matchPrefix))
-    .sort((a, b) => (b.matchPrefix?.length ?? 0) - (a.matchPrefix?.length ?? 0));
-  if (prefixMatches[0]) return prefixMatches[0].label;
-
-  return 'Dashboard';
-}
-
 function initials(name?: string) {
   if (!name) return '?';
   return name
@@ -173,7 +120,12 @@ interface SearchEntry {
   path: string;
 }
 
-export default function AppLayout() {
+interface AppLayoutProps {
+  title: string;
+  children: ReactNode;
+}
+
+export default function AppLayout({ title, children }: AppLayoutProps) {
   const { user, logout } = useAuth();
   const { resetChat } = useChat();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -183,9 +135,6 @@ export default function AppLayout() {
   const searchBoxRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
-
-  // PENAMBAHAN: title sekarang di-derive dari pathname, bukan prop lagi
-  const title = useMemo(() => resolveTitle(location.pathname), [location.pathname]);
 
   const STAFF_ROLES = ['admin', 'hr'];
   const REVIEWER_ROLES = ['admin', 'hr', 'manajer', 'manager', 'cabang'];
@@ -316,7 +265,7 @@ export default function AppLayout() {
     });
   };
 
-  const handleLogout = async () => {
+const handleLogout = async () => {
     // NOTE: revoke token ke server, unsubscribe push, & bersih-bersih localStorage
     // semua udah ditangani di dalam logout() (AuthContext), dalam urutan yang benar
     // (unsubscribe push dulu selagi token masih valid, baru revoke). Jangan panggil
@@ -325,10 +274,10 @@ export default function AppLayout() {
     resetChat();
     const res = await logout();
     navigate('/login', {
-      replace: true,
-      state: res?.password_direset ? { passwordReset: true } : undefined,
+        replace: true,
+        state: res?.password_direset ? { passwordReset: true } : undefined,
     });
-  };
+};
 
   // Route yang sekarang dirender sebagai overlay absolute (RouteModal) di App.tsx,
   // bukan halaman penuh lagi — jadi navigasi ke sini WAJIB bawa state.backgroundLocation
@@ -376,14 +325,8 @@ export default function AppLayout() {
       )}
 
       {/* ===== SIDEBAR ===== */}
-      {/* PENAMBAHAN: dulu pakai "lg:sticky" + parent "min-h-screen" -- itu yang
-          bikin sidebar ikut kebawa scroll dokumen & ikut berubah tinggi waktu
-          konten page berubah. Sekarang parent-nya "h-screen overflow-hidden"
-          (tinggi terkunci ke viewport), jadi sidebar cukup "lg:static" aja --
-          dia otomatis diam karena dia bagian dari flex container yang gak
-          pernah discroll sama sekali, cuma <main> di bawah yang scroll sendiri. */}
       <aside
-        className={`fixed lg:static top-0 left-0 h-screen w-64 bg-white flex flex-col z-50 transition-transform duration-300 flex-shrink-0 ${
+        className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-white flex flex-col z-50 transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
       >
@@ -501,17 +444,11 @@ export default function AppLayout() {
       </aside>
 
       {/* ===== MAIN AREA ===== */}
-      {/* PENAMBAHAN: "overflow-hidden" di sini + "overflow-y-auto" di <main>
-          bikin kolom ini jadi container scroll-nya sendiri, terpisah total
-          dari sidebar. Sidebar & header nggak akan pernah ikut scroll lagi,
-          apapun yang terjadi di konten <Outlet /> di bawahnya. */}
-      <div className="flex-1 min-w-0 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 min-w-0 h-screen overflow-y-auto flex flex-col">
         {/* TOPBAR — bg sama kayak sidebar (bg-white), garis pemisah (border-b)
             sengaja dihilangin biar sidebar & topbar keliatan nyatu jadi satu
-            panel chrome tanpa garis. "sticky" udah gak wajib lagi karena kolom
-            ini gak discroll (yang scroll cuma <main> di bawahnya), tapi tetap
-            dibiarin sebagai jaga-jaga/tidak masalah kalau ada perubahan lain. */}
-        <header className="h-20 flex-shrink-0 bg-white/70 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
+            panel chrome tanpa garis */}
+        <header className="h-20 bg-white/70 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-600">
               <Menu size={22} />
@@ -578,14 +515,9 @@ export default function AppLayout() {
         {/* CONTENT — panel dashboard sendiri: bg-slate-50 + rounded-3xl,
             dikasih margin (p-3/p-6) biar keliatan "mengambang" terpisah
             dari chrome putih di sidebar & topbar */}
-        <main className="flex-1 overflow-y-auto p-3 md:p-6">
-          <div className="bg-zinc-100 rounded-3xl min-h-[calc(100%-0px)] p-4 md:p-8">
-            {/* PENAMBAHAN: Outlet menggantikan {children} -- ini yang bikin
-                AppLayout tetap satu instance yang sama waktu pindah antar
-                halaman child, karena AppLayout sekarang dipasang sekali di
-                router sebagai parent route, bukan dibungkus ulang di tiap
-                page. Lihat catatan router di bawah file ini. */}
-            <Outlet />
+        <main className="flex-1 p-3 md:p-6">
+          <div className="bg-zinc-100 rounded-3xl min-h-[calc(100vh-6.5rem)] p-4 md:p-8">
+            {children}
           </div>
         </main>
       </div>
