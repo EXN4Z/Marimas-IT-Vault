@@ -11,6 +11,8 @@ import {
   AlertCircle,
   CheckCircle2,
   MapPin,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import AppLayout from '../components/shared/AppLayout';
 import FaceCapture from '../components/absensi/FaceCapture';
@@ -94,25 +96,26 @@ function PaginationAbsensi({ currentPage, totalPages, onPageChange }: Pagination
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-center gap-1 pt-4 mt-2 border-t border-slate-100">
+    <div className="flex items-center justify-center gap-1 pt-4 mt-2 border-t border-slate-100 flex-wrap">
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+        className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
       >
-        Sebelumnya
+        <ChevronLeft size={14} />
+        <span className="hidden sm:inline">Sebelumnya</span>
       </button>
 
       {pageNumbers.map((p, idx) =>
         p === 'ellipsis' ? (
-          <span key={`ellipsis-${idx}`} className="px-2 text-sm text-slate-400">
+          <span key={`ellipsis-${idx}`} className="px-1.5 sm:px-2 text-sm text-slate-400">
             ...
           </span>
         ) : (
           <button
             key={p}
             onClick={() => onPageChange(p)}
-            className={`min-w-[2rem] px-3 py-1.5 text-sm rounded-lg transition-colors ${
+            className={`min-w-[2rem] px-2.5 sm:px-3 py-1.5 text-sm rounded-lg transition-colors ${
               p === currentPage
                 ? 'bg-slate-900 text-white font-medium'
                 : 'text-slate-600 hover:bg-slate-50 border border-slate-200'
@@ -126,9 +129,10 @@ function PaginationAbsensi({ currentPage, totalPages, onPageChange }: Pagination
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+        className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
       >
-        Selanjutnya
+        <span className="hidden sm:inline">Selanjutnya</span>
+        <ChevronRight size={14} />
       </button>
     </div>
   );
@@ -265,9 +269,10 @@ export default function AbsensiPage() {
         </p>
       </div>
 
-      <nav className="mb-6">
-        <ul className="flex items-center gap-6 border-b border-slate-200">
-          <li>
+      {/* Tab nav: bisa discroll horizontal di layar sempit supaya 3 tab + counter tidak numpuk/kepotong */}
+      <nav className="mb-6 -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto">
+        <ul className="flex items-center gap-4 sm:gap-6 border-b border-slate-200 min-w-max sm:min-w-0">
+          <li className="flex-shrink-0">
             <button
               onClick={() => setActiveTab('semua')}
               className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
@@ -283,7 +288,7 @@ export default function AbsensiPage() {
               </span>
             </button>
           </li>
-          <li>
+          <li className="flex-shrink-0">
             <button
               onClick={() => setActiveTab('sudah_absen')}
               className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
@@ -299,7 +304,7 @@ export default function AbsensiPage() {
               </span>
             </button>
           </li>
-          <li>
+          <li className="flex-shrink-0">
             <button
               onClick={() => setActiveTab('belum_absen')}
               className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
@@ -325,7 +330,7 @@ export default function AbsensiPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+        <div className="lg:col-span-2 bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-slate-200">
           <h3 className="text-base font-semibold text-slate-900 mb-4">Daftar Karyawan</h3>
 
           <div className="relative mb-4">
@@ -351,13 +356,16 @@ export default function AbsensiPage() {
                   const adaLokasi = rec?.latitude != null && rec?.longitude != null;
 
                   return (
-                    <div key={item.id} className="flex items-center justify-between border border-slate-200 rounded-lg p-3 hover:bg-slate-50 transition">
+                    <div
+                      key={item.id}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-slate-200 rounded-lg p-3 hover:bg-slate-50 transition"
+                    >
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-xs font-medium text-slate-700 flex-shrink-0">
                           {initials(item.user.name)}
                         </div>
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-medium text-slate-800 truncate">{item.user.name}</p>
                             {rec?.status === 'telat' && (
                               <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full flex-shrink-0">
@@ -378,13 +386,19 @@ export default function AbsensiPage() {
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-slate-400 truncate">
                             {item.nip} · {roleLabels[item.user.role]} · {item.departemen?.nama || '-'}
+                          </p>
+                          {/* Jam masuk/pulang: tampil di bawah nama khusus layar kecil (di layar sm+ dipindah ke kanan) */}
+                          <p className="text-xs text-slate-400 sm:hidden mt-0.5">
+                            Masuk <span className="font-semibold text-slate-700">{formatJam(rec?.jam_masuk ?? null)}</span>
+                            {' · '}
+                            Pulang <span className="font-semibold text-slate-700">{formatJam(rec?.jam_pulang ?? null)}</span>
                           </p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4 flex-shrink-0 ml-3">
+                      <div className="flex items-center justify-between sm:justify-end gap-3 flex-shrink-0 sm:ml-3">
                         <div className="text-right hidden sm:block">
                           <p className="text-xs text-slate-400">
                             Masuk <span className="font-semibold text-slate-700">{formatJam(rec?.jam_masuk ?? null)}</span>
@@ -393,12 +407,12 @@ export default function AbsensiPage() {
                             Pulang <span className="font-semibold text-slate-700">{formatJam(rec?.jam_pulang ?? null)}</span>
                           </p>
                         </div>
-                        <div className="flex gap-1.5">
+                        <div className="flex gap-1.5 flex-wrap justify-end">
                           {adaLokasi && (
                             <button
                               onClick={() => setModalLokasi(rec)}
                               title="Lihat Lokasi Absen"
-                              className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center hover:bg-sky-100 transition"
+                              className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center hover:bg-sky-100 transition flex-shrink-0"
                             >
                               <MapPin size={16} />
                             </button>
@@ -406,7 +420,7 @@ export default function AbsensiPage() {
                           <button
                             onClick={() => setWajahKaryawan(item)}
                             title={belumDaftarWajah ? 'Daftarkan Wajah' : 'Perbarui Wajah'}
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center transition flex-shrink-0 ${
                               belumDaftarWajah
                                 ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
                                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -418,7 +432,7 @@ export default function AbsensiPage() {
                             <button
                               onClick={() => openModal(item)}
                               title="Tandai Masuk"
-                              className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-100 transition"
+                              className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-100 transition flex-shrink-0"
                             >
                               <ArrowDownCircle size={16} />
                             </button>
@@ -427,7 +441,7 @@ export default function AbsensiPage() {
                             <button
                               onClick={() => openModal(item)}
                               title="Tandai Pulang"
-                              className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition"
+                              className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition flex-shrink-0"
                             >
                               <ArrowUpCircle size={16} />
                             </button>
@@ -435,7 +449,7 @@ export default function AbsensiPage() {
                           {sudahMasuk && sudahPulang && (
                             <span
                               title="Absen lengkap hari ini"
-                              className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center"
+                              className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center flex-shrink-0"
                             >
                               <CheckCircle2 size={16} />
                             </span>
@@ -462,7 +476,7 @@ export default function AbsensiPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-slate-200">
           <h3 className="text-base font-semibold text-slate-900 mb-4">Riwayat Absensi</h3>
           <ul className="flex flex-col gap-4">
             {riwayat.map((r) => {
@@ -477,7 +491,7 @@ export default function AbsensiPage() {
                     {r.jam_pulang ? <ArrowUpCircle size={16} /> : <ArrowDownCircle size={16} />}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm text-slate-800 min-w-0">
                         <span className="font-medium">{r.pekerja?.user.name ?? '-'}</span>{' '}
                         {r.jam_pulang ? 'absen pulang' : 'absen masuk'}
@@ -510,7 +524,7 @@ export default function AbsensiPage() {
       {/* MODAL KONFIRMASI ABSEN (override admin) */}
       {modalKaryawan && modalTipe && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-slate-900">
                 {modalTipe === 'masuk' && 'Absen Masuk'}
@@ -580,7 +594,7 @@ export default function AbsensiPage() {
       {/* MODAL PREVIEW LOKASI ABSEN */}
       {modalLokasi && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
                 <MapPin size={18} className="text-sky-600" />
