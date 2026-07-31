@@ -132,6 +132,9 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
   const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const lastScrollYRef = useRef(0);
+  const contentScrollRef = useRef<HTMLDivElement>(null);
   const searchBoxRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -232,6 +235,25 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // header ilang pas scroll ke bawah, muncul lagi pas scroll ke atas --
+  // dicek dari selisih posisi scroll sekarang vs sebelumnya (bukan cuma
+  // "> 0" doang) biar gak keder pas scroll dikit/jitter di ujung atas
+  const handleContentScroll = () => {
+    const el = contentScrollRef.current;
+    if (!el) return;
+    const currentY = el.scrollTop;
+    const lastY = lastScrollYRef.current;
+
+    if (currentY <= 0) {
+      setHeaderVisible(true);
+    } else if (currentY > lastY + 4) {
+      setHeaderVisible(false);
+    } else if (currentY < lastY - 4) {
+      setHeaderVisible(true);
+    }
+    lastScrollYRef.current = currentY;
+  };
 
   const handleSearchResultClick = (path: string) => {
     if (OVERLAY_PATHS.includes(path)) {
@@ -350,7 +372,7 @@ const handleLogout = async () => {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
       >
-        <div className="flex items-center justify-between px-6 h-24 shrink-0">
+        <div className="flex items-center justify-between px-6 h-18 shrink-0">
           <div className="flex p-1 items-center mx-auto gap-2">
             <img src="/logo.png" alt="Marimas One" className="h-18 w-auto p-1" />
           </div>
@@ -464,11 +486,19 @@ const handleLogout = async () => {
       </aside>
 
       {/* ===== MAIN AREA ===== */}
-      <div className="flex-1 min-w-0 h-screen overflow-y-auto flex flex-col">
+      <div
+        ref={contentScrollRef}
+        onScroll={handleContentScroll}
+        className="flex-1 min-w-0 h-screen overflow-y-auto flex flex-col"
+      >
         {/* TOPBAR — bg sama kayak sidebar (bg-white), garis pemisah (border-b)
             sengaja dihilangin biar sidebar & topbar keliatan nyatu jadi satu
             panel chrome tanpa garis */}
-        <header className="h-18 min-h-18 shrink-0 bg-white/70 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
+        <header
+          className={`h-18 min-h-18 shrink-0 bg-white/70 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 transition-transform duration-300 ${
+            headerVisible ? 'translate-y-0' : '-translate-y-full'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-600">
               <Menu size={22} />
@@ -536,7 +566,7 @@ const handleLogout = async () => {
             dikasih margin (p-3/p-6) biar keliatan "mengambang" terpisah
             dari chrome putih di sidebar & topbar */}
         <main className="flex-1 p-4 md:p-8">
-          <div className="bg-zinc-100 rounded-3xl min-h-[calc(100vh-8.5rem)] p-4 md:p-8">
+          <div className="bg-zinc-100 rounded-3xl min-h-[calc(100vh-6.5rem)] p-4 md:p-8">
             {children ?? <Outlet />}
           </div>
         </main>
