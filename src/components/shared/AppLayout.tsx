@@ -350,7 +350,7 @@ const handleLogout = async () => {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
       >
-        <div className="flex items-center justify-between px-6 h-20">
+        <div className="flex items-center justify-between px-6 h-24">
           <div className="flex p-1 items-center mx-auto gap-2">
             <img src="/logo.png" alt="Marimas One" className="h-18 w-auto p-1" />
           </div>
@@ -468,7 +468,7 @@ const handleLogout = async () => {
         {/* TOPBAR — bg sama kayak sidebar (bg-white), garis pemisah (border-b)
             sengaja dihilangin biar sidebar & topbar keliatan nyatu jadi satu
             panel chrome tanpa garis */}
-        <header className="h-20 bg-white/70 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
+        <header className="h-24 bg-white/70 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-600">
               <Menu size={22} />
@@ -476,7 +476,7 @@ const handleLogout = async () => {
             <h1 className="text-xl font-bold text-slate-900 hidden sm:block">{pageTitle}</h1>
           </div>
 
-          <div ref={searchBoxRef} className="hidden md:flex items-center flex-1 max-w-sm mx-6 relative">
+          <div ref={searchBoxRef} className="hidden md:flex items-center flex-1 max-w-md mx-6 relative">
             <Search className="absolute left-3 w-4 h-4 text-slate-400" />
             <input
               value={searchQuery}
@@ -536,7 +536,7 @@ const handleLogout = async () => {
             dikasih margin (p-3/p-6) biar keliatan "mengambang" terpisah
             dari chrome putih di sidebar & topbar */}
         <main className="flex-1 p-4 md:p-8">
-          <div className="bg-zinc-100 rounded-3xl min-h-[calc(100vh-7.5rem)] p-4 md:p-8">
+          <div className="bg-zinc-100 rounded-3xl min-h-[calc(100vh-8.5rem)] p-4 md:p-8">
             {children ?? <Outlet />}
           </div>
         </main>
