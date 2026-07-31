@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Building2, MapPin, Phone, Users, Map, Plus, Pencil, Trash2, X } from 'lucide-react';
-import AppLayout from '../components/shared/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import { getCabang, createCabang, updateCabang, deleteCabang, type Cabang } from '../api/cabang';
 
@@ -147,16 +146,14 @@ export default function CabangPage() {
 
   if (!isStaff) {
     return (
-      <AppLayout title="Daftar Cabang">
         <div className="bg-white rounded-xl p-8 shadow-sm border border-slate-200 text-center">
           <p className="text-sm text-slate-500">Anda tidak punya akses ke halaman ini.</p>
         </div>
-      </AppLayout>
     );
   }
 
   return (
-    <AppLayout title="Daftar Cabang">
+    <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <p className="text-sm text-slate-500">
           Kelola data cabang / kantor perusahaan beserta lokasi dan jumlah pegawainya.
@@ -374,6 +371,6 @@ export default function CabangPage() {
           </div>
         </div>
       )}
-    </AppLayout>
+    </>
   );
 }

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { CalendarDays, Plus, Trash2, X } from 'lucide-react';
-import AppLayout from '../components/shared/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import { getAgendaMendatang, createAgenda, deleteAgenda, type AgendaItem } from '../api/agenda';
 
@@ -110,7 +109,7 @@ export default function Agenda() {
   }, {});
 
   return (
-    <AppLayout title="Agenda">
+    <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <p className="text-sm text-slate-500 max-w-lg">
           Daftar agenda dan kegiatan mendatang perusahaan, diurutkan dari yang paling dekat.
@@ -263,6 +262,6 @@ export default function Agenda() {
           </div>
         </div>
       )}
-    </AppLayout>
+    </>
   );
 }

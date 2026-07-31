@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { ArrowDownCircle, ArrowUpCircle, CheckCircle2, AlertCircle, Fingerprint } from 'lucide-react';
-import AppLayout from '../components/shared/AppLayout';
 import FaceCapture from '../components/absensi/FaceCapture';
 import DaftarWajahModal from '../components/absensi/DaftarWajahModal';
 import { getAbsensiSaya, scanAbsenFace, type Karyawan, type Absensi } from '../api/absensi';
@@ -97,24 +96,20 @@ export default function AbsensiSayaPage() {
 
   if (loading) {
     return (
-      <AppLayout title="Absensi">
         <p className="text-sm text-slate-400 text-center py-12">Memuat data kamu...</p>
-      </AppLayout>
     );
   }
 
   if (error || !pekerja) {
     return (
-      <AppLayout title="Absensi">
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
           {error || 'Data karyawan tidak ditemukan.'}
         </div>
-      </AppLayout>
     );
   }
 
   return (
-    <AppLayout title="Absensi">
+    <>
       <div className="max-w-md mx-auto">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 text-center">
           <p className="text-3xl font-bold text-slate-900 tabular-nums tracking-wide">{jamSekarang}</p>
@@ -231,6 +226,6 @@ export default function AbsensiSayaPage() {
           }}
         />
       )}
-    </AppLayout>
+    </>
   );
 }

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { User as UserIcon, Mail, Phone, Save, AlertCircle, CheckCircle2, Bell, BellOff } from 'lucide-react';
-import AppLayout from '../components/shared/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import { updateProfile } from '../api/auth';
 import { usePushNotifications } from '../hooks/usePushNotifications';
@@ -70,7 +69,7 @@ export default function Settings() {
   };
 
   return (
-    <AppLayout title="Settings">
+    <>
       <p className="text-sm text-slate-500 mb-6">Kelola informasi akun kamu di sini.</p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -199,6 +198,6 @@ export default function Settings() {
           </div>
         </div>
       </div>
-    </AppLayout>
+    </>
   );
 }

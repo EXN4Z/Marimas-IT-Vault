@@ -1,5 +1,4 @@
 import { QrCode, CalendarDays, Ticket } from 'lucide-react';
-import AppLayout from '../../components/shared/AppLayout';
 import { useDashboardCore, useDashboardAnalytics, buildStatCards } from './useDashboardData';
 import {
   StatCardsGrid,
@@ -48,7 +47,7 @@ export default function DashboardAdmin() {
   }
 
   return (
-    <AppLayout title="Dashboard">
+    <>
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">{error}</div>
       )}
@@ -75,6 +74,6 @@ export default function DashboardAdmin() {
         <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
         <AgendaCard agenda={agenda} agendaLoading={agendaLoading} />
       </div>
-    </AppLayout>
+    </>
   );
 }

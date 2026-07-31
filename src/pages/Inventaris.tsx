@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { useSearchParams } from 'react-router-dom';
+<<<<<<< HEAD
 import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench, PlayCircle, Banknote, X, Images } from 'lucide-react';
 import AppLayout from '../components/shared/AppLayout';
+=======
+import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench, PlayCircle, Banknote, ChevronLeft, ChevronRight, X, Images } from 'lucide-react';
+>>>>>>> e3a196c0a764e60d6968de576483ffc5468c8652
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import Pagination from '../components/shared/Pagination';
 import TabAset from '../components/inventaris/TabAset';
@@ -196,7 +200,7 @@ export default function Inventaris() {
   ];
 
   return (
-    <AppLayout title="Inventaris">
+    <>
       <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
         <p className="text-sm text-slate-500">Kelola aset IT</p>
       </div>
@@ -354,6 +358,6 @@ export default function Inventaris() {
       ) : (
         <TabFotoAset onCount={handleCountFoto} />
       )}
-    </AppLayout>
+    </>
   );
 }

@@ -12,8 +12,11 @@ import {
   AlertCircle,
   User as UserIcon,
 } from 'lucide-react';
+<<<<<<< HEAD
 import AppLayout from '../components/shared/AppLayout';
 import Pagination from '../components/shared/Pagination';
+=======
+>>>>>>> e3a196c0a764e60d6968de576483ffc5468c8652
 import { useAuth } from '../context/AuthContext';
 import {
   getTicketsAktif,
@@ -245,14 +248,12 @@ export default function Ticketing() {
 
   if (loading) {
     return (
-      <AppLayout title="Ticketing">
         <p className="text-sm text-slate-500">Memuat data laporan...</p>
-      </AppLayout>
     );
   }
 
   return (
-    <AppLayout title="Ticketing">
+    <>
       <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
         <p className="text-sm text-slate-500">Buat dan pantau laporan / pengaduan kamu di sini.</p>
         <button
@@ -569,6 +570,6 @@ export default function Ticketing() {
           </div>
         </div>
       )}
-    </AppLayout>
+    </>
   );
 }

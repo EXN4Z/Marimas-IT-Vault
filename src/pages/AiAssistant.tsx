@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { Bot, Send, Sparkles, Trash2 } from 'lucide-react';
-import AppLayout from '../components/shared/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import { useChat, type ChatMessage } from '../context/ChatContext';
 import { sendChatMessage } from '../api/chat';
@@ -110,7 +109,7 @@ export default function AiAssistant() {
   };
 
   return (
-    <AppLayout title="AI Assistant">
+    <>
       <div className="flex flex-col h-[calc(100vh-7rem)] max-h-[820px] bg-white border border-slate-200 rounded-xl overflow-hidden">
         {/* HEADER */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
@@ -240,6 +239,6 @@ export default function AiAssistant() {
           </p>
         </div>
       </div>
-    </AppLayout>
+    </>
   );
 }

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
-import AppLayout from '../components/shared/AppLayout';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import Pagination from '../components/shared/Pagination';
 
@@ -253,7 +252,7 @@ export default function PengajuanIzinPage() {
     }
 
     return (
-        <AppLayout title="Pengajuan Izin">
+        <>
             <div className="max-w-6xl mx-auto">
                 <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
@@ -400,7 +399,7 @@ export default function PengajuanIzinPage() {
                     </div>
                 </div>
             )}
-        </AppLayout>
+        </>
     );
 }
 

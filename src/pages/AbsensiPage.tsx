@@ -12,8 +12,11 @@ import {
   CheckCircle2,
   MapPin,
 } from 'lucide-react';
+<<<<<<< HEAD
 import AppLayout from '../components/shared/AppLayout';
 import Pagination from '../components/shared/Pagination';
+=======
+>>>>>>> e3a196c0a764e60d6968de576483ffc5468c8652
 import FaceCapture from '../components/absensi/FaceCapture';
 import DaftarWajahModal from '../components/absensi/DaftarWajahModal';
 import {
@@ -196,7 +199,7 @@ export default function AbsensiPage() {
   };
 
   return (
-    <AppLayout title="Absensi (Admin)">
+    <>
       <div className="mb-2">
         <p className="text-sm text-slate-500">
           Kelola & pantau absen seluruh karyawan. Sebagai Admin, kamu bisa menandai absen atas nama karyawan lain.
@@ -584,6 +587,6 @@ export default function AbsensiPage() {
           }}
         />
       )}
-    </AppLayout>
+    </>
   );
 }
