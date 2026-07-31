@@ -535,8 +535,8 @@ const handleLogout = async () => {
         {/* CONTENT — panel dashboard sendiri: bg-slate-50 + rounded-3xl,
             dikasih margin (p-3/p-6) biar keliatan "mengambang" terpisah
             dari chrome putih di sidebar & topbar */}
-        <main className="flex-1 p-3 md:p-6">
-          <div className="bg-zinc-100 rounded-3xl min-h-[calc(100vh-6.5rem)] p-4 md:p-8">
+        <main className="flex-1 p-4 md:p-8">
+          <div className="bg-zinc-100 rounded-3xl min-h-[calc(100vh-7.5rem)] p-4 md:p-8">
             {children ?? <Outlet />}
           </div>
         </main>
