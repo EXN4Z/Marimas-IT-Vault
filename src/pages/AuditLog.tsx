@@ -1,10 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-<<<<<<< HEAD
-import { ScrollText, Trash2, ArrowDownCircle, ArrowUpCircle, RefreshCw, Search, X } from 'lucide-react';
-import AppLayout from '../components/shared/AppLayout';
-=======
 import { ScrollText, Trash2, ArrowDownCircle, ArrowUpCircle, RefreshCw, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
->>>>>>> e3a196c0a764e60d6968de576483ffc5468c8652
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import Pagination from '../components/shared/Pagination';
 import { getAuditLog, getAuditLogTrash, type AuditLog } from '../api/auditLog';

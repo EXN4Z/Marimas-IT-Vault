@@ -12,12 +12,8 @@ import {
   AlertCircle,
   User as UserIcon,
 } from 'lucide-react';
-<<<<<<< HEAD
-import AppLayout from '../components/shared/AppLayout';
-import Pagination from '../components/shared/Pagination';
-=======
->>>>>>> e3a196c0a764e60d6968de576483ffc5468c8652
 import { useAuth } from '../context/AuthContext';
+import Pagination from '../components/shared/Pagination';
 import {
   getTicketsAktif,
   getTicketsHistory,

@@ -12,13 +12,9 @@ import {
   CheckCircle2,
   MapPin,
 } from 'lucide-react';
-<<<<<<< HEAD
-import AppLayout from '../components/shared/AppLayout';
-import Pagination from '../components/shared/Pagination';
-=======
->>>>>>> e3a196c0a764e60d6968de576483ffc5468c8652
 import FaceCapture from '../components/absensi/FaceCapture';
 import DaftarWajahModal from '../components/absensi/DaftarWajahModal';
+import Pagination from '../components/shared/Pagination';
 import {
   scanAbsenFace,
   type Karyawan,
