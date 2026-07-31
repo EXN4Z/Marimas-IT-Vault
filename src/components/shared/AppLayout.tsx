@@ -468,7 +468,7 @@ const handleLogout = async () => {
         {/* TOPBAR — bg sama kayak sidebar (bg-white), garis pemisah (border-b)
             sengaja dihilangin biar sidebar & topbar keliatan nyatu jadi satu
             panel chrome tanpa garis */}
-        <header className="h-20 min-h-20 shrink-0 bg-white/70 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
+        <header className="h-18 min-h-18 shrink-0 bg-white/70 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-600">
               <Menu size={22} />
