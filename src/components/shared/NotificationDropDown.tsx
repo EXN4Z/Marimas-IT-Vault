@@ -155,8 +155,18 @@ export default function NotificationDropdown() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 max-w-[90vw] bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+        // PENAMBAHAN: dulu "absolute right-0" -- posisinya dihitung relatif ke
+        // tombol bell, padahal bell bukan elemen paling kanan di header (masih
+        // ada avatar+nama di sebelah kanannya). Akibatnya di device yang lebih
+        // sempit / rasio beda dari iPhone yang dites, titik jangkarnya jadi
+        // gak selalu di ujung layar, dan panel selebar w-80 yang melebar ke
+        // kiri bisa kepotong tepi layar. Sekarang di mobile (di bawah "sm")
+        // dropdown pakai "fixed" yang nempel langsung ke tepi LAYAR
+        // (left-4 right-4), jadi posisinya selalu aman & center apapun posisi
+        // tombolnya. Di "sm" ke atas balik ke perilaku lama (absolute nempel
+        // ke tombol, lebar tetap w-80).
+        <div className="fixed left-4 right-4 top-[4.5rem] sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 sm:max-w-[90vw] bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden flex flex-col max-h-[75vh] sm:max-h-none">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
             <p className="text-sm font-semibold text-slate-900">Notifikasi</p>
             {unreadCount > 0 && (
               <button
@@ -169,7 +179,7 @@ export default function NotificationDropdown() {
             )}
           </div>
 
-          <div className="max-h-80 overflow-y-auto">
+          <div className="overflow-y-auto max-h-[60vh] sm:max-h-80">
             {isLoading && items.length === 0 && (
               <p className="text-sm text-slate-400 text-center py-8">Memuat...</p>
             )}
