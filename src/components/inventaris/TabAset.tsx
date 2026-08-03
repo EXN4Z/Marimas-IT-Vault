@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Check, ListFilter, Download } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Check, ListFilter, Upload, Loader2 } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import AsetFormModal from './AsetFormModal';
-import AsetExportModal from './AsetExportModal';
 import AsetSerahTerimaModal from './AsetSerahTerimaModal';
 import AsetPengembalianModal from './AsetPengembalianModal';
 import AsetLaporKerusakanModal from './AsetLaporKerusakanModal';
@@ -12,6 +11,7 @@ import AsetSparepartModal from './AsetSparepartModal';
 import { useAuth } from '../../context/AuthContext';
 import { printStruk } from '../../utils/printStruk';
 import { namaPemakai, userIdPemakai, isCabangPemakai } from './asetHelpers';
+import api from '../../api/axios';
 import {
   getAset,
   getAsetById,
@@ -135,7 +135,6 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   const ASET_PER_PAGE = 10;
 
   const [formOpen, setFormOpen] = useState(false);
-  const [exportOpen, setExportOpen] = useState(false);
   const [editingAset, setEditingAset] = useState<Aset | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Aset | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -163,6 +162,13 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   const [jualLoading, setJualLoading] = useState(false);
   const [jualError, setJualError] = useState('');
 
+  // PINDAHAN dari Inventaris.tsx: Import Excel data aset (bulk import: aset +
+  // jenis + supplier + kelengkapan) — sekarang ditaruh di sini biar aksinya
+  // nempel langsung sama tabel/list aset yang dia pengaruhi.
+  const [importLoading, setImportLoading] = useState(false);
+  const [importMessage, setImportMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const loadList = async () => {
     setLoading(true);
     setError('');
@@ -185,6 +191,35 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
       setAsetList(data);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setImportLoading(true);
+    setImportMessage(null);
+
+    try {
+      const res = await api.post('/import-aset', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setImportMessage({ type: 'success', text: res.data.message });
+      // refresh list aset setelah import berhasil (badge count ikut update
+      // otomatis lewat efek onCount di bawah begitu asetList berubah)
+      loadList();
+    } catch (err: any) {
+      setImportMessage({
+        type: 'error',
+        text: err.response?.data?.message || 'Gagal mengimport file',
+      });
+    } finally {
+      setImportLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = ''; // reset biar bisa upload file yang sama lagi
     }
   };
 
@@ -502,27 +537,49 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
           Kelola aset IT per-unit (laptop, monitor, dsb) — serah-terima ke karyawan dan riwayatnya.
         </p>
         <div className="flex items-center gap-2.5 flex-shrink-0">
-          <button
-            onClick={() => setExportOpen(true)}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 transition"
-          >
-            <Download size={16} />
-            Export
-          </button>
           {isAdmin && (
-            <button
-              onClick={() => {
-                setEditingAset(null);
-                setFormOpen(true);
-              }}
-              className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition"
-            >
-              <Plus size={16} />
-              Tambah Aset
-            </button>
+            <>
+              {/* PINDAHAN dari Inventaris.tsx: Import Excel data aset */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelected}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importLoading}
+                className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                {importLoading ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Upload size={16} />
+                )}
+                {importLoading ? 'Mengimport...' : 'Import Excel'}
+              </button>
+
+              <button
+                onClick={() => {
+                  setEditingAset(null);
+                  setFormOpen(true);
+                }}
+                className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition"
+              >
+                <Plus size={16} />
+                Tambah Aset
+              </button>
+            </>
           )}
         </div>
       </div>
+
+      {importMessage && (
+        <p className={`text-sm mb-4 -mt-2 ${importMessage.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+          {importMessage.text}
+        </p>
+      )}
 
       <div className="flex items-center gap-3 mb-4 flex-wrap">
         <div className="relative" ref={statusMenuRef}>
@@ -792,8 +849,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
         />
       )}
 
-      <AsetExportModal open={exportOpen} onClose={() => setExportOpen(false)} data={filteredAset} />
-
+    
       {/* KONFIRMASI HAPUS */}
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] px-4">

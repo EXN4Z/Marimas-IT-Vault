@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench, PlayCircle, Banknote, X, Images, Upload, Loader2 } from 'lucide-react';
+import { Package, HandCoins, Undo2, Search, AlertTriangle, ClipboardList, Wrench, PlayCircle, Banknote, X, Images } from 'lucide-react';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import Pagination from '../components/shared/Pagination';
 import TabAset from '../components/inventaris/TabAset';
@@ -44,11 +44,6 @@ export default function Inventaris() {
   const [activeTab, setActiveTab] = useState<TabKey>('aset');
   const [search, setSearch] = useState('');
   const [counts, setCounts] = useState<Partial<Record<TabKey, number>>>({});
-
-  // Import Excel data aset
-  const [importLoading, setImportLoading] = useState(false);
-  const [importMessage, setImportMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Klik notif kerusakan aset ngarahin ke /inventaris?tab=penanganan (lihat
   // AsetKerusakanDilaporkan.php) -- buka langsung tab Penanganan Aset-nya,
@@ -191,36 +186,6 @@ export default function Inventaris() {
     };
   }, [isAdmin, updateCount]);
 
-  // Import Excel data aset (bulk import: aset + jenis + supplier + kelengkapan)
-  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    setImportLoading(true);
-    setImportMessage(null);
-
-    try {
-      const res = await api.post('/import-aset', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setImportMessage({ type: 'success', text: res.data.message });
-      // refresh riwayat & badge count setelah import berhasil
-      refreshRiwayatAset(1, riwayatFilter, riwayatSearch);
-      getAset().then((list) => updateCount('aset', list.length)).catch(console.error);
-    } catch (err: any) {
-      setImportMessage({
-        type: 'error',
-        text: err.response?.data?.message || 'Gagal mengimport file',
-      });
-    } finally {
-      setImportLoading(false);
-      if (fileInputRef.current) fileInputRef.current.value = ''; // reset biar bisa upload file yang sama lagi
-    }
-  };
-
   const tabs: { key: TabKey; label: string; icon: typeof Package; adminOnly?: boolean }[] = [
     { key: 'aset', label: 'Aset', icon: Package },
     { key: 'kelengkapan_aset', label: 'Kelengkapan Aset', icon: ClipboardList },
@@ -261,37 +226,7 @@ export default function Inventaris() {
                 className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none"
               />
             </div>
-
-            {isAdmin && (
-              <>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={handleFileSelected}
-                  className="hidden"
-                />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={importLoading}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0"
-                >
-                  {importLoading ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <Upload size={16} />
-                  )}
-                  {importLoading ? 'Mengimport...' : 'Import Excel'}
-                </button>
-              </>
-            )}
           </div>
-
-          {importMessage && (
-            <p className={`text-sm -mt-3 ${importMessage.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
-              {importMessage.text}
-            </p>
-          )}
 
           <TabAset search={search} onCount={handleCountAset} />
 
