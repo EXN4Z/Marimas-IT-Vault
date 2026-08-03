@@ -35,6 +35,26 @@ export async function getAsetPenanganan(): Promise<AsetPenanganan[]> {
   return res.data;
 }
 
+export interface PaginatedAsetPenanganan {
+  data: AsetPenanganan[];
+  current_page: number;
+  last_page: number;
+  total: number;
+  per_page: number;
+}
+
+// GET /aset-penanganan/foto — tab "Rusak" di halaman Foto Aset (paginated + search).
+export async function getFotoKerusakanAset(
+  page = 1,
+  perPage = 12,
+  search?: string
+): Promise<PaginatedAsetPenanganan> {
+  const res = await api.get<PaginatedAsetPenanganan>('/aset-penanganan/foto', {
+    params: { page, per_page: perPage, search: search || undefined },
+  });
+  return res.data;
+}
+
 // POST /aset-penanganan — bisa dipanggil user manapun yang sedang memegang aset tsb.
 export async function laporKerusakanAset(payload: {
   aset_id: number;

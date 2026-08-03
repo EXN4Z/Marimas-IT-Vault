@@ -197,10 +197,11 @@ export async function getAsetById(id: number): Promise<Aset> {
 export async function getFotoPemakaiAset(
   page = 1,
   perPage = 12,
-  search?: string
+  search?: string,
+  type?: 'peminjaman' | 'pengembalian'
 ): Promise<PaginatedFotoPemakai> {
   const res = await api.get<PaginatedFotoPemakai>('/aset-pemakai/foto', {
-    params: { page, per_page: perPage, search: search || undefined },
+    params: { page, per_page: perPage, search: search || undefined, type },
   });
   return res.data;
 }
