@@ -25,7 +25,7 @@ self.addEventListener('push', (event) => {
     icon: payload.icon || '/logo.png',
     badge: '/logo.png',
     data: payload.data || {},
-    tag: payload.tag || 'marimas-one-notif',
+    tag: payload.tag || `marimas-one-${Date.now()}`,
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
