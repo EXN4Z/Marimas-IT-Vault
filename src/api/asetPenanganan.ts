@@ -16,6 +16,10 @@ export interface AsetPenanganan {
   jenis_kerusakan: string;
   keluhan: string;
   tanggal_lapor: string;
+  // waktu kejadian akurat (jam-menit-detik lengkap) -- kolom tanggal_lapor
+  // di atas cuma nyimpen tanggal doang, jamnya selalu 00:00:00. Lihat
+  // migration add_waktu_akurat_ke_aset_pemakai_dan_penanganan.
+  lapor_at: string | null;
   foto: string | null;
   tanggal_selesai: string | null;
   harga_jasa: number | null;
@@ -32,6 +36,26 @@ export interface AsetPenanganan {
 // GET /aset-penanganan — dibatasi backend ke role admin.
 export async function getAsetPenanganan(): Promise<AsetPenanganan[]> {
   const res = await api.get<AsetPenanganan[]>('/aset-penanganan');
+  return res.data;
+}
+
+export interface PaginatedAsetPenanganan {
+  data: AsetPenanganan[];
+  current_page: number;
+  last_page: number;
+  total: number;
+  per_page: number;
+}
+
+// GET /aset-penanganan/foto — tab "Rusak" di halaman Foto Aset (paginated + search).
+export async function getFotoKerusakanAset(
+  page = 1,
+  perPage = 12,
+  search?: string
+): Promise<PaginatedAsetPenanganan> {
+  const res = await api.get<PaginatedAsetPenanganan>('/aset-penanganan/foto', {
+    params: { page, per_page: perPage, search: search || undefined },
+  });
   return res.data;
 }
 

@@ -153,6 +153,11 @@ export interface FotoPemakaiEntry {
   user?: { id: number; name: string } | null;
   tanggal_penerimaan: string | null;
   tanggal_pengembalian: string | null;
+  // waktu kejadian akurat (jam-menit-detik lengkap) -- tanggal_penerimaan/
+  // tanggal_pengembalian di atas cuma nyimpen tanggal doang. Lihat migration
+  // add_waktu_akurat_ke_aset_pemakai_dan_penanganan.
+  diterima_at: string | null;
+  dikembalikan_at: string | null;
   foto_penerimaan: string[] | null;
   foto_pengembalian: string[] | null;
   created_at: string;
@@ -197,10 +202,11 @@ export async function getAsetById(id: number): Promise<Aset> {
 export async function getFotoPemakaiAset(
   page = 1,
   perPage = 12,
-  search?: string
+  search?: string,
+  type?: 'peminjaman' | 'pengembalian'
 ): Promise<PaginatedFotoPemakai> {
   const res = await api.get<PaginatedFotoPemakai>('/aset-pemakai/foto', {
-    params: { page, per_page: perPage, search: search || undefined },
+    params: { page, per_page: perPage, search: search || undefined, type },
   });
   return res.data;
 }
@@ -224,6 +230,7 @@ export async function deleteAset(id: number, force = false): Promise<{ message: 
   const res = await api.delete<{ message: string }>(`/aset/${id}`, { params: force ? { force: 1 } : undefined });
   return res.data;
 }
+
 
 /**
  * Cari karyawan atau akun cabang (buat dipilih sebagai pemakai aset). Pakai
@@ -253,6 +260,13 @@ export async function serahTerimaAset(asetId: number, formData: FormData) {
 // (struk asli pas serah-terima) buat validasi backend.
 export async function kembalikanAset(pemakaiId: number, formData: FormData) {
   const res = await api.post(`/aset-pemakai/${pemakaiId}/kembalikan`, formData);
+  return res.data;
+}
+
+// DELETE /aset-pemakai/{id} — admin hapus satu entri riwayat pemakaian.
+// Ditolak backend kalau entri ini punya laporan perbaikan yang nempel.
+export async function deletePemakaiAset(pemakaiId: number): Promise<{ message: string }> {
+  const res = await api.delete<{ message: string }>(`/aset-pemakai/${pemakaiId}`);
   return res.data;
 }
 

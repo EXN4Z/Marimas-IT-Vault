@@ -155,7 +155,6 @@ export default function Inventaris() {
 
   const handleCountAset = useCallback((n: number) => updateCount('aset', n), [updateCount]);
   const handleCountPenanganan = useCallback((n: number) => updateCount('penanganan_aset', n), [updateCount]);
-  const handleCountFoto = useCallback((n: number) => updateCount('foto_aset', n), [updateCount]);
 
   // Fetch badge count semua tab di sini (bukan nunggu tab-nya dibuka), biar
   // angka di nav udah kebaca dari awal buka halaman & tetep update walau
@@ -418,7 +417,7 @@ export default function Inventaris() {
       ) : activeTab === 'penanganan_aset' ? (
         <TabPenangananAset onCount={handleCountPenanganan} />
       ) : (
-        <TabFotoAset onCount={handleCountFoto} />
+        <TabFotoAset />
       )}
     </>
   );
