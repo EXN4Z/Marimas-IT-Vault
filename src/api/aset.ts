@@ -225,6 +225,12 @@ export async function deleteAset(id: number, force = false): Promise<{ message: 
   return res.data;
 }
 
+
+export async function deletePemakaiAset(pemakaiId: number): Promise<{ message: string }> {
+  const res = await api.delete<{ message: string }>(`/aset-pemakai/${pemakaiId}`);
+  return res.data;
+}
+
 /**
  * Cari karyawan atau akun cabang (buat dipilih sebagai pemakai aset). Pakai
  * endpoint /karyawan yang sudah ada (UserController::index), yang eager-load

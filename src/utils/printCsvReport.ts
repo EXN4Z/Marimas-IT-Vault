@@ -189,3 +189,40 @@ export function printCsvAsReport(
     targetWindow.print();
   };
 }
+
+/**
+ * Sama seperti printCsvAsReport, tapi buat data yang sudah kebentuk
+ * headers + rows di memori (bukan hasil fetch CSV dari backend) — dipakai
+ * misalnya sama export Aset yang datanya sudah ada di state React, jadi
+ * gak perlu bolak-balik ke CSV cuma buat di-parse ulang.
+ *
+ * PENTING: sama seperti printCsvAsReport, `targetWindow` harus dibuka lewat
+ * window.open() SECARA SINKRON di dalam event handler klik.
+ */
+export function printRowsAsReport(
+  headers: string[],
+  rows: string[][],
+  opts: { title: string; periodLabel: string },
+  targetWindow: Window
+): void {
+  if (rows.length === 0) {
+    targetWindow.close();
+    throw new Error('Data yang dipilih kosong.');
+  }
+
+  const html = buildPrintableHtml({
+    title: opts.title,
+    periodLabel: opts.periodLabel,
+    headers,
+    rows,
+  });
+
+  targetWindow.document.open();
+  targetWindow.document.write(html);
+  targetWindow.document.close();
+
+  targetWindow.onload = () => {
+    targetWindow.focus();
+    targetWindow.print();
+  };
+}
