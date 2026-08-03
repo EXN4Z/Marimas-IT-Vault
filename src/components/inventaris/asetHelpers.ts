@@ -28,6 +28,22 @@ export function formatTanggalId(iso: string | null): string {
   return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+// Gabung tanggal + jam jadi satu string, buat kolom tabel yang cuma punya
+// 1 slot ("Tgl Serah Terima", "Tgl Lapor", dst) tapi mau nunjukin jam
+// kejadian juga -- bukan bikin kolom baru. `waktuAkurat` idealnya diisi
+// kolom *_at (diterima_at/dikembalikan_at/lapor_at, datetime lengkap);
+// `tanggalFallback` (kolom tanggal_* lama, cuma nyimpen tanggal) dipakai
+// kalau *_at-nya null (data lama sebelum kolom *_at ada / belum tercatat).
+export function formatTanggalWaktuId(waktuAkurat: string | null, tanggalFallback: string | null): string {
+  if (waktuAkurat) {
+    const d = new Date(waktuAkurat);
+    const tanggal = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    const jam = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    return `${tanggal}, ${jam}`;
+  }
+  return formatTanggalId(tanggalFallback);
+}
+
 // Bentuk minimal yang dibutuhkan namaPemakai/userIdPemakai. SENGAJA gak
 // pakai `AsetPemakai` penuh sebagai tipe parameter: AsetPenanganan.pemakai
 // punya bentuk yang lebih ringkas ({ id, pekerja?, user? }) dan gak punya
