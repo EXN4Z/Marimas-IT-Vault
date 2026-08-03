@@ -224,6 +224,8 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
 
   const openDetail = async (id: number) => {
     setDetailId(id);
+    setPenangananPage(1);
+    setExpandedPenangananId(null);
     setDetailLoading(true);
     try {
       const data = await getAsetById(id);
@@ -277,6 +279,12 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   };
 
   const [terimaLoadingId, setTerimaLoadingId] = useState<number | null>(null);
+
+  // Pagination + dropdown detail buat Riwayat Perbaikan — style ringkas kayak
+  // Riwayat Pemakai, limit 5 per halaman (beda dari Pagination tabel aset yg 10).
+  const RIWAYAT_PERBAIKAN_PER_PAGE = 5;
+  const [penangananPage, setPenangananPage] = useState(1);
+  const [expandedPenangananId, setExpandedPenangananId] = useState<number | null>(null);
 
   const handleTerimaPenanganan = async (id: number) => {
     setHistoryActionError('');
@@ -1051,95 +1059,136 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                 {/* RIWAYAT PERBAIKAN / PENANGANAN KERUSAKAN */}
                 <div className="border-t border-slate-100 pt-4">
                   <p className="text-sm font-semibold text-slate-900 mb-2">Riwayat Perbaikan</p>
-                  <ul className="flex flex-col gap-2">
-                    {(detail.penanganan || []).map((p) => {
-                      const totalBiaya = (Number(p.harga_jasa) || 0) + (Number(p.biaya_komponen) || 0);
-                      const selesai = !!p.tanggal_selesai;
-                      const diterima = !!p.tanggal_diterima;
-                      const statusLabel = selesai ? 'Selesai' : diterima ? 'Sedang Diperbaiki' : 'Menunggu Diterima';
-                      const statusStyle = selesai
-                        ? 'bg-emerald-50 text-emerald-700'
-                        : diterima
-                        ? 'bg-orange-50 text-orange-700'
-                        : 'bg-yellow-50 text-yellow-700';
-                      const namaPelapor = namaPemakai(p.pemakai);
-                      return (
-                        <li key={p.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <span
-                                className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium mb-1 ${statusStyle}`}
-                              >
-                                {statusLabel}
-                              </span>{' '}
-                              <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium mb-1 bg-slate-200 text-slate-600 capitalize">
-                                {p.jenis_kerusakan}
-                              </span>
-                              <p className="text-slate-700">{p.keluhan}</p>
-                              {p.hasil && <p className="text-slate-500 mt-0.5">Hasil: {p.hasil}</p>}
-                              <p className="text-slate-400 mt-0.5">
-                                Dipinjam oleh: <span className="font-medium">{namaPelapor === '-' ? 'Tidak ada (audit gudang)' : namaPelapor}</span>
-                              </p>
-                              <p className="text-slate-400 mt-0.5">
-                                Lapor {formatTanggalId(p.tanggal_lapor)}
-                                {p.tanggal_diterima ? ` · Diterima ${formatTanggalId(p.tanggal_diterima)}` : ''}
-                                {p.tanggal_selesai ? ` · Selesai ${formatTanggalId(p.tanggal_selesai)}` : ''}
-                                {p.durasi_hari != null ? ` · ${p.durasi_hari} hari` : ''}
-                              </p>
-                              {(p.harga_jasa != null || p.biaya_komponen != null) && (
-                                <p className="text-slate-400 mt-0.5">
-                                  Komponen {formatRupiah(p.biaya_komponen)} + Jasa {formatRupiah(p.harga_jasa)} = <span className="font-medium text-slate-600">{formatRupiah(totalBiaya)}</span>
-                                </p>
-                              )}
-                              {p.no_struk && <p className="text-slate-400 mt-0.5">Struk: {p.no_struk}</p>}
-                            </div>
-                            {isAdmin && (
-                              <div className="flex items-center gap-1 flex-shrink-0">
-                                {!selesai && !diterima && (
-                                  <button
-                                    onClick={() => handleTerimaPenanganan(p.id)}
-                                    disabled={terimaLoadingId === p.id}
-                                    title="Terima & mulai tangani laporan ini"
-                                    className="p-1.5 rounded-md text-amber-600 hover:bg-amber-100 transition disabled:opacity-50"
-                                  >
-                                    <PlayCircle size={14} />
-                                  </button>
+                  {(() => {
+                    const semuaPenanganan = detail.penanganan || [];
+                    const totalPenangananPage = Math.max(1, Math.ceil(semuaPenanganan.length / RIWAYAT_PERBAIKAN_PER_PAGE));
+                    const halamanPenanganan = semuaPenanganan.slice(
+                      (penangananPage - 1) * RIWAYAT_PERBAIKAN_PER_PAGE,
+                      penangananPage * RIWAYAT_PERBAIKAN_PER_PAGE
+                    );
+                    return (
+                      <>
+                        <ul className="flex flex-col gap-2">
+                          {halamanPenanganan.map((p) => {
+                            const totalBiaya = (Number(p.harga_jasa) || 0) + (Number(p.biaya_komponen) || 0);
+                            const selesai = !!p.tanggal_selesai;
+                            const diterima = !!p.tanggal_diterima;
+                            const statusLabel = selesai ? 'Selesai' : diterima ? 'Sedang Diperbaiki' : 'Menunggu Diterima';
+                            const statusStyle = selesai
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : diterima
+                              ? 'bg-orange-50 text-orange-700'
+                              : 'bg-yellow-50 text-yellow-700';
+                            const namaPelapor = namaPemakai(p.pemakai);
+                            const expanded = expandedPenangananId === p.id;
+                            return (
+                              <li key={p.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2">
+                                {/* Baris ringkas — sama gaya kayak Riwayat Pemakai */}
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <span
+                                      className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium mb-1 ${statusStyle}`}
+                                    >
+                                      {statusLabel}
+                                    </span>{' '}
+                                    <span className="font-medium text-slate-800">{p.keluhan}</span>{' '}
+                                    <span className="text-slate-500">— {formatTanggalId(p.tanggal_lapor)}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 flex-shrink-0">
+                                    {isAdmin && !selesai && !diterima && (
+                                      <button
+                                        onClick={() => handleTerimaPenanganan(p.id)}
+                                        disabled={terimaLoadingId === p.id}
+                                        title="Terima & mulai tangani laporan ini"
+                                        className="p-1.5 rounded-md text-amber-600 hover:bg-amber-100 transition disabled:opacity-50"
+                                      >
+                                        <PlayCircle size={14} />
+                                      </button>
+                                    )}
+                                    {isAdmin && !selesai && diterima && (
+                                      <button
+                                        onClick={() => setPenangananSelesaiTarget({ aset: detail, penanganan: p })}
+                                        title="Tandai selesai"
+                                        className="p-1.5 rounded-md text-emerald-600 hover:bg-emerald-100 transition"
+                                      >
+                                        <CheckCircle2 size={14} />
+                                      </button>
+                                    )}
+                                    {isAdmin && p.no_struk && (
+                                      <button
+                                        onClick={() => handlePrintPenanganan(detail, p)}
+                                        title="Cetak struk"
+                                        className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 transition"
+                                      >
+                                        <Printer size={13} />
+                                      </button>
+                                    )}
+                                    {isAdmin && (
+                                      <button
+                                        onClick={() => handleDeletePenanganan(p.id)}
+                                        title="Hapus"
+                                        className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() => setExpandedPenangananId(expanded ? null : p.id)}
+                                      title={expanded ? 'Sembunyikan detail' : 'Lihat detail'}
+                                      className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 transition"
+                                    >
+                                      {expanded ? <ChevronDown size={14} className="rotate-180 transition-transform" /> : <Eye size={14} />}
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Dropdown detail — expand di tempat, gak buka modal/halaman baru */}
+                                {expanded && (
+                                  <div className="mt-2 pt-2 border-t border-slate-200 flex flex-col gap-0.5">
+                                    <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium mb-1 bg-slate-200 text-slate-600 capitalize w-fit">
+                                      {p.jenis_kerusakan}
+                                    </span>
+                                    {p.hasil && <p className="text-slate-500">Hasil: {p.hasil}</p>}
+                                    <p className="text-slate-400">
+                                      Dipinjam oleh: <span className="font-medium">{namaPelapor === '-' ? 'Tidak ada (audit gudang)' : namaPelapor}</span>
+                                    </p>
+                                    <p className="text-slate-400">
+                                      Lapor {formatTanggalId(p.tanggal_lapor)}
+                                      {p.tanggal_diterima ? ` · Diterima ${formatTanggalId(p.tanggal_diterima)}` : ''}
+                                      {p.tanggal_selesai ? ` · Selesai ${formatTanggalId(p.tanggal_selesai)}` : ''}
+                                      {p.durasi_hari != null ? ` · ${p.durasi_hari} hari` : ''}
+                                    </p>
+                                    {(p.harga_jasa != null || p.biaya_komponen != null) && (
+                                      <p className="text-slate-400">
+                                        Komponen {formatRupiah(p.biaya_komponen)} + Jasa {formatRupiah(p.harga_jasa)} = <span className="font-medium text-slate-600">{formatRupiah(totalBiaya)}</span>
+                                      </p>
+                                    )}
+                                    {p.no_struk && <p className="text-slate-400">Struk: {p.no_struk}</p>}
+                                  </div>
                                 )}
-                                {!selesai && diterima && (
-                                  <button
-                                    onClick={() => setPenangananSelesaiTarget({ aset: detail, penanganan: p })}
-                                    title="Tandai selesai"
-                                    className="p-1.5 rounded-md text-emerald-600 hover:bg-emerald-100 transition"
-                                  >
-                                    <CheckCircle2 size={14} />
-                                  </button>
-                                )}
-                                {p.no_struk && (
-                                  <button
-                                    onClick={() => handlePrintPenanganan(detail, p)}
-                                    title="Cetak struk"
-                                    className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 transition"
-                                  >
-                                    <Printer size={13} />
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => handleDeletePenanganan(p.id)}
-                                  title="Hapus"
-                                  className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </li>
-                      );
-                    })}
-                    {!detail.penanganan?.length && (
-                      <p className="text-xs text-slate-400">Belum ada riwayat perbaikan.</p>
-                    )}
-                  </ul>
+                              </li>
+                            );
+                          })}
+                          {!semuaPenanganan.length && (
+                            <p className="text-xs text-slate-400">Belum ada riwayat perbaikan.</p>
+                          )}
+                        </ul>
+
+                        {semuaPenanganan.length > RIWAYAT_PERBAIKAN_PER_PAGE && (
+                          <Pagination
+                            currentPage={penangananPage}
+                            totalPages={totalPenangananPage}
+                            onPageChange={(page) => {
+                              setPenangananPage(page);
+                              setExpandedPenangananId(null);
+                            }}
+                            totalItems={semuaPenanganan.length}
+                            itemLabel="riwayat"
+                          />
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* RIWAYAT PENGGANTIAN SPAREPART */}
