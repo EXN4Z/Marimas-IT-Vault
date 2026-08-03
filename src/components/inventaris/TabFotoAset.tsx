@@ -17,9 +17,7 @@ const TABS: ScrollableTabItem<FotoTab>[] = [
   { key: 'rusak', label: 'Rusak', icon: Wrench },
 ];
 
-interface Props {
-  onCount?: (count: number) => void;
-}
+interface Props {}
 
 // State generik yang sama bentuknya buat ketiga tab (entries beda tipe,
 // tapi search/page/lastPage/total/loading semuanya sama pola), jadi
@@ -28,6 +26,10 @@ interface Props {
 interface TabState<T> {
   entries: T[];
   loading: boolean;
+  // true begitu fetch pertama kali kelar (sukses ATAUPUN gagal) — dipakai
+  // buat nentuin kapan badge angka boleh ditampilkan, biar gak sempet
+  // kelip nunjukin "0" dulu sebelum data aslinya kebaca dari server.
+  loaded: boolean;
   search: string;
   page: number;
   lastPage: number;
@@ -37,13 +39,14 @@ interface TabState<T> {
 const initialTabState = <T,>(): TabState<T> => ({
   entries: [],
   loading: true,
+  loaded: false,
   search: '',
   page: 1,
   lastPage: 1,
   total: 0,
 });
 
-export default function TabFotoAset({ onCount }: Props) {
+export default function TabFotoAset({}: Props) {
   const [activeTab, setActiveTab] = useState<FotoTab>('peminjaman');
 
   const [peminjaman, setPeminjaman] = useState<TabState<FotoPemakaiEntry>>(initialTabState);
@@ -58,11 +61,11 @@ export default function TabFotoAset({ onCount }: Props) {
     setPeminjaman((s) => ({ ...s, loading: true }));
     getFotoPemakaiAset(targetPage, PER_PAGE, targetSearch || undefined, 'peminjaman')
       .then((res) =>
-        setPeminjaman((s) => ({ ...s, entries: res.data, page: res.current_page, lastPage: res.last_page, total: res.total, loading: false }))
+        setPeminjaman((s) => ({ ...s, entries: res.data, page: res.current_page, lastPage: res.last_page, total: res.total, loading: false, loaded: true }))
       )
       .catch((err) => {
         console.error(err);
-        setPeminjaman((s) => ({ ...s, loading: false }));
+        setPeminjaman((s) => ({ ...s, loading: false, loaded: true }));
       });
   };
 
@@ -70,11 +73,11 @@ export default function TabFotoAset({ onCount }: Props) {
     setPengembalian((s) => ({ ...s, loading: true }));
     getFotoPemakaiAset(targetPage, PER_PAGE, targetSearch || undefined, 'pengembalian')
       .then((res) =>
-        setPengembalian((s) => ({ ...s, entries: res.data, page: res.current_page, lastPage: res.last_page, total: res.total, loading: false }))
+        setPengembalian((s) => ({ ...s, entries: res.data, page: res.current_page, lastPage: res.last_page, total: res.total, loading: false, loaded: true }))
       )
       .catch((err) => {
         console.error(err);
-        setPengembalian((s) => ({ ...s, loading: false }));
+        setPengembalian((s) => ({ ...s, loading: false, loaded: true }));
       });
   };
 
@@ -82,27 +85,22 @@ export default function TabFotoAset({ onCount }: Props) {
     setRusak((s) => ({ ...s, loading: true }));
     getFotoKerusakanAset(targetPage, PER_PAGE, targetSearch || undefined)
       .then((res) =>
-        setRusak((s) => ({ ...s, entries: res.data, page: res.current_page, lastPage: res.last_page, total: res.total, loading: false }))
+        setRusak((s) => ({ ...s, entries: res.data, page: res.current_page, lastPage: res.last_page, total: res.total, loading: false, loaded: true }))
       )
       .catch((err) => {
         console.error(err);
-        setRusak((s) => ({ ...s, loading: false }));
+        setRusak((s) => ({ ...s, loading: false, loaded: true }));
       });
   };
 
-  // load awal buat ketiga tab sekalian (biar badge count di parent langsung
-  // kebaca total gabungan meski user belum pindah-pindah tab)
+  // load awal buat ketiga tab sekalian (biar badge count di masing-masing
+  // sub-tab langsung kebaca meski user belum pindah-pindah tab)
   useEffect(() => {
     loadPeminjaman(1, '');
     loadPengembalian(1, '');
     loadRusak(1, '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    onCount?.(peminjaman.total + pengembalian.total + rusak.total);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [peminjaman.total, pengembalian.total, rusak.total]);
 
   const currentSearch =
     activeTab === 'peminjaman' ? peminjaman.search : activeTab === 'pengembalian' ? pengembalian.search : rusak.search;
@@ -288,9 +286,16 @@ export default function TabFotoAset({ onCount }: Props) {
 
   const activeState = activeTab === 'peminjaman' ? peminjaman : activeTab === 'pengembalian' ? pengembalian : rusak;
 
+  // Badge muncul cuma abis fetch pertama kelar (loaded=true), biar gak
+  // sempet kelip nunjukin "0" dulu sebelum totalnya beneran kebaca.
+  const tabsWithBadge: ScrollableTabItem<FotoTab>[] = TABS.map((t) => {
+    const state = t.key === 'peminjaman' ? peminjaman : t.key === 'pengembalian' ? pengembalian : rusak;
+    return { ...t, badge: state.loaded ? state.total : null };
+  });
+
   return (
     <div className="flex flex-col gap-6">
-      <ScrollableTabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+      <ScrollableTabBar tabs={tabsWithBadge} activeTab={activeTab} onChange={setActiveTab} />
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />

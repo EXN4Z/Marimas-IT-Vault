@@ -257,6 +257,13 @@ export async function kembalikanAset(pemakaiId: number, formData: FormData) {
   return res.data;
 }
 
+// DELETE /aset-pemakai/{id} — admin hapus satu entri riwayat pemakaian.
+// Ditolak backend kalau entri ini punya laporan perbaikan yang nempel.
+export async function deletePemakaiAset(pemakaiId: number): Promise<{ message: string }> {
+  const res = await api.delete<{ message: string }>(`/aset-pemakai/${pemakaiId}`);
+  return res.data;
+}
+
 // Satu entri riwayat aktivitas aset — dari peminjaman (pinjam/kembali),
 // penanganan kerusakan (lapor_rusak/mulai_perbaikan/selesai_perbaikan), atau
 // penjualan/writeoff (dijual), digabung backend. 'waktu' sudah pakai kolom

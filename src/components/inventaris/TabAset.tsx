@@ -16,6 +16,7 @@ import {
   getAsetById,
   deleteAset,
   deletePenangananAset,
+  deletePemakaiAset,
   deletePenggantianSparepart,
   terimaPenangananAset,
   jualAset,
@@ -226,6 +227,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
     setDetailId(id);
     setPenangananPage(1);
     setExpandedPenangananId(null);
+    setExpandedPemakaiId(null);
     setDetailLoading(true);
     try {
       const data = await getAsetById(id);
@@ -285,6 +287,8 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   const RIWAYAT_PERBAIKAN_PER_PAGE = 5;
   const [penangananPage, setPenangananPage] = useState(1);
   const [expandedPenangananId, setExpandedPenangananId] = useState<number | null>(null);
+  const [expandedPemakaiId, setExpandedPemakaiId] = useState<number | null>(null);
+  const [deletingPemakaiId, setDeletingPemakaiId] = useState<number | null>(null);
 
   const handleTerimaPenanganan = async (id: number) => {
     setHistoryActionError('');
@@ -308,6 +312,21 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
       await refreshDetail();
     } catch (err: any) {
       setHistoryActionError(err.response?.data?.message || 'Gagal menghapus riwayat penanganan.');
+    }
+  };
+
+  const handleDeletePemakai = async (id: number) => {
+    if (!confirm('Hapus riwayat pemakaian ini?')) return;
+    setHistoryActionError('');
+    setDeletingPemakaiId(id);
+    try {
+      await deletePemakaiAset(id);
+      await refreshDetail();
+      loadList();
+    } catch (err: any) {
+      setHistoryActionError(err.response?.data?.message || 'Gagal menghapus riwayat pemakaian.');
+    } finally {
+      setDeletingPemakaiId(null);
     }
   };
 
@@ -1006,31 +1025,21 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                 <div>
                   <p className="text-sm font-semibold text-slate-900 mb-2">Riwayat Pemakai (Peminjaman)</p>
                   <ul className="flex flex-col gap-2">
-                    {(detail.pemakai || []).map((p) => (
-                      <li key={p.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <span className="font-medium text-slate-800">{namaPemakai(p)}</span>{' '}
-                            <span className="text-slate-500">
-                              — {formatTanggalId(p.tanggal_penerimaan)}
-                              {p.tanggal_pengembalian ? ` s/d ${formatTanggalId(p.tanggal_pengembalian)}` : ' (masih dipakai)'}
-                            </span>
-                            {p.catatan_penerimaan && (
-                              <p className="text-slate-400 mt-0.5">Terima: {p.catatan_penerimaan}</p>
-                            )}
-                            {p.catatan_pengembalian && (
-                              <p className="text-slate-400 mt-0.5">Kembali: {p.catatan_pengembalian}</p>
-                            )}
-                            {p.no_struk_penerimaan && (
-                              <p className="text-slate-400 mt-0.5">Struk terima: {p.no_struk_penerimaan}</p>
-                            )}
-                            {p.no_struk_pengembalian && (
-                              <p className="text-slate-400 mt-0.5">Struk kembali: {p.no_struk_pengembalian}</p>
-                            )}
-                          </div>
-                          {isAdmin && (p.no_struk_penerimaan || p.no_struk_pengembalian) && (
+                    {(detail.pemakai || []).map((p) => {
+                      const expanded = expandedPemakaiId === p.id;
+                      return (
+                        <li key={p.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2">
+                          {/* Baris ringkas — nama & rentang tanggal doang */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <span className="font-medium text-slate-800">{namaPemakai(p)}</span>{' '}
+                              <span className="text-slate-500">
+                                — {formatTanggalId(p.tanggal_penerimaan)}
+                                {p.tanggal_pengembalian ? ` s/d ${formatTanggalId(p.tanggal_pengembalian)}` : ' (masih dipakai)'}
+                              </span>
+                            </div>
                             <div className="flex items-center gap-1 flex-shrink-0">
-                              {p.no_struk_penerimaan && (
+                              {isAdmin && p.no_struk_penerimaan && (
                                 <button
                                   onClick={() => handlePrintSerahTerima(detail, p)}
                                   title="Cetak struk penerimaan"
@@ -1039,11 +1048,49 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                                   <Printer size={13} />
                                 </button>
                               )}
+                              {isAdmin && (
+                                <button
+                                  onClick={() => handleDeletePemakai(p.id)}
+                                  disabled={deletingPemakaiId === p.id}
+                                  title="Hapus"
+                                  className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition disabled:opacity-50"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => setExpandedPemakaiId(expanded ? null : p.id)}
+                                title={expanded ? 'Sembunyikan detail' : 'Lihat detail'}
+                                className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 transition"
+                              >
+                                {expanded ? <ChevronDown size={14} className="rotate-180 transition-transform" /> : <Eye size={14} />}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Dropdown detail — expand di tempat, gak buka modal/halaman baru */}
+                          {expanded && (
+                            <div className="mt-2 pt-2 border-t border-slate-200 flex flex-col gap-0.5">
+                              {p.catatan_penerimaan && (
+                                <p className="text-slate-400">Terima: {p.catatan_penerimaan}</p>
+                              )}
+                              {p.catatan_pengembalian && (
+                                <p className="text-slate-400">Kembali: {p.catatan_pengembalian}</p>
+                              )}
+                              {p.no_struk_penerimaan && (
+                                <p className="text-slate-400">Struk terima: {p.no_struk_penerimaan}</p>
+                              )}
+                              {p.no_struk_pengembalian && (
+                                <p className="text-slate-400">Struk kembali: {p.no_struk_pengembalian}</p>
+                              )}
+                              {!p.catatan_penerimaan && !p.catatan_pengembalian && !p.no_struk_penerimaan && !p.no_struk_pengembalian && (
+                                <p className="text-slate-400">Tidak ada catatan tambahan.</p>
+                              )}
                             </div>
                           )}
-                        </div>
-                      </li>
-                    ))}
+                        </li>
+                      );
+                    })}
                     {!detail.pemakai?.length && (
                       <p className="text-xs text-slate-400">Belum ada riwayat pemakai.</p>
                     )}
