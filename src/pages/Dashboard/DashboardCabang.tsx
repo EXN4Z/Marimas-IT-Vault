@@ -34,6 +34,7 @@ export default function DashboardCabang() {
   // di-scope ke cabang di backend (lihat DashboardController::grafikPengajuan).
   const { ringkasanIzin, grafikPengajuan, topKehadiran, topKaryawan } = useDashboardAnalytics(true, {
     ringkasanIzin: true,
+    ringkasanAset: false,
     topKehadiran: true,
     topKaryawan: true,
     grafikPengajuan: true,

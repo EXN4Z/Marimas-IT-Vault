@@ -6,6 +6,7 @@ import api from '../../api/axios';
 import { getEcho } from '../../lib/echo';
 import type { User as UserType } from '../../types/user';
 import { getAgendaMendatang, type AgendaItem } from '../../api/agenda';
+import { getAset } from '../../api/aset';
 
 // ============================================================================
 // TYPES
@@ -59,6 +60,20 @@ export interface RingkasanIzin {
   pending: number;
   disetujui: number;
   ditolak: number;
+}
+
+// Ringkasan status seluruh aset/barang inventaris — dipakai kartu
+// "Ringkasan Status Aset" di dashboard (gantiin Ringkasan Status Izin).
+// Catatan: status backend aset ada 6 (tersedia, dipakai, menunggu_perbaikan,
+// diperbaiki, rusak_berat, dijual). Supaya kartu tetap simpel 4 kategori,
+// menunggu_perbaikan & diperbaiki (aset yang lagi dalam proses penanganan)
+// digabung ke bucket "dipakai" karena sama-sama belum tersedia dipinjam.
+export interface RingkasanAset {
+  total: number;
+  tersedia: number;
+  dipakai: number;
+  rusakBerat: number;
+  dijual: number;
 }
 
 export interface NotificationItem {
@@ -126,6 +141,35 @@ export async function fetchDepartemenDistribusi(): Promise<DepartemenDistribusi[
 export async function fetchRingkasanIzin(): Promise<RingkasanIzin> {
   const res = await api.get<RingkasanIzin>('/dashboard-analytics/analisis-izin');
   return res.data;
+}
+
+export async function fetchRingkasanAset(): Promise<RingkasanAset> {
+  const list = await getAset();
+  let tersedia = 0;
+  let dipakai = 0;
+  let rusakBerat = 0;
+  let dijual = 0;
+
+  for (const a of list) {
+    switch (a.status) {
+      case 'tersedia':
+        tersedia += 1;
+        break;
+      case 'dipakai':
+      case 'menunggu_perbaikan':
+      case 'diperbaiki':
+        dipakai += 1;
+        break;
+      case 'rusak_berat':
+        rusakBerat += 1;
+        break;
+      case 'dijual':
+        dijual += 1;
+        break;
+    }
+  }
+
+  return { total: list.length, tersedia, dipakai, rusakBerat, dijual };
 }
 
 export async function fetchGrafikPengajuan(): Promise<TrenPengajuan[]> {
@@ -378,6 +422,7 @@ export function useDashboardAnalytics(
   enabled: boolean,
   include: {
     ringkasanIzin?: boolean;
+    ringkasanAset?: boolean;
     grafikPengajuan?: boolean;
     topKehadiran?: boolean;
     topKaryawan?: boolean;
@@ -385,6 +430,7 @@ export function useDashboardAnalytics(
 ) {
   const {
     ringkasanIzin: wantRingkasan = true,
+    ringkasanAset: wantRingkasanAset = true,
     grafikPengajuan: wantGrafik = true,
     topKehadiran: wantTopKehadiran = true,
     topKaryawan: wantTopKaryawan = true,
@@ -394,6 +440,13 @@ export function useDashboardAnalytics(
     queryKey: ['ringkasan-izin'],
     queryFn: fetchRingkasanIzin,
     enabled: enabled && wantRingkasan,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: ringkasanAset } = useQuery({
+    queryKey: ['ringkasan-aset'],
+    queryFn: fetchRingkasanAset,
+    enabled: enabled && wantRingkasanAset,
     staleTime: 2 * 60 * 1000,
   });
 
@@ -420,6 +473,7 @@ export function useDashboardAnalytics(
 
   return {
     ringkasanIzin,
+    ringkasanAset,
     grafikPengajuan: grafikPengajuan ?? [],
     topKehadiran: topKehadiran ?? [],
     topKaryawan: topKaryawan ?? [],
