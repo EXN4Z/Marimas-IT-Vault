@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Check, ListFilter } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import AsetFormModal from './AsetFormModal';
 import AsetSerahTerimaModal from './AsetSerahTerimaModal';
@@ -48,6 +48,17 @@ const STATUS_STYLE: Record<AsetStatus, string> = {
   dijual: 'bg-purple-50 text-purple-700',
 };
 
+// Dipakai dropdown filter status (titik warna solid, senada sama STATUS_STYLE
+// di atas) supaya tiap opsi gampang dibedain sekilas pandang, gak cuma teks.
+const STATUS_DOT: Record<AsetStatus, string> = {
+  tersedia: 'bg-emerald-500',
+  dipakai: 'bg-amber-500',
+  menunggu_perbaikan: 'bg-yellow-400',
+  diperbaiki: 'bg-orange-500',
+  rusak_berat: 'bg-red-600',
+  dijual: 'bg-purple-500',
+};
+
 // urutan tampil di tabel: tersedia paling atas, lalu dipakai, lalu status
 // yang lagi dalam proses penanganan, rusak, rusak_berat, dan dijual paling
 // bawah — dipakai sebagai key sort di filteredAset, BUKAN untuk urutan
@@ -90,6 +101,30 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   const [error, setError] = useState('');
 
   const [statusFilter, setStatusFilter] = useState<AsetStatus | ''>('');
+
+  // Dropdown "Semua Status" custom (bukan <select> native) biar bisa kasih
+  // titik warna + jumlah aset per status. statusMenuRef dipakai buat
+  // deteksi klik di luar dropdown supaya otomatis ke-close.
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!statusMenuOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) {
+        setStatusMenuOpen(false);
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') setStatusMenuOpen(false);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [statusMenuOpen]);
 
   // Pagination tabel aset — style sama kayak pager Riwayat Aset (10 per
   // halaman, angka + elipsis). Client-side krn /api/aset gak dipaging
@@ -403,6 +438,21 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
     // dijual paling bawah. Lihat STATUS_PRIORITY di atas.
     .sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
 
+  // Jumlah aset per status (dari asetList utuh, bukan yang udah difilter),
+  // dipakai buat badge angka di tiap opsi dropdown status.
+  const statusCounts = useMemo(() => {
+    const counts: Record<AsetStatus, number> = {
+      tersedia: 0,
+      dipakai: 0,
+      menunggu_perbaikan: 0,
+      diperbaiki: 0,
+      rusak_berat: 0,
+      dijual: 0,
+    };
+    for (const a of asetList) counts[a.status] += 1;
+    return counts;
+  }, [asetList]);
+
   const asetLastPage = Math.max(1, Math.ceil(filteredAset.length / ASET_PER_PAGE));
   const asetPageClamped = Math.min(asetPage, asetLastPage);
   const pageAset = filteredAset.slice(
@@ -437,18 +487,82 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
       </div>
 
       <div className="flex items-center gap-3 mb-4 flex-wrap">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as AsetStatus | '')}
-          className="px-3 py-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
-        >
-          <option value="">Semua Status</option>
-          {(Object.keys(STATUS_LABEL) as AsetStatus[]).map((s) => (
-            <option key={s} value={s}>
-              {STATUS_LABEL[s]}
-            </option>
-          ))}
-        </select>
+        <div className="relative" ref={statusMenuRef}>
+          <button
+            type="button"
+            onClick={() => setStatusMenuOpen((v) => !v)}
+            aria-haspopup="listbox"
+            aria-expanded={statusMenuOpen}
+            className={`flex items-center gap-2 pl-3 pr-2.5 py-2.5 border rounded-lg text-sm bg-white transition focus:outline-none focus:ring-2 focus:ring-slate-900 ${
+              statusMenuOpen ? 'border-slate-900 ring-2 ring-slate-900' : 'border-slate-200 hover:border-slate-300'
+            }`}
+          >
+            <ListFilter size={15} className="text-slate-400" />
+            {statusFilter ? (
+              <span className="flex items-center gap-1.5 font-medium text-slate-700">
+                <span className={`w-2 h-2 rounded-full ${STATUS_DOT[statusFilter]}`} />
+                {STATUS_LABEL[statusFilter]}
+              </span>
+            ) : (
+              <span className="text-slate-600">Semua Status</span>
+            )}
+            <span className="text-xs text-slate-400 bg-slate-100 rounded-full px-1.5 py-0.5 leading-none">
+              {statusFilter ? statusCounts[statusFilter] : asetList.length}
+            </span>
+            <ChevronDown
+              size={15}
+              className={`text-slate-400 transition-transform ${statusMenuOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+
+          {statusMenuOpen && (
+            <div
+              role="listbox"
+              className="absolute z-20 mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-900/5 py-1.5"
+            >
+              <button
+                type="button"
+                role="option"
+                aria-selected={statusFilter === ''}
+                onClick={() => {
+                  setStatusFilter('');
+                  setStatusMenuOpen(false);
+                }}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left hover:bg-slate-50 transition ${
+                  statusFilter === '' ? 'text-slate-900 font-medium' : 'text-slate-600'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-slate-300 flex-shrink-0" />
+                <span className="flex-1">Semua Status</span>
+                <span className="text-xs text-slate-400">{asetList.length}</span>
+                {statusFilter === '' && <Check size={14} className="text-slate-900" />}
+              </button>
+
+              <div className="my-1 border-t border-slate-100" />
+
+              {(Object.keys(STATUS_LABEL) as AsetStatus[]).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  role="option"
+                  aria-selected={statusFilter === s}
+                  onClick={() => {
+                    setStatusFilter(s);
+                    setStatusMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left hover:bg-slate-50 transition ${
+                    statusFilter === s ? 'text-slate-900 font-medium' : 'text-slate-600'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_DOT[s]}`} />
+                  <span className="flex-1">{STATUS_LABEL[s]}</span>
+                  <span className="text-xs text-slate-400">{statusCounts[s]}</span>
+                  {statusFilter === s && <Check size={14} className="text-slate-900" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
