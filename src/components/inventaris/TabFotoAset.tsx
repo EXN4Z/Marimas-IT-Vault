@@ -4,7 +4,7 @@ import Pagination from '../shared/Pagination';
 import ScrollableTabBar, { type ScrollableTabItem } from '../shared/ScrollableTabBar';
 import { getFotoPemakaiAset, type FotoPemakaiEntry } from '../../api/aset';
 import { getFotoKerusakanAset, type AsetPenanganan } from '../../api/asetPenanganan';
-import { namaPemakai, formatTanggalId } from './asetHelpers';
+import { namaPemakai, formatTanggalWaktuId } from './asetHelpers';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 const PER_PAGE = 10;
@@ -151,6 +151,7 @@ export default function TabFotoAset({}: Props) {
     if (activeTab === 'peminjaman' || activeTab === 'pengembalian') {
       const state = activeTab === 'peminjaman' ? peminjaman : pengembalian;
       const tanggalKey = activeTab === 'peminjaman' ? 'tanggal_penerimaan' : 'tanggal_pengembalian';
+      const waktuAkuratKey = activeTab === 'peminjaman' ? 'diterima_at' : 'dikembalikan_at';
       const fotoKey = activeTab === 'peminjaman' ? 'foto_penerimaan' : 'foto_pengembalian';
       const tanggalLabel = activeTab === 'peminjaman' ? 'Tgl Serah Terima' : 'Tgl Pengembalian';
 
@@ -168,7 +169,7 @@ export default function TabFotoAset({}: Props) {
       }
 
       return (
-        <div className="border border-slate-200 rounded-lg overflow-hidden">
+        <div className="border border-slate-200 bg-white rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[640px]">
               <thead>
@@ -184,6 +185,7 @@ export default function TabFotoAset({}: Props) {
                 {state.entries.map((e) => {
                   const foto = e[fotoKey] as string[] | null;
                   const tanggal = e[tanggalKey] as string | null;
+                  const waktuAkurat = e[waktuAkuratKey] as string | null;
                   return (
                     <tr key={e.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                       <td className="px-4 py-3 whitespace-nowrap">{asetLabel(e.aset)}</td>
@@ -192,7 +194,7 @@ export default function TabFotoAset({}: Props) {
                           {namaPemakai({ pekerja: e.pekerja, user: e.user })}
                         </p>
                       </td>
-                      <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatTanggalId(tanggal)}</td>
+                      <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(waktuAkurat, tanggal)}</td>
                       <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{foto?.length ?? 0} foto</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end">
@@ -258,7 +260,7 @@ export default function TabFotoAset({}: Props) {
                     <p className="font-medium text-slate-800 truncate">{p.jenis_kerusakan}</p>
                     <p className="text-xs text-slate-400 truncate">{p.keluhan}</p>
                   </td>
-                  <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatTanggalId(p.tanggal_lapor)}</td>
+                  <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(p.lapor_at, p.tanggal_lapor)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end">
                       {p.foto ? (

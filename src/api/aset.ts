@@ -153,6 +153,11 @@ export interface FotoPemakaiEntry {
   user?: { id: number; name: string } | null;
   tanggal_penerimaan: string | null;
   tanggal_pengembalian: string | null;
+  // waktu kejadian akurat (jam-menit-detik lengkap) -- tanggal_penerimaan/
+  // tanggal_pengembalian di atas cuma nyimpen tanggal doang. Lihat migration
+  // add_waktu_akurat_ke_aset_pemakai_dan_penanganan.
+  diterima_at: string | null;
+  dikembalikan_at: string | null;
   foto_penerimaan: string[] | null;
   foto_pengembalian: string[] | null;
   created_at: string;

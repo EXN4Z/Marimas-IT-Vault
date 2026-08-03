@@ -16,6 +16,10 @@ export interface AsetPenanganan {
   jenis_kerusakan: string;
   keluhan: string;
   tanggal_lapor: string;
+  // waktu kejadian akurat (jam-menit-detik lengkap) -- kolom tanggal_lapor
+  // di atas cuma nyimpen tanggal doang, jamnya selalu 00:00:00. Lihat
+  // migration add_waktu_akurat_ke_aset_pemakai_dan_penanganan.
+  lapor_at: string | null;
   foto: string | null;
   tanggal_selesai: string | null;
   harga_jasa: number | null;
