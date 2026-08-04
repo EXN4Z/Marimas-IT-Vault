@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import * as XLSX from 'xlsx';
 import { FileSpreadsheet, FileText, X, CheckSquare, Square } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { type Aset } from '../../api/aset';
 import { formatTanggalId, namaPemakai } from './asetHelpers';
 import { printRowsAsReport } from '../../utils/printCsvReport';
+import { downloadStyledExcel } from '../../utils/excelReport';
 
 const STATUS_LABEL: Record<Aset['status'], string> = {
   tersedia: 'Tersedia',
@@ -97,7 +97,7 @@ export default function AsetExportModal({ open, onClose, data }: Props) {
 
   const selectedColumns = EXPORT_COLUMNS.filter((c) => checkedKeys.has(c.key));
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (selectedColumns.length === 0) {
       toast.error('Pilih minimal 1 kolom data buat diexport.');
       return;
@@ -121,12 +121,22 @@ export default function AsetExportModal({ open, onClose, data }: Props) {
       const headers = selectedColumns.map((c) => c.label);
       const rows = data.map((a) => selectedColumns.map((c) => c.get(a)));
       const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      // Kalau kolom "Status" dicentang, index-nya dikirim ke builder Excel
+      // biar sel status itu diwarnai badge (hijau/merah/kuning) otomatis.
+      const statusColIdx = selectedColumns.findIndex((c) => c.key === 'status');
 
       if (fileType === 'excel') {
-        const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Aset'.slice(0, 31));
-        XLSX.writeFile(workbook, `Data Aset - ${today}.xlsx`);
+        await downloadStyledExcel(
+          {
+            title: 'Data Aset',
+            subtitle: `${data.length} aset sesuai filter saat ini`,
+            headers,
+            rows,
+            sheetName: 'Data Aset',
+            statusColumnIndexes: statusColIdx >= 0 ? [statusColIdx] : [],
+          },
+          `Data Aset - ${today}.xlsx`
+        );
       } else if (printWindow) {
         printRowsAsReport(
           headers,

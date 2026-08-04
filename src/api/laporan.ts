@@ -1,7 +1,7 @@
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
 import api from './axios';
 import { printCsvAsReport } from '../utils/printCsvReport';
+import { downloadStyledExcel } from '../utils/excelReport';
 
 type JenisLaporan = 'absensi' | 'izin';
 
@@ -64,28 +64,33 @@ async function downloadLaporanExcel(
     responseType: 'blob',
   });
 
-  
+
   const csvText = await (res.data as Blob).text();
 
   // PENTING: parsing manual pakai PapaParse, BUKAN XLSX.read(csvText, {type:'string'}).
-  // XLSX.read punya auto-detect tipe data yang suka salah nebak kolom tanggal/teks
-  // sebagai angka (mis. "21/07/2026 08:30" jadi serial number Excel seperti
-  // 46215.29 tanpa format tanggal yang benar). Dengan PapaParse, setiap sel dibaca
-  // sebagai string apa adanya, lalu aoa_to_sheet menyimpannya sebagai teks (type 's')
+  // Auto-detect tipe data ala SheetJS suka salah nebak kolom tanggal/teks sebagai
+  // angka (mis. "21/07/2026 08:30" jadi serial number Excel seperti 46215.29 tanpa
+  // format tanggal yang benar). Dengan PapaParse, setiap sel dibaca sebagai string
+  // apa adanya, dan builder Excel-nya (excelReport.ts) menyimpannya sebagai teks
   // tanpa konversi otomatis apapun.
   const parsed = Papa.parse<string[]>(csvText.trim(), { skipEmptyLines: true });
-  const rows = parsed.data;
+  const [headers, ...rows] = parsed.data;
 
-  const worksheet = XLSX.utils.aoa_to_sheet(rows);
-  const workbook = XLSX.utils.book_new();
-
-  // Nama sheet maks 31 karakter (batas Excel)
   const title = extraParams.status === 'telat' ? 'Laporan Karyawan Terlambat' : laporanTitle[jenis];
-  const sheetName = title.slice(0, 31);
-  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  const periodLabel = `Periode: ${bulanLabel[bulan - 1]} ${tahun}`;
+  const statusColIdx = headers.findIndex((h) => h.trim().toLowerCase() === 'status');
 
-  const filename = `${title} - ${bulanLabel[bulan - 1]} ${tahun}.xlsx`;
-  XLSX.writeFile(workbook, filename);
+  await downloadStyledExcel(
+    {
+      title,
+      subtitle: periodLabel,
+      headers,
+      rows,
+      sheetName: title,
+      statusColumnIndexes: statusColIdx >= 0 ? [statusColIdx] : [],
+    },
+    `${title} - ${bulanLabel[bulan - 1]} ${tahun}.xlsx`
+  );
 }
 
 interface AbsensiStatusParams {
@@ -127,17 +132,22 @@ export async function downloadLaporanAbsensiStatusExcel(p: AbsensiStatusParams):
 
   const csvText = await (res.data as Blob).text();
   const parsed = Papa.parse<string[]>(csvText.trim(), { skipEmptyLines: true });
-  const rows = parsed.data;
-
-  const worksheet = XLSX.utils.aoa_to_sheet(rows);
-  const workbook = XLSX.utils.book_new();
+  const [headers, ...rows] = parsed.data;
 
   const title = judulAbsensiStatus(p);
-  const sheetName = title.slice(0, 31);
-  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  const statusColIdx = headers.findIndex((h) => h.trim().toLowerCase() === 'status');
 
-  const filename = `${title} - ${p.label}.xlsx`;
-  XLSX.writeFile(workbook, filename);
+  await downloadStyledExcel(
+    {
+      title,
+      subtitle: `Periode: ${p.label}`,
+      headers,
+      rows,
+      sheetName: title,
+      statusColumnIndexes: statusColIdx >= 0 ? [statusColIdx] : [],
+    },
+    `${title} - ${p.label}.xlsx`
+  );
 }
 export function printLaporanAbsensi(bulan: number, tahun: number, targetWindow: Window): Promise<void> {
   return printLaporan('absensi', bulan, tahun, targetWindow);
