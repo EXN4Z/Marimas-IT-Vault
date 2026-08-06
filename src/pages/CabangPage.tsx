@@ -18,8 +18,7 @@ export default function CabangPage() {
   const [formNama, setFormNama] = useState('');
   const [formAlamat, setFormAlamat] = useState('');
   const [formTelepon, setFormTelepon] = useState('');
-  const [formLatitude, setFormLatitude] = useState('');
-  const [formLongitude, setFormLongitude] = useState('');
+  const [formLink, setFormLink] = useState('');
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -54,8 +53,7 @@ export default function CabangPage() {
     setFormNama('');
     setFormAlamat('');
     setFormTelepon('');
-    setFormLatitude('');
-    setFormLongitude('');
+    setFormLink('');
     setFormError('');
     setModalOpen(true);
   };
@@ -65,8 +63,7 @@ export default function CabangPage() {
     setFormNama(item.nama);
     setFormAlamat(item.alamat || '');
     setFormTelepon(item.telepon || '');
-    setFormLatitude(String(item.latitude));
-    setFormLongitude(String(item.longitude));
+    setFormLink(item.link || '');
     setFormError('');
     setModalOpen(true);
   };
@@ -82,23 +79,6 @@ export default function CabangPage() {
       return;
     }
 
-    // Terima format koma (gaya Indonesia, mis. "6,567847") maupun titik
-    // (gaya internasional, mis. "6.567847") -- keduanya dinormalisasi ke titik
-    // sebelum di-parse, dan dibulatkan ke 7 desimal (presisi ~1cm, cukup untuk
-    // GPS & sesuai kapasitas kolom database).
-    const normalizeCoord = (raw: string) => parseFloat(raw.trim().replace(',', '.'));
-
-    const lat = normalizeCoord(formLatitude);
-    const lng = normalizeCoord(formLongitude);
-    if (formLatitude.trim() === '' || formLongitude.trim() === '' || isNaN(lat) || isNaN(lng)) {
-      setFormError('Latitude dan longitude wajib diisi dengan angka yang valid.');
-      return;
-    }
-    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      setFormError('Koordinat tidak valid. Pastikan latitude (-90 s/d 90) dan longitude (-180 s/d 180).');
-      return;
-    }
-
     setSubmitting(true);
     setFormError('');
     try {
@@ -106,8 +86,7 @@ export default function CabangPage() {
         nama: formNama.trim(),
         alamat: formAlamat.trim(),
         telepon: formTelepon.trim(),
-        latitude: Math.round(lat * 1e7) / 1e7,
-        longitude: Math.round(lng * 1e7) / 1e7,
+        link: formLink.trim(),
       };
       if (editing) {
         await updateCabang(editing.id, payload);
@@ -119,8 +98,7 @@ export default function CabangPage() {
     } catch (err: any) {
       const msg =
         err.response?.data?.errors?.nama?.[0] ||
-        err.response?.data?.errors?.latitude?.[0] ||
-        err.response?.data?.errors?.longitude?.[0] ||
+        err.response?.data?.errors?.link?.[0] ||
         err.response?.data?.message ||
         'Gagal menyimpan cabang.';
       setFormError(msg);
@@ -230,15 +208,17 @@ export default function CabangPage() {
                   {item.pekerja_count} Pegawai
                 </span>
 
-                <a
-                  href={`https://www.google.com/maps?q=${item.latitude},${item.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-sky-600 hover:text-sky-700"
-                >
-                  <Map size={13} />
-                  Lihat di Maps
-                </a>
+                {item.link && (
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-sky-600 hover:text-sky-700"
+                  >
+                    <Map size={13} />
+                    Lihat Lokasi
+                  </a>
+                )}
               </div>
             </div>
           ))}
@@ -291,33 +271,15 @@ export default function CabangPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-slate-500 mb-1 block">Latitude</label>
-                  <input
-                    value={formLatitude}
-                    onChange={(e) => setFormLatitude(e.target.value)}
-                    placeholder="-6.9666"
-                    inputMode="decimal"
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-500 mb-1 block">Longitude</label>
-                  <input
-                    value={formLongitude}
-                    onChange={(e) => setFormLongitude(e.target.value)}
-                    placeholder="110.4166"
-                    inputMode="decimal"
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  />
-                </div>
+              <div>
+                <label className="text-xs font-medium text-slate-500 mb-1 block">Link Lokasi (Google Maps, dsb)</label>
+                <input
+                  value={formLink}
+                  onChange={(e) => setFormLink(e.target.value)}
+                  placeholder="https://maps.app.goo.gl/..."
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                />
               </div>
-              <p className="text-xs text-slate-400 -mt-2">
-                Tips: buka lokasi di Google Maps, klik kanan pada titiknya, lalu salin koordinat yang muncul
-                (format: latitude, longitude). Boleh pakai koma atau titik sebagai desimal — otomatis dibulatkan
-                ke 7 angka di belakang koma (± 1 cm, sudah lebih presisi dari akurasi GPS).
-              </p>
 
               {formError && (
                 <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
