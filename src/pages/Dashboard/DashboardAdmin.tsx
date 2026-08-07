@@ -4,38 +4,32 @@ import {
   StatCardsGrid,
   KehadiranMingguanCard,
   DepartemenDistribusiCard,
-  BebanKerjaCard,
-  NotifikasiCard,
-  AgendaCard,
   HeroPengajuanChart,
   RingkasanAsetCard,
-  TopKehadiranCard,
-  TopPengajuanCard,
-  AsetPerJenisCard,
-  AsetPerhatianCard,
 } from './Shared';
 
 // Dashboard untuk role admin/hr/manajer — dapet semua section, termasuk
 // hero chart "Pengajuan Izin Tahun Ini" yang gak ditampilin di DashboardUser
 // maupun DashboardCabang.
+// CATATAN: TopKehadiran, TopPengajuan, BebanKerja, Notifikasi, Agenda,
+// AsetPerJenis, AsetPerhatian sengaja dicabut dari tampilan sementara
+// (bukan dihapus dari Shared.tsx/useDashboardData.ts) -- nunggu rencana baru.
 export default function DashboardAdmin() {
   const {
     loading,
     error,
     statsCard,
-    notifications,
-    handleMarkAsRead,
     kehadiranMingguan,
-    bebanKerja,
-    agenda,
-    agendaLoading,
     departemen,
   } = useDashboardCore();
 
-  const { ringkasanAset, grafikPengajuan, topKehadiran, topKaryawan, asetPerJenis, asetPerhatian } =
-    useDashboardAnalytics(true, {
-      ringkasanIzin: false,
-    });
+  const { ringkasanAset, grafikPengajuan } = useDashboardAnalytics(true, {
+    ringkasanIzin: false,
+    topKehadiran: false,
+    topKaryawan: false,
+    asetPerJenis: false,
+    asetPerhatian: false,
+  });
 
   const statCards = buildStatCards(statsCard, {
     kehadiran: QrCode,
@@ -67,22 +61,6 @@ export default function DashboardAdmin() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <KehadiranMingguanCard kehadiranMingguan={kehadiranMingguan} />
         <DepartemenDistribusiCard departemen={departemen} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        <TopKehadiranCard topKehadiran={topKehadiran} />
-        <TopPengajuanCard topKaryawan={topKaryawan} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        <AsetPerJenisCard asetPerJenis={asetPerJenis} />
-        <AsetPerhatianCard asetPerhatian={asetPerhatian} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-        <BebanKerjaCard bebanKerja={bebanKerja} />
-        <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
-        <AgendaCard agenda={agenda} agendaLoading={agendaLoading} />
       </div>
     </>
   );

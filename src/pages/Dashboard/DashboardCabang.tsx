@@ -4,39 +4,30 @@ import {
   StatCardsGrid,
   KehadiranMingguanCard,
   DepartemenDistribusiCard,
-  BebanKerjaCard,
-  NotifikasiCard,
-  AgendaCard,
   HeroPengajuanChart,
   RingkasanIzinCard,
-  TopKehadiranCard,
-  TopPengajuanCard,
 } from './Shared';
 
 // Dashboard untuk role cabang — dapet analytics yang di-scope ke karyawan
-// cabang tsb (termasuk sekarang "Pengajuan Izin Tahun Ini"), TAPI TIDAK
-// dapet section Inventaris (itu murni buat admin/hr/manajer).
+// cabang tsb (termasuk "Pengajuan Izin Tahun Ini"), TAPI TIDAK dapet
+// section Inventaris (itu murni buat admin/hr/manajer).
+// CATATAN: TopKehadiran, TopPengajuan, BebanKerja, Notifikasi, Agenda
+// sengaja dicabut dari tampilan sementara (bukan dihapus dari
+// Shared.tsx/useDashboardData.ts) -- nunggu rencana baru.
 export default function DashboardCabang() {
   const {
     loading,
     error,
     statsCard,
-    notifications,
-    handleMarkAsRead,
     kehadiranMingguan,
-    bebanKerja,
-    agenda,
-    agendaLoading,
     departemen,
   } = useDashboardCore();
 
-  // UBAH: grafikPengajuan sekarang ikut dinyalain -- endpoint-nya sudah
-  // di-scope ke cabang di backend (lihat DashboardController::grafikPengajuan).
-  const { ringkasanIzin, grafikPengajuan, topKehadiran, topKaryawan } = useDashboardAnalytics(true, {
+  const { ringkasanIzin, grafikPengajuan } = useDashboardAnalytics(true, {
     ringkasanIzin: true,
     ringkasanAset: false,
-    topKehadiran: true,
-    topKaryawan: true,
+    topKehadiran: false,
+    topKaryawan: false,
     grafikPengajuan: true,
   });
 
@@ -62,8 +53,6 @@ export default function DashboardCabang() {
 
       <StatCardsGrid statCards={statCards} />
 
-      {/* BARU: hero chart "Pengajuan Izin Tahun Ini", sama pola kayak
-          Dashboard Admin, tapi datanya sudah di-scope ke cabang ini saja. */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
         <HeroPengajuanChart grafikPengajuan={grafikPengajuan} />
         <RingkasanIzinCard ringkasanIzin={ringkasanIzin} compact />
@@ -72,17 +61,6 @@ export default function DashboardCabang() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <KehadiranMingguanCard kehadiranMingguan={kehadiranMingguan} />
         <DepartemenDistribusiCard departemen={departemen} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        <TopKehadiranCard topKehadiran={topKehadiran} />
-        <TopPengajuanCard topKaryawan={topKaryawan} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-        <BebanKerjaCard bebanKerja={bebanKerja} />
-        <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
-        <AgendaCard agenda={agenda} agendaLoading={agendaLoading} />
       </div>
     </>
   );
