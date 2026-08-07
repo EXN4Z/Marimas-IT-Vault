@@ -4,7 +4,7 @@ import {
   StatCardsGrid,
   RingkasanAsetCard,
   HeroTrenPembelianAsetChart,
-  StatusAsetDonutCard,
+  AsetPerhatianCard,
   AsetPerJenisCard,
 } from './Shared';
 
@@ -15,17 +15,20 @@ import {
 // sengaja dicabut dari tampilan sementara (bukan dihapus dari
 // Shared.tsx/useDashboardData.ts) -- nunggu rencana baru.
 // Hero pengajuan izin, kehadiran mingguan, & distribusi departemen sudah
-// diganti data inventaris (tren pembelian aset, status aset, jenis aset)
-// -- section ini murni inventaris jadi gak relevan lagi buat admin.
+// diganti data inventaris (tren pembelian aset, aset butuh perhatian,
+// jenis aset) -- section ini murni inventaris jadi gak relevan lagi
+// buat admin. Distribusi Status Aset (donut) dicabut karena tumpang
+// tindih sama RingkasanAsetCard -- diganti Aset Butuh Perhatian yang
+// lebih actionable (rusak berat / dalam penanganan / garansi mau habis).
 export default function DashboardAdmin() {
   const { loading, error, statsCard } = useDashboardCore();
 
-  const { ringkasanAset, trenPembelianAset, statusAsetDistribusi, asetPerJenis } = useDashboardAnalytics(true, {
+  const { ringkasanAset, trenPembelianAset, asetPerhatian, asetPerJenis } = useDashboardAnalytics(true, {
     ringkasanIzin: false,
     grafikPengajuan: false,
     topKehadiran: false,
     topKaryawan: false,
-    asetPerhatian: false,
+    statusAsetDistribusi: false,
   });
 
   const statCards = buildStatCards(statsCard, {
@@ -56,7 +59,7 @@ export default function DashboardAdmin() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        <StatusAsetDonutCard statusAsetDistribusi={statusAsetDistribusi} />
+        <AsetPerhatianCard asetPerhatian={asetPerhatian} />
         <AsetPerJenisCard asetPerJenis={asetPerJenis} />
       </div>
     </>
