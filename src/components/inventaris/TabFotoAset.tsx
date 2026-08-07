@@ -237,7 +237,7 @@ export default function TabFotoAset({}: Props) {
     }
 
     return (
-      <div className="border border-slate-200 rounded-lg overflow-hidden">
+      <div className="border border-slate-200 bg-white rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[640px]">
             <thead>

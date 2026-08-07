@@ -51,17 +51,6 @@ const STATUS_STYLE: Record<AsetStatus, string> = {
   dijual: 'bg-purple-50 text-purple-700',
 };
 
-// Dipakai dropdown filter status (titik warna solid, senada sama STATUS_STYLE
-// di atas) supaya tiap opsi gampang dibedain sekilas pandang, gak cuma teks.
-const STATUS_DOT: Record<AsetStatus, string> = {
-  tersedia: 'bg-emerald-500',
-  dipakai: 'bg-amber-500',
-  menunggu_perbaikan: 'bg-yellow-400',
-  diperbaiki: 'bg-orange-500',
-  rusak_berat: 'bg-red-600',
-  dijual: 'bg-purple-500',
-};
-
 // urutan tampil di tabel: tersedia paling atas, lalu dipakai, lalu status
 // yang lagi dalam proses penanganan, rusak, rusak_berat, dan dijual paling
 // bawah — dipakai sebagai key sort di filteredAset, BUKAN untuk urutan
@@ -659,7 +648,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
 
       {/* Filter status sekarang pakai tab nav (ScrollableTabBar) -- sama pola
           kayak Forum Penanganan Aset, biar konsisten di seluruh halaman
-          Inventaris. STATUS_DOT tetap dipakai sebagai titik warna di label. */}
+          Inventaris. */}
       <ScrollableTabBar
         className="mb-4"
         activeTab={statusFilter === '' ? 'semua' : statusFilter}
@@ -674,7 +663,6 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
           ...(Object.keys(STATUS_LABEL) as AsetStatus[]).map((s) => ({
             key: s,
             label: STATUS_LABEL[s],
-            icon: <span className={`w-2 h-2 rounded-full ${STATUS_DOT[s]}`} />,
             badge: statusCounts[s],
             badgeClassName: statusFilter === s ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
           })),
