@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Check, ListFilter, Upload, Loader2 } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2 } from 'lucide-react';
 import Pagination from '../shared/Pagination';
+import ScrollableTabBar from '../shared/ScrollableTabBar';
 import AsetFormModal from './AsetFormModal';
 import AsetSerahTerimaModal from './AsetSerahTerimaModal';
 import AsetPengembalianModal from './AsetPengembalianModal';
@@ -103,30 +104,6 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   const [error, setError] = useState('');
 
   const [statusFilter, setStatusFilter] = useState<AsetStatus | ''>('');
-
-  // Dropdown "Semua Status" custom (bukan <select> native) biar bisa kasih
-  // titik warna + jumlah aset per status. statusMenuRef dipakai buat
-  // deteksi klik di luar dropdown supaya otomatis ke-close.
-  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
-  const statusMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!statusMenuOpen) return;
-    function handleClickOutside(e: MouseEvent) {
-      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) {
-        setStatusMenuOpen(false);
-      }
-    }
-    function handleEscape(e: KeyboardEvent) {
-      if (e.key === 'Escape') setStatusMenuOpen(false);
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [statusMenuOpen]);
 
   // Pagination tabel aset — style sama kayak pager Riwayat Aset (10 per
   // halaman, angka + elipsis). Client-side krn /api/aset gak dipaging
@@ -530,6 +507,105 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
     setAsetPage(1);
   }, [search, statusFilter, onlyMenipis]);
 
+  // Dipakai bareng oleh tabel (desktop) & card (mobile) biar tombol aksinya
+  // gak ke-duplikasi/nyimpang antara 2 tampilan itu.
+  const renderAksiAset = (a: Aset) => {
+    const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
+    const bolehLihatDetail = isAdmin || akuPeminjamnya;
+    return (
+      <>
+        {bolehLihatDetail && (
+          <button
+            onClick={() => openDetail(a.id)}
+            title="Detail"
+            className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+          >
+            <Eye size={15} />
+          </button>
+        )}
+
+        {isAdmin && (
+          <>
+            {a.status === 'tersedia' && (
+              <button
+                onClick={() => setSerahTerimaAset(a)}
+                title="Serahkan ke Karyawan"
+                className="flex items-center gap-1.5 text-xs font-semibold text-white bg-slate-900 px-3 py-2 rounded-lg hover:bg-slate-800 transition"
+              >
+                <HandCoins size={14} />
+                Serahkan
+              </button>
+            )}
+            {a.status === 'dipakai' && a.pemakai_saat_ini && (
+              <button
+                onClick={() => setPengembalianTarget({ aset: a, pemakai: a.pemakai_saat_ini! })}
+                title="Terima Kembali"
+                className="flex items-center gap-1.5 text-xs font-semibold text-white bg-emerald-600 px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
+              >
+                <Undo2 size={14} />
+                Terima Kembali
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setEditingAset(a);
+                setFormOpen(true);
+              }}
+              title="Edit"
+              className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+            >
+              <Pencil size={15} />
+            </button>
+            <button
+              onClick={() => {
+                setDeleteError('');
+                setDeleteForceAvailable(false);
+                setDeleteTarget(a);
+              }}
+              title="Hapus"
+              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+            >
+              <Trash2 size={15} />
+            </button>
+          </>
+        )}
+
+        {!isAdmin && akuPeminjamnya && a.status === 'dipakai' && a.pemakai_saat_ini && (
+          <button
+            onClick={() => setPengembalianTarget({ aset: a, pemakai: a.pemakai_saat_ini! })}
+            title="Kembalikan"
+            className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg hover:bg-emerald-100 transition"
+          >
+            <Undo2 size={14} />
+            Kembalikan
+          </button>
+        )}
+
+        {!isAdmin && akuPeminjamnya && a.status === 'dipakai' && (
+          <button
+            onClick={() => setPerbaikanAsetTarget(a)}
+            title="Lapor Kerusakan"
+            className="flex items-center gap-1.5 text-xs font-semibold text-red-700 bg-red-50 px-3 py-2 rounded-lg hover:bg-red-100 transition"
+          >
+            <Wrench size={14} />
+            Lapor Rusak
+          </button>
+        )}
+        {!isAdmin && akuPeminjamnya && (a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak_berat') && (
+          <span
+            title="Laporan kerusakan sudah dikirim, menunggu ditangani admin"
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg cursor-default"
+          >
+            <Wrench size={14} />
+            Sudah Lapor
+          </span>
+        )}
+      </>
+    );
+  };
+
+  const [expandedAsetId, setExpandedAsetId] = useState<number | null>(null);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
@@ -581,84 +657,29 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
         </p>
       )}
 
-      <div className="flex items-center gap-3 mb-4 flex-wrap">
-        <div className="relative" ref={statusMenuRef}>
-          <button
-            type="button"
-            onClick={() => setStatusMenuOpen((v) => !v)}
-            aria-haspopup="listbox"
-            aria-expanded={statusMenuOpen}
-            className={`flex items-center gap-2 pl-3 pr-2.5 py-2.5 border rounded-lg text-sm bg-white transition focus:outline-none focus:ring-2 focus:ring-slate-900 ${
-              statusMenuOpen ? 'border-slate-900 ring-2 ring-slate-900' : 'border-slate-200 hover:border-slate-300'
-            }`}
-          >
-            <ListFilter size={15} className="text-slate-400" />
-            {statusFilter ? (
-              <span className="flex items-center gap-1.5 font-medium text-slate-700">
-                <span className={`w-2 h-2 rounded-full ${STATUS_DOT[statusFilter]}`} />
-                {STATUS_LABEL[statusFilter]}
-              </span>
-            ) : (
-              <span className="text-slate-600">Semua Status</span>
-            )}
-            <span className="text-xs text-slate-400 bg-slate-100 rounded-full px-1.5 py-0.5 leading-none">
-              {statusFilter ? statusCounts[statusFilter] : asetList.length}
-            </span>
-            <ChevronDown
-              size={15}
-              className={`text-slate-400 transition-transform ${statusMenuOpen ? 'rotate-180' : ''}`}
-            />
-          </button>
-
-          {statusMenuOpen && (
-            <div
-              role="listbox"
-              className="absolute z-20 mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-900/5 py-1.5"
-            >
-              <button
-                type="button"
-                role="option"
-                aria-selected={statusFilter === ''}
-                onClick={() => {
-                  setStatusFilter('');
-                  setStatusMenuOpen(false);
-                }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left hover:bg-slate-50 transition ${
-                  statusFilter === '' ? 'text-slate-900 font-medium' : 'text-slate-600'
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full bg-slate-300 flex-shrink-0" />
-                <span className="flex-1">Semua Status</span>
-                <span className="text-xs text-slate-400">{asetList.length}</span>
-                {statusFilter === '' && <Check size={14} className="text-slate-900" />}
-              </button>
-
-              <div className="my-1 border-t border-slate-100" />
-
-              {(Object.keys(STATUS_LABEL) as AsetStatus[]).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  role="option"
-                  aria-selected={statusFilter === s}
-                  onClick={() => {
-                    setStatusFilter(s);
-                    setStatusMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left hover:bg-slate-50 transition ${
-                    statusFilter === s ? 'text-slate-900 font-medium' : 'text-slate-600'
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_DOT[s]}`} />
-                  <span className="flex-1">{STATUS_LABEL[s]}</span>
-                  <span className="text-xs text-slate-400">{statusCounts[s]}</span>
-                  {statusFilter === s && <Check size={14} className="text-slate-900" />}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Filter status sekarang pakai tab nav (ScrollableTabBar) -- sama pola
+          kayak Forum Penanganan Aset, biar konsisten di seluruh halaman
+          Inventaris. STATUS_DOT tetap dipakai sebagai titik warna di label. */}
+      <ScrollableTabBar
+        className="mb-4"
+        activeTab={statusFilter === '' ? 'semua' : statusFilter}
+        onChange={(key) => setStatusFilter(key === 'semua' ? '' : (key as AsetStatus))}
+        tabs={[
+          {
+            key: 'semua' as const,
+            label: 'Semua Status',
+            badge: asetList.length,
+            badgeClassName: statusFilter === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
+          },
+          ...(Object.keys(STATUS_LABEL) as AsetStatus[]).map((s) => ({
+            key: s,
+            label: STATUS_LABEL[s],
+            icon: <span className={`w-2 h-2 rounded-full ${STATUS_DOT[s]}`} />,
+            badge: statusCounts[s],
+            badgeClassName: statusFilter === s ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
+          })),
+        ]}
+      />
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         {loading && <p className="text-sm text-slate-400 text-center py-8">Memuat data...</p>}
@@ -668,7 +689,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
         )}
 
         {!loading && !error && filteredAset.length > 0 && (
-          <div className="overflow-x-auto">
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-[1180px] text-sm min-w-[760px]">
               <thead>
                 <tr className="border-b border-slate-100 text-middle text-xs text-slate-400 uppercase tracking-wide">
@@ -682,9 +703,6 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
               </thead>
               <tbody>
                 {pageAset.map((a) => {
-                  const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
-                  const bolehLihatDetail = isAdmin || akuPeminjamnya;
-
                   return (
                     <tr key={a.id} className="text-center border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                       <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{a.kode_aset}</td>
@@ -711,100 +729,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                       </td>
                       <td className="px-6 py-3">
                         <div className="flex items-center justify-end gap-1 flex-nowrap">
-                          {bolehLihatDetail && (
-                            <button
-                              onClick={() => openDetail(a.id)}
-                              title="Detail"
-                              className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                            >
-                              <Eye size={15} />
-                            </button>
-                          )}
-
-                          {isAdmin && (
-                            <>
-                              {a.status === 'tersedia' && (
-                                <button
-                                  onClick={() => setSerahTerimaAset(a)}
-                                  title="Serahkan ke Karyawan"
-                                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-slate-900 px-3 py-2 rounded-lg hover:bg-slate-800 transition"
-                                >
-                                  <HandCoins size={14} />
-                                  Serahkan
-                                </button>
-                              )}
-                              {a.status === 'dipakai' && a.pemakai_saat_ini && (
-                                <button
-                                  onClick={() => setPengembalianTarget({ aset: a, pemakai: a.pemakai_saat_ini! })}
-                                  title="Terima Kembali"
-                                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-emerald-600 px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
-                                >
-                                  <Undo2 size={14} />
-                                  Terima Kembali
-                                </button>
-                              )}
-                              {/* Tombol Jual sengaja TIDAK ditaruh di sini lagi — sekarang cuma
-                                  ada di panel detail (buka lewat ikon mata / "Detail" di atas),
-                                  biar admin liat dulu info lengkap asetnya sebelum jual. */}
-                              <button
-                                onClick={() => {
-                                  setEditingAset(a);
-                                  setFormOpen(true);
-                                }}
-                                title="Edit"
-                                className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                              >
-                                <Pencil size={15} />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setDeleteError('');
-                                  setDeleteForceAvailable(false);
-                                  setDeleteTarget(a);
-                                }}
-                                title="Hapus"
-                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            </>
-                          )}
-
-                          {/* KARYAWAN/CABANG yang lagi minjem aset ini: kembalikan langsung dari
-                              tabel, gak perlu buka detail dulu */}
-                          {!isAdmin && akuPeminjamnya && a.status === 'dipakai' && a.pemakai_saat_ini && (
-                            <button
-                              onClick={() => setPengembalianTarget({ aset: a, pemakai: a.pemakai_saat_ini! })}
-                              title="Kembalikan"
-                              className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg hover:bg-emerald-100 transition"
-                            >
-                              <Undo2 size={14} />
-                              Kembalikan
-                            </button>
-                          )}
-
-                          {/* KARYAWAN/CABANG yang lagi minjem: lapor kerusakan. Begitu lapor, status
-                              aset berubah dari 'dipakai' jadi 'menunggu_perbaikan'/'diperbaiki' —
-                              dipake sebagai sinyal "udah lapor", tombol ganti jadi badge nonaktif */}
-                          {!isAdmin && akuPeminjamnya && a.status === 'dipakai' && (
-                            <button
-                              onClick={() => setPerbaikanAsetTarget(a)}
-                              title="Lapor Kerusakan"
-                              className="flex items-center gap-1.5 text-xs font-semibold text-red-700 bg-red-50 px-3 py-2 rounded-lg hover:bg-red-100 transition"
-                            >
-                              <Wrench size={14} />
-                              Lapor Rusak
-                            </button>
-                          )}
-                          {!isAdmin && akuPeminjamnya && (a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak_berat') && (
-                            <span
-                              title="Laporan kerusakan sudah dikirim, menunggu ditangani admin"
-                              className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg cursor-default"
-                            >
-                              <Wrench size={14} />
-                              Sudah Lapor
-                            </span>
-                          )}
+                          {renderAksiAset(a)}
                         </div>
                       </td>
                     </tr>
@@ -812,6 +737,55 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* MOBILE: list card dengan dropdown expand-in-place per baris,
+            gantiin tabel yang kepenuhan di layar sempit. Pola sama kayak
+            "Dropdown detail" Riwayat Pemakai/Perbaikan di panel detail. */}
+        {!loading && !error && filteredAset.length > 0 && (
+          <div className="sm:hidden flex flex-col divide-y divide-slate-100">
+            {pageAset.map((a) => {
+              const expanded = expandedAsetId === a.id;
+              return (
+                <div key={a.id} className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedAsetId(expanded ? null : a.id)}
+                    className="w-full flex items-start justify-between gap-2 text-left"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-800">{a.kode_aset}</p>
+                      <p className="text-xs text-slate-500 truncate">
+                        {a.jenis?.nama || '-'} · {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}
+                      </p>
+                      <span className={`inline-block mt-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_STYLE[a.status]}`}>
+                        {STATUS_LABEL[a.status]}
+                      </span>
+                    </div>
+                    <ChevronDown
+                      size={16}
+                      className={`text-slate-400 flex-shrink-0 mt-1 transition-transform ${expanded ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+
+                  {expanded && (
+                    <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-2">
+                      <p className="text-xs text-slate-500">
+                        Dipakai Oleh:{' '}
+                        <span className="text-slate-700 font-medium">
+                          {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}
+                          {a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && ' (Cabang)'}
+                        </span>
+                      </p>
+                      <div className="flex items-center flex-wrap gap-1.5">
+                        {renderAksiAset(a)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 
