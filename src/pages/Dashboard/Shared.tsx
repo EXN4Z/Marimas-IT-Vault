@@ -659,6 +659,16 @@ export function AsetPerJenisCard({ asetPerJenis }: { asetPerJenis: AsetPerJenis[
 }
 
 // ==== Aset butuh perhatian — khusus admin (inventaris) ====
+// Donut chart (bukan cuma daftar) biar area kartu ini gak keliatan kosong
+// sebelah kanan seperti sebelumnya -- pola visualnya disamain dengan
+// StatusAsetDonutCard di atas. Daftar angka tetap ditampilkan di bawah
+// donut, karena tiap baris bisa jadi actionable checklist buat admin.
+const ASET_PERHATIAN_COLOR: Record<string, string> = {
+  'Rusak Berat': THEME.rose,
+  'Dalam Penanganan': THEME.amber,
+  'Garansi < 30 Hari': THEME.orange,
+};
+
 export function AsetPerhatianCard({ asetPerhatian }: { asetPerhatian?: AsetPerhatian }) {
   const rusak = asetPerhatian?.rusak ?? 0;
   const dalamPenanganan = asetPerhatian?.dalamPenanganan ?? 0;
@@ -671,6 +681,10 @@ export function AsetPerhatianCard({ asetPerhatian }: { asetPerhatian?: AsetPerha
     { label: 'Garansi < 30 Hari', value: garansiSegeraHabis, icon: ShieldAlert, color: 'text-orange-500 bg-orange-50' },
   ];
 
+  // Data buat donut -- cuma masukin baris yang jumlahnya > 0, sama kayak
+  // pola StatusAsetDistribusi (biar slice kosong gak nongol di chart).
+  const donutData = rows.filter((r) => r.value > 0).map((r) => ({ label: r.label, jumlah: r.value }));
+
   return (
     <div className={cardClass}>
       <div className="flex items-center justify-between mb-4">
@@ -681,22 +695,50 @@ export function AsetPerhatianCard({ asetPerhatian }: { asetPerhatian?: AsetPerha
           </span>
         )}
       </div>
+
       {totalPerhatian === 0 ? (
         <p className="text-sm text-slate-400">Semua aset dalam kondisi aman.</p>
       ) : (
-        <div className="flex flex-col gap-3">
-          {rows.map((r) => (
-            <div key={r.label} className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${r.color}`}>
-                  <r.icon size={16} />
-                </div>
-                <span className="text-sm text-slate-700 font-medium">{r.label}</span>
-              </div>
-              <span className="text-lg font-bold text-slate-900">{r.value}</span>
+        <>
+          <div className="h-48 relative mb-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={donutData}
+                  dataKey="jumlah"
+                  nameKey="label"
+                  innerRadius={50}
+                  outerRadius={72}
+                  paddingAngle={2}
+                  strokeWidth={0}
+                >
+                  {donutData.map((entry) => (
+                    <Cell key={entry.label} fill={ASET_PERHATIAN_COLOR[entry.label] ?? THEME.axis} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-2xl font-extrabold text-slate-900">{totalPerhatian}</span>
+              <span className="text-xs text-slate-400">butuh perhatian</span>
             </div>
-          ))}
-        </div>
+          </div>
+
+          <div className="flex flex-col gap-3 pt-3 border-t border-slate-100">
+            {rows.map((r) => (
+              <div key={r.label} className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${r.color}`}>
+                    <r.icon size={16} />
+                  </div>
+                  <span className="text-sm text-slate-700 font-medium">{r.label}</span>
+                </div>
+                <span className="text-lg font-bold text-slate-900">{r.value}</span>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
