@@ -11,7 +11,7 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
-import { ClipboardList, Clock, TrendingUp, Boxes } from 'lucide-react';
+import { ClipboardList, Clock, TrendingUp, Boxes, AlertTriangle, Wrench, ShieldAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type {
   AccentColor,
@@ -24,6 +24,8 @@ import type {
   RingkasanAset,
   TrenPengajuan,
   TopKaryawan,
+  AsetPerJenis,
+  AsetPerhatian,
 } from './useDashboardData';
 import type { AgendaItem } from '../../api/agenda';
 
@@ -482,6 +484,74 @@ export function NotifikasiCard({
             );
           })}
         </ul>
+      )}
+    </div>
+  );
+}
+
+// ==== Distribusi aset per jenis — khusus admin (inventaris) ====
+export function AsetPerJenisCard({ asetPerJenis }: { asetPerJenis: AsetPerJenis[] }) {
+  return (
+    <div className={cardClass}>
+      <h3 className="text-base font-semibold text-slate-900 mb-4">Distribusi Aset per Jenis</h3>
+      {asetPerJenis.length === 0 ? (
+        <p className="text-sm text-slate-400">Belum ada data aset</p>
+      ) : (
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={asetPerJenis} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={THEME.grid} horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 12, fill: THEME.axis }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <YAxis dataKey="jenis" type="category" tick={{ fontSize: 12, fill: '#475569' }} axisLine={false} tickLine={false} width={90} />
+              <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
+              <Bar dataKey="jumlah" fill={THEME.orange} radius={[0, 8, 8, 0]} barSize={18} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ==== Aset butuh perhatian — khusus admin (inventaris) ====
+export function AsetPerhatianCard({ asetPerhatian }: { asetPerhatian?: AsetPerhatian }) {
+  const rusak = asetPerhatian?.rusak ?? 0;
+  const dalamPenanganan = asetPerhatian?.dalamPenanganan ?? 0;
+  const garansiSegeraHabis = asetPerhatian?.garansiSegeraHabis ?? 0;
+  const totalPerhatian = rusak + dalamPenanganan + garansiSegeraHabis;
+
+  const rows = [
+    { label: 'Rusak Berat', value: rusak, icon: AlertTriangle, color: 'text-rose-500 bg-rose-50' },
+    { label: 'Dalam Penanganan', value: dalamPenanganan, icon: Wrench, color: 'text-amber-500 bg-amber-50' },
+    { label: 'Garansi < 30 Hari', value: garansiSegeraHabis, icon: ShieldAlert, color: 'text-orange-500 bg-orange-50' },
+  ];
+
+  return (
+    <div className={cardClass}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-base font-semibold text-slate-900">Aset Butuh Perhatian</h3>
+        {totalPerhatian > 0 && (
+          <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">
+            {totalPerhatian} aset
+          </span>
+        )}
+      </div>
+      {totalPerhatian === 0 ? (
+        <p className="text-sm text-slate-400">Semua aset dalam kondisi aman.</p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {rows.map((r) => (
+            <div key={r.label} className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${r.color}`}>
+                  <r.icon size={16} />
+                </div>
+                <span className="text-sm text-slate-700 font-medium">{r.label}</span>
+              </div>
+              <span className="text-lg font-bold text-slate-900">{r.value}</span>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

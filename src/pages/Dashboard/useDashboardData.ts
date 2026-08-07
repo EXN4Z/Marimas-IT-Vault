@@ -76,6 +76,22 @@ export interface RingkasanAset {
   dijual: number;
 }
 
+// Distribusi jumlah aset per jenis (laptop, printer, kendaraan, dst) —
+// dipakai kartu "Distribusi Aset per Jenis" di dashboard admin.
+export interface AsetPerJenis {
+  jenis: string;
+  jumlah: number;
+}
+
+// Ringkasan aset yang butuh perhatian: lagi rusak/proses perbaikan, atau
+// garansinya bakal habis dalam 30 hari ke depan — dipakai kartu
+// "Aset Butuh Perhatian" di dashboard admin.
+export interface AsetPerhatian {
+  rusak: number; // status rusak_berat
+  dalamPenanganan: number; // status menunggu_perbaikan + diperbaiki
+  garansiSegeraHabis: number; // tanggal_garansi <= 30 hari dari sekarang
+}
+
 export interface NotificationItem {
   id: string;
   data: { message: string; nomor_izin?: string; status?: string; [key: string]: any };
@@ -170,6 +186,47 @@ export async function fetchRingkasanAset(): Promise<RingkasanAset> {
   }
 
   return { total: list.length, tersedia, dipakai, rusakBerat, dijual };
+}
+
+const GARANSI_WARNING_DAYS = 30;
+
+export async function fetchAsetPerJenis(): Promise<AsetPerJenis[]> {
+  const list = await getAset();
+  const counts = new Map<string, number>();
+
+  for (const a of list) {
+    const nama = a.jenis?.nama ?? 'Tanpa Jenis';
+    counts.set(nama, (counts.get(nama) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries())
+    .map(([jenis, jumlah]) => ({ jenis, jumlah }))
+    .sort((a, b) => b.jumlah - a.jumlah);
+}
+
+export async function fetchAsetPerhatian(): Promise<AsetPerhatian> {
+  const list = await getAset();
+  const now = Date.now();
+  const warningMs = GARANSI_WARNING_DAYS * 24 * 60 * 60 * 1000;
+
+  let rusak = 0;
+  let dalamPenanganan = 0;
+  let garansiSegeraHabis = 0;
+
+  for (const a of list) {
+    if (a.status === 'rusak_berat') rusak += 1;
+    if (a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki') dalamPenanganan += 1;
+
+    if (a.tanggal_garansi) {
+      const garansiTime = new Date(a.tanggal_garansi).getTime();
+      if (!isNaN(garansiTime)) {
+        const sisaMs = garansiTime - now;
+        if (sisaMs >= 0 && sisaMs <= warningMs) garansiSegeraHabis += 1;
+      }
+    }
+  }
+
+  return { rusak, dalamPenanganan, garansiSegeraHabis };
 }
 
 export async function fetchGrafikPengajuan(): Promise<TrenPengajuan[]> {
@@ -426,6 +483,8 @@ export function useDashboardAnalytics(
     grafikPengajuan?: boolean;
     topKehadiran?: boolean;
     topKaryawan?: boolean;
+    asetPerJenis?: boolean;
+    asetPerhatian?: boolean;
   } = {}
 ) {
   const {
@@ -434,6 +493,8 @@ export function useDashboardAnalytics(
     grafikPengajuan: wantGrafik = true,
     topKehadiran: wantTopKehadiran = true,
     topKaryawan: wantTopKaryawan = true,
+    asetPerJenis: wantAsetPerJenis = true,
+    asetPerhatian: wantAsetPerhatian = true,
   } = include;
 
   const { data: ringkasanIzin } = useQuery({
@@ -471,11 +532,27 @@ export function useDashboardAnalytics(
     staleTime: 2 * 60 * 1000,
   });
 
+  const { data: asetPerJenis } = useQuery({
+    queryKey: ['aset-per-jenis'],
+    queryFn: fetchAsetPerJenis,
+    enabled: enabled && wantAsetPerJenis,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: asetPerhatian } = useQuery({
+    queryKey: ['aset-perhatian'],
+    queryFn: fetchAsetPerhatian,
+    enabled: enabled && wantAsetPerhatian,
+    staleTime: 2 * 60 * 1000,
+  });
+
   return {
     ringkasanIzin,
     ringkasanAset,
     grafikPengajuan: grafikPengajuan ?? [],
     topKehadiran: topKehadiran ?? [],
     topKaryawan: topKaryawan ?? [],
+    asetPerJenis: asetPerJenis ?? [],
+    asetPerhatian,
   };
 }

@@ -11,6 +11,8 @@ import {
   RingkasanAsetCard,
   TopKehadiranCard,
   TopPengajuanCard,
+  AsetPerJenisCard,
+  AsetPerhatianCard,
 } from './Shared';
 
 // Dashboard untuk role admin/hr/manajer — dapet semua section, termasuk
@@ -30,9 +32,10 @@ export default function DashboardAdmin() {
     departemen,
   } = useDashboardCore();
 
-  const { ringkasanAset, grafikPengajuan, topKehadiran, topKaryawan } = useDashboardAnalytics(true, {
-    ringkasanIzin: false,
-  });
+  const { ringkasanAset, grafikPengajuan, topKehadiran, topKaryawan, asetPerJenis, asetPerhatian } =
+    useDashboardAnalytics(true, {
+      ringkasanIzin: false,
+    });
 
   const statCards = buildStatCards(statsCard, {
     kehadiran: QrCode,
@@ -69,6 +72,11 @@ export default function DashboardAdmin() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <TopKehadiranCard topKehadiran={topKehadiran} />
         <TopPengajuanCard topKaryawan={topKaryawan} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <AsetPerJenisCard asetPerJenis={asetPerJenis} />
+        <AsetPerhatianCard asetPerhatian={asetPerhatian} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
