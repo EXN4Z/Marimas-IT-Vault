@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import {
   AreaChart,
   Area,
@@ -13,7 +14,20 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
-import { ClipboardList, Clock, TrendingUp, Boxes, AlertTriangle, Wrench, ShieldAlert } from 'lucide-react';
+import {
+  ClipboardList,
+  Clock,
+  TrendingUp,
+  Boxes,
+  AlertTriangle,
+  Wrench,
+  ShieldAlert,
+  HandCoins,
+  Undo2,
+  PlayCircle,
+  Banknote,
+  ArrowRight,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type {
   AccentColor,
@@ -30,6 +44,7 @@ import type {
   AsetPerhatian,
   TrenPembelianAset,
   StatusAsetDistribusi,
+  AktivitasAsetTerbaru,
 } from './useDashboardData';
 import type { AgendaItem } from '../../api/agenda';
 
@@ -682,6 +697,85 @@ export function AsetPerhatianCard({ asetPerhatian }: { asetPerhatian?: AsetPerha
             </div>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+// Waktu relatif singkat, sama persis logikanya dengan formatWaktu() di
+// pages/Inventaris.tsx (tab Riwayat) -- disamain biar "3 jam lalu" di
+// widget dashboard dan di tab Riwayat konsisten, gak beda kalkulasi.
+function formatWaktuSingkat(iso: string): string {
+  const date = new Date(iso);
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'Baru saja';
+  if (diffMin < 60) return `${diffMin} menit lalu`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour} jam lalu`;
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay === 1) return 'Kemarin';
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+}
+
+const AKTIVITAS_ASET_STYLE: Record<
+  AktivitasAsetTerbaru['type'],
+  { bg: string; icon: JSX.Element; label: string }
+> = {
+  pinjam: { bg: 'bg-amber-50 text-amber-600', icon: <HandCoins size={15} />, label: 'menerima' },
+  kembali: { bg: 'bg-emerald-50 text-emerald-600', icon: <Undo2 size={15} />, label: 'mengembalikan' },
+  lapor_rusak: { bg: 'bg-red-50 text-red-600', icon: <AlertTriangle size={15} />, label: 'melaporkan kerusakan' },
+  mulai_perbaikan: { bg: 'bg-orange-50 text-orange-600', icon: <PlayCircle size={15} />, label: 'mulai memperbaiki' },
+  selesai_perbaikan: { bg: 'bg-sky-50 text-sky-600', icon: <Wrench size={15} />, label: 'selesai memperbaiki' },
+  dijual: { bg: 'bg-purple-50 text-purple-600', icon: <Banknote size={15} />, label: 'menjual' },
+};
+
+// ==== Aktivitas aset terbaru — khusus admin (inventaris) ====
+// Ringkasan 5 event teraktual dari feed yang sama dengan tab "Riwayat Aset"
+// di halaman Inventaris. Ditaruh di dashboard (halaman pertama yang dibuka
+// user) supaya histori aset kelihatan tanpa harus sadar dulu ada tab
+// Riwayat yang harus diklik manual. Klik "Lihat semua" -> lempar ke tab
+// Riwayat di Inventaris buat detail lengkap + filter/search/pagination.
+export function AktivitasAsetCard({ aktivitasAsetTerbaru }: { aktivitasAsetTerbaru: AktivitasAsetTerbaru[] }) {
+  const navigate = useNavigate();
+
+  return (
+    <div className={cardClass}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-base font-semibold text-slate-900">Aktivitas Aset Terbaru</h3>
+        <button
+          onClick={() => navigate('/inventaris?tab=aset')}
+          className="flex items-center gap-1 text-xs font-semibold text-[#6D5DFC] hover:text-[#4C3FE0] whitespace-nowrap"
+        >
+          Lihat semua <ArrowRight size={13} />
+        </button>
+      </div>
+
+      {aktivitasAsetTerbaru.length === 0 ? (
+        <p className="text-sm text-slate-400">Belum ada aktivitas aset.</p>
+      ) : (
+        <ul className="flex flex-col gap-3.5">
+          {aktivitasAsetTerbaru.map((ev, idx) => {
+            const s = AKTIVITAS_ASET_STYLE[ev.type];
+            const kode = ev.aset?.kode_aset || '-';
+            const pelaku =
+              ev.nama ?? (ev.type === 'mulai_perbaikan' || ev.type === 'selesai_perbaikan' ? 'Admin' : null);
+            return (
+              <li key={`${ev.type}-${idx}`} className="flex items-start gap-2.5">
+                <span className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${s.bg}`}>
+                  {s.icon}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm text-slate-700 leading-snug">
+                    {pelaku && <span className="font-medium text-slate-800">{pelaku} </span>}
+                    {s.label} <span className="font-medium text-slate-800">{kode}</span>
+                  </p>
+                  <p className="text-xs text-slate-400 mt-0.5">{formatWaktuSingkat(ev.waktu)}</p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );

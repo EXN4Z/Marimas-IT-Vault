@@ -6,7 +6,7 @@ import api from '../../api/axios';
 import { getEcho } from '../../lib/echo';
 import type { User as UserType } from '../../types/user';
 import { getAgendaMendatang, type AgendaItem } from '../../api/agenda';
-import { getAset } from '../../api/aset';
+import { getAset, getRiwayatAset, type RiwayatAsetEvent } from '../../api/aset';
 
 // ============================================================================
 // TYPES
@@ -107,6 +107,11 @@ export interface AsetPerhatian {
   garansiSegeraHabis: number; // tanggal_garansi <= 30 hari dari sekarang
 }
 
+// 5 aktivitas aset terbaru (pinjam/kembali/lapor rusak/dst) — dipakai
+// widget "Aktivitas Aset Terbaru" di dashboard admin, biar histori aset
+// gak cuma keliatan kalau user sadar buka tab Riwayat di dalam Inventaris.
+export type AktivitasAsetTerbaru = RiwayatAsetEvent;
+
 export interface NotificationItem {
   id: string;
   data: { message: string; nomor_izin?: string; status?: string; [key: string]: any };
@@ -201,6 +206,14 @@ export async function fetchRingkasanAset(): Promise<RingkasanAset> {
   }
 
   return { total: list.length, tersedia, dipakai, rusakBerat, dijual };
+}
+
+// 5 event teratas dari endpoint riwayat aset yang sudah ada (halaman 1,
+// tanpa filter type/search) — sumber sama persis dengan tab "Riwayat Aset"
+// di Inventaris, cuma dipotong ke 5 item terbaru buat widget dashboard.
+export async function fetchAktivitasAsetTerbaru(): Promise<AktivitasAsetTerbaru[]> {
+  const res = await getRiwayatAset(1, 10);
+  return res.data.slice(0, 5);
 }
 
 const GARANSI_WARNING_DAYS = 30;
@@ -551,6 +564,7 @@ export function useDashboardAnalytics(
     asetPerhatian?: boolean;
     trenPembelianAset?: boolean;
     statusAsetDistribusi?: boolean;
+    aktivitasAsetTerbaru?: boolean;
   } = {}
 ) {
   const {
@@ -563,6 +577,7 @@ export function useDashboardAnalytics(
     asetPerhatian: wantAsetPerhatian = true,
     trenPembelianAset: wantTrenPembelianAset = true,
     statusAsetDistribusi: wantStatusAsetDistribusi = true,
+    aktivitasAsetTerbaru: wantAktivitasAsetTerbaru = true,
   } = include;
 
   const { data: ringkasanIzin } = useQuery({
@@ -628,6 +643,15 @@ export function useDashboardAnalytics(
     staleTime: 2 * 60 * 1000,
   });
 
+  // staleTime pendek (30 detik) -- ini feed aktivitas, harus lebih "segar"
+  // dibanding kartu ringkasan/statistik lain yang wajar agak nge-lag.
+  const { data: aktivitasAsetTerbaru } = useQuery({
+    queryKey: ['aktivitas-aset-terbaru'],
+    queryFn: fetchAktivitasAsetTerbaru,
+    enabled: enabled && wantAktivitasAsetTerbaru,
+    staleTime: 30 * 1000,
+  });
+
   return {
     ringkasanIzin,
     ringkasanAset,
@@ -638,5 +662,6 @@ export function useDashboardAnalytics(
     asetPerhatian,
     trenPembelianAset: trenPembelianAset ?? [],
     statusAsetDistribusi: statusAsetDistribusi ?? [],
+    aktivitasAsetTerbaru: aktivitasAsetTerbaru ?? [],
   };
 }

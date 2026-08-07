@@ -6,6 +6,7 @@ import {
   HeroTrenPembelianAsetChart,
   AsetPerhatianCard,
   AsetPerJenisCard,
+  AktivitasAsetCard,
 } from './Shared';
 
 // Dashboard untuk role admin/hr/manajer — dapet semua section, termasuk
@@ -23,7 +24,7 @@ import {
 export default function DashboardAdmin() {
   const { loading, error, statsCard } = useDashboardCore();
 
-  const { ringkasanAset, trenPembelianAset, asetPerhatian, asetPerJenis } = useDashboardAnalytics(true, {
+  const { ringkasanAset, trenPembelianAset, asetPerhatian, asetPerJenis, aktivitasAsetTerbaru } = useDashboardAnalytics(true, {
     ringkasanIzin: false,
     grafikPengajuan: false,
     topKehadiran: false,
@@ -61,6 +62,13 @@ export default function DashboardAdmin() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <AsetPerhatianCard asetPerhatian={asetPerhatian} />
         <AsetPerJenisCard asetPerJenis={asetPerJenis} />
+      </div>
+
+      {/* Aktivitas Aset Terbaru -- feed histori aset (sumber sama dengan tab
+          Riwayat di Inventaris), ditaruh di dashboard biar user gak perlu
+          sadar dulu ada tab Riwayat buat lihat aktivitas terkini. */}
+      <div className="grid grid-cols-1 mt-6">
+        <AktivitasAsetCard aktivitasAsetTerbaru={aktivitasAsetTerbaru} />
       </div>
     </>
   );
