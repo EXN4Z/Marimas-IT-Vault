@@ -19,8 +19,11 @@ export default function Login() {
   // masih login (token valid), langsung lempar ke dashboard tanpa nampilin
   // form login lagi.
   useEffect(() => {
-    if (!isLoading && user) {
+    if (isLoading || !user) return;
+    if (!isLoading && user?.role === 'admin') {
       navigate('/dashboard', { replace: true });
+    } else {
+      navigate('/inventaris', { replace: true });
     }
   }, [isLoading, user, navigate]);
 
