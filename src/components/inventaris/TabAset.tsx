@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Search } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2 } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
+import SearchInput from '../shared/SearchInput';
+import StatusBadge from '../shared/StatusBadge';
 import AsetFormModal from './AsetFormModal';
 import AsetSerahTerimaModal from './AsetSerahTerimaModal';
 import AsetPengembalianModal from './AsetPengembalianModal';
@@ -670,16 +672,12 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
         ]}
       />
 
-      <div className="relative mb-4">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Cari nama, kode, atau jenis aset..."
-          className="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-        />
-      </div>
+      <SearchInput
+        value={search}
+        onChange={setSearch}
+        placeholder="Cari nama, kode, atau jenis aset..."
+        className="mb-4"
+      />
 
       <div className="border border-slate-200 rounded-lg overflow-hidden">
         {loading && <p className="text-sm text-slate-400 text-center py-8">Memuat data...</p>}
@@ -715,9 +713,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                         </p>
                       </td>
                       <td className="px-6 py-3 whitespace-nowrap">
-                        <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_STYLE[a.status]}`}>
-                          {STATUS_LABEL[a.status]}
-                        </span>
+                        <StatusBadge colorClass={STATUS_STYLE[a.status]}>{STATUS_LABEL[a.status]}</StatusBadge>
                       </td>
                       <td className="px-6 py-3 text-slate-600 max-w-[160px]">
                         <p className="truncate" title={a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
@@ -759,9 +755,9 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                       <p className="text-xs text-slate-500 truncate">
                         {a.jenis?.nama || '-'} · {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}
                       </p>
-                      <span className={`inline-block mt-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_STYLE[a.status]}`}>
+                      <StatusBadge colorClass={STATUS_STYLE[a.status]} size="xs" className="mt-1.5">
                         {STATUS_LABEL[a.status]}
-                      </span>
+                      </StatusBadge>
                     </div>
                     <ChevronDown
                       size={16}
@@ -943,9 +939,9 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium mb-2 ${STATUS_STYLE[detail.status]}`}>
+                    <StatusBadge colorClass={STATUS_STYLE[detail.status]} className="mb-2">
                       {STATUS_LABEL[detail.status]}
-                    </span>
+                    </StatusBadge>
                     <p className="text-sm text-slate-800 font-medium">{[detail.merek, detail.tipe].filter(Boolean).join(' ') || '-'}</p>
                     <p className="text-xs text-slate-400">{detail.jenis?.nama || '-'} · {detail.warna || '-'}</p>
                     <p className="text-xs text-slate-400">S/N: {detail.serial_number || '-'}</p>
@@ -1176,11 +1172,9 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                                 {/* Baris ringkas — sama gaya kayak Riwayat Pemakai */}
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="min-w-0">
-                                    <span
-                                      className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium mb-1 ${statusStyle}`}
-                                    >
+                                    <StatusBadge colorClass={statusStyle} size="xs" className="mb-1">
                                       {statusLabel}
-                                    </span>{' '}
+                                    </StatusBadge>{' '}
                                     <span className="font-medium text-slate-800">{p.keluhan}</span>{' '}
                                     <span className="text-slate-500">— {formatTanggalId(p.tanggal_lapor)}</span>
                                   </div>
@@ -1235,9 +1229,9 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                                 {/* Dropdown detail — expand di tempat, gak buka modal/halaman baru */}
                                 {expanded && (
                                   <div className="mt-2 pt-2 border-t border-slate-200 flex flex-col gap-0.5">
-                                    <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium mb-1 bg-slate-200 text-slate-600 capitalize w-fit">
+                                    <StatusBadge colorClass="bg-slate-200 text-slate-600" size="xs" className="mb-1 capitalize w-fit">
                                       {p.jenis_kerusakan}
-                                    </span>
+                                    </StatusBadge>
                                     {p.hasil && <p className="text-slate-500">Hasil: {p.hasil}</p>}
                                     <p className="text-slate-400">
                                       Dipinjam oleh: <span className="font-medium">{namaPelapor === '-' ? 'Tidak ada (audit gudang)' : namaPelapor}</span>

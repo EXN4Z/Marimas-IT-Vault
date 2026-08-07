@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { X, Wrench, Printer, PlayCircle, Eye, Search, ImageOff } from 'lucide-react';
+import { X, Wrench, Printer, PlayCircle, Eye, ImageOff } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import api from '../../api/axios';
 import { terimaPenangananAset, selesaikanPenangananAset, type AsetPenanganan } from '../../api/aset';
 import { formatTanggalId, namaPemakai } from './asetHelpers';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
+import SearchInput from '../shared/SearchInput';
+import StatusBadge from '../shared/StatusBadge';
 import { printStruk } from '../../utils/printStruk';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
@@ -180,7 +182,7 @@ export default function TabPenangananAset({ onCount }: Props) {
   const rusakBeratList = penangananList.filter((p) => !!p.tanggal_selesai && p.hasil === 'rusak_berat');
 
   // Cocokin kata kunci ke kode aset, jenis kerusakan, keluhan, dan nama pelapor
-  // -- dipakai buat cari aset berhasil di tab "Berhasil Diperbaiki" & "Rusak Berat".
+  // -- dipakai buat search bar di tab "Berhasil Diperbaiki" & "Rusak Berat".
   const matchSearch = (p: AsetPenanganan, keyword: string) => {
     const q = keyword.trim().toLowerCase();
     if (!q) return true;
@@ -243,28 +245,23 @@ export default function TabPenangananAset({ onCount }: Props) {
       />
 
       {(activeTab === 'diperbaiki_selesai' || activeTab === 'rusak_berat') && (
-        <div className="relative mb-4">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={activeTab === 'diperbaiki_selesai' ? searchSelesai : searchRusakBerat}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (activeTab === 'diperbaiki_selesai') {
-                setSearchSelesai(value);
-              } else {
-                setSearchRusakBerat(value);
-              }
-              setPage(1); // balik ke halaman 1 tiap kata kunci berubah
-            }}
-            placeholder={
-              activeTab === 'diperbaiki_selesai'
-                ? 'Cari aset berhasil diperbaiki (kode aset, keluhan, pelapor)...'
-                : 'Cari aset rusak berat (kode aset, keluhan, pelapor)...'
+        <SearchInput
+          value={activeTab === 'diperbaiki_selesai' ? searchSelesai : searchRusakBerat}
+          onChange={(value) => {
+            if (activeTab === 'diperbaiki_selesai') {
+              setSearchSelesai(value);
+            } else {
+              setSearchRusakBerat(value);
             }
-            className="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-          />
-        </div>
+            setPage(1); // balik ke halaman 1 tiap kata kunci berubah
+          }}
+          placeholder={
+            activeTab === 'diperbaiki_selesai'
+              ? 'Cari aset berhasil diperbaiki (kode aset, keluhan, pelapor)...'
+              : 'Cari aset rusak berat (kode aset, keluhan, pelapor)...'
+          }
+          className="mb-4"
+        />
       )}
 
       {activeTab === 'diperbaiki_selesai' || activeTab === 'rusak_berat' ? (
@@ -297,13 +294,12 @@ export default function TabPenangananAset({ onCount }: Props) {
                       </td>
                       <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatTanggalId(p.tanggal_selesai)}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span
-                          className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
-                            rusakBerat ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
-                          }`}
+                        <StatusBadge
+                          colorClass={rusakBerat ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}
+                          size="xs"
                         >
                           {rusakBerat ? 'Rusak Berat' : 'Berhasil Diperbaiki'}
-                        </span>
+                        </StatusBadge>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end">
@@ -345,9 +341,7 @@ export default function TabPenangananAset({ onCount }: Props) {
               <div key={p.id} className="border border-slate-200 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm font-medium text-slate-800">{p.aset?.kode_aset}</span>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusStyle}`}>
-                    {statusLabel}
-                  </span>
+                  <StatusBadge colorClass={statusStyle} size="xs">{statusLabel}</StatusBadge>
                 </div>
                 <p className="text-xs text-slate-500">
                   Dilaporkan oleh <span className="font-medium">{namaPemakai(p.pemakai)}</span> · {formatTanggalId(p.tanggal_lapor)}

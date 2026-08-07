@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getAset, type Aset } from '../../api/aset';
 import { getKelengkapanMaster, type KelengkapanMaster } from '../../api/kelengkapanMaster';
 import { kelengkapanLevel, kelengkapanLevelStyle, kelengkapanLevelLabel } from './asetHelpers';
+import StatusBadge from '../shared/StatusBadge';
 
 export default function TabKelengkapanAset() {
   const [asetList, setAsetList] = useState<Aset[]>([]);
@@ -50,9 +51,9 @@ export default function TabKelengkapanAset() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {kelengkapanSummary.map(({ level, items }) => (
           <div key={level} className="border border-slate-200 rounded-lg p-4 text-center">
-            <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium mb-2 ${kelengkapanLevelStyle(level, totalKelengkapanMaster)}`}>
+            <StatusBadge colorClass={kelengkapanLevelStyle(level, totalKelengkapanMaster)} className="mb-2">
               Level {level}
-            </span>
+            </StatusBadge>
             <p className="text-2xl font-bold text-slate-900">{items.length}</p>
             <p className="text-xs text-slate-400">unit</p>
           </div>
@@ -82,9 +83,9 @@ export default function TabKelengkapanAset() {
                     {(a.kelengkapan || []).map((k) => k.kelengkapan_master?.nama).filter(Boolean).join(', ') || '-'}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${kelengkapanLevelStyle(level, totalKelengkapanMaster)}`}>
+                    <StatusBadge colorClass={kelengkapanLevelStyle(level, totalKelengkapanMaster)}>
                       {kelengkapanLevelLabel(level, totalKelengkapanMaster)}
-                    </span>
+                    </StatusBadge>
                   </td>
                 </tr>
               );

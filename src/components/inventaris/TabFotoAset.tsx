@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Images, Search, X, ChevronLeft, ChevronRight, HandCoins, Undo2, Wrench, Eye } from 'lucide-react';
+import { Images, X, ChevronLeft, ChevronRight, HandCoins, Undo2, Wrench, Eye } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import ScrollableTabBar, { type ScrollableTabItem } from '../shared/ScrollableTabBar';
+import SearchInput from '../shared/SearchInput';
 import { getFotoPemakaiAset, type FotoPemakaiEntry } from '../../api/aset';
 import { getFotoKerusakanAset, type AsetPenanganan } from '../../api/asetPenanganan';
 import { namaPemakai, formatTanggalWaktuId } from './asetHelpers';
@@ -299,16 +300,12 @@ export default function TabFotoAset({}: Props) {
     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
       <ScrollableTabBar className="mb-4" tabs={tabsWithBadge} activeTab={activeTab} onChange={setActiveTab} />
 
-      <div className="relative mb-4">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          type="text"
-          value={currentSearch}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder="Cari kode aset, merek, atau tipe..."
-          className="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-        />
-      </div>
+      <SearchInput
+        value={currentSearch}
+        onChange={handleSearchChange}
+        placeholder="Cari kode aset, merek, atau tipe..."
+        className="mb-4"
+      />
 
       {renderTable()}
 
