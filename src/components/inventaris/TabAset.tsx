@@ -469,7 +469,11 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     // BARU: urutkan berdasarkan prioritas status — tersedia paling atas,
     // dipakai, lalu status dalam proses penanganan, rusak_berat, dan
     // dijual paling bawah. Lihat STATUS_PRIORITY di atas.
-    .sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
+    .sort((a, b) => {
+      const diffStatus = STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status];
+      if (diffStatus !== 0) return diffStatus;
+      return a.kode_aset.localeCompare(b.kode_aset, 'id', { numeric: true });
+    });
 
   // Jumlah aset per status (dari asetList utuh, bukan yang udah difilter),
   // dipakai buat badge angka di tiap opsi dropdown status.
