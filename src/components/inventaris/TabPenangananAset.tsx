@@ -180,7 +180,7 @@ export default function TabPenangananAset({ onCount }: Props) {
   const rusakBeratList = penangananList.filter((p) => !!p.tanggal_selesai && p.hasil === 'rusak_berat');
 
   // Cocokin kata kunci ke kode aset, jenis kerusakan, keluhan, dan nama pelapor
-  // -- dipakai buat search bar di tab "Berhasil Diperbaiki" & "Rusak Berat".
+  // -- dipakai buat cari aset berhasil di tab "Berhasil Diperbaiki" & "Rusak Berat".
   const matchSearch = (p: AsetPenanganan, keyword: string) => {
     const q = keyword.trim().toLowerCase();
     if (!q) return true;

@@ -596,7 +596,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
   const [expandedAsetId, setExpandedAsetId] = useState<number | null>(null);
 
   return (
-    <div>
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <p className="text-sm text-slate-500">
           Kelola aset IT per-unit (laptop, monitor, dsb) — serah-terima ke karyawan dan riwayatnya.
@@ -669,7 +669,7 @@ export default function TabAset({ search, onlyMenipis, onCount }: Props) {
         ]}
       />
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="border border-slate-200 rounded-lg overflow-hidden">
         {loading && <p className="text-sm text-slate-400 text-center py-8">Memuat data...</p>}
         {!loading && error && <p className="text-sm text-red-500 text-center py-8">{error}</p>}
         {!loading && !error && filteredAset.length === 0 && (
