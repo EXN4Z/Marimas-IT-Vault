@@ -83,6 +83,21 @@ export interface AsetPerJenis {
   jumlah: number;
 }
 
+// Tren jumlah aset dibeli per bulan (6 bulan terakhir, dari tanggal_pembelian)
+// — dipakai hero chart "Tren Pembelian Aset per Bulan", gantiin hero chart
+// pengajuan izin di dashboard admin (inventaris-only).
+export interface TrenPembelianAset {
+  bulan: string;
+  jumlah: number;
+}
+
+// Distribusi jumlah aset per status (tersedia/dipakai/dst) — dipakai
+// donut chart "Distribusi Status Aset" di dashboard admin.
+export interface StatusAsetDistribusi {
+  status: string;
+  jumlah: number;
+}
+
 // Ringkasan aset yang butuh perhatian: lagi rusak/proses perbaikan, atau
 // garansinya bakal habis dalam 30 hari ke depan — dipakai kartu
 // "Aset Butuh Perhatian" di dashboard admin.
@@ -190,6 +205,17 @@ export async function fetchRingkasanAset(): Promise<RingkasanAset> {
 
 const GARANSI_WARNING_DAYS = 30;
 
+const BULAN_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+const STATUS_LABEL: Record<string, string> = {
+  tersedia: 'Tersedia',
+  dipakai: 'Dipakai',
+  menunggu_perbaikan: 'Menunggu Perbaikan',
+  diperbaiki: 'Diperbaiki',
+  rusak_berat: 'Rusak Berat',
+  dijual: 'Dijual',
+};
+
 export async function fetchAsetPerJenis(): Promise<AsetPerJenis[]> {
   const list = await getAset();
   const counts = new Map<string, number>();
@@ -202,6 +228,44 @@ export async function fetchAsetPerJenis(): Promise<AsetPerJenis[]> {
   return Array.from(counts.entries())
     .map(([jenis, jumlah]) => ({ jenis, jumlah }))
     .sort((a, b) => b.jumlah - a.jumlah);
+}
+
+// 6 bulan terakhir, jumlah aset yang tanggal_pembelian-nya jatuh di bulan itu.
+export async function fetchTrenPembelianAset(): Promise<TrenPembelianAset[]> {
+  const list = await getAset();
+  const now = new Date();
+
+  const bulanKeys: { key: string; label: string }[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    bulanKeys.push({ key: `${d.getFullYear()}-${d.getMonth()}`, label: BULAN_ID[d.getMonth()] });
+  }
+
+  const counts = new Map(bulanKeys.map((b) => [b.key, 0]));
+
+  for (const a of list) {
+    if (!a.tanggal_pembelian) continue;
+    const d = new Date(a.tanggal_pembelian);
+    if (isNaN(d.getTime())) continue;
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    if (counts.has(key)) counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  return bulanKeys.map((b) => ({ bulan: b.label, jumlah: counts.get(b.key) ?? 0 }));
+}
+
+export async function fetchStatusAsetDistribusi(): Promise<StatusAsetDistribusi[]> {
+  const list = await getAset();
+  const counts = new Map<string, number>();
+
+  for (const a of list) {
+    const label = STATUS_LABEL[a.status] ?? a.status;
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+
+  return Object.values(STATUS_LABEL)
+    .map((label) => ({ status: label, jumlah: counts.get(label) ?? 0 }))
+    .filter((s) => s.jumlah > 0);
 }
 
 export async function fetchAsetPerhatian(): Promise<AsetPerhatian> {
@@ -485,6 +549,8 @@ export function useDashboardAnalytics(
     topKaryawan?: boolean;
     asetPerJenis?: boolean;
     asetPerhatian?: boolean;
+    trenPembelianAset?: boolean;
+    statusAsetDistribusi?: boolean;
   } = {}
 ) {
   const {
@@ -495,6 +561,8 @@ export function useDashboardAnalytics(
     topKaryawan: wantTopKaryawan = true,
     asetPerJenis: wantAsetPerJenis = true,
     asetPerhatian: wantAsetPerhatian = true,
+    trenPembelianAset: wantTrenPembelianAset = true,
+    statusAsetDistribusi: wantStatusAsetDistribusi = true,
   } = include;
 
   const { data: ringkasanIzin } = useQuery({
@@ -546,6 +614,20 @@ export function useDashboardAnalytics(
     staleTime: 2 * 60 * 1000,
   });
 
+  const { data: trenPembelianAset } = useQuery({
+    queryKey: ['tren-pembelian-aset'],
+    queryFn: fetchTrenPembelianAset,
+    enabled: enabled && wantTrenPembelianAset,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: statusAsetDistribusi } = useQuery({
+    queryKey: ['status-aset-distribusi'],
+    queryFn: fetchStatusAsetDistribusi,
+    enabled: enabled && wantStatusAsetDistribusi,
+    staleTime: 2 * 60 * 1000,
+  });
+
   return {
     ringkasanIzin,
     ringkasanAset,
@@ -554,5 +636,7 @@ export function useDashboardAnalytics(
     topKaryawan: topKaryawan ?? [],
     asetPerJenis: asetPerJenis ?? [],
     asetPerhatian,
+    trenPembelianAset: trenPembelianAset ?? [],
+    statusAsetDistribusi: statusAsetDistribusi ?? [],
   };
 }

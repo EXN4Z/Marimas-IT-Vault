@@ -3,6 +3,8 @@ import {
   Area,
   BarChart,
   Bar,
+  PieChart,
+  Pie,
   Cell,
   XAxis,
   YAxis,
@@ -26,6 +28,8 @@ import type {
   TopKaryawan,
   AsetPerJenis,
   AsetPerhatian,
+  TrenPembelianAset,
+  StatusAsetDistribusi,
 } from './useDashboardData';
 import type { AgendaItem } from '../../api/agenda';
 
@@ -489,6 +493,132 @@ export function NotifikasiCard({
   );
 }
 
+// ==== Hero chart "Tren Pembelian Aset per Bulan" — khusus admin (inventaris) ====
+export function HeroTrenPembelianAsetChart({ trenPembelianAset }: { trenPembelianAset: TrenPembelianAset[] }) {
+  const totalTahunIni = trenPembelianAset.reduce((sum, d) => sum + d.jumlah, 0);
+  const maxJumlah = trenPembelianAset.length ? Math.max(...trenPembelianAset.map((d) => d.jumlah)) : 0;
+  const avgJumlah = trenPembelianAset.length ? totalTahunIni / trenPembelianAset.length : 0;
+  const peakIndex = maxJumlah > 0 ? trenPembelianAset.findIndex((d) => d.jumlah === maxJumlah) : -1;
+
+  const renderPeakLabel = (props: any) => {
+    const { x, y, width, value, index } = props;
+    if (index !== peakIndex || maxJumlah <= 0) return null;
+    const cx = x + width / 2;
+    const boxW = 52;
+    return (
+      <g>
+        <rect x={cx - boxW / 2} y={y - 32} width={boxW} height={24} rx={7} fill={THEME.orange} />
+        <text x={cx} y={y - 15} textAnchor="middle" fontSize={12} fontWeight={700} fill="#fff">
+          {value}
+        </text>
+      </g>
+    );
+  };
+
+  return (
+    <div className={`${cardClass} xl:col-span-2`}>
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="text-sm text-slate-500 font-medium">Tren Pembelian Aset per Bulan</h3>
+          <p className="text-3xl md:text-4xl font-extrabold text-slate-900 mt-1 tracking-tight">
+            {totalTahunIni}
+            <span className="text-base font-semibold text-slate-400 ml-2">aset dibeli</span>
+          </p>
+        </div>
+        <span className="text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full whitespace-nowrap">
+          6 bulan terakhir
+        </span>
+      </div>
+
+      <div className="flex items-center gap-4 mt-4 mb-2">
+        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+          <span className="w-2 h-2 rounded-full" style={{ background: THEME.orange }} />
+          Aset Dibeli
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+          <span className="w-2.5 h-0 border-t-2 border-dashed" style={{ borderColor: THEME.orange }} />
+          Rata-rata
+        </div>
+      </div>
+
+      <div className="h-72 mt-2">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={trenPembelianAset} margin={{ top: 36, right: 8, left: -20, bottom: 0 }}>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" stroke={THEME.grid} />
+            <XAxis dataKey="bulan" tick={{ fontSize: 12, fill: THEME.axis }} axisLine={false} tickLine={false} />
+            <YAxis hide domain={[0, (dataMax: number) => Math.max(dataMax * 1.35, 4)]} />
+            {maxJumlah > 0 && (
+              <ReferenceLine y={avgJumlah} stroke={THEME.orange} strokeDasharray="5 5" strokeOpacity={0.5} />
+            )}
+            <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
+            <Bar dataKey="jumlah" name="Aset Dibeli" fill={THEME.orange} radius={[8, 8, 0, 0]} barSize={28} label={renderPeakLabel} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+// ==== Distribusi status aset (donut) — khusus admin (inventaris) ====
+const STATUS_ASET_COLOR: Record<string, string> = {
+  Tersedia: THEME.emerald,
+  Dipakai: THEME.violet,
+  'Menunggu Perbaikan': THEME.amber,
+  Diperbaiki: '#38BDF8',
+  'Rusak Berat': THEME.rose,
+  Dijual: THEME.axis,
+};
+
+export function StatusAsetDonutCard({ statusAsetDistribusi }: { statusAsetDistribusi: StatusAsetDistribusi[] }) {
+  const total = statusAsetDistribusi.reduce((sum, d) => sum + d.jumlah, 0);
+
+  return (
+    <div className={cardClass}>
+      <h3 className="text-base font-semibold text-slate-900 mb-4">Distribusi Status Aset</h3>
+      {total === 0 ? (
+        <p className="text-sm text-slate-400">Belum ada data aset</p>
+      ) : (
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="h-56 w-full sm:w-1/2 relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={statusAsetDistribusi}
+                  dataKey="jumlah"
+                  nameKey="status"
+                  innerRadius={55}
+                  outerRadius={80}
+                  paddingAngle={2}
+                  strokeWidth={0}
+                >
+                  {statusAsetDistribusi.map((entry) => (
+                    <Cell key={entry.status} fill={STATUS_ASET_COLOR[entry.status] ?? THEME.axis} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-2xl font-extrabold text-slate-900">{total}</span>
+              <span className="text-xs text-slate-400">total aset</span>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2.5 w-full sm:w-1/2">
+            {statusAsetDistribusi.map((d) => (
+              <LegendDot
+                key={d.status}
+                color={STATUS_ASET_COLOR[d.status] ?? THEME.axis}
+                label={d.status}
+                value={d.jumlah}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ==== Distribusi aset per jenis — khusus admin (inventaris) ====
 export function AsetPerJenisCard({ asetPerJenis }: { asetPerJenis: AsetPerJenis[] }) {
   return (
@@ -499,12 +629,12 @@ export function AsetPerJenisCard({ asetPerJenis }: { asetPerJenis: AsetPerJenis[
       ) : (
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={asetPerJenis} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={THEME.grid} horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 12, fill: THEME.axis }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <YAxis dataKey="jenis" type="category" tick={{ fontSize: 12, fill: '#475569' }} axisLine={false} tickLine={false} width={90} />
+            <BarChart data={asetPerJenis} margin={{ top: 16, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" stroke={THEME.grid} />
+              <XAxis dataKey="jenis" tick={{ fontSize: 12, fill: THEME.axis }} axisLine={false} tickLine={false} interval={0} angle={-20} textAnchor="end" height={50} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: THEME.axis }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
-              <Bar dataKey="jumlah" fill={THEME.orange} radius={[0, 8, 8, 0]} barSize={18} />
+              <Bar dataKey="jumlah" fill={THEME.orange} radius={[8, 8, 0, 0]} barSize={36} />
             </BarChart>
           </ResponsiveContainer>
         </div>

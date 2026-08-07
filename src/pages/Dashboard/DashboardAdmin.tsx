@@ -2,32 +2,29 @@ import { QrCode, CalendarDays, Ticket } from 'lucide-react';
 import { useDashboardCore, useDashboardAnalytics, buildStatCards } from './useDashboardData';
 import {
   StatCardsGrid,
-  KehadiranMingguanCard,
-  DepartemenDistribusiCard,
-  HeroPengajuanChart,
   RingkasanAsetCard,
+  HeroTrenPembelianAsetChart,
+  StatusAsetDonutCard,
+  AsetPerJenisCard,
 } from './Shared';
 
 // Dashboard untuk role admin/hr/manajer — dapet semua section, termasuk
-// hero chart "Pengajuan Izin Tahun Ini" yang gak ditampilin di DashboardUser
-// maupun DashboardCabang.
-// CATATAN: TopKehadiran, TopPengajuan, BebanKerja, Notifikasi, Agenda,
-// AsetPerJenis, AsetPerhatian sengaja dicabut dari tampilan sementara
-// (bukan dihapus dari Shared.tsx/useDashboardData.ts) -- nunggu rencana baru.
+// hero chart "Tren Pembelian Aset per Bulan" yang gak ditampilin di
+// DashboardUser maupun DashboardCabang.
+// CATATAN: TopKehadiran, TopPengajuan, BebanKerja, Notifikasi, Agenda
+// sengaja dicabut dari tampilan sementara (bukan dihapus dari
+// Shared.tsx/useDashboardData.ts) -- nunggu rencana baru.
+// Hero pengajuan izin, kehadiran mingguan, & distribusi departemen sudah
+// diganti data inventaris (tren pembelian aset, status aset, jenis aset)
+// -- section ini murni inventaris jadi gak relevan lagi buat admin.
 export default function DashboardAdmin() {
-  const {
-    loading,
-    error,
-    statsCard,
-    kehadiranMingguan,
-    departemen,
-  } = useDashboardCore();
+  const { loading, error, statsCard } = useDashboardCore();
 
-  const { ringkasanAset, grafikPengajuan } = useDashboardAnalytics(true, {
+  const { ringkasanAset, trenPembelianAset, statusAsetDistribusi, asetPerJenis } = useDashboardAnalytics(true, {
     ringkasanIzin: false,
+    grafikPengajuan: false,
     topKehadiran: false,
     topKaryawan: false,
-    asetPerJenis: false,
     asetPerhatian: false,
   });
 
@@ -54,13 +51,13 @@ export default function DashboardAdmin() {
       <StatCardsGrid statCards={statCards} />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
-        <HeroPengajuanChart grafikPengajuan={grafikPengajuan} />
+        <HeroTrenPembelianAsetChart trenPembelianAset={trenPembelianAset} />
         <RingkasanAsetCard ringkasanAset={ringkasanAset} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        <KehadiranMingguanCard kehadiranMingguan={kehadiranMingguan} />
-        <DepartemenDistribusiCard departemen={departemen} />
+        <StatusAsetDonutCard statusAsetDistribusi={statusAsetDistribusi} />
+        <AsetPerJenisCard asetPerJenis={asetPerJenis} />
       </div>
     </>
   );
