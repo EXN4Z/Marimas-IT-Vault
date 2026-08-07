@@ -296,16 +296,17 @@ export default function TabFotoAset({}: Props) {
   });
 
   return (
-    <div className="flex flex-col gap-6">
-      <ScrollableTabBar tabs={tabsWithBadge} activeTab={activeTab} onChange={setActiveTab} />
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+      <ScrollableTabBar className="mb-4" tabs={tabsWithBadge} activeTab={activeTab} onChange={setActiveTab} />
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+      <div className="relative mb-4">
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
+          type="text"
           value={currentSearch}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Cari kode aset, merek, atau tipe..."
-          className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none"
+          className="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
         />
       </div>
 

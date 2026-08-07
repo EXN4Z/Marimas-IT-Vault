@@ -42,7 +42,6 @@ export default function Inventaris() {
   const [searchParams] = useSearchParams();
 
   const [activeTab, setActiveTab] = useState<TabKey>('aset');
-  const [search, setSearch] = useState('');
   const [counts, setCounts] = useState<Partial<Record<TabKey, number>>>({});
 
   // Klik notif kerusakan aset ngarahin ke /inventaris?tab=penanganan (lihat
@@ -216,19 +215,7 @@ export default function Inventaris() {
 
       {activeTab === 'aset' ? (
         <div className="flex flex-col gap-6">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari nama, kode, atau jenis aset..."
-                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <TabAset search={search} onCount={handleCountAset} />
+          <TabAset onCount={handleCountAset} />
 
           {/* RIWAYAT ASET — sementara ditaruh di bawah tabel (bukan di samping)
               soalnya tabel aset kolomnya banyak, kalau dipepetin sidebar jadi
