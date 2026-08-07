@@ -43,6 +43,7 @@ interface NavItem {
   children?: NavChild[]; // kalau ada, item ini jadi dropdown di sidebar
   matchPrefix?: string; // dipakai buat nentuin dropdown auto-expand + highlight, termasuk buat route dinamis (mis. /karyawan/5/edit)
   restricted?: boolean; // true = halaman khusus admin/staff, bukan buat karyawan biasa (dipakai buat naro garis pemisah di sidebar)
+  hidden?: boolean; // true = fitur belum lengkap, disembunyikan dari sidebar sementara. Route & filenya TETAP ada, cuma gak ditampilkan di menu.
 }
 
 const navItems: NavItem[] = [
@@ -51,11 +52,15 @@ const navItems: NavItem[] = [
   // udah ada di dalam halaman list-nya sendiri (tombol di header / query ?action=),
   // jadi gak perlu link duplikat di sidebar.
   { label: 'Data Karyawan', icon: Users, path: '/karyawan', matchPrefix: '/karyawan' },
-  { label: 'Absensi', icon: QrCode, path: '/absensi', matchPrefix: '/absensi' },
-  { label: 'Pengajuan Izin', icon: FileText, path: '/izin', matchPrefix: '/izin' },
-  { label: 'Ticketing', icon: Ticket, path: '/ticketing', matchPrefix: '/ticketing' },
+  // BELUM LENGKAP -- disembunyikan dari sidebar dulu, jangan dihapus.
+  { label: 'Absensi', icon: QrCode, path: '/absensi', matchPrefix: '/absensi', hidden: true },
+  // BELUM LENGKAP -- disembunyikan dari sidebar dulu, jangan dihapus.
+  { label: 'Pengajuan Izin', icon: FileText, path: '/izin', matchPrefix: '/izin', hidden: true },
+  // BELUM LENGKAP -- disembunyikan dari sidebar dulu, jangan dihapus.
+  { label: 'Ticketing', icon: Ticket, path: '/ticketing', matchPrefix: '/ticketing', hidden: true },
   { label: 'Inventaris', icon: Package, path: '/inventaris', matchPrefix: '/inventaris' },
-  { label: 'Agenda', icon: CalendarDays, path: '/agenda', matchPrefix: '/agenda' },
+  // BELUM LENGKAP -- disembunyikan dari sidebar dulu, jangan dihapus.
+  { label: 'Agenda', icon: CalendarDays, path: '/agenda', matchPrefix: '/agenda', hidden: true },
   { label: 'Cabang', icon: Building2, path: '/cabang', matchPrefix: '/cabang' },
   { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true },
   {
@@ -72,7 +77,8 @@ const navItems: NavItem[] = [
       { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier' },
     ],
   },
-  { label: 'AI Assistant', icon: Bot, path: '/ai-assistant' },
+  // BELUM LENGKAP -- disembunyikan dari sidebar dulu, jangan dihapus.
+  { label: 'AI Assistant', icon: Bot, path: '/ai-assistant', hidden: true },
   { label: 'Audit Log', icon: ScrollText, path: '/audit-log', restricted: true },
   { label: 'Settings', icon: SettingsIcon, path: '/settings' },
 ];
@@ -144,6 +150,10 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
   const ABSENSI_ROLES = ['admin', 'hr', 'manajer', 'manager'];
 
   const roleFilter = (item: NavItem) => {
+    // Fitur yang masih belum lengkap -- sembunyikan dari sidebar dulu (lihat flag `hidden` di navItems).
+    if (item.hidden) {
+      return false;
+    }
     // Master Data hanya untuk admin/hr
     if (item.label === 'Master Data' && !STAFF_ROLES.includes(user?.role ?? '')) {
       return false;
@@ -571,7 +581,8 @@ const handleLogout = async () => {
           </div>
         </main>
       </div>
-      {location.pathname !== '/ai-assistant' && <ChatWidget />}
+      {/* BELUM LENGKAP -- bubble chat AI Assistant disembunyikan sementara, jangan dihapus. */}
+      {false && location.pathname !== '/ai-assistant' && <ChatWidget />}
     </div>
   );
 }
