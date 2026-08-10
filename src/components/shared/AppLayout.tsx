@@ -3,18 +3,13 @@ import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
-  QrCode,
-  Ticket,
-  Bot,
   ScrollText,
   Settings as SettingsIcon,
-  FileText,
   LogOut,
   Search,
   Menu,
   X,
   Package,
-  CalendarDays,
   FileSpreadsheet,
   Database,
   ChevronDown,
@@ -25,7 +20,6 @@ import {
   Truck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useChat } from '../../context/ChatContext';
 import NotificationDropdown from './NotificationDropDown';
 
 interface NavChild {
@@ -47,21 +41,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  // Semua menu di bawah ini sengaja BUKAN dropdown — aksi "Tambah/Buat/Scan"-nya
-  // udah ada di dalam halaman list-nya sendiri (tombol di header / query ?action=),
-  // jadi gak perlu link duplikat di sidebar.
   { label: 'Data Karyawan', icon: Users, path: '/karyawan', matchPrefix: '/karyawan' },
-  // BELUM LENGKAP -- disembunyikan dari sidebar dulu, jangan dihapus.
-  { label: 'Absensi', icon: QrCode, path: '/absensi', matchPrefix: '/absensi', hidden: true },
-  // BELUM LENGKAP -- disembunyikan dari sidebar dulu, jangan dihapus.
-  { label: 'Pengajuan Izin', icon: FileText, path: '/izin', matchPrefix: '/izin', hidden: true },
-  // BELUM LENGKAP -- disembunyikan dari sidebar dulu, jangan dihapus.
-  { label: 'Ticketing', icon: Ticket, path: '/ticketing', matchPrefix: '/ticketing', hidden: true },
   { label: 'Inventaris', icon: Package, path: '/inventaris', matchPrefix: '/inventaris' },
-  // BELUM LENGKAP -- disembunyikan dari sidebar dulu, jangan dihapus.
-  { label: 'Agenda', icon: CalendarDays, path: '/agenda', matchPrefix: '/agenda', hidden: true },
   { label: 'Cabang', icon: Building2, path: '/cabang', matchPrefix: '/cabang' },
-  { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true },
+  { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true, hidden: true },
   {
     label: 'Master Data',
     icon: Database,
@@ -76,8 +59,6 @@ const navItems: NavItem[] = [
       { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier' },
     ],
   },
-  // BELUM LENGKAP -- disembunyikan dari sidebar dulu, jangan dihapus.
-  { label: 'AI Assistant', icon: Bot, path: '/ai-assistant', hidden: true },
   { label: 'Audit Log', icon: ScrollText, path: '/audit-log', restricted: true },
   { label: 'Settings', icon: SettingsIcon, path: '/settings' },
 ];
@@ -132,7 +113,6 @@ interface AppLayoutProps {
 
 export default function AppLayout({ title, children }: AppLayoutProps = {}) {
   const { user, logout } = useAuth();
-  const { resetChat } = useChat();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
@@ -146,7 +126,6 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
 
   const STAFF_ROLES = ['admin', 'hr'];
   const REVIEWER_ROLES = ['admin', 'hr', 'manajer', 'manager', 'cabang'];
-  const ABSENSI_ROLES = ['admin', 'hr', 'manajer', 'manager'];
 
   const roleFilter = (item: NavItem) => {
     // Fitur yang masih belum lengkap -- sembunyikan dari sidebar dulu (lihat flag `hidden` di navItems).
@@ -155,9 +134,6 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
     }
     // Master Data hanya untuk admin/hr
     if (item.label === 'Master Data' && !STAFF_ROLES.includes(user?.role ?? '')) {
-      return false;
-    }
-    if (item.label === 'Absensi' && !ABSENSI_ROLES.includes(user?.role ?? '')) {
       return false;
     }
     if (item.label === 'Dashboard' && user?.role !== 'admin') {
@@ -325,7 +301,6 @@ const handleLogout = async () => {
     // (unsubscribe push dulu selagi token masih valid, baru revoke). Jangan panggil
     // api.post('/logout') terpisah di sini -- itu bikin push unsubscribe-nya gagal
     // diam-diam (401) karena token keburu mati duluan.
-    resetChat();
     const res = await logout();
     navigate('/login', {
         replace: true,
@@ -337,7 +312,7 @@ const handleLogout = async () => {
   // bukan halaman penuh lagi — jadi navigasi ke sini WAJIB bawa state.backgroundLocation
   // supaya halaman yang lagi kebuka tetap mounted & kelihatan di belakangnya, gak
   // reload/hilang. Kalau path-nya gak ada di daftar ini, navigasi biasa aja.
-  const OVERLAY_PATHS = ['/karyawan/create', '/izin/create'];
+  const OVERLAY_PATHS = ['/karyawan/create'];
 
   const handleNavClick = (item: NavItem) => {
     if (item.children) {
@@ -583,7 +558,6 @@ const handleLogout = async () => {
           </div>
         </main>
       </div>
-      {/* BELUM LENGKAP -- bubble chat AI Assistant disembunyikan sementara, jangan dihapus. */}
     </div>
   );
 }

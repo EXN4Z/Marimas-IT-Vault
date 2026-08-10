@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, type Location } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { ChatProvider } from './context/ChatContext';
 import { Toaster } from 'react-hot-toast';
 import AdminRoute from './components/shared/AdminRoute';
 import AppLayout from './components/shared/AppLayout';
@@ -11,11 +10,8 @@ import Inventaris from './pages/Inventaris';
 import Karyawan from './pages/Karyawan';
 import KaryawanEdit from './pages/KaryawanEdit';
 import KaryawanCreate from './pages/KaryawanCreate';
-import AiAssistant from './pages/AiAssistant';
-import Ticketing from './pages/Ticketing';
 import Settings from './pages/Settings';
 import AuditLog from './pages/AuditLog';
-import PengajuanIzin from './pages/PengajuanIzin';
 import Laporan from './pages/Laporan';
 import MasterData from './pages/MasterData';
 import CabangPage from './pages/CabangPage';
@@ -27,7 +23,7 @@ interface LocationState {
 function AppRoutes() {
   const location = useLocation();
   // Kalau route ini dibuka lewat state.backgroundLocation (lihat navigate() di
-  // Karyawan.tsx / PengajuanIzin.tsx), <Routes> utama tetap merender halaman LAMA
+  // Karyawan.tsx), <Routes> utama tetap merender halaman LAMA
   // (backgroundLocation), jadi dia tidak pernah unmount/loading ulang. Route
   // create/edit-nya sendiri dirender terpisah di bawah sebagai layer overlay
   // absolute di atasnya (mirip ScanQrModal), lalu ditutup dengan navigate(-1).
@@ -53,13 +49,10 @@ function AppRoutes() {
           <Route path="/inventaris" element={<Inventaris />} />
           <Route path="/aset" element={<Navigate to="/inventaris" replace />} />
           <Route path="/karyawan" element={<Karyawan />} />
-          <Route path="/izin" element={<PengajuanIzin />} />
           {/* Dashboard Analytics sekarang jadi tab di dalam /dashboard, bukan halaman sendiri.
               Redirect ini cuma buat jaga-jaga kalau ada bookmark/link lama ke /dashboard-analytics. */}
           <Route path="/dashboard-analytics" element={<Navigate to="/dashboard?tab=analytics" replace />} />
-          <Route path="/ticketing" element={<Ticketing />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/ai-assistant" element={<AiAssistant />} />
           <Route path="/audit-log" element={<AuditLog />} />
           <Route path="/laporan" element={<Laporan />} />
           <Route path="/master-data" element={<MasterData />} />
@@ -120,11 +113,9 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <ChatProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </ChatProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
     </AuthProvider>
   );
 }
