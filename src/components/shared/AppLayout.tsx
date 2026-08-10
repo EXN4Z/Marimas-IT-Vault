@@ -18,6 +18,9 @@ import {
   Boxes,
   Package2,
   Truck,
+  Wrench,
+  Images,
+  History,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import NotificationDropdown from './NotificationDropDown';
@@ -42,7 +45,21 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Data Karyawan', icon: Users, path: '/karyawan', matchPrefix: '/karyawan' },
-  { label: 'Inventaris', icon: Package, path: '/inventaris', matchPrefix: '/inventaris' },
+  {
+    label: 'Inventaris',
+    icon: Package,
+    path: null,
+    matchPrefix: '/inventaris',
+    children: [
+      { label: 'Aset', icon: Package, path: '/inventaris?tab=aset' },
+      // Kelengkapan Aset sengaja gak dikasih link dropdown -- masih jarang
+      // kepake, disembunyikan dulu dari sidebar. Tab & kodenya tetap ada
+      // di Inventaris.tsx, cuma gak muncul di tab bar / sidebar sementara.
+      { label: 'Penanganan Aset', icon: Wrench, path: '/inventaris?tab=penanganan_aset', roles: ['admin'] },
+      { label: 'Foto Aset', icon: Images, path: '/inventaris?tab=foto_aset', roles: ['admin'] },
+      { label: 'Riwayat Aset', icon: History, path: '/inventaris?tab=riwayat_aset' },
+    ],
+  },
   { label: 'Cabang', icon: Building2, path: '/cabang', matchPrefix: '/cabang' },
   { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true, hidden: true },
   {
