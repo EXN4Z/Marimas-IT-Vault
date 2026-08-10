@@ -11,14 +11,11 @@ import Inventaris from './pages/Inventaris';
 import Karyawan from './pages/Karyawan';
 import KaryawanEdit from './pages/KaryawanEdit';
 import KaryawanCreate from './pages/KaryawanCreate';
-import Absensi from './pages/Absensi';
 import AiAssistant from './pages/AiAssistant';
 import Ticketing from './pages/Ticketing';
 import Settings from './pages/Settings';
 import AuditLog from './pages/AuditLog';
 import PengajuanIzin from './pages/PengajuanIzin';
-import IzinForm from './pages/IzinPageForm';
-import Agenda from './pages/Agenda';
 import Laporan from './pages/Laporan';
 import MasterData from './pages/MasterData';
 import CabangPage from './pages/CabangPage';
@@ -60,12 +57,10 @@ function AppRoutes() {
           {/* Dashboard Analytics sekarang jadi tab di dalam /dashboard, bukan halaman sendiri.
               Redirect ini cuma buat jaga-jaga kalau ada bookmark/link lama ke /dashboard-analytics. */}
           <Route path="/dashboard-analytics" element={<Navigate to="/dashboard?tab=analytics" replace />} />
-          <Route path="/absensi" element={<Absensi />} />
           <Route path="/ticketing" element={<Ticketing />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/ai-assistant" element={<AiAssistant />} />
           <Route path="/audit-log" element={<AuditLog />} />
-          <Route path="/agenda" element={<Agenda />} />
           <Route path="/laporan" element={<Laporan />} />
           <Route path="/master-data" element={<MasterData />} />
           <Route path="/cabang" element={<CabangPage />} />
@@ -90,7 +85,6 @@ function AppRoutes() {
               </AdminRoute>
             }
           />
-          <Route path="/izin/create" element={<IzinForm />} />
         </Route>
       </Routes>
 
@@ -117,7 +111,6 @@ function AppRoutes() {
               </AdminRoute>
             }
           />
-          <Route path="/izin/create" element={<IzinForm />} />
         </Routes>
       )}
     </>

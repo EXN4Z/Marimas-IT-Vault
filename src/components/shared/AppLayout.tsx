@@ -27,7 +27,6 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import NotificationDropdown from './NotificationDropDown';
-import ChatWidget from './Chatwidget';
 
 interface NavChild {
   label: string;
@@ -585,7 +584,6 @@ const handleLogout = async () => {
         </main>
       </div>
       {/* BELUM LENGKAP -- bubble chat AI Assistant disembunyikan sementara, jangan dihapus. */}
-      {false && location.pathname !== '/ai-assistant' && <ChatWidget />}
     </div>
   );
 }
