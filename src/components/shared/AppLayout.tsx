@@ -161,6 +161,9 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
     if (item.label === 'Absensi' && !ABSENSI_ROLES.includes(user?.role ?? '')) {
       return false;
     }
+    if (item.label === 'Dashboard' && user?.role !== 'admin') {
+      return false;
+    }
     // Laporan untuk admin/hr/manajer
     if (item.label === 'Laporan' && !REVIEWER_ROLES.includes(user?.role ?? '')) {
       return false;

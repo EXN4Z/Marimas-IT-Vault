@@ -11,7 +11,7 @@ import { getAset, type Aset } from '../api/aset';
 import AsetExportModal from '../components/inventaris/AsetExportModal';
 
 const STAFF_ROLES = ['admin', 'hr', 'manajer', 'manager', 'cabang'];
-
+const SHOW_LAPORAN = false;
 const bulanOptions = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
@@ -127,38 +127,40 @@ export default function Laporan() {
 
   return (
     <>
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
-        <p className="text-sm text-slate-500 max-w-lg">
-          Cetak rekap bulanan sebagai PDF, atau unduh sebagai file Excel.
-        </p>
+      {SHOW_LAPORAN && (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
+          <p className="text-sm text-slate-500 max-w-lg">
+            Cetak rekap bulanan sebagai PDF, atau unduh sebagai file Excel.
+          </p>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <select
-            value={bulan}
-            onChange={(e) => setBulan(Number(e.target.value))}
-            className="px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-          >
-            {bulanOptions.map((label, idx) => (
-              <option key={label} value={idx + 1}>
-                {label}
-              </option>
-            ))}
-          </select>
-          <input
-            type="number"
-            value={tahun}
-            onChange={(e) => setTahun(Number(e.target.value))}
-            className="w-24 px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-          />
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <select
+              value={bulan}
+              onChange={(e) => setBulan(Number(e.target.value))}
+              className="px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+            >
+              {bulanOptions.map((label, idx) => (
+                <option key={label} value={idx + 1}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <input
+              type="number"
+              value={tahun}
+              onChange={(e) => setTahun(Number(e.target.value))}
+              className="w-24 px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+            />
+          </div>
         </div>
-      </div>
-
+      )}
       {error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4">{error}</p>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {(Object.keys(laporanConfig) as LaporanKey[]).map((key) => {
+        {SHOW_LAPORAN &&
+        (Object.keys(laporanConfig) as LaporanKey[]).map((key) => {
           const cfg = laporanConfig[key];
           const Icon = cfg.icon;
           const isPrintingPdf = processing?.key === key && processing.type === 'pdf';
