@@ -687,6 +687,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                   <th className="px-6 py-3 font-medium">Kode Aset</th>
                   <th className="px-6 py-3 font-medium">Jenis</th>
                   <th className="px-6 py-3 font-medium">Merek / Tipe</th>
+                  <th className="px-6 py-3 font-medium">Jumlah</th>
                   <th className="px-6 py-3 font-medium">Status</th>
                   <th className="px-6 py-3 font-medium">Dipakai Oleh</th>
                   <th className="px-6 py-3 font-medium">Aksi</th>
@@ -705,6 +706,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                           {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}
                         </p>
                       </td>
+                      <td className="px-6 py-3 text-slate-600 whitespace-nowrap">{a.jumlah ?? 1}</td>
                       <td className="px-6 py-3 whitespace-nowrap">
                         <StatusBadge colorClass={STATUS_STYLE[a.status]}>{STATUS_LABEL[a.status]}</StatusBadge>
                       </td>
@@ -746,7 +748,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-slate-800">{a.kode_aset}</p>
                       <p className="text-xs text-slate-500 truncate">
-                        {a.jenis?.nama || '-'} · {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}
+                        {a.jenis?.nama || '-'} · {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'} · Jumlah: {a.jumlah ?? 1}
                       </p>
                       <StatusBadge colorClass={STATUS_STYLE[a.status]} size="xs" className="mt-1.5">
                         {STATUS_LABEL[a.status]}
@@ -938,6 +940,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                     <p className="text-sm text-slate-800 font-medium">{[detail.merek, detail.tipe].filter(Boolean).join(' ') || '-'}</p>
                     <p className="text-xs text-slate-400">{detail.jenis?.nama || '-'} · {detail.warna || '-'}</p>
                     <p className="text-xs text-slate-400">S/N: {detail.serial_number || '-'}</p>
+                    <p className="text-xs text-slate-400">Jumlah: {detail.jumlah ?? 1}</p>
                   </div>
                 </div>
 
