@@ -81,15 +81,6 @@ export interface AsetPenanganan {
   } | null;
 }
 
-export interface AsetPenggantianSparepart {
-  id: number;
-  aset_id: number;
-  tanggal: string;
-  nama_sparepart: string;
-  keterangan: string | null;
-  biaya: number | null;
-}
-
 export interface Aset {
   id: number;
   kode_aset: string;
@@ -113,7 +104,6 @@ export interface Aset {
   pemakai_saat_ini?: AsetPemakai | null;
   pemakai?: AsetPemakai[]; // riwayat lengkap, cuma keisi di endpoint show()
   penanganan?: AsetPenanganan[]; // riwayat lengkap, cuma keisi di endpoint show()
-  penggantian_sparepart?: AsetPenggantianSparepart[];
   penanganan_aktif?: { id: number; jenis_kerusakan: string; keluhan: string; tanggal_lapor: string } | null;
   // catatan penjualan/writeoff — cuma keisi kalau status aset 'dijual'
   writeoff?: {
@@ -346,26 +336,6 @@ export async function selesaikanPenangananAset(
 // DELETE /aset-penanganan/{id} — dibatasi backend ke role admin.
 export async function deletePenangananAset(asetPenangananId: number): Promise<{ message: string }> {
   const res = await api.delete<{ message: string }>(`/aset-penanganan/${asetPenangananId}`);
-  return res.data;
-}
-
-// POST /aset/{aset}/penggantian-sparepart — dibatasi backend ke role admin.
-export async function tambahPenggantianSparepart(
-  asetId: number,
-  payload: {
-    tanggal: string;
-    nama_sparepart: string;
-    keterangan?: string;
-    biaya?: number;
-  }
-): Promise<AsetPenggantianSparepart> {
-  const res = await api.post<AsetPenggantianSparepart>(`/aset/${asetId}/penggantian-sparepart`, payload);
-  return res.data;
-}
-
-// DELETE /aset-penggantian-sparepart/{id} — dibatasi backend ke role admin.
-export async function deletePenggantianSparepart(id: number): Promise<{ message: string }> {
-  const res = await api.delete<{ message: string }>(`/aset-penggantian-sparepart/${id}`);
   return res.data;
 }
 
