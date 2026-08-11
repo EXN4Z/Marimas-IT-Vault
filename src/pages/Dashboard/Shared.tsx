@@ -317,7 +317,6 @@ export function StatusAsetDonutCard({ statusAsetDistribusi }: { statusAsetDistri
   );
 }
 
-// ==== Distribusi aset per jenis — khusus admin (inventaris) ====
 export function AsetPerJenisCard({ asetPerJenis }: { asetPerJenis: AsetPerJenis[] }) {
   return (
     <div className={cardClass}>
@@ -329,7 +328,7 @@ export function AsetPerJenisCard({ asetPerJenis }: { asetPerJenis: AsetPerJenis[
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={asetPerJenis} margin={{ top: 16, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" stroke={THEME.grid} />
-              <XAxis dataKey="jenis" tick={{ fontSize: 12, fill: THEME.axis }} axisLine={false} tickLine={false} interval={0} angle={-20} textAnchor="end" height={50} />
+              <XAxis dataKey="jenis" tick={false} axisLine={false} tickLine={false} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: THEME.axis }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
               <Bar dataKey="jumlah" fill={THEME.orange} radius={[8, 8, 0, 0]} barSize={36} />
