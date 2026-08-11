@@ -10,7 +10,6 @@ import AsetSerahTerimaModal from './AsetSerahTerimaModal';
 import AsetPengembalianModal from './AsetPengembalianModal';
 import AsetLaporKerusakanModal from './AsetLaporKerusakanModal';
 import AsetPenangananSelesaiModal from './AsetPenangananSelesaiModal';
-import AsetSparepartModal from './AsetSparepartModal';
 import { useAuth } from '../../context/AuthContext';
 import { printStruk } from '../../utils/printStruk';
 import { namaPemakai, userIdPemakai, isCabangPemakai } from './asetHelpers';
@@ -21,7 +20,6 @@ import {
   deleteAset,
   deletePenangananAset,
   deletePemakaiAset,
-  deletePenggantianSparepart,
   terimaPenangananAset,
   jualAset,
   type Aset,
@@ -122,7 +120,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
 
   const [perbaikanAsetTarget, setPerbaikanAsetTarget] = useState<Aset | null>(null);
   const [penangananSelesaiTarget, setPenangananSelesaiTarget] = useState<{ aset: Aset; penanganan: AsetPenanganan } | null>(null);
-  const [sparepartAsetTarget, setSparepartAsetTarget] = useState<Aset | null>(null);
   const [historyActionError, setHistoryActionError] = useState('');
 
   // BARU: state untuk aksi "Jual Aset" (aset berstatus tersedia atau rusak_berat) —
@@ -333,17 +330,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
       setHistoryActionError(err.response?.data?.message || 'Gagal menghapus riwayat pemakaian.');
     } finally {
       setDeletingPemakaiId(null);
-    }
-  };
-
-  const handleDeleteSparepart = async (id: number) => {
-    if (!confirm('Hapus riwayat penggantian sparepart ini?')) return;
-    setHistoryActionError('');
-    try {
-      await deletePenggantianSparepart(id);
-      await refreshDetail();
-    } catch (err: any) {
-      setHistoryActionError(err.response?.data?.message || 'Gagal menghapus riwayat sparepart.');
     }
   };
 
@@ -916,7 +902,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
         !pengembalianTarget &&
         !perbaikanAsetTarget &&
         !penangananSelesaiTarget &&
-        !sparepartAsetTarget &&
         !jualTarget && (
         <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
@@ -1278,35 +1263,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                     );
                   })()}
                 </div>
-
-                {/* RIWAYAT PENGGANTIAN SPAREPART */}
-                <div>
-                  <p className="text-sm font-semibold text-slate-900 mb-2">Riwayat Penggantian Sparepart</p>
-                  <ul className="flex flex-col gap-2">
-                    {(detail.penggantian_sparepart || []).map((s) => (
-                      <li key={s.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2 flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <span className="font-medium text-slate-800">{s.nama_sparepart}</span>{' '}
-                          <span className="text-slate-500">— {formatTanggalId(s.tanggal)}</span>
-                          {s.keterangan && <p className="text-slate-400 mt-0.5">{s.keterangan}</p>}
-                          {s.biaya != null && <p className="text-slate-400 mt-0.5">{formatRupiah(s.biaya)}</p>}
-                        </div>
-                        {isAdmin && (
-                          <button
-                            onClick={() => handleDeleteSparepart(s.id)}
-                            title="Hapus"
-                            className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition flex-shrink-0"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </li>
-                    ))}
-                    {!detail.penggantian_sparepart?.length && (
-                      <p className="text-xs text-slate-400">Belum ada riwayat penggantian sparepart.</p>
-                    )}
-                  </ul>
-                </div>
               </div>
             )}
           </div>
@@ -1361,18 +1317,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
           onClose={() => setPenangananSelesaiTarget(null)}
           onSuccess={() => {
             setPenangananSelesaiTarget(null);
-            loadList();
-            if (detailId) refreshDetail();
-          }}
-        />
-      )}
-
-      {sparepartAsetTarget && (
-        <AsetSparepartModal
-          aset={sparepartAsetTarget}
-          onClose={() => setSparepartAsetTarget(null)}
-          onSuccess={() => {
-            setSparepartAsetTarget(null);
             loadList();
             if (detailId) refreshDetail();
           }}
