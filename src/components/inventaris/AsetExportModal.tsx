@@ -35,7 +35,6 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { key: 'tipe', label: 'Tipe', defaultChecked: true, get: (a) => a.tipe || '-' },
   { key: 'warna', label: 'Warna', defaultChecked: false, get: (a) => a.warna || '-' },
   { key: 'serial_number', label: 'Serial Number', defaultChecked: true, get: (a) => a.serial_number || '-' },
-  { key: 'jumlah', label: 'Jumlah', defaultChecked: false, get: (a) => String(a.jumlah ?? 1) },
   { key: 'status', label: 'Status', defaultChecked: true, get: (a) => STATUS_LABEL[a.status] },
   { key: 'pemakai_saat_ini', label: 'Pemakai Saat Ini', defaultChecked: true, get: (a) => namaPemakai(a.pemakai_saat_ini) },
   {

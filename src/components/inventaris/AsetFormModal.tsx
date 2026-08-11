@@ -4,10 +4,12 @@ import { createAset, updateAset, type Aset } from '../../api/aset';
 import type { JenisAset } from '../../api/jenisAset';
 import type { Supplier } from '../../api/supplier';
 import type { KelengkapanMaster } from '../../api/kelengkapanMaster';
+import type { Departemen } from '../../api/departemen';
 
 interface AsetFormModalProps {
   aset: Aset | null; // null = mode tambah
   jenisOptions: JenisAset[];
+  departemenOptions: Departemen[];
   supplierOptions: Supplier[];
   kelengkapanOptions: KelengkapanMaster[];
   onClose: () => void;
@@ -21,11 +23,11 @@ interface KelengkapanRow {
 
 interface FormState {
   jenis_id: string;
+  departemen_id: string;
   merek: string;
   tipe: string;
   warna: string;
   serial_number: string;
-  jumlah: string;
   tanggal_garansi: string;
   perusahaan: string;
   keterangan: string;
@@ -38,6 +40,7 @@ interface FormState {
 export default function AsetFormModal({
   aset,
   jenisOptions,
+  departemenOptions,
   supplierOptions,
   kelengkapanOptions,
   onClose,
@@ -45,11 +48,11 @@ export default function AsetFormModal({
 }: AsetFormModalProps) {
   const [form, setForm] = useState<FormState>({
     jenis_id: aset?.jenis_id ? String(aset.jenis_id) : '',
+    departemen_id: aset?.departemen_id ? String(aset.departemen_id) : '',
     merek: aset?.merek || '',
     tipe: aset?.tipe || '',
     warna: aset?.warna || '',
     serial_number: aset?.serial_number || '',
-    jumlah: aset?.jumlah != null ? String(aset.jumlah) : '1',
     tanggal_garansi: aset?.tanggal_garansi ? aset.tanggal_garansi.slice(0, 10) : '',
     perusahaan: aset?.perusahaan || '',
     keterangan: aset?.keterangan || '',
@@ -91,11 +94,11 @@ export default function AsetFormModal({
 
       const values = {
         jenis_id: form.jenis_id ? Number(form.jenis_id) : null,
+        departemen_id: form.departemen_id ? Number(form.departemen_id) : null,
         merek: form.merek.trim() || undefined,
         tipe: form.tipe.trim() || undefined,
         warna: form.warna.trim() || undefined,
         serial_number: form.serial_number.trim() || undefined,
-        jumlah: form.jumlah ? Number(form.jumlah) : 1,
         tanggal_garansi: form.tanggal_garansi || undefined,
         perusahaan: form.perusahaan.trim() || undefined,
         keterangan: form.keterangan.trim() || undefined,
@@ -149,6 +152,22 @@ export default function AsetFormModal({
             </select>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Departemen</label>
+            <select
+              value={form.departemen_id}
+              onChange={set('departemen_id')}
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
+            >
+              <option value="">Tanpa departemen</option>
+              {departemenOptions.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.nama}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Merek</label>
@@ -170,7 +189,7 @@ export default function AsetFormModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Warna</label>
               <input
@@ -186,17 +205,6 @@ export default function AsetFormModal({
                 onChange={set('serial_number')}
                 className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Jumlah</label>
-              <input
-                type="number"
-                min={1}
-                value={form.jumlah}
-                onChange={set('jumlah')}
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-              <p className="text-xs text-slate-400 mt-1">Isi &gt;1 hanya untuk item tanpa serial number (mis. kabel, adaptor).</p>
             </div>
           </div>
 

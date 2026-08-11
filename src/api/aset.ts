@@ -2,6 +2,7 @@ import api from './axios';
 import type { JenisAset } from './jenisAset';
 import type { Supplier } from './supplier';
 import type { KelengkapanMaster } from './kelengkapanMaster';
+import type { Departemen } from './departemen';
 
 export type AsetStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'dijual';
 export type AsetPemakaiStatus = 'pending' | 'disetujui' | 'ditolak';
@@ -86,11 +87,12 @@ export interface Aset {
   kode_aset: string;
   jenis_id: number | null;
   jenis?: JenisAset | null;
+  departemen_id: number | null;
+  departemen?: Departemen | null;
   merek: string | null;
   tipe: string | null;
   warna: string | null;
   serial_number: string | null;
-  jumlah: number;
   tanggal_garansi: string | null;
   perusahaan: string | null;
   keterangan: string | null;
@@ -120,11 +122,11 @@ export interface Aset {
 
 export interface AsetFormValues {
   jenis_id?: number | null;
+  departemen_id?: number | null;
   merek?: string;
   tipe?: string;
   warna?: string;
   serial_number?: string;
-  jumlah?: number;
   tanggal_garansi?: string;
   perusahaan?: string;
   keterangan?: string;
@@ -166,11 +168,11 @@ export interface PaginatedFotoPemakai {
 function buildAsetFormData(values: AsetFormValues): FormData {
   const fd = new FormData();
   if (values.jenis_id != null) fd.append('jenis_id', String(values.jenis_id));
+  if (values.departemen_id != null) fd.append('departemen_id', String(values.departemen_id));
   if (values.merek) fd.append('merek', values.merek);
   if (values.tipe) fd.append('tipe', values.tipe);
   if (values.warna) fd.append('warna', values.warna);
   if (values.serial_number) fd.append('serial_number', values.serial_number);
-  if (values.jumlah != null) fd.append('jumlah', String(values.jumlah));
   if (values.tanggal_garansi) fd.append('tanggal_garansi', values.tanggal_garansi);
   if (values.perusahaan) fd.append('perusahaan', values.perusahaan);
   if (values.keterangan) fd.append('keterangan', values.keterangan);
