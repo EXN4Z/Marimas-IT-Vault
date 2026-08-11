@@ -4,8 +4,8 @@ import api from '../api/axios';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import Pagination from '../components/shared/Pagination';
 
-type Role = 'admin' | 'hr' | 'manajer' | 'karyawan';
-type TabKey = 'semua' | 'karyawan' | 'hr_manajer' | 'admin';
+type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'cabang';
+type TabKey = 'semua' | 'karyawan' | 'hr_manajer' | 'admin' | 'cabang';
 
 interface Pekerja {
     nip: string;
@@ -26,6 +26,7 @@ const roleStyles: Record<Role, string> = {
     hr: 'bg-pink-50 text-pink-700',
     manajer: 'bg-purple-50 text-purple-700',
     karyawan: 'bg-teal-50 text-teal-700',
+    cabang: 'bg-blue-50 text-blue-700',
 };
 
 const roleLabels: Record<Role, string> = {
@@ -33,6 +34,7 @@ const roleLabels: Record<Role, string> = {
     hr: 'HR',
     manajer: 'Manajer',
     karyawan: 'Karyawan',
+    cabang: 'Cabang',
 };
 
 const tabs: { key: TabKey; label: string; icon: JSX.Element }[] = [
@@ -72,6 +74,15 @@ const tabs: { key: TabKey; label: string; icon: JSX.Element }[] = [
             </svg>
         ),
     },
+    {
+        key: 'cabang',
+        label: 'Cabang',
+        icon: (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+        ),
+    }
 ];
 
 function initials(name: string): string {
