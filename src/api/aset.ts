@@ -2,6 +2,7 @@ import api from './axios';
 import type { JenisAset } from './jenisAset';
 import type { Supplier } from './supplier';
 import type { KelengkapanMaster } from './kelengkapanMaster';
+import type { Departemen } from './departemen';
 
 export type AsetStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'dijual';
 export type AsetPemakaiStatus = 'pending' | 'disetujui' | 'ditolak';
@@ -81,20 +82,13 @@ export interface AsetPenanganan {
   } | null;
 }
 
-export interface AsetPenggantianSparepart {
-  id: number;
-  aset_id: number;
-  tanggal: string;
-  nama_sparepart: string;
-  keterangan: string | null;
-  biaya: number | null;
-}
-
 export interface Aset {
   id: number;
   kode_aset: string;
   jenis_id: number | null;
   jenis?: JenisAset | null;
+  departemen_id: number | null;
+  departemen?: Departemen | null;
   merek: string | null;
   tipe: string | null;
   warna: string | null;
@@ -113,7 +107,6 @@ export interface Aset {
   pemakai_saat_ini?: AsetPemakai | null;
   pemakai?: AsetPemakai[]; // riwayat lengkap, cuma keisi di endpoint show()
   penanganan?: AsetPenanganan[]; // riwayat lengkap, cuma keisi di endpoint show()
-  penggantian_sparepart?: AsetPenggantianSparepart[];
   penanganan_aktif?: { id: number; jenis_kerusakan: string; keluhan: string; tanggal_lapor: string } | null;
   // catatan penjualan/writeoff — cuma keisi kalau status aset 'dijual'
   writeoff?: {
@@ -129,6 +122,7 @@ export interface Aset {
 
 export interface AsetFormValues {
   jenis_id?: number | null;
+  departemen_id?: number | null;
   merek?: string;
   tipe?: string;
   warna?: string;
@@ -174,6 +168,7 @@ export interface PaginatedFotoPemakai {
 function buildAsetFormData(values: AsetFormValues): FormData {
   const fd = new FormData();
   if (values.jenis_id != null) fd.append('jenis_id', String(values.jenis_id));
+  if (values.departemen_id != null) fd.append('departemen_id', String(values.departemen_id));
   if (values.merek) fd.append('merek', values.merek);
   if (values.tipe) fd.append('tipe', values.tipe);
   if (values.warna) fd.append('warna', values.warna);
@@ -346,26 +341,6 @@ export async function selesaikanPenangananAset(
 // DELETE /aset-penanganan/{id} — dibatasi backend ke role admin.
 export async function deletePenangananAset(asetPenangananId: number): Promise<{ message: string }> {
   const res = await api.delete<{ message: string }>(`/aset-penanganan/${asetPenangananId}`);
-  return res.data;
-}
-
-// POST /aset/{aset}/penggantian-sparepart — dibatasi backend ke role admin.
-export async function tambahPenggantianSparepart(
-  asetId: number,
-  payload: {
-    tanggal: string;
-    nama_sparepart: string;
-    keterangan?: string;
-    biaya?: number;
-  }
-): Promise<AsetPenggantianSparepart> {
-  const res = await api.post<AsetPenggantianSparepart>(`/aset/${asetId}/penggantian-sparepart`, payload);
-  return res.data;
-}
-
-// DELETE /aset-penggantian-sparepart/{id} — dibatasi backend ke role admin.
-export async function deletePenggantianSparepart(id: number): Promise<{ message: string }> {
-  const res = await api.delete<{ message: string }>(`/aset-penggantian-sparepart/${id}`);
   return res.data;
 }
 
