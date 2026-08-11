@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, type Location } fr
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 import AdminRoute from './components/shared/AdminRoute';
+import RoleRoute from './components/shared/RoleRoute';
 import AppLayout from './components/shared/AppLayout';
 import Login from './pages/Login';
 import VerifyOtp from './pages/VerifyOtp';
@@ -54,10 +55,19 @@ function AppRoutes() {
           <Route path="/dashboard-analytics" element={<Navigate to="/dashboard?tab=analytics" replace />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/audit-log" element={<AuditLog />} />
-          <Route path="/laporan" element={<Laporan />} />
+          {/* /laporan cuma boleh diakses staff (admin/hr/manajer/cabang) --
+              karyawan biasa di-redirect balik ke /dashboard, bukan cuma
+              ditampilin pesan "tidak punya akses" di dalam halamannya. */}
+          <Route
+            path="/laporan"
+            element={
+              <RoleRoute roles={['admin']}>
+                <Laporan />
+              </RoleRoute>
+            }
+          />
           <Route path="/master-data" element={<MasterData />} />
           <Route path="/cabang" element={<CabangPage />} />
-          <Route path="/laporan" element={<Laporan />} />
 
           {/* Fallback: kalau /karyawan/create atau /karyawan/:id/edit diakses langsung
               (refresh browser / paste link / belum ada backgroundLocation), route ini
