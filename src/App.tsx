@@ -57,6 +57,7 @@ function AppRoutes() {
           <Route path="/laporan" element={<Laporan />} />
           <Route path="/master-data" element={<MasterData />} />
           <Route path="/cabang" element={<CabangPage />} />
+          <Route path="/laporan" element={<Laporan />} />
 
           {/* Fallback: kalau /karyawan/create atau /karyawan/:id/edit diakses langsung
               (refresh browser / paste link / belum ada backgroundLocation), route ini

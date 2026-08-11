@@ -61,7 +61,7 @@ const navItems: NavItem[] = [
     ],
   },
   { label: 'Cabang', icon: Building2, path: '/cabang', matchPrefix: '/cabang' },
-  { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true, hidden: true },
+  { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true},
   {
     label: 'Master Data',
     icon: Database,
