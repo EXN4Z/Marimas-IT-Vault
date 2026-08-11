@@ -61,7 +61,7 @@ const navItems: NavItem[] = [
     ],
   },
   { label: 'Cabang', icon: Building2, path: '/cabang', matchPrefix: '/cabang' },
-  { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true, hidden: true },
+  { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true},
   {
     label: 'Master Data',
     icon: Database,
@@ -142,7 +142,6 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
   const location = useLocation();
 
   const STAFF_ROLES = ['admin', 'hr'];
-  const REVIEWER_ROLES = ['admin', 'hr', 'manajer', 'manager', 'cabang'];
 
   const roleFilter = (item: NavItem) => {
     // Fitur yang masih belum lengkap -- sembunyikan dari sidebar dulu (lihat flag `hidden` di navItems).
@@ -157,7 +156,7 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
       return false;
     }
     // Laporan untuk admin/hr/manajer
-    if (item.label === 'Laporan' && !REVIEWER_ROLES.includes(user?.role ?? '')) {
+    if (item.label === 'Laporan' && !STAFF_ROLES.includes(user?.role ?? '')) {
       return false;
     }
     return true;
