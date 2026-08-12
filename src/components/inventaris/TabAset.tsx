@@ -975,6 +975,21 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                   </div>
                 </div>
 
+                {detail.status === 'dipakai' && detail.pemakai_saat_ini && (
+                  <div className="bg-slate-50 rounded-lg p-3 text-sm">
+                    <p className="text-xs text-slate-400 mb-1">Dipinjam Oleh</p>
+                    <p className="text-slate-800 font-medium">
+                      {namaPemakai(detail.pemakai_saat_ini)}
+                      {isCabangPemakai(detail.pemakai_saat_ini) && ' (Cabang)'}
+                    </p>
+                    {detail.pemakai_saat_ini.pekerja && (
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        NIK: {detail.pemakai_saat_ini.pekerja.nik || '-'} · {detail.pemakai_saat_ini.pekerja.departemen?.nama || '-'}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-xs text-slate-400">Perusahaan</p>
