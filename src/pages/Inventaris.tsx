@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Package, Boxes, ClipboardList, Wrench, Images, History } from 'lucide-react';
+import { Package, ClipboardList, Wrench, Images, History } from 'lucide-react';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import TabAset from '../components/inventaris/TabAset';
-import TabKategori from '../components/inventaris/TabKategori';
-import TabKelengkapanAset from '../components/inventaris/TabKelengkapanAset';
+import TabKelengkapanMaster from '../components/inventaris/TabKelengkapanMaster';
 import TabPenangananAset from '../components/inventaris/TabPenangananAset';
 import TabFotoAset from '../components/inventaris/TabFotoAset';
 import TabRiwayatAset from '../components/inventaris/TabRiwayatAset';
@@ -16,9 +15,9 @@ import api from '../api/axios';
 // Aset, Riwayat Aset -- pola sama kayak child-class di MasterData.tsx, dan
 // sekarang juga punya dropdown sendiri di sidebar (lihat AppLayout.tsx) yang
 // nyambung lewat query "?tab=" persis kayak Master Data.
-type TabKey = 'aset' | 'kategori' | 'kelengkapan_aset' | 'penanganan_aset' | 'foto_aset' | 'riwayat_aset';
+type TabKey = 'aset' | 'kelengkapan_aset' | 'penanganan_aset' | 'foto_aset' | 'riwayat_aset';
 
-const TAB_KEYS: TabKey[] = ['aset', 'kategori', 'kelengkapan_aset', 'penanganan_aset', 'foto_aset', 'riwayat_aset'];
+const TAB_KEYS: TabKey[] = ['aset', 'kelengkapan_aset', 'penanganan_aset', 'foto_aset', 'riwayat_aset'];
 
 function isTabKey(value: string | null): value is TabKey {
   return !!value && (TAB_KEYS as string[]).includes(value);
@@ -108,15 +107,13 @@ export default function Inventaris() {
 
   const tabs: { key: TabKey; label: string; icon: typeof Package; adminOnly?: boolean; hidden?: boolean }[] = [
     { key: 'aset', label: 'Aset', icon: Package },
-    // "Kategori" gabungin master data jenis_aset & kelengkapan_master jadi
-    // satu tab (dulu 2 tab terpisah di MasterData.tsx: "Jenis Aset" dan
-    // "Kelengkapan Aset") -- pindah ke sini biar satu atap sama data
-    // inventaris lain. Isi sub-tabnya sendiri (Aset/Kelengkapan) di dalam
-    // TabKategori.tsx.
-    { key: 'kategori', label: 'Kategori', icon: Boxes },
-    // disembunyikan sementara dari tab bar & sidebar -- masih jarang kepake.
-    // Route/komponennya (TabKelengkapanAset) tetep ada, cuma gak ditampilin.
-    { key: 'kelengkapan_aset', label: 'Kelengkapan Aset', icon: ClipboardList, hidden: true },
+    // dulu ("Kelengkapan Aset" hidden) isinya laporan level kelengkapan
+    // laptop (lihat TabKelengkapanAset.tsx, masih ada di disk tapi gak
+    // dirender lagi). Sekarang jadi CRUD master kelengkapan_master
+    // (Tambah/Edit/Hapus Tas, Charger, dst) lewat TabKelengkapanMaster.tsx,
+    // dipakai buat checklist di form peminjaman aset -- makanya ditaruh di
+    // Inventaris, bukan Master Data (yang isinya data referensi umum).
+    { key: 'kelengkapan_aset', label: 'Kelengkapan Aset', icon: ClipboardList },
     { key: 'penanganan_aset', label: 'Penanganan Aset', icon: Wrench, adminOnly: true },
     { key: 'foto_aset', label: 'Foto Aset', icon: Images, adminOnly: true },
     { key: 'riwayat_aset', label: 'Riwayat Aset', icon: History },
@@ -145,10 +142,8 @@ export default function Inventaris() {
 
       {activeTab === 'aset' ? (
         <TabAset onCount={handleCountAset} />
-      ) : activeTab === 'kategori' ? (
-        <TabKategori />
       ) : activeTab === 'kelengkapan_aset' ? (
-        <TabKelengkapanAset />
+        <TabKelengkapanMaster />
       ) : activeTab === 'penanganan_aset' ? (
         <TabPenangananAset onCount={handleCountPenanganan} />
       ) : activeTab === 'foto_aset' ? (

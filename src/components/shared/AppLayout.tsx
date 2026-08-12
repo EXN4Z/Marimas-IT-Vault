@@ -16,6 +16,7 @@ import {
   Building2,
   BriefcaseBusiness,
   Boxes,
+  ClipboardList,
   Truck,
   Wrench,
   Images,
@@ -51,15 +52,10 @@ const navItems: NavItem[] = [
     matchPrefix: '/inventaris',
     children: [
       { label: 'Aset', icon: Package, path: '/inventaris?tab=aset' },
-      // "Kategori" pindahan dari Master Data ("Jenis Aset" + "Kelengkapan
-      // Aset") -- satu atap sama data inventaris lain. Sub-tab default
-      // (Aset/Kelengkapan) diatur sendiri di dalam TabKategori.tsx lewat
-      // query "sub=".
-      { label: 'Kategori', icon: Boxes, path: '/inventaris?tab=kategori' },
-      // Kelengkapan Aset (tab lama, bukan kategori) sengaja gak dikasih link
-      // dropdown -- masih jarang kepake, disembunyikan dulu dari sidebar.
-      // Tab & kodenya tetap ada di Inventaris.tsx, cuma gak muncul di tab
-      // bar / sidebar sementara.
+      // dulu CRUD kelengkapan_master ada di Master Data -- pindah ke sini
+      // karena kelengkapan dipakai spesifik buat checklist di form
+      // peminjaman aset ("pinjam laptop + tas + charger sekaligus").
+      { label: 'Kelengkapan Aset', icon: ClipboardList, path: '/inventaris?tab=kelengkapan_aset' },
       { label: 'Penanganan Aset', icon: Wrench, path: '/inventaris?tab=penanganan_aset', roles: ['admin'] },
       { label: 'Foto Aset', icon: Images, path: '/inventaris?tab=foto_aset', roles: ['admin'] },
       { label: 'Riwayat Aset', icon: History, path: '/inventaris?tab=riwayat_aset' },
@@ -76,6 +72,7 @@ const navItems: NavItem[] = [
     children: [
       { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen' },
       { label: 'Jabatan', icon: BriefcaseBusiness, path: '/master-data?tab=jabatan' },
+      { label: 'Jenis Aset', icon: Boxes, path: '/master-data?tab=jenis-aset' },
       { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier' },
     ],
   },
