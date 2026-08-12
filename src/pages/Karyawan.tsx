@@ -8,7 +8,7 @@ type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'cabang';
 type TabKey = 'semua' | 'karyawan' | 'hr_manajer' | 'admin' | 'cabang';
 
 interface Pekerja {
-    nip: string;
+    nik: string;
     departemen: { nama: string } | null;
     jabatan: { nama: string } | null;
 }

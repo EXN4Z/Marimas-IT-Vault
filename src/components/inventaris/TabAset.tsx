@@ -954,10 +954,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                     <p className="text-slate-800">{detail.supplier?.nama || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400">Departemen</p>
-                    <p className="text-slate-800">{detail.departemen?.nama || '-'}</p>
-                  </div>
-                  <div>
                     <p className="text-xs text-slate-400">Tanggal Pembelian</p>
                     <p className="text-slate-800">{formatTanggalId(detail.tanggal_pembelian)}</p>
                   </div>

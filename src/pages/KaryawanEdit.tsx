@@ -12,7 +12,7 @@ type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest' | 'cabang';
 
 interface Pekerja {
     id: number;
-    nip: string;
+    nik: string;
     departemen_id: number | null;
     jabatan_id: number | null;
     lokasi_kantor_id: number | null;
@@ -34,7 +34,7 @@ interface FormState {
     email: string;
     phone: string;
     role: Role;
-    nip: string;
+    nik: string;
     departemen_id: string;
     jabatan_id: string;
     lokasi_kantor_id: string;
@@ -50,7 +50,7 @@ const initialForm: FormState = {
     email: '',
     phone: '',
     role: 'karyawan',
-    nip: '',
+    nik: '',
     departemen_id: '',
     jabatan_id: '',
     lokasi_kantor_id: '',
@@ -85,7 +85,7 @@ export default function EditKaryawanPage() {
                     email: u.email ?? '',
                     phone: u.phone ?? '',
                     role: u.role,
-                    nip: u.pekerja?.nip ?? '',
+                    nik: u.pekerja?.nik ?? '',
                     departemen_id: u.pekerja?.departemen_id ? String(u.pekerja.departemen_id) : '',
                     jabatan_id: u.pekerja?.jabatan_id ? String(u.pekerja.jabatan_id) : '',
                     lokasi_kantor_id: u.pekerja?.lokasi_kantor_id
@@ -126,14 +126,14 @@ export default function EditKaryawanPage() {
             ...prev,
             role: value,
             ...(value === 'cabang'
-                ? { nip: '', departemen_id: '', jabatan_id: '', tanggal_masuk: '' }
+                ? { nik: '', departemen_id: '', jabatan_id: '', tanggal_masuk: '' }
                 : {}),
         }));
         setErrors((prev) => {
             const next = { ...prev };
             delete next.role;
             if (value === 'cabang') {
-                delete next.nip;
+                delete next.nik;
                 delete next.departemen_id;
                 delete next.jabatan_id;
                 delete next.tanggal_masuk;
@@ -150,7 +150,7 @@ export default function EditKaryawanPage() {
         try {
             const payload = {
                 ...form,
-                nip: isCabang ? null : form.nip,
+                nik: isCabang ? null : form.nik,
                 departemen_id: isCabang ? null : form.departemen_id || null,
                 jabatan_id: isCabang ? null : form.jabatan_id || null,
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
@@ -246,11 +246,11 @@ export default function EditKaryawanPage() {
                     </Field>
 
                     {!isCabang && (
-                        <Field label="NIP" error={errors.nip?.[0]}>
+                        <Field label="NIK" error={errors.nik?.[0]}>
                             <input
                                 type="text"
-                                value={form.nip}
-                                onChange={(e) => handleChange('nip', e.target.value)}
+                                value={form.nik}
+                                onChange={(e) => handleChange('nik', e.target.value)}
                                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
                                 required
                             />

@@ -13,7 +13,7 @@ export interface KaryawanUser {
   role?: string;
   pekerja?: {
     id: number;
-    nip: string;
+    nik: string;
     departemen?: { id: number; nama: string } | null;
     jabatan?: { id: number; nama: string } | null;
   } | null;
@@ -33,7 +33,7 @@ export interface AsetPemakai {
   aset_id: number;
   // salah satu dari dua ini yang terisi: pekerja_id buat karyawan, user_id buat akun cabang
   pekerja_id: number | null;
-  pekerja?: { id: number; nip: string; user?: { id: number; name: string } };
+  pekerja?: { id: number; nik: string; user?: { id: number; name: string } };
   user_id: number | null;
   user?: { id: number; name: string } | null;
   status: AsetPemakaiStatus;
