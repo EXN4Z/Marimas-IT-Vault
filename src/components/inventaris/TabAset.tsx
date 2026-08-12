@@ -1136,6 +1136,11 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                           {/* Dropdown detail — expand di tempat, gak buka modal/halaman baru */}
                           {expanded && (
                             <div className="mt-2 pt-2 border-t border-slate-200 flex flex-col gap-0.5">
+                              {p.pekerja && (
+                                <p className="text-slate-400">
+                                  NIK: {p.pekerja.nik || '-'} · {p.pekerja.departemen?.nama || '-'}
+                                </p>
+                              )}
                               {p.catatan_penerimaan && (
                                 <p className="text-slate-400">Terima: {p.catatan_penerimaan}</p>
                               )}
