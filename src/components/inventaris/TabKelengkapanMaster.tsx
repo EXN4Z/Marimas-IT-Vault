@@ -1,38 +1,38 @@
 import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, X } from 'lucide-react';
 import {
-  getKelengkapanMaster,
-  createKelengkapanMaster,
-  updateKelengkapanMaster,
-  deleteKelengkapanMaster,
-  type KelengkapanMaster,
-} from '../../api/kelengkapanMaster';
+  getJenisAset,
+  createJenisAset,
+  updateJenisAset,
+  deleteJenisAset,
+  type JenisAset,
+} from '../../api/jenisAset';
 
-// CRUD master kelengkapan aset (Tas, Charger, Case/Dus, dst) -- dipindah ke
-// sini (dari MasterData.tsx) karena kelengkapan dipakai spesifik buat data
-// inventaris: checklist di form peminjaman aset ("pinjam laptop + tas +
-// charger sekaligus") narik daftar dari tabel kelengkapan_master ini.
-// "Jenis Aset" tetap di Master Data karena masih dianggap data referensi
-// umum, bukan spesifik-inventaris.
+// CRUD kelengkapan aset (Tas, Charger, Case/Dus, dst) -- dulu tabel sendiri
+// (kelengkapan_master), sekarang cuma jenis_aset dengan kategori
+// 'kelengkapan' (lihat migration drop_kelengkapan_master_and_aset_kelengkapan
+// & add_kategori_to_jenis_aset_table di backend). Fisiknya tetap dilacak
+// sebagai baris `aset` biasa (kode unik, S/N, riwayat pinjam sendiri) --
+// yang di-CRUD di sini cuma daftar jenisnya, bukan unit fisiknya.
 export default function TabKelengkapanMaster() {
-  const [items, setItems] = useState<KelengkapanMaster[]>([]);
+  const [items, setItems] = useState<JenisAset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<KelengkapanMaster | null>(null);
+  const [editing, setEditing] = useState<JenisAset | null>(null);
   const [formNama, setFormNama] = useState('');
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const [deleteTarget, setDeleteTarget] = useState<KelengkapanMaster | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<JenisAset | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
     setError('');
     try {
-      const data = await getKelengkapanMaster();
+      const data = await getJenisAset('kelengkapan');
       setItems(data);
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
@@ -53,7 +53,7 @@ export default function TabKelengkapanMaster() {
     setModalOpen(true);
   };
 
-  const openEditModal = (item: KelengkapanMaster) => {
+  const openEditModal = (item: JenisAset) => {
     setEditing(item);
     setFormNama(item.nama);
     setFormError('');
@@ -74,9 +74,9 @@ export default function TabKelengkapanMaster() {
     setFormError('');
     try {
       if (editing) {
-        await updateKelengkapanMaster(editing.id, formNama.trim());
+        await updateJenisAset(editing.id, formNama.trim(), 'kelengkapan');
       } else {
-        await createKelengkapanMaster(formNama.trim());
+        await createJenisAset(formNama.trim(), 'kelengkapan');
       }
       setModalOpen(false);
       loadData();
@@ -93,7 +93,7 @@ export default function TabKelengkapanMaster() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await deleteKelengkapanMaster(deleteTarget.id);
+      await deleteJenisAset(deleteTarget.id);
       setDeleteTarget(null);
       loadData();
     } catch (err: unknown) {
