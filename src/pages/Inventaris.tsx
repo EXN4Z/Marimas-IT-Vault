@@ -3,9 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import { Package, ClipboardList, Wrench, Images, History } from 'lucide-react';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import TabAset from '../components/inventaris/TabAset';
-import TabKelengkapanMaster from '../components/inventaris/TabKelengkapanMaster';
 import TabPenangananAset from '../components/inventaris/TabPenangananAset';
 import TabFotoAset from '../components/inventaris/TabFotoAset';
+import TabKelengkapanAset from '../components/inventaris/TabKelengkapanAset';
 import TabRiwayatAset from '../components/inventaris/TabRiwayatAset';
 import { useAuth } from '../context/AuthContext';
 import { getAset, type AsetPenanganan } from '../api/aset';
@@ -143,7 +143,7 @@ export default function Inventaris() {
       {activeTab === 'aset' ? (
         <TabAset onCount={handleCountAset} />
       ) : activeTab === 'kelengkapan_aset' ? (
-        <TabKelengkapanMaster />
+        <TabKelengkapanAset />
       ) : activeTab === 'penanganan_aset' ? (
         <TabPenangananAset onCount={handleCountPenanganan} />
       ) : activeTab === 'foto_aset' ? (

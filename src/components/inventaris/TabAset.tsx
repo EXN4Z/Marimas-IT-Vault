@@ -29,7 +29,6 @@ import {
 } from '../../api/aset';
 import { getJenisAset, type JenisAset } from '../../api/jenisAset';
 import { getSupplier, type Supplier } from '../../api/supplier';
-import { getKelengkapanMaster, type KelengkapanMaster } from '../../api/kelengkapanMaster';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 
@@ -89,7 +88,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   const [asetList, setAsetList] = useState<Aset[]>([]);
   const [jenisOptions, setJenisOptions] = useState<JenisAset[]>([]);
   const [supplierOptions, setSupplierOptions] = useState<Supplier[]>([]);
-  const [kelengkapanOptions, setKelengkapanOptions] = useState<KelengkapanMaster[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -193,7 +191,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     loadList();
     getJenisAset().then(setJenisOptions).catch(() => {});
     getSupplier().then(setSupplierOptions).catch(() => {});
-    getKelengkapanMaster().then(setKelengkapanOptions).catch(() => {});
   }, []);
 
   // dipakai polling interval biar selalu tau detailId TERBARU tanpa perlu
@@ -802,7 +799,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
           aset={editingAset}
           jenisOptions={jenisOptions}
           supplierOptions={supplierOptions}
-          kelengkapanOptions={kelengkapanOptions}
           onClose={() => setFormOpen(false)}
           onSaved={(saved) => {
             setAsetList((prev) => {
@@ -1039,22 +1035,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                     </div>
                   );
                 })()}
-
-                {/* KELENGKAPAN */}
-                <div>
-                  <p className="text-sm font-semibold text-slate-900 mb-2">Kelengkapan</p>
-                  <div className="flex flex-col gap-1.5">
-                    {(detail.kelengkapan || []).map((k) => (
-                      <div key={k.id} className="flex items-center justify-between text-sm bg-slate-50 rounded-lg px-3 py-1.5">
-                        <span className="text-slate-700">{k.kelengkapan_master?.nama}</span>
-                        {k.keterangan && <span className="text-xs text-slate-400">{k.keterangan}</span>}
-                      </div>
-                    ))}
-                    {!detail.kelengkapan?.length && (
-                      <p className="text-xs text-slate-400">Belum ada kelengkapan tercatat.</p>
-                    )}
-                  </div>
-                </div>
 
                 {/* RIWAYAT PEMAKAI / PEMINJAMAN */}
                 <div>
