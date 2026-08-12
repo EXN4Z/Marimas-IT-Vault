@@ -120,7 +120,7 @@ export default function TabKelengkapanAset() {
                   <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                     <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{item.kode_kelengkapan}</td>
                     <td className="px-6 py-3 text-slate-600">
-                      {item.jenis?.nama || '-'} · {[item.merek, item.tipe].filter(Boolean).join(' ') || '-'}
+                      {item.nama || '-'} · {[item.merek, item.tipe].filter(Boolean).join(' ') || '-'}
                     </td>
                     <td className="px-6 py-3 text-slate-600">{item.serial_number || '-'}</td>
                     <td className="px-6 py-3">
