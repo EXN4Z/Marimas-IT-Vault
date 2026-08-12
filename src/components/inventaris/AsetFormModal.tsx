@@ -112,11 +112,28 @@ export default function AsetFormModal({
               className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
             >
               <option value="">Pilih jenis...</option>
-              {jenisOptions.map((j) => (
-                <option key={j.id} value={j.id}>
-                  {j.nama}
-                </option>
-              ))}
+              {/* Jenis Aset Utama (laptop, proyektor, dst) & Kelengkapan (tas,
+                  charger, dst) dipisah lewat optgroup -- form-nya sama persis,
+                  cuma bantu admin milih jenis yang bener. Kategori jenisnya
+                  sendiri diatur di Master Data > Jenis Aset. */}
+              <optgroup label="Aset Utama">
+                {jenisOptions
+                  .filter((j) => j.kategori !== 'kelengkapan')
+                  .map((j) => (
+                    <option key={j.id} value={j.id}>
+                      {j.nama}
+                    </option>
+                  ))}
+              </optgroup>
+              <optgroup label="Kelengkapan">
+                {jenisOptions
+                  .filter((j) => j.kategori === 'kelengkapan')
+                  .map((j) => (
+                    <option key={j.id} value={j.id}>
+                      {j.nama}
+                    </option>
+                  ))}
+              </optgroup>
             </select>
           </div>
 

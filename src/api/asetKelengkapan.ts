@@ -1,5 +1,4 @@
 import api from './axios';
-import type { JenisAset } from './jenisAset';
 import type { Supplier } from './supplier';
 import type { KaryawanUser } from './aset';
 
@@ -8,8 +7,7 @@ export type AsetKelengkapanStatus = 'tersedia' | 'dipakai' | 'rusak' | 'diperbai
 export interface AsetKelengkapan {
   id: number;
   kode_kelengkapan: string;
-  jenis_id: number | null;
-  jenis?: JenisAset | null;
+  nama: string;
   merek: string | null;
   tipe: string | null;
   warna: string | null;
@@ -49,7 +47,7 @@ export interface AsetKelengkapanPemakai {
 }
 
 export interface AsetKelengkapanFormValues {
-  jenis_id?: number | null;
+  nama?: string;
   merek?: string;
   tipe?: string;
   warna?: string;
@@ -67,7 +65,7 @@ export interface AsetKelengkapanFormValues {
 
 function buildAsetKelengkapanFormData(values: AsetKelengkapanFormValues): FormData {
   const fd = new FormData();
-  if (values.jenis_id != null) fd.append('jenis_id', String(values.jenis_id));
+  if (values.nama != null) fd.append('nama', String(values.nama));
   if (values.merek) fd.append('merek', values.merek);
   if (values.tipe) fd.append('tipe', values.tipe);
   if (values.warna) fd.append('warna', values.warna);
