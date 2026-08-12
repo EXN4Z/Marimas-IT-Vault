@@ -439,7 +439,11 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
         (a.serial_number || '').toLowerCase().includes(q) ||
         (a.merek || '').toLowerCase().includes(q) ||
         (a.tipe || '').toLowerCase().includes(q) ||
-        (a.jenis?.nama || '').toLowerCase().includes(q);
+        (a.jenis?.nama || '').toLowerCase().includes(q) ||
+        // BARU: search juga cocokkan nama di kolom "Dipakai Oleh". Status
+        // 'dijual' sengaja dilewati karena kolomnya ditampilkan sebagai "-"
+        // di tabel (namaPemakai lama sudah tidak relevan buat aset yang dijual).
+        (a.status !== 'dijual' && namaPemakai(a.pemakai_saat_ini).toLowerCase().includes(q));
       return matchStatus && matchSearch;
     })
     .filter((a) => !onlyMenipis || a.status === 'tersedia')
