@@ -29,7 +29,6 @@ import {
 } from '../../api/aset';
 import { getJenisAset, type JenisAset } from '../../api/jenisAset';
 import { getSupplier, type Supplier } from '../../api/supplier';
-import { getDepartemen, type Departemen } from '../../api/departemen';
 import { getKelengkapanMaster, type KelengkapanMaster } from '../../api/kelengkapanMaster';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
@@ -90,7 +89,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   const [asetList, setAsetList] = useState<Aset[]>([]);
   const [jenisOptions, setJenisOptions] = useState<JenisAset[]>([]);
   const [supplierOptions, setSupplierOptions] = useState<Supplier[]>([]);
-  const [departemenOptions, setDepartemenOptions] = useState<Departemen[]>([]);
   const [kelengkapanOptions, setKelengkapanOptions] = useState<KelengkapanMaster[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -195,7 +193,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     loadList();
     getJenisAset().then(setJenisOptions).catch(() => {});
     getSupplier().then(setSupplierOptions).catch(() => {});
-    getDepartemen().then(setDepartemenOptions).catch(() => {});
     getKelengkapanMaster().then(setKelengkapanOptions).catch(() => {});
   }, []);
 
@@ -439,7 +436,11 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
         (a.serial_number || '').toLowerCase().includes(q) ||
         (a.merek || '').toLowerCase().includes(q) ||
         (a.tipe || '').toLowerCase().includes(q) ||
-        (a.jenis?.nama || '').toLowerCase().includes(q);
+        (a.jenis?.nama || '').toLowerCase().includes(q) ||
+        // BARU: search juga cocokkan nama di kolom "Dipakai Oleh". Status
+        // 'dijual' sengaja dilewati karena kolomnya ditampilkan sebagai "-"
+        // di tabel (namaPemakai lama sudah tidak relevan buat aset yang dijual).
+        (a.status !== 'dijual' && namaPemakai(a.pemakai_saat_ini).toLowerCase().includes(q));
       return matchStatus && matchSearch;
     })
     .filter((a) => !onlyMenipis || a.status === 'tersedia')
@@ -800,7 +801,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
         <AsetFormModal
           aset={editingAset}
           jenisOptions={jenisOptions}
-          departemenOptions={departemenOptions}
           supplierOptions={supplierOptions}
           kelengkapanOptions={kelengkapanOptions}
           onClose={() => setFormOpen(false)}
