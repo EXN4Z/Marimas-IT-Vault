@@ -1,22 +1,15 @@
 import { useState } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import { createAset, updateAset, type Aset } from '../../api/aset';
 import type { JenisAset } from '../../api/jenisAset';
 import type { Supplier } from '../../api/supplier';
-import type { KelengkapanMaster } from '../../api/kelengkapanMaster';
 
 interface AsetFormModalProps {
   aset: Aset | null; // null = mode tambah
   jenisOptions: JenisAset[];
   supplierOptions: Supplier[];
-  kelengkapanOptions: KelengkapanMaster[];
   onClose: () => void;
   onSaved: (aset: Aset) => void;
-}
-
-interface KelengkapanRow {
-  kelengkapan_master_id: string;
-  keterangan: string;
 }
 
 interface FormState {
@@ -39,7 +32,6 @@ export default function AsetFormModal({
   aset,
   jenisOptions,
   supplierOptions,
-  kelengkapanOptions,
   onClose,
   onSaved,
 }: AsetFormModalProps) {
@@ -58,14 +50,6 @@ export default function AsetFormModal({
     no_surat_jalan: aset?.no_surat_jalan || '',
     no_good_receive: aset?.no_good_receive || '',
   });
-  const [kelengkapanRows, setKelengkapanRows] = useState<KelengkapanRow[]>(
-    aset?.kelengkapan?.length
-      ? aset.kelengkapan.map((k) => ({
-          kelengkapan_master_id: String(k.kelengkapan_master_id),
-          keterangan: k.keterangan || '',
-        }))
-      : []
-  );
   const [foto, setFoto] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -73,22 +57,10 @@ export default function AsetFormModal({
   const set = (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  const addKelengkapanRow = () => setKelengkapanRows((prev) => [...prev, { kelengkapan_master_id: '', keterangan: '' }]);
-  const removeKelengkapanRow = (idx: number) => setKelengkapanRows((prev) => prev.filter((_, i) => i !== idx));
-  const updateKelengkapanRow = (idx: number, patch: Partial<KelengkapanRow>) =>
-    setKelengkapanRows((prev) => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
-
   const handleSubmit = async () => {
     setSubmitting(true);
     setError('');
     try {
-      const kelengkapanPayload = kelengkapanRows
-        .filter((r) => r.kelengkapan_master_id)
-        .map((r) => ({
-          kelengkapan_master_id: Number(r.kelengkapan_master_id),
-          keterangan: r.keterangan.trim() || undefined,
-        }));
-
       const values = {
         jenis_id: form.jenis_id ? Number(form.jenis_id) : null,
         merek: form.merek.trim() || undefined,
@@ -104,7 +76,6 @@ export default function AsetFormModal({
         tanggal_pembelian: form.tanggal_pembelian || undefined,
         no_surat_jalan: form.no_surat_jalan.trim() || undefined,
         no_good_receive: form.no_good_receive.trim() || undefined,
-        kelengkapan: kelengkapanPayload,
       };
 
       const saved = aset ? await updateAset(aset.id, values) : await createAset(values);
@@ -141,11 +112,28 @@ export default function AsetFormModal({
               className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
             >
               <option value="">Pilih jenis...</option>
-              {jenisOptions.map((j) => (
-                <option key={j.id} value={j.id}>
-                  {j.nama}
-                </option>
-              ))}
+              {/* Jenis Aset Utama (laptop, proyektor, dst) & Kelengkapan (tas,
+                  charger, dst) dipisah lewat optgroup -- form-nya sama persis,
+                  cuma bantu admin milih jenis yang bener. Kategori jenisnya
+                  sendiri diatur di Master Data > Jenis Aset. */}
+              <optgroup label="Aset Utama">
+                {jenisOptions
+                  .filter((j) => j.kategori !== 'kelengkapan')
+                  .map((j) => (
+                    <option key={j.id} value={j.id}>
+                      {j.nama}
+                    </option>
+                  ))}
+              </optgroup>
+              <optgroup label="Kelengkapan">
+                {jenisOptions
+                  .filter((j) => j.kategori === 'kelengkapan')
+                  .map((j) => (
+                    <option key={j.id} value={j.id}>
+                      {j.nama}
+                    </option>
+                  ))}
+              </optgroup>
             </select>
           </div>
 
@@ -286,54 +274,6 @@ export default function AsetFormModal({
               onChange={set('tanggal_pembelian')}
               className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
             />
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-slate-700">Kelengkapan</label>
-              <button
-                type="button"
-                onClick={addKelengkapanRow}
-                className="flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900"
-              >
-                <Plus size={13} />
-                Tambah
-              </button>
-            </div>
-            {kelengkapanRows.length === 0 && (
-              <p className="text-xs text-slate-400">Belum ada kelengkapan ditambahkan.</p>
-            )}
-            <div className="flex flex-col gap-2">
-              {kelengkapanRows.map((row, idx) => (
-                <div key={idx} className="flex gap-2">
-                  <select
-                    value={row.kelengkapan_master_id}
-                    onChange={(e) => updateKelengkapanRow(idx, { kelengkapan_master_id: e.target.value })}
-                    className="flex-1 px-2.5 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  >
-                    <option value="">Pilih...</option>
-                    {kelengkapanOptions.map((k) => (
-                      <option key={k.id} value={k.id}>
-                        {k.nama}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    value={row.keterangan}
-                    onChange={(e) => updateKelengkapanRow(idx, { keterangan: e.target.value })}
-                    placeholder="Keterangan (cth. S/N: xxx)"
-                    className="flex-[1.4] px-2.5 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeKelengkapanRow(idx)}
-                    className="w-9 flex-shrink-0 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
           </div>
 
           {!aset && (

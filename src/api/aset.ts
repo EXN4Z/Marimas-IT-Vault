@@ -1,7 +1,6 @@
 import api from './axios';
 import type { JenisAset } from './jenisAset';
 import type { Supplier } from './supplier';
-import type { KelengkapanMaster } from './kelengkapanMaster';
 import type { Departemen } from './departemen';
 
 export type AsetStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'dijual';
@@ -17,14 +16,6 @@ export interface KaryawanUser {
     departemen?: { id: number; nama: string } | null;
     jabatan?: { id: number; nama: string } | null;
   } | null;
-}
-
-export interface AsetKelengkapan {
-  id: number;
-  aset_id: number;
-  kelengkapan_master_id: number;
-  kelengkapan_master?: KelengkapanMaster;
-  keterangan: string | null;
 }
 
 export interface AsetPemakai {
@@ -104,7 +95,6 @@ export interface Aset {
   no_surat_jalan: string | null;
   no_good_receive: string | null;
   status: AsetStatus;
-  kelengkapan?: AsetKelengkapan[];
   pemakai_saat_ini?: AsetPemakai | null;
   pemakai?: AsetPemakai[]; // riwayat lengkap, cuma keisi di endpoint show()
   penanganan?: AsetPenanganan[]; // riwayat lengkap, cuma keisi di endpoint show()
@@ -137,7 +127,6 @@ export interface AsetFormValues {
   tanggal_pembelian?: string;
   no_surat_jalan?: string;
   no_good_receive?: string;
-  kelengkapan?: { kelengkapan_master_id: number; keterangan?: string }[];
 }
 export interface FotoPemakaiEntry {
   id: number;
@@ -184,7 +173,6 @@ function buildAsetFormData(values: AsetFormValues): FormData {
   if (values.tanggal_pembelian) fd.append('tanggal_pembelian', values.tanggal_pembelian);
   if (values.no_surat_jalan) fd.append('no_surat_jalan', values.no_surat_jalan);
   if (values.no_good_receive) fd.append('no_good_receive', values.no_good_receive);
-  if (values.kelengkapan) fd.append('kelengkapan', JSON.stringify(values.kelengkapan));
   return fd;
 }
 

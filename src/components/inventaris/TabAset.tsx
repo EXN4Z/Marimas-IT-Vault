@@ -27,9 +27,8 @@ import {
   type AsetPemakai,
   type AsetPenanganan,
 } from '../../api/aset';
-import { getJenisAset, type JenisAset } from '../../api/jenisAset';
+import { getJenisAset, type JenisAset, type JenisAsetKategori } from '../../api/jenisAset';
 import { getSupplier, type Supplier } from '../../api/supplier';
-import { getKelengkapanMaster, type KelengkapanMaster } from '../../api/kelengkapanMaster';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 
@@ -89,11 +88,14 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   const [asetList, setAsetList] = useState<Aset[]>([]);
   const [jenisOptions, setJenisOptions] = useState<JenisAset[]>([]);
   const [supplierOptions, setSupplierOptions] = useState<Supplier[]>([]);
-  const [kelengkapanOptions, setKelengkapanOptions] = useState<KelengkapanMaster[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const [statusFilter, setStatusFilter] = useState<AsetStatus | ''>('');
+  // Filter kategori jenis: '' (semua), 'aset_utama', atau 'kelengkapan'.
+  // Kategori-nya nempel di jenis aset (lihat Master Data > Jenis Aset),
+  // bukan kolom sendiri di tabel aset -- makanya difilter dari a.jenis?.kategori.
+  const [kategoriFilter, setKategoriFilter] = useState<JenisAsetKategori | ''>('');
 
   // Pagination tabel aset — style sama kayak pager Riwayat Aset (10 per
   // halaman, angka + elipsis). Client-side krn /api/aset gak dipaging
@@ -115,6 +117,12 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   const [detail, setDetail] = useState<Aset | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
+  // Serah-terima 1 aset utama (klik tombol "Serahkan" di baris) -- di dalam
+  // modalnya sendiri ada checklist buat nambahin aset kelengkapan (tas,
+  // charger, dst) yang mau ikut dipinjamkan bareng aset utama ini dalam SATU
+  // proses (satu penerima, satu tanggal, satu set foto bukti, satu struk).
+  // Tetap ditaruh di sini (bukan di dalam modal) karena aset yang diklik
+  // datang dari tabel/detail panel ini.
   const [serahTerimaAset, setSerahTerimaAset] = useState<Aset | null>(null);
   const [pengembalianTarget, setPengembalianTarget] = useState<{ aset: Aset; pemakai: AsetPemakai } | null>(null);
 
@@ -193,7 +201,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     loadList();
     getJenisAset().then(setJenisOptions).catch(() => {});
     getSupplier().then(setSupplierOptions).catch(() => {});
-    getKelengkapanMaster().then(setKelengkapanOptions).catch(() => {});
   }, []);
 
   // dipakai polling interval biar selalu tau detailId TERBARU tanpa perlu
@@ -372,18 +379,28 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     });
   };
 
-  const handlePrintSerahTerima = (aset: Aset, pemakai: AsetPemakai) => {
-    if (!pemakai.no_struk_penerimaan) return;
+  // BARU: sekarang bisa serah-terima lebih dari 1 aset dalam sekali proses
+  // (aset utama + kelengkapan yang ikut dipinjamkan) -- tetap 1 struk gabungan,
+  // pakai no_struk_penerimaan dari aset PERTAMA (aset utama yang diklik) sebagai
+  // nomor struknya, item lain cuma numpang jadi baris "Aset 2", "Aset 3", dst.
+  const handlePrintSerahTerima = (results: { aset: Aset; pemakai: AsetPemakai }[]) => {
+    if (!results.length) return;
+    const utama = results[0];
+    if (!utama.pemakai.no_struk_penerimaan) return;
+    const asetRows = results.map((r, i) => ({
+      label: results.length > 1 ? `Aset ${i + 1}` : 'Aset',
+      value: `${r.aset.kode_aset} — ${[r.aset.merek, r.aset.tipe].filter(Boolean).join(' ') || '-'}`,
+    }));
     printStruk({
       judul: 'Bukti Serah Terima Aset',
-      noStruk: pemakai.no_struk_penerimaan,
-      tanggal: formatTanggalId(pemakai.tanggal_penerimaan),
+      noStruk: utama.pemakai.no_struk_penerimaan,
+      tanggal: formatTanggalId(utama.pemakai.tanggal_penerimaan),
       rows: [
-        { label: 'Aset', value: `${aset.kode_aset} — ${[aset.merek, aset.tipe].filter(Boolean).join(' ') || '-'}` },
-        { label: 'Diserahkan Kepada', value: namaPemakai(pemakai) },
-        { label: 'Nomor Penerimaan', value: pemakai.nomor_penerimaan || '-' },
+        ...asetRows,
+        { label: 'Diserahkan Kepada', value: namaPemakai(utama.pemakai) },
+        { label: 'Nomor Penerimaan', value: utama.pemakai.nomor_penerimaan || '-' },
       ],
-      catatan: pemakai.catatan_penerimaan,
+      catatan: utama.pemakai.catatan_penerimaan,
     });
   };
 
@@ -429,6 +446,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   const filteredAset = asetList
     .filter((a) => {
       const matchStatus = !statusFilter || a.status === statusFilter;
+      const matchKategori = !kategoriFilter || (a.jenis?.kategori ?? 'aset_utama') === kategoriFilter;
       const q = search.toLowerCase();
       const matchSearch =
         !q ||
@@ -441,7 +459,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
         // 'dijual' sengaja dilewati karena kolomnya ditampilkan sebagai "-"
         // di tabel (namaPemakai lama sudah tidak relevan buat aset yang dijual).
         (a.status !== 'dijual' && namaPemakai(a.pemakai_saat_ini).toLowerCase().includes(q));
-      return matchStatus && matchSearch;
+      return matchStatus && matchKategori && matchSearch;
     })
     .filter((a) => !onlyMenipis || a.status === 'tersedia')
     // KARYAWAN/CABANG cuma boleh liat aset yang masih tersedia, atau aset yang
@@ -491,7 +509,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   // biar gak nyangkut di halaman kosong (sama pola kayak riwayat search).
   useEffect(() => {
     setAsetPage(1);
-  }, [search, statusFilter, onlyMenipis]);
+  }, [search, statusFilter, kategoriFilter, onlyMenipis]);
 
   // Dipakai bareng oleh tabel (desktop) & card (mobile) biar tombol aksinya
   // gak ke-duplikasi/nyimpang antara 2 tampilan itu.
@@ -666,12 +684,26 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
         ]}
       />
 
-      <SearchInput
-        value={search}
-        onChange={setSearch}
-        placeholder="Cari nama, kode, atau jenis aset..."
-        className="mb-4"
-      />
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Cari nama, kode, atau jenis aset..."
+          className="flex-1"
+        />
+        {/* Filter kategori jenis: Aset Utama (laptop, proyektor, dst) vs
+            Kelengkapan (tas, charger, dst) -- kategorinya nempel di jenis
+            aset (Master Data > Jenis Aset), difilter dari a.jenis?.kategori. */}
+        <select
+          value={kategoriFilter}
+          onChange={(e) => setKategoriFilter(e.target.value as JenisAsetKategori | '')}
+          className="px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 sm:w-56"
+        >
+          <option value="">Semua Kategori</option>
+          <option value="aset_utama">Aset Utama</option>
+          <option value="kelengkapan">Kelengkapan</option>
+        </select>
+      </div>
 
       <div className="border border-slate-200 rounded-lg overflow-hidden">
         {loading && <p className="text-sm text-slate-400 text-center py-8">Memuat data...</p>}
@@ -802,7 +834,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
           aset={editingAset}
           jenisOptions={jenisOptions}
           supplierOptions={supplierOptions}
-          kelengkapanOptions={kelengkapanOptions}
           onClose={() => setFormOpen(false)}
           onSaved={(saved) => {
             setAsetList((prev) => {
@@ -1040,22 +1071,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                   );
                 })()}
 
-                {/* KELENGKAPAN */}
-                <div>
-                  <p className="text-sm font-semibold text-slate-900 mb-2">Kelengkapan</p>
-                  <div className="flex flex-col gap-1.5">
-                    {(detail.kelengkapan || []).map((k) => (
-                      <div key={k.id} className="flex items-center justify-between text-sm bg-slate-50 rounded-lg px-3 py-1.5">
-                        <span className="text-slate-700">{k.kelengkapan_master?.nama}</span>
-                        {k.keterangan && <span className="text-xs text-slate-400">{k.keterangan}</span>}
-                      </div>
-                    ))}
-                    {!detail.kelengkapan?.length && (
-                      <p className="text-xs text-slate-400">Belum ada kelengkapan tercatat.</p>
-                    )}
-                  </div>
-                </div>
-
                 {/* RIWAYAT PEMAKAI / PEMINJAMAN */}
                 <div>
                   <p className="text-sm font-semibold text-slate-900 mb-2">Riwayat Pemakai (Peminjaman)</p>
@@ -1076,7 +1091,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                             <div className="flex items-center gap-1 flex-shrink-0">
                               {isAdmin && p.no_struk_penerimaan && (
                                 <button
-                                  onClick={() => handlePrintSerahTerima(detail, p)}
+                                  onClick={() => handlePrintSerahTerima([{ aset: detail, pemakai: p }])}
                                   title="Cetak struk penerimaan"
                                   className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 transition"
                                 >
@@ -1280,8 +1295,8 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
         <AsetSerahTerimaModal
           aset={serahTerimaAset}
           onClose={() => setSerahTerimaAset(null)}
-          onSuccess={(pemakai) => {
-            handlePrintSerahTerima(serahTerimaAset, pemakai);
+          onSuccess={(results) => {
+            handlePrintSerahTerima(results);
             setSerahTerimaAset(null);
             loadList();
             if (detailId) refreshDetail();

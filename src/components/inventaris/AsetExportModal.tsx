@@ -55,13 +55,10 @@ const EXPORT_COLUMNS: ExportColumn[] = [
     get: (a) => formatTanggalId(a.tanggal_pembelian),
   },
   {
-    key: 'kelengkapan',
-    label: 'Kelengkapan',
+    key: 'kategori',
+    label: 'Kategori',
     defaultChecked: false,
-    get: (a) => {
-      const nama = (a.kelengkapan || []).map((k) => k.kelengkapan_master?.nama).filter(Boolean);
-      return nama.length > 0 ? nama.join(', ') : '-';
-    },
+    get: (a) => (a.jenis?.kategori === 'kelengkapan' ? 'Kelengkapan' : 'Aset Utama'),
   },
   { key: 'keterangan', label: 'Keterangan', defaultChecked: false, get: (a) => a.keterangan || '-' },
 ];
