@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Package, ClipboardList, Wrench, Images, History } from 'lucide-react';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import TabAset from '../components/inventaris/TabAset';
-import TabKelengkapanAset from '../components/inventaris/TabKelengkapanAset';
+import TabKelengkapanMaster from '../components/inventaris/TabKelengkapanMaster';
 import TabPenangananAset from '../components/inventaris/TabPenangananAset';
 import TabFotoAset from '../components/inventaris/TabFotoAset';
 import TabRiwayatAset from '../components/inventaris/TabRiwayatAset';
@@ -107,9 +107,13 @@ export default function Inventaris() {
 
   const tabs: { key: TabKey; label: string; icon: typeof Package; adminOnly?: boolean; hidden?: boolean }[] = [
     { key: 'aset', label: 'Aset', icon: Package },
-    // disembunyikan sementara dari tab bar & sidebar -- masih jarang kepake.
-    // Route/komponennya (TabKelengkapanAset) tetep ada, cuma gak ditampilin.
-    { key: 'kelengkapan_aset', label: 'Kelengkapan Aset', icon: ClipboardList, hidden: true },
+    // dulu ("Kelengkapan Aset" hidden) isinya laporan level kelengkapan
+    // laptop (lihat TabKelengkapanAset.tsx, masih ada di disk tapi gak
+    // dirender lagi). Sekarang jadi CRUD master kelengkapan_master
+    // (Tambah/Edit/Hapus Tas, Charger, dst) lewat TabKelengkapanMaster.tsx,
+    // dipakai buat checklist di form peminjaman aset -- makanya ditaruh di
+    // Inventaris, bukan Master Data (yang isinya data referensi umum).
+    { key: 'kelengkapan_aset', label: 'Kelengkapan Aset', icon: ClipboardList },
     { key: 'penanganan_aset', label: 'Penanganan Aset', icon: Wrench, adminOnly: true },
     { key: 'foto_aset', label: 'Foto Aset', icon: Images, adminOnly: true },
     { key: 'riwayat_aset', label: 'Riwayat Aset', icon: History },
@@ -139,7 +143,7 @@ export default function Inventaris() {
       {activeTab === 'aset' ? (
         <TabAset onCount={handleCountAset} />
       ) : activeTab === 'kelengkapan_aset' ? (
-        <TabKelengkapanAset />
+        <TabKelengkapanMaster />
       ) : activeTab === 'penanganan_aset' ? (
         <TabPenangananAset onCount={handleCountPenanganan} />
       ) : activeTab === 'foto_aset' ? (
