@@ -13,7 +13,7 @@ interface FormState {
     email: string;
     phone: string;
     role: Role;
-    nip: string;
+    nik: string;
     departemen_id: string;
     lokasi_kantor_id: string;
     tanggal_masuk: string;
@@ -28,7 +28,7 @@ const initialForm: FormState = {
     email: '',
     phone: '',
     role: 'karyawan',
-    nip: '',
+    nik: '',
     departemen_id: '',
     lokasi_kantor_id: '',
     tanggal_masuk: '',
@@ -78,14 +78,14 @@ export default function CreateKaryawanPage() {
             role: value,
             // bersihkan field kepegawaian kalau role diganti ke cabang
             ...(value === 'cabang'
-                ? { nip: '', departemen_id: '', tanggal_masuk: '' }
+                ? { nik: '', departemen_id: '', tanggal_masuk: '' }
                 : {}),
         }));
         setErrors((prev) => {
             const next = { ...prev };
             delete next.role;
             if (value === 'cabang') {
-                delete next.nip;
+                delete next.nik;
                 delete next.departemen_id;
                 delete next.tanggal_masuk;
             }
@@ -101,7 +101,7 @@ export default function CreateKaryawanPage() {
         try {
             const payload = {
                 ...form,
-                nip: isCabang ? null : form.nip,
+                nik: isCabang ? null : form.nik,
                 departemen_id: isCabang ? null : form.departemen_id || null,
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
                 tanggal_masuk: isCabang ? null : form.tanggal_masuk || null,
@@ -201,11 +201,11 @@ export default function CreateKaryawanPage() {
                     </Field>
 
                     {!isCabang && (
-                        <Field label="NIP" error={errors.nip?.[0]}>
+                        <Field label="NIK" error={errors.nik?.[0]}>
                             <input
                                 type="text"
-                                value={form.nip}
-                                onChange={(e) => handleChange('nip', e.target.value)}
+                                value={form.nik}
+                                onChange={(e) => handleChange('nik', e.target.value)}
                                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
                                 required
                             />
