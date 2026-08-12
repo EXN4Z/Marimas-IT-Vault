@@ -1,26 +1,23 @@
 import '../index.css';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, BriefcaseBusiness, Boxes, Package, Truck, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Building2, BriefcaseBusiness, Truck, Plus, Pencil, Trash2, X } from 'lucide-react';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen } from '../api/departemen';
 import { getJabatan, createJabatan, updateJabatan, deleteJabatan } from '../api/jabatan';
-import { getJenisAset, createJenisAset, updateJenisAset, deleteJenisAset } from '../api/jenisAset';
-import {
-  getKelengkapanMaster,
-  createKelengkapanMaster,
-  updateKelengkapanMaster,
-  deleteKelengkapanMaster,
-} from '../api/kelengkapanMaster';
 import { getSupplier, createSupplier, updateSupplier, deleteSupplier } from '../api/supplier';
 
-type TabKey = 'departemen' | 'jabatan' | 'jenis-aset' | 'kelengkapan-master' | 'supplier';
+// "Jenis Aset" & "Kelengkapan Aset" pindah ke tab "Kategori" di halaman
+// Inventaris (lihat TabKategori.tsx) -- satu atap sama data inventaris lain,
+// karena dua master ini nentuin dari tabel mana data diambil pas Tambah
+// Aset atau checklist kelengkapan di form peminjaman.
+type TabKey = 'departemen' | 'jabatan' | 'supplier';
 // alamat & telepon cuma dipakai tab 'supplier' -- tab lain cukup nama
 type Item = { id: number; nama: string; alamat?: string | null; telepon?: string | null };
 type FormPayload = { nama: string; alamat?: string; telepon?: string };
 
-const TAB_KEYS: TabKey[] = ['departemen', 'jabatan', 'jenis-aset', 'kelengkapan-master', 'supplier'];
+const TAB_KEYS: TabKey[] = ['departemen', 'jabatan', 'supplier'];
 
 function isTabKey(value: string | null): value is TabKey {
   return !!value && (TAB_KEYS as string[]).includes(value);
@@ -57,24 +54,6 @@ const tabConfig: Record<
     create: createJabatan,
     update: updateJabatan,
     remove: deleteJabatan,
-  },
-  'jenis-aset': {
-    label: 'Jenis Aset',
-    icon: Boxes,
-    singular: 'Jenis Aset',
-    get: getJenisAset as () => Promise<Item[]>,
-    create: (payload) => createJenisAset(payload.nama),
-    update: (id, payload) => updateJenisAset(id, payload.nama),
-    remove: deleteJenisAset,
-  },
-  'kelengkapan-master': {
-    label: 'Kelengkapan Aset',
-    icon: Package,
-    singular: 'Kelengkapan',
-    get: getKelengkapanMaster as () => Promise<Item[]>,
-    create: (payload) => createKelengkapanMaster(payload.nama),
-    update: (id, payload) => updateKelengkapanMaster(id, payload.nama),
-    remove: deleteKelengkapanMaster,
   },
   supplier: {
     label: 'Supplier',
@@ -233,8 +212,8 @@ export default function MasterData() {
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <p className="text-sm text-slate-500">
-          Kelola data referensi departemen, jabatan, dan data master aset (jenis, kelengkapan,
-          supplier) yang dipakai di seluruh sistem.
+          Kelola data referensi departemen, jabatan, dan supplier yang dipakai di seluruh sistem.
+          Jenis aset & kelengkapan sekarang dikelola di halaman Inventaris &rsaquo; Kategori.
         </p>
         <button
           onClick={openCreateModal}
