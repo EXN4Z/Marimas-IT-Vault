@@ -1,15 +1,23 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AsetKelengkapan, AsetKelengkapanFormValues, AsetKelengkapanStatus } from '../../api/asetKelengkapan';
 import { createAsetKelengkapan, updateAsetKelengkapan } from '../../api/asetKelengkapan';
 import { getSupplier, type Supplier } from '../../api/supplier';
 import { getAset, type Aset } from '../../api/aset';
 
-const STATUS_OPTIONS: { value: AsetKelengkapanStatus; label: string; dot: string }[] = [
-  { value: 'tersedia', label: 'Tersedia', dot: 'bg-emerald-500' },
-  { value: 'dipakai', label: 'Dipakai', dot: 'bg-blue-500' },
-  { value: 'rusak', label: 'Rusak', dot: 'bg-red-500' },
-  { value: 'diperbaiki', label: 'Diperbaiki', dot: 'bg-amber-500' },
+const STATUS_OPTIONS: { value: AsetKelengkapanStatus; label: string; dot: string; ring: string }[] = [
+  { value: 'tersedia', label: 'Tersedia', dot: 'bg-emerald-500', ring: 'ring-emerald-100 border-emerald-400 bg-emerald-50/60' },
+  { value: 'dipakai', label: 'Dipakai', dot: 'bg-blue-500', ring: 'ring-blue-100 border-blue-400 bg-blue-50/60' },
+  { value: 'rusak', label: 'Rusak', dot: 'bg-red-500', ring: 'ring-red-100 border-red-400 bg-red-50/60' },
+  { value: 'diperbaiki', label: 'Diperbaiki', dot: 'bg-amber-500', ring: 'ring-amber-100 border-amber-400 bg-amber-50/60' },
 ];
+
+const MAX_FOTO_MB = 4;
+const ACCEPTED_FOTO_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+const KETERANGAN_MAX = 500;
+
+const inputClass =
+  'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 shadow-sm outline-none transition-all duration-150 hover:border-slate-400 focus:border-slate-900 focus:ring-4 focus:ring-slate-900/[0.06]';
+const inputErrorClass = 'border-red-400 focus:border-red-500 focus:ring-red-500/10';
 
 interface Props {
   open: boolean;
@@ -41,34 +49,33 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
   const [supplierOptions, setSupplierOptions] = useState<Supplier[]>([]);
   const [asetOptions, setAsetOptions] = useState<Aset[]>([]);
   const [asetSearch, setAsetSearch] = useState('');
+  const [asetDropdownOpen, setAsetDropdownOpen] = useState(false);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+  const [isDraggingFoto, setIsDraggingFoto] = useState(false);
+  const [loadingRefs, setLoadingRefs] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const asetFieldRef = useRef<HTMLDivElement>(null);
+  const fotoObjectUrl = useRef<string | null>(null);
+  const firstFieldRef = useRef<HTMLInputElement>(null);
+  const dragCounter = useRef(0);
+
+  // ---- load reference data tiap kali modal dibuka ----
   useEffect(() => {
     if (!open) return;
-    getSupplier()
-      .then(setSupplierOptions)
-      .catch(console.error);
-    getAset()
-      .then(setAsetOptions)
-      .catch(console.error);
+    setLoadingRefs(true);
+    Promise.allSettled([getSupplier(), getAset()]).then(([sup, aset]) => {
+      if (sup.status === 'fulfilled') setSupplierOptions(sup.value);
+      if (aset.status === 'fulfilled') setAsetOptions(aset.value);
+      if (sup.status === 'rejected' || aset.status === 'rejected') {
+        setErrors((prev) => ({ ...prev, _general: 'Sebagian data referensi gagal dimuat. Coba buka ulang form ini.' }));
+      }
+      setLoadingRefs(false);
+    });
   }, [open]);
 
-  // aset terpilih saat ini (buat nampilin label di kotak pencarian)
-  const asetTerpilih = useMemo(
-    () => asetOptions.find((a) => a.id === form.aset_id) || null,
-    [asetOptions, form.aset_id]
-  );
-
-  const asetFiltered = useMemo(() => {
-    const q = asetSearch.trim().toLowerCase();
-    if (!q) return asetOptions;
-    return asetOptions.filter((a) =>
-      [a.kode_aset, a.merek, a.tipe].filter(Boolean).join(' ').toLowerCase().includes(q)
-    );
-  }, [asetOptions, asetSearch]);
-
+  // ---- isi ulang form tiap kali target edit berubah ----
   useEffect(() => {
     if (!open) return;
     if (editing) {
@@ -95,40 +102,130 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
       setFotoPreview(null);
     }
     setAsetSearch('');
+    setAsetDropdownOpen(false);
     setErrors({});
+    requestAnimationFrame(() => firstFieldRef.current?.focus());
   }, [open, editing]);
+
+  // ---- tutup dropdown aset kalau klik di luar ----
+  useEffect(() => {
+    if (!asetDropdownOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (asetFieldRef.current && !asetFieldRef.current.contains(e.target as Node)) {
+        setAsetDropdownOpen(false);
+        setAsetSearch('');
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [asetDropdownOpen]);
+
+  // ---- tutup modal / dropdown dengan tombol Esc ----
+  useEffect(() => {
+    if (!open) return;
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        if (asetDropdownOpen) {
+          setAsetDropdownOpen(false);
+          setAsetSearch('');
+        } else if (!saving) {
+          onClose();
+        }
+      }
+    }
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [open, asetDropdownOpen, saving, onClose]);
+
+  // ---- bersihkan object URL foto biar nggak leak memory ----
+  useEffect(() => {
+    return () => {
+      if (fotoObjectUrl.current) URL.revokeObjectURL(fotoObjectUrl.current);
+    };
+  }, []);
+
+  const asetTerpilih = useMemo(
+    () => asetOptions.find((a) => a.id === form.aset_id) || null,
+    [asetOptions, form.aset_id]
+  );
+
+  const asetFiltered = useMemo(() => {
+    const q = asetSearch.trim().toLowerCase();
+    if (!q) return asetOptions;
+    return asetOptions.filter((a) =>
+      [a.kode_aset, a.merek, a.tipe].filter(Boolean).join(' ').toLowerCase().includes(q)
+    );
+  }, [asetOptions, asetSearch]);
 
   if (!open) return null;
 
   function setField<K extends keyof AsetKelengkapanFormValues>(key: K, value: AsetKelengkapanFormValues[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: '' }));
+  }
+
+  function applyFoto(file: File | null) {
+    if (!file) return;
+    if (!ACCEPTED_FOTO_TYPES.includes(file.type)) {
+      setErrors((prev) => ({ ...prev, foto: 'Format harus PNG, JPG, atau WEBP.' }));
+      return;
+    }
+    if (file.size > MAX_FOTO_MB * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, foto: `Ukuran foto maksimal ${MAX_FOTO_MB}MB.` }));
+      return;
+    }
+    setErrors((prev) => ({ ...prev, foto: '' }));
+    if (fotoObjectUrl.current) URL.revokeObjectURL(fotoObjectUrl.current);
+    const url = URL.createObjectURL(file);
+    fotoObjectUrl.current = url;
+    setField('foto', file);
+    setFotoPreview(url);
   }
 
   function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0] || null;
-    setField('foto', file);
-    if (file) setFotoPreview(URL.createObjectURL(file));
+    applyFoto(e.target.files?.[0] || null);
   }
 
   function handleFotoDrop(e: React.DragEvent<HTMLLabelElement>) {
     e.preventDefault();
-    const file = e.dataTransfer.files?.[0] || null;
-    if (file) {
-      setField('foto', file);
-      setFotoPreview(URL.createObjectURL(file));
-    }
+    dragCounter.current = 0;
+    setIsDraggingFoto(false);
+    applyFoto(e.dataTransfer.files?.[0] || null);
+  }
+
+  function handleFotoDragEnter(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    dragCounter.current += 1;
+    setIsDraggingFoto(true);
+  }
+
+  function handleFotoDragLeave(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    dragCounter.current -= 1;
+    if (dragCounter.current <= 0) setIsDraggingFoto(false);
+  }
+
+  function removeFoto() {
+    if (fotoObjectUrl.current) URL.revokeObjectURL(fotoObjectUrl.current);
+    fotoObjectUrl.current = null;
+    setField('foto', null);
+    setFotoPreview(null);
   }
 
   function validate(): boolean {
     const next: Record<string, string> = {};
     if (!form.merek?.trim()) next.merek = 'Merek wajib diisi';
     if (!form.status) next.status = 'Status wajib dipilih';
-    setErrors(next);
+    if (form.tanggal_pembelian && form.tanggal_garansi && form.tanggal_garansi < form.tanggal_pembelian) {
+      next.tanggal_garansi = 'Tanggal garansi tidak boleh sebelum tanggal pembelian';
+    }
+    setErrors((prev) => ({ ...prev, ...next }));
     return Object.keys(next).length === 0;
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (saving) return;
     if (!validate()) return;
     setSaving(true);
     try {
@@ -146,8 +243,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
         Object.keys(apiErrors).forEach((k) => (flat[k] = apiErrors[k][0]));
         setErrors(flat);
       } else {
-        console.error(err);
-        setErrors({ _general: 'Gagal menyimpan data. Coba lagi.' });
+        setErrors({ _general: err?.response?.data?.message || 'Gagal menyimpan data. Coba lagi.' });
       }
     } finally {
       setSaving(false);
@@ -158,27 +254,31 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-[fadeIn_150ms_ease-out]"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !saving) onClose();
       }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="aset-kelengkapan-form-title"
     >
-      <div className="bg-white rounded-2xl shadow-xl ring-1 ring-slate-900/5 w-full max-w-2xl max-h-[90vh] flex flex-col animate-[slideUp_180ms_ease-out]">
+      <div className="bg-white rounded-2xl shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5 w-full max-w-2xl max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
               {editing ? 'Ubah data' : 'Data baru'}
             </p>
-            <h3 className="text-lg font-semibold text-slate-900">
+            <h3 id="aset-kelengkapan-form-title" className="text-lg font-semibold text-slate-900">
               {editing ? 'Edit Kelengkapan Aset' : 'Tambah Kelengkapan Aset'}
             </h3>
           </div>
           <button
             type="button"
             onClick={onClose}
+            disabled={saving}
             aria-label="Tutup"
-            className="grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+            className="group grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-40 disabled:pointer-events-none transition-colors"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform duration-200 group-hover:rotate-90">
               <path d="M1 1L15 15M15 1L1 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
             </svg>
           </button>
@@ -187,7 +287,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
         {/* Body */}
         <form id="aset-kelengkapan-form" onSubmit={handleSubmit} className="px-6 py-5 space-y-7 overflow-y-auto">
           {errors._general && (
-            <p className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2.5">
+            <p className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2.5 animate-[fadeIn_150ms_ease-out]" role="alert">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
                 <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.4" />
                 <path d="M8 5v3.5M8 11h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -196,20 +296,46 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
             </p>
           )}
 
+          {loadingRefs && (
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.25" />
+                <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+              </svg>
+              Memuat data aset & supplier…
+            </div>
+          )}
+
           {/* Section: Informasi Umum */}
-          <Section title="Informasi Umum" subtitle="Nama, status, dan ciri fisik barang">
-            <div className="sm:col-span-2">
+          <Section
+            index={0}
+            title="Informasi Umum"
+            subtitle="Nama, status, dan ciri fisik barang"
+            icon={
+              <path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM8 5v3.5M8 10.8h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            }
+          >
+            <div className="sm:col-span-2" ref={asetFieldRef}>
               <Field label="Aset Induk" error={errors.aset_id}>
                 <div className="relative">
-                  <input
-                    className="input"
-                    placeholder="Cari kode aset, merek, atau tipe…"
-                    value={asetSearch}
-                    onChange={(e) => setAsetSearch(e.target.value)}
-                    onFocus={() => setAsetSearch((s) => s)}
-                  />
-                  {asetTerpilih && !asetSearch && (
-                    <div className="mt-1.5 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+                  <div className="relative">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                      <circle cx="7" cy="7" r="5.2" stroke="currentColor" strokeWidth="1.4" />
+                      <path d="M14.5 14.5L11 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                    <input
+                      className={`${inputClass} pl-8`}
+                      placeholder="Cari kode aset, merek, atau tipe…"
+                      value={asetSearch}
+                      onChange={(e) => {
+                        setAsetSearch(e.target.value);
+                        setAsetDropdownOpen(true);
+                      }}
+                      onFocus={() => setAsetDropdownOpen(true)}
+                    />
+                  </div>
+                  {asetTerpilih && !asetDropdownOpen && (
+                    <div className="mt-1.5 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm animate-[fadeIn_120ms_ease-out]">
                       <span className="text-slate-700">
                         <span className="font-mono text-[13px]">{asetTerpilih.kode_aset}</span>
                         {(asetTerpilih.merek || asetTerpilih.tipe) && (
@@ -219,7 +345,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
                       <button
                         type="button"
                         onClick={() => setField('aset_id', null)}
-                        className="text-slate-400 hover:text-slate-600"
+                        className="text-slate-400 hover:text-slate-600 transition-colors"
                         aria-label="Hapus pilihan aset induk"
                       >
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -228,19 +354,23 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
                       </button>
                     </div>
                   )}
-                  {asetSearch && (
-                    <div className="absolute z-10 mt-1.5 max-h-48 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+                  {asetDropdownOpen && (
+                    <div className="absolute z-10 mt-1.5 max-h-48 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg animate-[dropIn_140ms_ease-out]">
                       <button
                         type="button"
                         onClick={() => {
                           setField('aset_id', null);
                           setAsetSearch('');
+                          setAsetDropdownOpen(false);
                         }}
-                        className="block w-full px-3 py-2 text-left text-sm text-slate-400 hover:bg-slate-50"
+                        className="block w-full px-3 py-2 text-left text-sm text-slate-400 hover:bg-slate-50 transition-colors"
                       >
                         Tanpa aset induk
                       </button>
-                      {asetFiltered.length === 0 && (
+                      {loadingRefs && (
+                        <p className="px-3 py-2 text-sm text-slate-400">Memuat…</p>
+                      )}
+                      {!loadingRefs && asetFiltered.length === 0 && (
                         <p className="px-3 py-2 text-sm text-slate-400">Tidak ada aset yang cocok</p>
                       )}
                       {asetFiltered.map((a) => (
@@ -250,8 +380,9 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
                           onClick={() => {
                             setField('aset_id', a.id);
                             setAsetSearch('');
+                            setAsetDropdownOpen(false);
                           }}
-                          className={`block w-full px-3 py-2 text-left text-sm hover:bg-slate-50 ${
+                          className={`block w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors ${
                             form.aset_id === a.id ? 'bg-slate-50 text-slate-900' : 'text-slate-700'
                           }`}
                         >
@@ -271,122 +402,152 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
             </div>
 
             <Field label="Nama" error={errors.nama}>
-              <input className="input" value={form.nama} onChange={(e) => setField('nama', e.target.value)} />
+              <input
+                ref={firstFieldRef}
+                className={inputClass}
+                value={form.nama}
+                onChange={(e) => setField('nama', e.target.value)}
+                placeholder="cth. Charger Laptop"
+              />
             </Field>
 
             <Field label="Status" error={errors.status} required>
               <div className="grid grid-cols-2 gap-2">
-                {STATUS_OPTIONS.map((s) => (
-                  <label
-                    key={s.value}
-                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer transition-colors ${
-                      form.status === s.value
-                        ? 'border-slate-900 bg-slate-900/[0.03] text-slate-900'
-                        : 'border-slate-200 text-slate-500 hover:border-slate-300'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="status"
-                      className="sr-only"
-                      checked={form.status === s.value}
-                      onChange={() => setField('status', s.value)}
-                    />
-                    <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
-                    {s.label}
-                  </label>
-                ))}
+                {STATUS_OPTIONS.map((s) => {
+                  const active = form.status === s.value;
+                  return (
+                    <label
+                      key={s.value}
+                      className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer transition-all duration-150 active:scale-[0.98] ${
+                        active
+                          ? `${s.ring} ring-4 text-slate-900 font-medium`
+                          : 'border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="status"
+                          className="sr-only"
+                          checked={active}
+                          onChange={() => setField('status', s.value)}
+                        />
+                        <span className={`h-1.5 w-1.5 rounded-full ${s.dot} transition-transform duration-150 ${active ? 'scale-125' : ''}`} />
+                        {s.label}
+                      </span>
+                      {active && (
+                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" className="text-slate-900 animate-[fadeIn_120ms_ease-out]">
+                          <path d="M3 8.5l3 3 7-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </label>
+                  );
+                })}
               </div>
             </Field>
 
             <Field label="Merek" error={errors.merek} required>
-              <input className="input" value={form.merek} onChange={(e) => setField('merek', e.target.value)} placeholder="cth. Dell, HP, Logitech" />
+              <input
+                className={`${inputClass} ${errors.merek ? inputErrorClass : ''}`}
+                value={form.merek}
+                onChange={(e) => setField('merek', e.target.value)}
+                placeholder="cth. Dell, HP, Logitech"
+              />
             </Field>
 
             <Field label="Tipe">
-              <input className="input" value={form.tipe} onChange={(e) => setField('tipe', e.target.value)} />
+              <input className={inputClass} value={form.tipe} onChange={(e) => setField('tipe', e.target.value)} placeholder="cth. 65W USB-C" />
             </Field>
 
             <Field label="Warna">
-              <input className="input" value={form.warna} onChange={(e) => setField('warna', e.target.value)} />
+              <input className={inputClass} value={form.warna} onChange={(e) => setField('warna', e.target.value)} placeholder="cth. Hitam" />
             </Field>
 
-            <Field label="Serial Number">
+            <Field label="Serial Number" error={errors.serial_number}>
               <input
-                className="input font-mono text-[13px]"
+                className={`${inputClass} font-mono text-[13px]`}
                 value={form.serial_number}
                 onChange={(e) => setField('serial_number', e.target.value)}
+                placeholder="Kosongkan kalau tidak ada"
               />
             </Field>
           </Section>
 
           {/* Section: Pembelian & Garansi */}
-          <Section title="Pembelian & Garansi" subtitle="Sumber barang dan dokumen terkait">
+          <Section
+            index={1}
+            title="Pembelian & Garansi"
+            subtitle="Sumber barang dan dokumen terkait"
+            icon={
+              <path d="M3 5h10l-.8 7.2a1.5 1.5 0 01-1.49 1.3H5.29a1.5 1.5 0 01-1.49-1.3L3 5zM5.5 5V3.5a2.5 2.5 0 015 0V5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            }
+          >
             <Field label="Supplier">
-              <select
-                className="input"
+              <SelectField
                 value={form.supplier_id ?? ''}
-                onChange={(e) => setField('supplier_id', e.target.value ? Number(e.target.value) : null)}
+                onChange={(v) => setField('supplier_id', v ? Number(v) : null)}
               >
                 <option value="">Pilih supplier</option>
                 {supplierOptions.map((s) => (
                   <option key={s.id} value={s.id}>{s.nama}</option>
                 ))}
-              </select>
+              </SelectField>
             </Field>
 
             <Field label="Perusahaan">
-              <input
-                className="input"
-                value={form.perusahaan}
-                onChange={(e) => setField('perusahaan', e.target.value)}
-              />
+              <input className={inputClass} value={form.perusahaan} onChange={(e) => setField('perusahaan', e.target.value)} />
             </Field>
 
             <Field label="Tanggal Pembelian">
               <input
                 type="date"
-                className="input"
+                className={inputClass}
                 value={form.tanggal_pembelian || ''}
                 onChange={(e) => setField('tanggal_pembelian', e.target.value)}
               />
             </Field>
 
-            <Field label="Tanggal Garansi">
+            <Field label="Tanggal Garansi" error={errors.tanggal_garansi}>
               <input
                 type="date"
-                className="input"
+                className={`${inputClass} ${errors.tanggal_garansi ? inputErrorClass : ''}`}
                 value={form.tanggal_garansi || ''}
                 onChange={(e) => setField('tanggal_garansi', e.target.value)}
               />
             </Field>
 
             <Field label="No Surat Jalan">
-              <input
-                className="input"
-                value={form.no_surat_jalan}
-                onChange={(e) => setField('no_surat_jalan', e.target.value)}
-              />
+              <input className={`${inputClass} font-mono text-[13px]`} value={form.no_surat_jalan} onChange={(e) => setField('no_surat_jalan', e.target.value)} />
             </Field>
 
             <Field label="No Good Receive">
-              <input
-                className="input"
-                value={form.no_good_receive}
-                onChange={(e) => setField('no_good_receive', e.target.value)}
-              />
+              <input className={`${inputClass} font-mono text-[13px]`} value={form.no_good_receive} onChange={(e) => setField('no_good_receive', e.target.value)} />
             </Field>
           </Section>
 
           {/* Section: Detail Tambahan */}
-          <Section title="Detail Tambahan" subtitle="Catatan dan foto barang">
+          <Section
+            index={2}
+            title="Detail Tambahan"
+            subtitle="Catatan dan foto barang"
+            icon={
+              <path d="M2 12.5l3.3-3.3a1.4 1.4 0 012 0L10 11.9M8.7 10.6l1.6-1.6a1.4 1.4 0 012 0L14 10.7M2.5 3h11v10h-11V3z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            }
+          >
             <div className="sm:col-span-2">
               <Field label="Keterangan">
-                <textarea
-                  className="input min-h-[80px] resize-none"
-                  value={form.keterangan}
-                  onChange={(e) => setField('keterangan', e.target.value)}
-                />
+                <div className="relative">
+                  <textarea
+                    className={`${inputClass} min-h-[80px] resize-none`}
+                    value={form.keterangan ?? ''}
+                    maxLength={KETERANGAN_MAX}
+                    onChange={(e) => setField('keterangan', e.target.value)}
+                    placeholder="Catatan tambahan tentang kondisi atau riwayat barang…"
+                  />
+                  <span className="pointer-events-none absolute bottom-2 right-2.5 text-[11px] text-slate-300">
+                    {(form.keterangan ?? '').length}/{KETERANGAN_MAX}
+                  </span>
+                </div>
               </Field>
             </div>
 
@@ -394,24 +555,45 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
               <span className="block mb-1.5 text-sm font-medium text-slate-700">Foto</span>
               <label
                 onDragOver={(e) => e.preventDefault()}
+                onDragEnter={handleFotoDragEnter}
+                onDragLeave={handleFotoDragLeave}
                 onDrop={handleFotoDrop}
-                className="flex items-center gap-4 rounded-xl border border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/50 p-3 cursor-pointer transition-colors"
+                className={`flex items-center gap-4 rounded-xl border border-dashed p-3 cursor-pointer transition-all duration-150 ${
+                  isDraggingFoto
+                    ? 'border-slate-900 bg-slate-900/[0.03] scale-[1.01]'
+                    : 'border-slate-300 hover:border-slate-400 bg-slate-50/50'
+                }`}
               >
-                <input type="file" accept="image/*" className="sr-only" onChange={handleFotoChange} />
+                <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={handleFotoChange} />
                 {fotoPreview ? (
-                  <img src={fotoPreview} alt="Preview" className="h-16 w-16 object-cover rounded-lg border border-slate-200 shrink-0" />
+                  <img src={fotoPreview} alt="Preview foto kelengkapan" className="h-16 w-16 object-cover rounded-lg border border-slate-200 shrink-0 shadow-sm" />
                 ) : (
-                  <div className="grid h-16 w-16 place-items-center rounded-lg bg-slate-100 text-slate-400 shrink-0">
+                  <div className={`grid h-16 w-16 place-items-center rounded-lg bg-slate-100 text-slate-400 shrink-0 transition-transform duration-150 ${isDraggingFoto ? 'scale-110' : ''}`}>
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                       <path d="M4 16l4.6-4.6a2 2 0 0 1 2.8 0L16 16M13 13l1.6-1.6a2 2 0 0 1 2.8 0L20 14M4 6h16v14H4V6z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
                 )}
-                <div className="text-sm">
-                  <p className="font-medium text-slate-700">{fotoPreview ? 'Ganti foto' : 'Unggah foto'}</p>
-                  <p className="text-slate-400 text-xs mt-0.5">Klik atau seret file ke sini · PNG/JPG</p>
+                <div className="text-sm flex-1">
+                  <p className="font-medium text-slate-700">
+                    {isDraggingFoto ? 'Lepas untuk unggah' : fotoPreview ? 'Ganti foto' : 'Unggah foto'}
+                  </p>
+                  <p className="text-slate-400 text-xs mt-0.5">Klik atau seret file ke sini · PNG/JPG/WEBP · maks {MAX_FOTO_MB}MB</p>
                 </div>
+                {fotoPreview && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      removeFoto();
+                    }}
+                    className="text-xs text-red-600 hover:text-red-700 shrink-0 transition-colors"
+                  >
+                    Hapus
+                  </button>
+                )}
               </label>
+              {errors.foto && <span className="block mt-1 text-xs text-red-600 animate-[fadeIn_120ms_ease-out]">{errors.foto}</span>}
             </div>
           </Section>
         </form>
@@ -421,7 +603,8 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+            disabled={saving}
+            className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
           >
             Batal
           </button>
@@ -429,7 +612,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
             type="submit"
             form="aset-kelengkapan-form"
             disabled={saving}
-            className="px-4 py-2 text-sm rounded-lg bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 transition-colors inline-flex items-center gap-2"
+            className="px-4 py-2 text-sm rounded-lg bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 transition-all duration-150 inline-flex items-center gap-2"
           >
             {saving && (
               <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -444,18 +627,44 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
 
       <style>{`
         @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(8px) scale(.98) } to { opacity: 1; transform: translateY(0) scale(1) } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px) scale(.98) } to { opacity: 1; transform: translateY(0) scale(1) } }
+        @keyframes dropIn { from { opacity: 0; transform: translateY(-4px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: translateY(0) } }
       `}</style>
     </div>
   );
 }
 
-function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Section({
+  title,
+  subtitle,
+  icon,
+  index,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  icon?: React.ReactNode;
+  index?: number;
+  children: React.ReactNode;
+}) {
   return (
-    <div>
-      <div className="mb-3">
-        <h4 className="text-sm font-semibold text-slate-900">{title}</h4>
-        {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+    <div
+      className="animate-[fadeInUp_260ms_ease-out_backwards]"
+      style={{ animationDelay: `${(index ?? 0) * 50}ms` }}
+    >
+      <div className="mb-3 flex items-center gap-2">
+        {icon && (
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-slate-100 text-slate-500">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              {icon}
+            </svg>
+          </span>
+        )}
+        <div>
+          <h4 className="text-sm font-semibold text-slate-900">{title}</h4>
+          {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+        </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>
     </div>
@@ -479,7 +688,38 @@ function Field({
         {label} {required && <span className="text-red-500">*</span>}
       </span>
       {children}
-      {error && <span className="block mt-1 text-xs text-red-600">{error}</span>}
+      {error && <span className="block mt-1 text-xs text-red-600 animate-[fadeIn_120ms_ease-out]">{error}</span>}
     </label>
+  );
+}
+
+function SelectField({
+  value,
+  onChange,
+  children,
+}: {
+  value: string | number;
+  onChange: (value: string) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative">
+      <select
+        className={`${inputClass} appearance-none pr-9 cursor-pointer`}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {children}
+      </select>
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 16 16"
+        fill="none"
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+      >
+        <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
   );
 }
