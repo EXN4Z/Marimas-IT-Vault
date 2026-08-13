@@ -4,7 +4,6 @@ import toast from 'react-hot-toast';
 import api from '../api/axios';
 import RouteModal from '../components/shared/RouteModal';
 import { getDepartemen } from '../api/departemen';
-import { getJabatan, type Jabatan } from '../api/jabatan';
 import { getCabang, type Cabang } from '../api/cabang';
 import { resetKaryawanPassword } from '../api/auth';
 import type { Departemen } from '../api/departemen';
@@ -12,23 +11,16 @@ import { createPortal } from 'react-dom';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest' | 'cabang';
 
-interface Pekerja {
-    id: number;
-    nik: string;
-    departemen_id: number | null;
-    jabatan_id: number | null;
-    lokasi_kantor_id: number | null;
-    tanggal_masuk: string | null;
-}
-
 interface User {
     id: number;
     name: string;
     email: string | null;
     phone: string | null;
     role: Role;
-    pekerja: Pekerja | null;
+    nik: string | null;
+    departemen_id?: number | null;
     lokasi_kantor_id?: number | null;
+    tanggal_masuk: string | null;
 }
 
 interface FormState {
@@ -38,7 +30,6 @@ interface FormState {
     role: Role;
     nik: string;
     departemen_id: string;
-    jabatan_id: string;
     lokasi_kantor_id: string;
     tanggal_masuk: string;
 }
@@ -54,7 +45,6 @@ const initialForm: FormState = {
     role: 'karyawan',
     nik: '',
     departemen_id: '',
-    jabatan_id: '',
     lokasi_kantor_id: '',
     tanggal_masuk: '',
 };
@@ -65,7 +55,6 @@ export default function EditKaryawanPage() {
 
     const [form, setForm] = useState<FormState>(initialForm);
     const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
-    const [jabatanList, setJabatanList] = useState<Jabatan[]>([]);
     const [cabangList, setCabangList] = useState<Cabang[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [saving, setSaving] = useState<boolean>(false);
@@ -78,7 +67,6 @@ export default function EditKaryawanPage() {
 
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
-        getJabatan().then(setJabatanList).catch(() => {});
         getCabang().then(setCabangList).catch(() => {});
 
         api
@@ -90,15 +78,10 @@ export default function EditKaryawanPage() {
                     email: u.email ?? '',
                     phone: u.phone ?? '',
                     role: u.role,
-                    nik: u.pekerja?.nik ?? '',
-                    departemen_id: u.pekerja?.departemen_id ? String(u.pekerja.departemen_id) : '',
-                    jabatan_id: u.pekerja?.jabatan_id ? String(u.pekerja.jabatan_id) : '',
-                    lokasi_kantor_id: u.pekerja?.lokasi_kantor_id
-                        ? String(u.pekerja.lokasi_kantor_id)
-                        : u.lokasi_kantor_id
-                          ? String(u.lokasi_kantor_id)
-                          : '',
-                    tanggal_masuk: u.pekerja?.tanggal_masuk ?? '',
+                    nik: u.nik ?? '',
+                    departemen_id: u.departemen_id ? String(u.departemen_id) : '',
+                    lokasi_kantor_id: u.lokasi_kantor_id ? String(u.lokasi_kantor_id) : '',
+                    tanggal_masuk: u.tanggal_masuk ?? '',
                 });
             })
             .catch(() => {
@@ -136,7 +119,7 @@ export default function EditKaryawanPage() {
             ...prev,
             role: value,
             ...(value === 'cabang'
-                ? { nik: '', departemen_id: '', jabatan_id: '', tanggal_masuk: '' }
+                ? { nik: '', departemen_id: '', tanggal_masuk: '' }
                 : {}),
         }));
         setErrors((prev) => {
@@ -145,7 +128,6 @@ export default function EditKaryawanPage() {
             if (value === 'cabang') {
                 delete next.nik;
                 delete next.departemen_id;
-                delete next.jabatan_id;
                 delete next.tanggal_masuk;
             }
             return next;
@@ -162,7 +144,6 @@ export default function EditKaryawanPage() {
                 ...form,
                 nik: isCabang ? null : form.nik,
                 departemen_id: isCabang ? null : form.departemen_id || null,
-                jabatan_id: isCabang ? null : form.jabatan_id || null,
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
                 tanggal_masuk: isCabang ? null : form.tanggal_masuk || null,
             };
@@ -294,37 +275,20 @@ export default function EditKaryawanPage() {
                     )}
 
                     {!isCabang && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <Field label="Departemen" error={errors.departemen_id?.[0]}>
-                                <select
-                                    value={form.departemen_id}
-                                    onChange={(e) => handleChange('departemen_id', e.target.value)}
-                                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                                >
-                                    <option value="">Pilih departemen</option>
-                                    {departemenList.map((d) => (
-                                        <option key={d.id} value={d.id}>
-                                            {d.nama}
-                                        </option>
-                                    ))}
-                                </select>
-                            </Field>
-
-                            <Field label="Jabatan" error={errors.jabatan_id?.[0]}>
-                                <select
-                                    value={form.jabatan_id}
-                                    onChange={(e) => handleChange('jabatan_id', e.target.value)}
-                                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                                >
-                                    <option value="">Pilih jabatan</option>
-                                    {jabatanList.map((j) => (
-                                        <option key={j.id} value={j.id}>
-                                            {j.nama}
-                                        </option>
-                                    ))}
-                                </select>
-                            </Field>
-                        </div>
+                        <Field label="Departemen" error={errors.departemen_id?.[0]}>
+                            <select
+                                value={form.departemen_id}
+                                onChange={(e) => handleChange('departemen_id', e.target.value)}
+                                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                            >
+                                <option value="">Pilih departemen</option>
+                                {departemenList.map((d) => (
+                                    <option key={d.id} value={d.id}>
+                                        {d.nama}
+                                    </option>
+                                ))}
+                            </select>
+                        </Field>
                     )}
 
                     <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]}>

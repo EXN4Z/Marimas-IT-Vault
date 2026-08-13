@@ -971,9 +971,9 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                       {namaPemakai(detail.pemakai_saat_ini)}
                       {isCabangPemakai(detail.pemakai_saat_ini) && ' (Cabang)'}
                     </p>
-                    {detail.pemakai_saat_ini.pekerja && (
+                    {detail.pemakai_saat_ini.user && (
                       <p className="text-xs text-slate-500 mt-0.5">
-                        NIK: {detail.pemakai_saat_ini.pekerja.nik || '-'} · {detail.pemakai_saat_ini.pekerja.departemen?.nama || '-'}
+                        NIK: {detail.pemakai_saat_ini.user.nik || '-'} · {detail.pemakai_saat_ini.user.departemen?.nama || '-'}
                       </p>
                     )}
                   </div>
@@ -1159,9 +1159,9 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                           {/* Dropdown detail — expand di tempat, gak buka modal/halaman baru */}
                           {expanded && (
                             <div className="mt-2 pt-2 border-t border-slate-200 flex flex-col gap-0.5">
-                              {p.pekerja && (
+                              {p.user && (
                                 <p className="text-slate-400">
-                                  NIK: {p.pekerja.nik || '-'} · {p.pekerja.departemen?.nama || '-'}
+                                  NIK: {p.user.nik || '-'} · {p.user.departemen?.nama || '-'}
                                 </p>
                               )}
                               {p.catatan_penerimaan && (

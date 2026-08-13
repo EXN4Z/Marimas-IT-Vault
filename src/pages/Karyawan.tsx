@@ -7,18 +7,13 @@ import Pagination from '../components/shared/Pagination';
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'cabang';
 type TabKey = 'semua' | 'karyawan' | 'hr_manajer' | 'admin' | 'cabang';
 
-interface Pekerja {
-    nik: string;
-    departemen: { nama: string } | null;
-    jabatan: { nama: string } | null;
-}
-
 interface User {
     id: number;
     name: string;
     email: string;
     role: Role;
-    pekerja: Pekerja | null;
+    nik: string | null;
+    departemen: { nama: string } | null;
 }
 
 const roleStyles: Record<Role, string> = {
@@ -290,9 +285,9 @@ function UserRow({ user, isAdmin, onDelete, onEdit }: UserRowProps) {
                 <span className={`text-xs px-3 py-1 rounded-full ${roleStyles[user.role]}`}>
                     {roleLabels[user.role]}
                 </span>
-                {user.pekerja && (
+                {user.departemen && (
                     <span className="text-xs text-gray-500">
-                        {user.pekerja.departemen?.nama || 'Departemen tidak ditentukan'}
+                        {user.departemen?.nama || 'Departemen tidak ditentukan'}
                     </span>
                 )}
                 {isAdmin && (

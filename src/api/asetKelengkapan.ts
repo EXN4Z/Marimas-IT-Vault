@@ -32,11 +32,8 @@ export interface AsetKelengkapanPemakai {
   created_at: string;
   id: number;
   aset_kelengkapan_id: number;
-  // salah satu dari dua ini yang terisi: pekerja_id buat karyawan, user_id buat akun cabang
-  pekerja_id: number | null;
-  pekerja?: { id: number; nik: string; user?: { id: number; name: string } };
   user_id: number | null;
-  user?: { id: number; name: string } | null;
+  user?: { id: number; name: string; nik?: string | null } | null;
   status: 'pending' | 'disetujui' | 'ditolak';
   requested_by_user_id: number | null;
   no_struk_penerimaan: string | null;
@@ -131,9 +128,9 @@ export async function searchKaryawanUntukKelengkapan(query: string, role?: strin
   return res.data;
 }
 
-// POST /aset-kelengkapan/{id}/pemakai — serah-terima kelengkapan ke pekerja
-// ATAU akun cabang. Kirim salah satu: pekerja_id (karyawan) atau user_id
-// (cabang), jangan dua-duanya. Dibatasi backend ke role admin.
+// POST /aset-kelengkapan/{id}/pemakai — serah-terima kelengkapan ke karyawan
+// ATAU akun cabang. Kirim user_id (tabel pekerja sudah dihapus, satu-satunya
+// identitas pemakai). Dibatasi backend ke role admin.
 export async function serahTerimaKelengkapan(asetKelengkapanId: number, formData: FormData) {
   const res = await api.post(`/aset-kelengkapan/${asetKelengkapanId}/pemakai`, formData);
   return res.data;
