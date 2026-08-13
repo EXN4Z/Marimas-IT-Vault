@@ -3,6 +3,11 @@ import type { AsetKelengkapan, AsetKelengkapanFormValues, AsetKelengkapanStatus 
 import { createAsetKelengkapan, updateAsetKelengkapan } from '../../api/asetKelengkapan';
 import { getSupplier, type Supplier } from '../../api/supplier';
 
+// Style input disamakan dengan form2 lain (AsetFormModal, AsetSerahTerimaModal, dst)
+// biar border-nya konsisten di semua form inventaris.
+const INPUT_CLASS =
+  'w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900';
+
 const STATUS_OPTIONS: { value: AsetKelengkapanStatus; label: string; dot: string }[] = [
   { value: 'tersedia', label: 'Tersedia', dot: 'bg-emerald-500' },
   { value: 'dipakai', label: 'Dipakai', dot: 'bg-blue-500' },
@@ -176,7 +181,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
           {/* Section: Informasi Umum */}
           <Section title="Informasi Umum" subtitle="Nama, status, dan ciri fisik barang">
             <Field label="Nama" error={errors.nama}>
-              <input className="input" value={form.nama} onChange={(e) => setField('nama', e.target.value)} />
+              <input className={INPUT_CLASS} value={form.nama} onChange={(e) => setField('nama', e.target.value)} />
             </Field>
 
             <Field label="Status" error={errors.status} required>
@@ -205,20 +210,20 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
             </Field>
 
             <Field label="Merek" error={errors.merek} required>
-              <input className="input" value={form.merek} onChange={(e) => setField('merek', e.target.value)} placeholder="cth. Dell, HP, Logitech" />
+              <input className={INPUT_CLASS} value={form.merek} onChange={(e) => setField('merek', e.target.value)} placeholder="cth. Dell, HP, Logitech" />
             </Field>
 
             <Field label="Tipe">
-              <input className="input" value={form.tipe} onChange={(e) => setField('tipe', e.target.value)} />
+              <input className={INPUT_CLASS} value={form.tipe} onChange={(e) => setField('tipe', e.target.value)} />
             </Field>
 
             <Field label="Warna">
-              <input className="input" value={form.warna} onChange={(e) => setField('warna', e.target.value)} />
+              <input className={INPUT_CLASS} value={form.warna} onChange={(e) => setField('warna', e.target.value)} />
             </Field>
 
             <Field label="Serial Number">
               <input
-                className="input font-mono text-[13px]"
+                className={`${INPUT_CLASS} font-mono text-[13px]`}
                 value={form.serial_number}
                 onChange={(e) => setField('serial_number', e.target.value)}
               />
@@ -229,7 +234,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
           <Section title="Pembelian & Garansi" subtitle="Sumber barang dan dokumen terkait">
             <Field label="Supplier">
               <select
-                className="input"
+                className={`${INPUT_CLASS} bg-white`}
                 value={form.supplier_id ?? ''}
                 onChange={(e) => setField('supplier_id', e.target.value ? Number(e.target.value) : null)}
               >
@@ -242,7 +247,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
 
             <Field label="Perusahaan">
               <input
-                className="input"
+                className={INPUT_CLASS}
                 value={form.perusahaan}
                 onChange={(e) => setField('perusahaan', e.target.value)}
               />
@@ -251,7 +256,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
             <Field label="Tanggal Pembelian">
               <input
                 type="date"
-                className="input"
+                className={INPUT_CLASS}
                 value={form.tanggal_pembelian || ''}
                 onChange={(e) => setField('tanggal_pembelian', e.target.value)}
               />
@@ -260,7 +265,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
             <Field label="Tanggal Garansi">
               <input
                 type="date"
-                className="input"
+                className={INPUT_CLASS}
                 value={form.tanggal_garansi || ''}
                 onChange={(e) => setField('tanggal_garansi', e.target.value)}
               />
@@ -268,7 +273,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
 
             <Field label="No Surat Jalan">
               <input
-                className="input"
+                className={INPUT_CLASS}
                 value={form.no_surat_jalan}
                 onChange={(e) => setField('no_surat_jalan', e.target.value)}
               />
@@ -276,7 +281,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
 
             <Field label="No Good Receive">
               <input
-                className="input"
+                className={INPUT_CLASS}
                 value={form.no_good_receive}
                 onChange={(e) => setField('no_good_receive', e.target.value)}
               />
@@ -288,7 +293,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
             <div className="sm:col-span-2">
               <Field label="Keterangan">
                 <textarea
-                  className="input min-h-[80px] resize-none"
+                  className={`${INPUT_CLASS} min-h-[80px] resize-none`}
                   value={form.keterangan}
                   onChange={(e) => setField('keterangan', e.target.value)}
                 />
