@@ -15,7 +15,6 @@ import {
   ChevronDown,
   Building2,
   BriefcaseBusiness,
-  Boxes,
   ClipboardList,
   Truck,
   Wrench,
@@ -72,7 +71,6 @@ const navItems: NavItem[] = [
     children: [
       { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen' },
       { label: 'Jabatan', icon: BriefcaseBusiness, path: '/master-data?tab=jabatan' },
-      { label: 'Jenis Aset', icon: Boxes, path: '/master-data?tab=jenis-aset' },
       { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier' },
     ],
   },

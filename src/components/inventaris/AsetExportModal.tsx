@@ -30,8 +30,7 @@ interface ExportColumn {
 
 const EXPORT_COLUMNS: ExportColumn[] = [
   { key: 'kode_aset', label: 'Kode Aset', defaultChecked: true, get: (a) => a.kode_aset },
-  { key: 'jenis', label: 'Jenis Aset', defaultChecked: true, get: (a) => a.jenis?.nama || '-' },
-  { key: 'merek', label: 'Merek', defaultChecked: true, get: (a) => a.merek || '-' },
+  { key: 'merek', label: 'Nama/Merek', defaultChecked: true, get: (a) => a.merek || '-' },
   { key: 'tipe', label: 'Tipe', defaultChecked: true, get: (a) => a.tipe || '-' },
   { key: 'warna', label: 'Warna', defaultChecked: false, get: (a) => a.warna || '-' },
   { key: 'serial_number', label: 'Serial Number', defaultChecked: true, get: (a) => a.serial_number || '-' },

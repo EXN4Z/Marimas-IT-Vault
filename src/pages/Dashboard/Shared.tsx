@@ -28,7 +28,7 @@ import type {
   NotificationItem,
   DepartemenDistribusi,
   RingkasanAset,
-  AsetPerJenis,
+  AsetPerMerek,
   AsetPerhatian,
   TrenPembelianAset,
   StatusAsetDistribusi,
@@ -317,18 +317,18 @@ export function StatusAsetDonutCard({ statusAsetDistribusi }: { statusAsetDistri
   );
 }
 
-export function AsetPerJenisCard({ asetPerJenis }: { asetPerJenis: AsetPerJenis[] }) {
+export function AsetPerMerekCard({ asetPerMerek }: { asetPerMerek: AsetPerMerek[] }) {
   return (
     <div className={cardClass}>
-      <h3 className="text-base font-semibold text-slate-900 mb-4">Distribusi Aset per Jenis</h3>
-      {asetPerJenis.length === 0 ? (
+      <h3 className="text-base font-semibold text-slate-900 mb-4">Distribusi Aset per Merek</h3>
+      {asetPerMerek.length === 0 ? (
         <p className="text-sm text-slate-400">Belum ada data aset</p>
       ) : (
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={asetPerJenis} margin={{ top: 16, right: 10, left: -20, bottom: 0 }}>
+            <BarChart data={asetPerMerek} margin={{ top: 16, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" stroke={THEME.grid} />
-              <XAxis dataKey="jenis" tick={false} axisLine={false} tickLine={false} />
+              <XAxis dataKey="merek" tick={false} axisLine={false} tickLine={false} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: THEME.axis }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
               <Bar dataKey="jumlah" fill={THEME.orange} radius={[8, 8, 0, 0]} barSize={36} />

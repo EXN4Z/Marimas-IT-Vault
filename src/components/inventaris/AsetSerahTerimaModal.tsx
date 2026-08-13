@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Search, Check, Plus } from 'lucide-react';
-import { serahTerimaAset, searchKaryawan, getAset, type Aset, type AsetPemakai, type KaryawanUser } from '../../api/aset';
+import { useEffect, useRef, useState } from 'react';
+import { Search, Check } from 'lucide-react';
+import { serahTerimaAset, searchKaryawan, type Aset, type AsetPemakai, type KaryawanUser } from '../../api/aset';
 import AsetFotoUpload from './AsetFotoUpload';
 
 interface AsetSerahTerimaModalProps {
@@ -31,58 +31,12 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // BARU: checklist kelengkapan (tas, charger, dst) yang ikut diserahkan
-  // bareng aset utama ini dalam satu proses -- satu penerima, satu tanggal,
-  // satu set foto, satu struk gabungan. Diambil dari /api/aset, difilter di
-  // sini ke kategori jenis "kelengkapan" & status "tersedia" (dan bukan
-  // aset utamanya sendiri, buat jaga-jaga kalau kebetulan sama).
-  const [kelengkapanPool, setKelengkapanPool] = useState<Aset[]>([]);
-  const [kelengkapanQuery, setKelengkapanQuery] = useState('');
-  const [selectedKelengkapan, setSelectedKelengkapan] = useState<Aset[]>([]);
-  const [loadingKelengkapan, setLoadingKelengkapan] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    getAset()
-      .then((list) => {
-        if (cancelled) return;
-        const pool = list.filter(
-          (a) => a.id !== aset.id && a.status === 'tersedia' && (a.jenis?.kategori ?? 'aset_utama') === 'kelengkapan'
-        );
-        setKelengkapanPool(pool);
-      })
-      .catch(() => {
-        if (!cancelled) setKelengkapanPool([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingKelengkapan(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [aset.id]);
-
-  const kelengkapanMatches = useMemo(() => {
-    const q = kelengkapanQuery.trim().toLowerCase();
-    const belumDipilih = kelengkapanPool.filter((a) => !selectedKelengkapan.some((s) => s.id === a.id));
-    if (!q) return belumDipilih;
-    return belumDipilih.filter((a) => {
-      const haystack = [a.kode_aset, a.jenis?.nama, a.merek, a.tipe, a.serial_number]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [kelengkapanPool, selectedKelengkapan, kelengkapanQuery]);
-
-  const addKelengkapan = (a: Aset) => {
-    setSelectedKelengkapan((prev) => (prev.some((s) => s.id === a.id) ? prev : [...prev, a]));
-    setKelengkapanQuery('');
-  };
-
-  const removeKelengkapan = (id: number) => {
-    setSelectedKelengkapan((prev) => prev.filter((s) => s.id !== id));
-  };
+  // Kelengkapan (tas, charger, dst) TIDAK bisa dipinjam sendiri lagi -- dia
+  // wajib nempel & ikut status aset induknya. Begitu aset ini diserahkan,
+  // backend otomatis ikut serahkan semua kelengkapan miliknya yang masih
+  // 'tersedia' (satu struk & foto yang sama). Di sini kita cuma tampilkan
+  // daftarnya sebagai info, tidak ada checklist/pilihan manual lagi.
+  const kelengkapanTersedia = (aset.aset_kelengkapan ?? []).filter((k) => k.status === 'tersedia');
 
   function handleModeChange(next: PenerimaMode) {
     setMode(next);
@@ -141,36 +95,27 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
     setSubmitting(true);
     setError('');
 
-    // Semua item (aset utama duluan, baru kelengkapan yang dicentang)
-    // diserahkan satu-satu ke backend (endpoint /aset/{id}/pemakai tetap
-    // per-aset, tidak berubah) -- tapi pakai penerima/tanggal/catatan/foto
-    // yang SAMA persis buat semuanya, jadi kelihatan seperti satu proses.
-    const semuaItem = [aset, ...selectedKelengkapan];
-    const hasil: { aset: Aset; pemakai: AsetPemakai }[] = [];
-
+    // Cuma aset utama yang diserahkan lewat sini -- kelengkapan yang masih
+    // 'tersedia' otomatis ikut diserahkan di backend (satu struk & foto yang
+    // sama), gak perlu request terpisah dari sini lagi.
     try {
-      for (const item of semuaItem) {
-        const formData = new FormData();
-        if (mode === 'karyawan') {
-          formData.append('pekerja_id', String(selected!.pekerja!.id));
-        } else {
-          formData.append('user_id', String(selected!.id));
-        }
-        formData.append('tanggal_penerimaan', tanggalPenerimaan);
-        if (catatan.trim()) formData.append('catatan_penerimaan', catatan.trim());
-        fotoPenerimaan.forEach((file) => formData.append('foto_penerimaan[]', file));
-
-        const pemakai = await serahTerimaAset(item.id, formData);
-        hasil.push({ aset: item, pemakai });
+      const formData = new FormData();
+      if (mode === 'karyawan') {
+        formData.append('pekerja_id', String(selected!.pekerja!.id));
+      } else {
+        formData.append('user_id', String(selected!.id));
       }
-      onSuccess(hasil);
+      formData.append('tanggal_penerimaan', tanggalPenerimaan);
+      if (catatan.trim()) formData.append('catatan_penerimaan', catatan.trim());
+      fotoPenerimaan.forEach((file) => formData.append('foto_penerimaan[]', file));
+
+      const pemakai = await serahTerimaAset(aset.id, formData);
+      onSuccess([{ aset, pemakai }]);
     } catch (err: any) {
-      const namaGagal = semuaItem[hasil.length]?.kode_aset;
       setError(
-        (hasil.length > 0 ? `${hasil.length} aset berhasil diserahkan, tapi gagal lanjut di ${namaGagal}: ` : '') +
-          (err.response?.data?.errors?.foto_penerimaan?.[0] ||
-            err.response?.data?.message ||
-            'Gagal mencatat serah-terima. Coba lagi.')
+        err.response?.data?.errors?.foto_penerimaan?.[0] ||
+          err.response?.data?.message ||
+          'Gagal mencatat serah-terima. Coba lagi.'
       );
     } finally {
       setSubmitting(false);
@@ -304,66 +249,29 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
             />
           </div>
 
-          {/* BARU: checklist kelengkapan -- cari & tambahin tas/charger/dst
-              yang ikut dipinjamkan bareng aset utama ini. Opsional, boleh
-              kosong (cuma pinjam aset utama doang). */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Kelengkapan yang Ikut Dipinjamkan <span className="text-slate-400 font-normal">(opsional)</span>
-            </label>
-
-            {selectedKelengkapan.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {selectedKelengkapan.map((k) => (
+          {/* Kelengkapan bukan lagi checklist manual -- semua kelengkapan
+              aset ini yang statusnya 'tersedia' otomatis ikut diserahkan
+              bareng, ditampilkan di sini cuma sebagai info. */}
+          {kelengkapanTersedia.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Kelengkapan yang Ikut Otomatis
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {kelengkapanTersedia.map((k) => (
                   <span
                     key={k.id}
-                    className="flex items-center gap-1 text-xs font-medium bg-slate-900 text-white pl-2.5 pr-1.5 py-1 rounded-full"
+                    className="text-xs font-medium bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full"
                   >
-                    {k.kode_aset} · {k.jenis?.nama || k.merek || '-'}
-                    <button
-                      type="button"
-                      onClick={() => removeKelengkapan(k.id)}
-                      className="hover:bg-white/20 rounded-full p-0.5"
-                    >
-                      <X size={11} />
-                    </button>
+                    {k.kode_kelengkapan} · {k.nama}
                   </span>
                 ))}
               </div>
-            )}
-
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                value={kelengkapanQuery}
-                onChange={(e) => setKelengkapanQuery(e.target.value)}
-                placeholder={loadingKelengkapan ? 'Memuat kelengkapan tersedia...' : 'Cari tas, charger, dst...'}
-                disabled={loadingKelengkapan}
-                className="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-50"
-              />
-
-              {!loadingKelengkapan && kelengkapanQuery.trim() !== '' && (
-                <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                  {kelengkapanMatches.map((k) => (
-                    <button
-                      key={k.id}
-                      type="button"
-                      onClick={() => addKelengkapan(k)}
-                      className="w-full flex items-center justify-between gap-2 text-left text-sm px-3 py-2 hover:bg-slate-50 transition"
-                    >
-                      <span>
-                        {k.kode_aset} · {k.jenis?.nama || k.merek || '-'}
-                      </span>
-                      <Plus size={13} className="text-slate-400 flex-shrink-0" />
-                    </button>
-                  ))}
-                  {kelengkapanMatches.length === 0 && (
-                    <p className="text-xs text-slate-400 px-3 py-2">Kelengkapan tersedia tidak ditemukan.</p>
-                  )}
-                </div>
-              )}
+              <p className="text-xs text-slate-400 mt-1">
+                Item di atas ikut berstatus "dipakai" otomatis begitu aset ini diserahkan.
+              </p>
             </div>
-          </div>
+          )}
 
           <AsetFotoUpload files={fotoPenerimaan} onChange={setFotoPenerimaan} max={3} label="Foto Bukti Serah Terima (3 Foto)" />
         </div>
@@ -395,8 +303,8 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
             )}
             {submitting
               ? 'Memproses...'
-              : selectedKelengkapan.length > 0
-              ? `Serahkan Aset + ${selectedKelengkapan.length} Kelengkapan`
+              : kelengkapanTersedia.length > 0
+              ? `Serahkan Aset + ${kelengkapanTersedia.length} Kelengkapan`
               : 'Serahkan Aset'}
           </button>
         </div>

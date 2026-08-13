@@ -27,7 +27,6 @@ import {
   type AsetPemakai,
   type AsetPenanganan,
 } from '../../api/aset';
-import { getJenisAset, type JenisAset, type JenisAsetKategori } from '../../api/jenisAset';
 import { getSupplier, type Supplier } from '../../api/supplier';
 import type { AsetKelengkapan, AsetKelengkapanStatus } from '../../api/asetKelengkapan';
 
@@ -101,16 +100,11 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   const [search, setSearch] = useState('');
 
   const [asetList, setAsetList] = useState<Aset[]>([]);
-  const [jenisOptions, setJenisOptions] = useState<JenisAset[]>([]);
   const [supplierOptions, setSupplierOptions] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const [statusFilter, setStatusFilter] = useState<AsetStatus | ''>('');
-  // Filter kategori jenis: '' (semua), 'aset_utama', atau 'kelengkapan'.
-  // Kategori-nya nempel di jenis aset (lihat Master Data > Jenis Aset),
-  // bukan kolom sendiri di tabel aset -- makanya difilter dari a.jenis?.kategori.
-  const [kategoriFilter, setKategoriFilter] = useState<JenisAsetKategori | ''>('');
 
   // Pagination tabel aset — style sama kayak pager Riwayat Aset (10 per
   // halaman, angka + elipsis). Client-side krn /api/aset gak dipaging
@@ -157,6 +151,12 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   const [importLoading, setImportLoading] = useState(false);
   const [importMessage, setImportMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Import format BARU "Data Aset Rapi" (1 baris = 1 barang, kolom Kategori
+  // eksplisit Aset Utama/Kelengkapan) — endpoint & state terpisah dari
+  // import format lama di atas, biar dua-duanya tetap bisa dipakai.
+  const [importRapiLoading, setImportRapiLoading] = useState(false);
+  const fileInputRapiRef = useRef<HTMLInputElement | null>(null);
 
   const loadList = async () => {
     setLoading(true);
@@ -212,9 +212,39 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     }
   };
 
+  // Sama kayak handleFileSelected di atas, tapi ke endpoint /import-aset-rapi
+  // (format "Data Aset Rapi" — 1 baris = 1 barang, kolom Kategori eksplisit
+  // Aset Utama/Kelengkapan; kelengkapan otomatis ke-link ke aset induknya
+  // lewat No Bukti yang sama).
+  const handleFileSelectedRapi = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setImportRapiLoading(true);
+    setImportMessage(null);
+
+    try {
+      const res = await api.post('/import-aset-rapi', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setImportMessage({ type: 'success', text: res.data.message });
+      loadList();
+    } catch (err: any) {
+      setImportMessage({
+        type: 'error',
+        text: err.response?.data?.message || 'Gagal mengimport file',
+      });
+    } finally {
+      setImportRapiLoading(false);
+      if (fileInputRapiRef.current) fileInputRapiRef.current.value = '';
+    }
+  };
+
   useEffect(() => {
     loadList();
-    getJenisAset().then(setJenisOptions).catch(() => {});
     getSupplier().then(setSupplierOptions).catch(() => {});
   }, []);
 
@@ -461,7 +491,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   const filteredAset = asetList
     .filter((a) => {
       const matchStatus = !statusFilter || a.status === statusFilter;
-      const matchKategori = !kategoriFilter || (a.jenis?.kategori ?? 'aset_utama') === kategoriFilter;
       const q = search.toLowerCase();
       const matchSearch =
         !q ||
@@ -469,12 +498,11 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
         (a.serial_number || '').toLowerCase().includes(q) ||
         (a.merek || '').toLowerCase().includes(q) ||
         (a.tipe || '').toLowerCase().includes(q) ||
-        (a.jenis?.nama || '').toLowerCase().includes(q) ||
         // BARU: search juga cocokkan nama di kolom "Dipakai Oleh". Status
         // 'dijual' sengaja dilewati karena kolomnya ditampilkan sebagai "-"
         // di tabel (namaPemakai lama sudah tidak relevan buat aset yang dijual).
         (a.status !== 'dijual' && namaPemakai(a.pemakai_saat_ini).toLowerCase().includes(q));
-      return matchStatus && matchKategori && matchSearch;
+      return matchStatus && matchSearch;
     })
     .filter((a) => !onlyMenipis || a.status === 'tersedia')
     // KARYAWAN/CABANG cuma boleh liat aset yang masih tersedia, atau aset yang
@@ -524,7 +552,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   // biar gak nyangkut di halaman kosong (sama pola kayak riwayat search).
   useEffect(() => {
     setAsetPage(1);
-  }, [search, statusFilter, kategoriFilter, onlyMenipis]);
+  }, [search, statusFilter, onlyMenipis]);
 
   // Dipakai bareng oleh tabel (desktop) & card (mobile) biar tombol aksinya
   // gak ke-duplikasi/nyimpang antara 2 tampilan itu.
@@ -655,6 +683,30 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                 {importLoading ? 'Mengimport...' : 'Import Excel'}
               </button>
 
+              {/* Import format "Data Aset Rapi" (kolom Kategori eksplisit
+                  Aset Utama/Kelengkapan) — endpoint /import-aset-rapi,
+                  dipisah dari tombol Import Excel lama di atas. */}
+              <input
+                ref={fileInputRapiRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelectedRapi}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRapiRef.current?.click()}
+                disabled={importRapiLoading}
+                title="Import Excel format 'Data Aset Rapi' (1 baris = 1 barang, kolom Kategori Aset Utama/Kelengkapan)"
+                className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                {importRapiLoading ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Upload size={16} />
+                )}
+                {importRapiLoading ? 'Mengimport...' : 'Import Excel (Rapi)'}
+              </button>
+
               <button
                 onClick={() => {
                   setEditingAset(null);
@@ -703,21 +755,9 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Cari nama, kode, atau jenis aset..."
+          placeholder="Cari nama, kode, atau merek aset..."
           className="flex-1"
         />
-        {/* Filter kategori jenis: Aset Utama (laptop, proyektor, dst) vs
-            Kelengkapan (tas, charger, dst) -- kategorinya nempel di jenis
-            aset (Master Data > Jenis Aset), difilter dari a.jenis?.kategori. */}
-        <select
-          value={kategoriFilter}
-          onChange={(e) => setKategoriFilter(e.target.value as JenisAsetKategori | '')}
-          className="px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 sm:w-56"
-        >
-          <option value="">Semua Kategori</option>
-          <option value="aset_utama">Aset Utama</option>
-          <option value="kelengkapan">Kelengkapan</option>
-        </select>
       </div>
 
       <div className="border border-slate-200 rounded-lg overflow-hidden">
@@ -733,7 +773,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
               <thead>
                 <tr className="border-b border-slate-100 text-middle text-xs text-slate-400 uppercase tracking-wide">
                   <th className="px-6 py-3 font-medium">Kode Aset</th>
-                  <th className="px-6 py-3 font-medium">Jenis</th>
                   <th className="px-6 py-3 font-medium">Merek / Tipe</th>
                   <th className="px-6 py-3 font-medium">Jumlah</th>
                   <th className="px-6 py-3 font-medium">Status</th>
@@ -746,9 +785,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                   return (
                     <tr key={a.id} className="text-center border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                       <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{a.kode_aset}</td>
-                      <td className="px-6 py-3 text-slate-600 max-w-[140px]">
-                        <p className="truncate" title={a.jenis?.nama || '-'}>{a.jenis?.nama || '-'}</p>
-                      </td>
                       <td className="px-6 py-3 text-slate-600 max-w-[160px]">
                         <p className="truncate" title={[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}>
                           {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}
@@ -796,7 +832,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-slate-800">{a.kode_aset}</p>
                       <p className="text-xs text-slate-500 truncate">
-                        {a.jenis?.nama || '-'} · {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'} · Jumlah: {a.jumlah ?? 1}
+                        {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'} · Jumlah: {a.jumlah ?? 1}
                       </p>
                       <StatusBadge colorClass={STATUS_STYLE[a.status]} size="xs" className="mt-1.5">
                         {STATUS_LABEL[a.status]}
@@ -847,7 +883,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
       {formOpen && (
         <AsetFormModal
           aset={editingAset}
-          jenisOptions={jenisOptions}
           supplierOptions={supplierOptions}
           onClose={() => setFormOpen(false)}
           onSaved={(saved) => {
@@ -984,7 +1019,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                       {STATUS_LABEL[detail.status]}
                     </StatusBadge>
                     <p className="text-sm text-slate-800 font-medium">{[detail.merek, detail.tipe].filter(Boolean).join(' ') || '-'}</p>
-                    <p className="text-xs text-slate-400">{detail.jenis?.nama || '-'} · {detail.warna || '-'}</p>
+                    <p className="text-xs text-slate-400">{detail.warna || '-'}</p>
                     <p className="text-xs text-slate-400">S/N: {detail.serial_number || '-'}</p>
                     <p className="text-xs text-slate-400">Jumlah: {detail.jumlah ?? 1}</p>
                   </div>
