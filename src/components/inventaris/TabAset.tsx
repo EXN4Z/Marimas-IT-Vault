@@ -29,6 +29,21 @@ import {
 } from '../../api/aset';
 import { getJenisAset, type JenisAset, type JenisAsetKategori } from '../../api/jenisAset';
 import { getSupplier, type Supplier } from '../../api/supplier';
+import type { AsetKelengkapan, AsetKelengkapanStatus } from '../../api/asetKelengkapan';
+
+const KELENGKAPAN_STATUS_LABEL: Record<AsetKelengkapanStatus, string> = {
+  tersedia: 'Tersedia',
+  dipakai: 'Dipakai',
+  rusak: 'Rusak',
+  diperbaiki: 'Sedang Diperbaiki',
+};
+
+const KELENGKAPAN_STATUS_STYLE: Record<AsetKelengkapanStatus, string> = {
+  tersedia: 'bg-emerald-50 text-emerald-700',
+  dipakai: 'bg-amber-50 text-amber-700',
+  rusak: 'bg-red-100 text-red-800',
+  diperbaiki: 'bg-orange-50 text-orange-700',
+};
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 
@@ -1017,6 +1032,40 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                   <div>
                     <p className="text-xs text-slate-400">Keterangan</p>
                     <p className="text-sm text-slate-700">{detail.keterangan}</p>
+                  </div>
+                )}
+
+                {/* KELENGKAPAN — daftar aksesoris (tas, charger, dst) yang
+                    nempel ke aset ini lewat aset_kelengkapan.aset_id */}
+                {detail.aset_kelengkapan && detail.aset_kelengkapan.length > 0 && (
+                  <div>
+                    <p className="text-xs text-slate-400 mb-2">
+                      Kelengkapan ({detail.aset_kelengkapan.length})
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {detail.aset_kelengkapan.map((k: AsetKelengkapan) => (
+                        <div
+                          key={k.id}
+                          className="flex items-center justify-between gap-3 bg-slate-50 rounded-lg px-3 py-2 text-sm"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-slate-800 font-medium truncate">
+                              {k.nama || [k.merek, k.tipe].filter(Boolean).join(' ') || k.kode_kelengkapan}
+                            </p>
+                            <p className="text-xs text-slate-400 truncate">
+                              {k.kode_kelengkapan}
+                              {k.serial_number ? ` · S/N: ${k.serial_number}` : ''}
+                            </p>
+                          </div>
+                          <StatusBadge
+                            colorClass={KELENGKAPAN_STATUS_STYLE[k.status] || 'bg-slate-100 text-slate-600'}
+                            className="shrink-0"
+                          >
+                            {KELENGKAPAN_STATUS_LABEL[k.status] || k.status}
+                          </StatusBadge>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 

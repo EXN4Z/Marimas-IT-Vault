@@ -2,6 +2,7 @@ import api from './axios';
 import type { JenisAset } from './jenisAset';
 import type { Supplier } from './supplier';
 import type { Departemen } from './departemen';
+import type { AsetKelengkapan } from './asetKelengkapan';
 
 export type AsetStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'dijual';
 export type AsetPemakaiStatus = 'pending' | 'disetujui' | 'ditolak';
@@ -99,6 +100,8 @@ export interface Aset {
   pemakai?: AsetPemakai[]; // riwayat lengkap, cuma keisi di endpoint show()
   penanganan?: AsetPenanganan[]; // riwayat lengkap, cuma keisi di endpoint show()
   penanganan_aktif?: { id: number; jenis_kerusakan: string; keluhan: string; tanggal_lapor: string } | null;
+  // daftar kelengkapan (aksesoris) yang nempel di aset ini — cuma keisi di endpoint show()
+  aset_kelengkapan?: AsetKelengkapan[];
   // catatan penjualan/writeoff — cuma keisi kalau status aset 'dijual'
   writeoff?: {
     id: number;
