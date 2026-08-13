@@ -158,6 +158,12 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   const [importMessage, setImportMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Import format BARU "Data Aset Rapi" (1 baris = 1 barang, kolom Kategori
+  // eksplisit Aset Utama/Kelengkapan) — endpoint & state terpisah dari
+  // import format lama di atas, biar dua-duanya tetap bisa dipakai.
+  const [importRapiLoading, setImportRapiLoading] = useState(false);
+  const fileInputRapiRef = useRef<HTMLInputElement | null>(null);
+
   const loadList = async () => {
     setLoading(true);
     setError('');
@@ -209,6 +215,37 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     } finally {
       setImportLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = ''; // reset biar bisa upload file yang sama lagi
+    }
+  };
+
+  // Sama kayak handleFileSelected di atas, tapi ke endpoint /import-aset-rapi
+  // (format "Data Aset Rapi" — 1 baris = 1 barang, kolom Kategori eksplisit
+  // Aset Utama/Kelengkapan; kelengkapan otomatis ke-link ke aset induknya
+  // lewat No Bukti yang sama).
+  const handleFileSelectedRapi = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setImportRapiLoading(true);
+    setImportMessage(null);
+
+    try {
+      const res = await api.post('/import-aset-rapi', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setImportMessage({ type: 'success', text: res.data.message });
+      loadList();
+    } catch (err: any) {
+      setImportMessage({
+        type: 'error',
+        text: err.response?.data?.message || 'Gagal mengimport file',
+      });
+    } finally {
+      setImportRapiLoading(false);
+      if (fileInputRapiRef.current) fileInputRapiRef.current.value = '';
     }
   };
 
@@ -653,6 +690,30 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                   <Upload size={16} />
                 )}
                 {importLoading ? 'Mengimport...' : 'Import Excel'}
+              </button>
+
+              {/* Import format "Data Aset Rapi" (kolom Kategori eksplisit
+                  Aset Utama/Kelengkapan) — endpoint /import-aset-rapi,
+                  dipisah dari tombol Import Excel lama di atas. */}
+              <input
+                ref={fileInputRapiRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelectedRapi}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRapiRef.current?.click()}
+                disabled={importRapiLoading}
+                title="Import Excel format 'Data Aset Rapi' (1 baris = 1 barang, kolom Kategori Aset Utama/Kelengkapan)"
+                className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                {importRapiLoading ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Upload size={16} />
+                )}
+                {importRapiLoading ? 'Mengimport...' : 'Import Excel (Rapi)'}
               </button>
 
               <button
