@@ -1,18 +1,15 @@
 import { useState } from 'react';
 import { createAset, updateAset, type Aset } from '../../api/aset';
-import type { JenisAset } from '../../api/jenisAset';
 import type { Supplier } from '../../api/supplier';
 
 interface AsetFormModalProps {
   aset: Aset | null; // null = mode tambah
-  jenisOptions: JenisAset[];
   supplierOptions: Supplier[];
   onClose: () => void;
   onSaved: (aset: Aset) => void;
 }
 
 interface FormState {
-  jenis_id: string;
   merek: string;
   tipe: string;
   warna: string;
@@ -29,13 +26,11 @@ interface FormState {
 
 export default function AsetFormModal({
   aset,
-  jenisOptions,
   supplierOptions,
   onClose,
   onSaved,
 }: AsetFormModalProps) {
   const [form, setForm] = useState<FormState>({
-    jenis_id: aset?.jenis_id ? String(aset.jenis_id) : '',
     merek: aset?.merek || '',
     tipe: aset?.tipe || '',
     warna: aset?.warna || '',
@@ -61,7 +56,6 @@ export default function AsetFormModal({
     setError('');
     try {
       const values = {
-        jenis_id: form.jenis_id ? Number(form.jenis_id) : null,
         merek: form.merek.trim() || undefined,
         tipe: form.tipe.trim() || undefined,
         warna: form.warna.trim() || undefined,
@@ -123,42 +117,9 @@ export default function AsetFormModal({
         {/* Body */}
         <div className="px-6 py-5 overflow-y-auto">
         <div className="flex flex-col gap-3 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Jenis Aset</label>
-            <select
-              value={form.jenis_id}
-              onChange={set('jenis_id')}
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
-            >
-              <option value="">Pilih jenis...</option>
-              {/* Jenis Aset Utama (laptop, proyektor, dst) & Kelengkapan (tas,
-                  charger, dst) dipisah lewat optgroup -- form-nya sama persis,
-                  cuma bantu admin milih jenis yang bener. Kategori jenisnya
-                  sendiri diatur di Master Data > Jenis Aset. */}
-              <optgroup label="Aset Utama">
-                {jenisOptions
-                  .filter((j) => j.kategori !== 'kelengkapan')
-                  .map((j) => (
-                    <option key={j.id} value={j.id}>
-                      {j.nama}
-                    </option>
-                  ))}
-              </optgroup>
-              <optgroup label="Kelengkapan">
-                {jenisOptions
-                  .filter((j) => j.kategori === 'kelengkapan')
-                  .map((j) => (
-                    <option key={j.id} value={j.id}>
-                      {j.nama}
-                    </option>
-                  ))}
-              </optgroup>
-            </select>
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Merek</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Nama/Merek</label>
               <input
                 value={form.merek}
                 onChange={set('merek')}

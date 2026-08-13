@@ -1,5 +1,4 @@
 import api from './axios';
-import type { JenisAset } from './jenisAset';
 import type { Supplier } from './supplier';
 import type { Departemen } from './departemen';
 import type { AsetKelengkapan } from './asetKelengkapan';
@@ -77,8 +76,6 @@ export interface AsetPenanganan {
 export interface Aset {
   id: number;
   kode_aset: string;
-  jenis_id: number | null;
-  jenis?: JenisAset | null;
   departemen_id: number | null;
   departemen?: Departemen | null;
   merek: string | null;
@@ -115,7 +112,6 @@ export interface Aset {
 }
 
 export interface AsetFormValues {
-  jenis_id?: number | null;
   departemen_id?: number | null;
   merek?: string;
   tipe?: string;
@@ -161,7 +157,6 @@ export interface PaginatedFotoPemakai {
 
 function buildAsetFormData(values: AsetFormValues): FormData {
   const fd = new FormData();
-  if (values.jenis_id != null) fd.append('jenis_id', String(values.jenis_id));
   if (values.departemen_id != null) fd.append('departemen_id', String(values.departemen_id));
   if (values.merek) fd.append('merek', values.merek);
   if (values.tipe) fd.append('tipe', values.tipe);

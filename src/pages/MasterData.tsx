@@ -1,25 +1,19 @@
 import '../index.css';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, BriefcaseBusiness, Boxes, Truck, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Building2, BriefcaseBusiness, Truck, Plus, Pencil, Trash2, X } from 'lucide-react';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen } from '../api/departemen';
 import { getJabatan, createJabatan, updateJabatan, deleteJabatan } from '../api/jabatan';
-import { getJenisAset, createJenisAset, updateJenisAset, deleteJenisAset } from '../api/jenisAset';
 import { getSupplier, createSupplier, updateSupplier, deleteSupplier } from '../api/supplier';
 
-// "Kelengkapan" sekarang bukan tab/master data terpisah lagi -- cukup jadi
-// salah satu nilai kolom `kategori` di Jenis Aset (lihat kolom Kategori di
-// tabel & modal tab ini), lalu tab "Aset" di Inventaris bisa difilter
-// berdasarkan kategori jenis itu.
-type TabKey = 'departemen' | 'jabatan' | 'jenis-aset' | 'supplier';
-type JenisAsetKategori = 'aset_utama' | 'kelengkapan';
-// alamat & telepon cuma dipakai tab 'supplier'; kategori cuma dipakai tab 'jenis-aset'
-type Item = { id: number; nama: string; alamat?: string | null; telepon?: string | null; kategori?: JenisAsetKategori };
-type FormPayload = { nama: string; alamat?: string; telepon?: string; kategori?: JenisAsetKategori };
+type TabKey = 'departemen' | 'jabatan' | 'supplier';
+// alamat & telepon cuma dipakai tab 'supplier'
+type Item = { id: number; nama: string; alamat?: string | null; telepon?: string | null };
+type FormPayload = { nama: string; alamat?: string; telepon?: string };
 
-const TAB_KEYS: TabKey[] = ['departemen', 'jabatan', 'jenis-aset', 'supplier'];
+const TAB_KEYS: TabKey[] = ['departemen', 'jabatan', 'supplier'];
 
 function isTabKey(value: string | null): value is TabKey {
   return !!value && (TAB_KEYS as string[]).includes(value);
@@ -56,15 +50,6 @@ const tabConfig: Record<
     create: createJabatan,
     update: updateJabatan,
     remove: deleteJabatan,
-  },
-  'jenis-aset': {
-    label: 'Jenis Aset',
-    icon: Boxes,
-    singular: 'Jenis Aset',
-    get: getJenisAset as () => Promise<Item[]>,
-    create: (payload) => createJenisAset(payload.nama, payload.kategori || 'aset_utama'),
-    update: (id, payload) => updateJenisAset(id, payload.nama, payload.kategori || 'aset_utama'),
-    remove: deleteJenisAset,
   },
   supplier: {
     label: 'Supplier',
@@ -114,7 +99,6 @@ export default function MasterData() {
   const [formNama, setFormNama] = useState('');
   const [formAlamat, setFormAlamat] = useState('');
   const [formTelepon, setFormTelepon] = useState('');
-  const [formKategori, setFormKategori] = useState<JenisAsetKategori>('aset_utama');
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -149,7 +133,6 @@ export default function MasterData() {
     setFormNama('');
     setFormAlamat('');
     setFormTelepon('');
-    setFormKategori('aset_utama');
     setFormError('');
     setModalOpen(true);
   };
@@ -159,7 +142,6 @@ export default function MasterData() {
     setFormNama(item.nama);
     setFormAlamat(item.alamat || '');
     setFormTelepon(item.telepon || '');
-    setFormKategori(item.kategori || 'aset_utama');
     setFormError('');
     setModalOpen(true);
   };
@@ -180,7 +162,6 @@ export default function MasterData() {
       const payload: FormPayload = {
         nama: formNama.trim(),
         ...(activeTab === 'supplier' ? { alamat: formAlamat.trim(), telepon: formTelepon.trim() } : {}),
-        ...(activeTab === 'jenis-aset' ? { kategori: formKategori } : {}),
       };
       if (editing) {
         await cfg.update(editing.id, payload);
@@ -227,10 +208,7 @@ export default function MasterData() {
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <p className="text-sm text-slate-500">
-          Kelola data referensi departemen, jabatan, jenis aset, dan supplier yang dipakai di
-          seluruh sistem. Kelengkapan (Tas, Charger, dst) diatur di sini juga lewat kolom
-          Kategori pada Jenis Aset — pilih "Kelengkapan" biar jenis itu muncul di filter
-          Kelengkapan pada tab Aset di halaman Inventaris.
+          Kelola data referensi departemen, jabatan, dan supplier yang dipakai di seluruh sistem.
         </p>
         <button
           onClick={openCreateModal}
@@ -267,9 +245,6 @@ export default function MasterData() {
             <thead>
               <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
                 <th className="px-6 py-3 font-medium">Nama</th>
-                {activeTab === 'jenis-aset' && (
-                  <th className="px-6 py-3 font-medium">Kategori</th>
-                )}
                 {activeTab === 'supplier' && (
                   <>
                     <th className="px-6 py-3 font-medium">Alamat</th>
@@ -283,19 +258,6 @@ export default function MasterData() {
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                   <td className="px-6 py-3 text-slate-800">{item.nama}</td>
-                  {activeTab === 'jenis-aset' && (
-                    <td className="px-6 py-3">
-                      <span
-                        className={`text-xs font-medium px-2 py-1 rounded-full ${
-                          item.kategori === 'kelengkapan'
-                            ? 'bg-blue-50 text-blue-700'
-                            : 'bg-slate-100 text-slate-600'
-                        }`}
-                      >
-                        {item.kategori === 'kelengkapan' ? 'Kelengkapan' : 'Aset Utama'}
-                      </span>
-                    </td>
-                  )}
                   {activeTab === 'supplier' && (
                     <>
                       <td className="px-6 py-3 text-slate-600">{item.alamat || '-'}</td>
@@ -352,24 +314,6 @@ export default function MasterData() {
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
-
-              {activeTab === 'jenis-aset' && (
-                <div>
-                  <label className="text-xs font-medium text-slate-500 mb-1 block">Kategori</label>
-                  <select
-                    value={formKategori}
-                    onChange={(e) => setFormKategori(e.target.value as JenisAsetKategori)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  >
-                    <option value="aset_utama">Aset Utama (mis. Laptop, Proyektor)</option>
-                    <option value="kelengkapan">Kelengkapan (mis. Tas, Charger)</option>
-                  </select>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Kelengkapan tetap dilacak seperti aset biasa (kode unik, S/N, bisa dipinjam &amp;
-                    dikembalikan) di tab Aset &rsaquo; Inventaris.
-                  </p>
-                </div>
-              )}
 
               {activeTab === 'supplier' && (
                 <>

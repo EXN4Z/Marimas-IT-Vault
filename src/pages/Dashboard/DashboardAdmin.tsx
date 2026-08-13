@@ -3,7 +3,7 @@ import {
   RingkasanAsetCard,
   HeroTrenPembelianAsetChart,
   AsetPerhatianCard,
-  AsetPerJenisCard,
+  AsetPerMerekCard,
   AktivitasAsetCard,
 } from './Shared';
 
@@ -13,7 +13,7 @@ import {
 export default function DashboardAdmin() {
   const { loading, error } = useDashboardCore();
 
-  const { ringkasanAset, trenPembelianAset, asetPerhatian, asetPerJenis, aktivitasAsetTerbaru } = useDashboardAnalytics(true, {
+  const { ringkasanAset, trenPembelianAset, asetPerhatian, asetPerMerek, aktivitasAsetTerbaru } = useDashboardAnalytics(true, {
     statusAsetDistribusi: false,
   });
 
@@ -38,7 +38,7 @@ export default function DashboardAdmin() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <AsetPerhatianCard asetPerhatian={asetPerhatian} />
-        <AsetPerJenisCard asetPerJenis={asetPerJenis} />
+        <AsetPerMerekCard asetPerMerek={asetPerMerek} />
       </div>
 
       {/* Aktivitas Aset Terbaru -- feed histori aset (sumber sama dengan tab

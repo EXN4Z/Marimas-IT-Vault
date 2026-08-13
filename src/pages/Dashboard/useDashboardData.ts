@@ -31,10 +31,12 @@ export interface RingkasanAset {
   dijual: number;
 }
 
-// Distribusi jumlah aset per jenis (laptop, printer, kendaraan, dst) —
-// dipakai kartu "Distribusi Aset per Jenis" di dashboard admin.
-export interface AsetPerJenis {
-  jenis: string;
+// Distribusi jumlah aset per merek (Asus, HP, Logitech, dst) — dipakai
+// kartu "Distribusi Aset per Merek" di dashboard admin. Sebelumnya per
+// jenis_id, tapi kolom itu udah dihapus dari tabel aset jadi sumbernya
+// sekarang kolom `merek` langsung biar fiturnya tetap jalan.
+export interface AsetPerMerek {
+  merek: string;
   jumlah: number;
 }
 
@@ -147,17 +149,17 @@ const STATUS_LABEL: Record<string, string> = {
   dijual: 'Dijual',
 };
 
-export async function fetchAsetPerJenis(): Promise<AsetPerJenis[]> {
+export async function fetchAsetPerMerek(): Promise<AsetPerMerek[]> {
   const list = await getAset();
   const counts = new Map<string, number>();
 
   for (const a of list) {
-    const nama = a.jenis?.nama ?? 'Tanpa Jenis';
+    const nama = a.merek?.trim() || 'Tanpa Merek';
     counts.set(nama, (counts.get(nama) ?? 0) + 1);
   }
 
   return Array.from(counts.entries())
-    .map(([jenis, jumlah]) => ({ jenis, jumlah }))
+    .map(([merek, jumlah]) => ({ merek, jumlah }))
     .sort((a, b) => b.jumlah - a.jumlah);
 }
 
@@ -407,7 +409,7 @@ export function useDashboardAnalytics(
   enabled: boolean,
   include: {
     ringkasanAset?: boolean;
-    asetPerJenis?: boolean;
+    asetPerMerek?: boolean;
     asetPerhatian?: boolean;
     trenPembelianAset?: boolean;
     statusAsetDistribusi?: boolean;
@@ -416,7 +418,7 @@ export function useDashboardAnalytics(
 ) {
   const {
     ringkasanAset: wantRingkasanAset = true,
-    asetPerJenis: wantAsetPerJenis = true,
+    asetPerMerek: wantAsetPerMerek = true,
     asetPerhatian: wantAsetPerhatian = true,
     trenPembelianAset: wantTrenPembelianAset = true,
     statusAsetDistribusi: wantStatusAsetDistribusi = true,
@@ -430,10 +432,10 @@ export function useDashboardAnalytics(
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: asetPerJenis } = useQuery({
-    queryKey: ['aset-per-jenis'],
-    queryFn: fetchAsetPerJenis,
-    enabled: enabled && wantAsetPerJenis,
+  const { data: asetPerMerek } = useQuery({
+    queryKey: ['aset-per-merek'],
+    queryFn: fetchAsetPerMerek,
+    enabled: enabled && wantAsetPerMerek,
     staleTime: 2 * 60 * 1000,
   });
 
@@ -469,7 +471,7 @@ export function useDashboardAnalytics(
 
   return {
     ringkasanAset,
-    asetPerJenis: asetPerJenis ?? [],
+    asetPerMerek: asetPerMerek ?? [],
     asetPerhatian,
     trenPembelianAset: trenPembelianAset ?? [],
     statusAsetDistribusi: statusAsetDistribusi ?? [],
