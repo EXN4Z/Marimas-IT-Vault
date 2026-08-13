@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { AsetKelengkapan, AsetKelengkapanFormValues, AsetKelengkapanStatus } from '../../api/asetKelengkapan';
 import { createAsetKelengkapan, updateAsetKelengkapan } from '../../api/asetKelengkapan';
 import { getSupplier, type Supplier } from '../../api/supplier';
@@ -40,7 +40,6 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
   const [form, setForm] = useState<AsetKelengkapanFormValues>(EMPTY_FORM);
   const [supplierOptions, setSupplierOptions] = useState<Supplier[]>([]);
   const [asetOptions, setAsetOptions] = useState<Aset[]>([]);
-  const [asetSearch, setAsetSearch] = useState('');
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -54,20 +53,6 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
       .then(setAsetOptions)
       .catch(console.error);
   }, [open]);
-
-  // aset terpilih saat ini (buat nampilin label di kotak pencarian)
-  const asetTerpilih = useMemo(
-    () => asetOptions.find((a) => a.id === form.aset_id) || null,
-    [asetOptions, form.aset_id]
-  );
-
-  const asetFiltered = useMemo(() => {
-    const q = asetSearch.trim().toLowerCase();
-    if (!q) return asetOptions;
-    return asetOptions.filter((a) =>
-      [a.kode_aset, a.merek, a.tipe].filter(Boolean).join(' ').toLowerCase().includes(q)
-    );
-  }, [asetOptions, asetSearch]);
 
   useEffect(() => {
     if (!open) return;
@@ -94,7 +79,6 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
       setForm(EMPTY_FORM);
       setFotoPreview(null);
     }
-    setAsetSearch('');
     setErrors({});
   }, [open, editing]);
 
@@ -200,70 +184,19 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
           <Section title="Informasi Umum" subtitle="Nama, status, dan ciri fisik barang">
             <div className="sm:col-span-2">
               <Field label="Aset Induk" error={errors.aset_id}>
-                <div className="relative">
-                  <input
-                    className="input"
-                    placeholder="Cari kode aset, merek, atau tipe…"
-                    value={asetSearch}
-                    onChange={(e) => setAsetSearch(e.target.value)}
-                    onFocus={() => setAsetSearch((s) => s)}
-                  />
-                  {asetTerpilih && !asetSearch && (
-                    <div className="mt-1.5 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
-                      <span className="text-slate-700">
-                        <span className="font-mono text-[13px]">{asetTerpilih.kode_aset}</span>
-                        {(asetTerpilih.merek || asetTerpilih.tipe) && (
-                          <span className="text-slate-400"> — {[asetTerpilih.merek, asetTerpilih.tipe].filter(Boolean).join(' ')}</span>
-                        )}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setField('aset_id', null)}
-                        className="text-slate-400 hover:text-slate-600"
-                        aria-label="Hapus pilihan aset induk"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                          <path d="M1 1L15 15M15 1L1 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                        </svg>
-                      </button>
-                    </div>
-                  )}
-                  {asetSearch && (
-                    <div className="absolute z-10 mt-1.5 max-h-48 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setField('aset_id', null);
-                          setAsetSearch('');
-                        }}
-                        className="block w-full px-3 py-2 text-left text-sm text-slate-400 hover:bg-slate-50"
-                      >
-                        Tanpa aset induk
-                      </button>
-                      {asetFiltered.length === 0 && (
-                        <p className="px-3 py-2 text-sm text-slate-400">Tidak ada aset yang cocok</p>
-                      )}
-                      {asetFiltered.map((a) => (
-                        <button
-                          key={a.id}
-                          type="button"
-                          onClick={() => {
-                            setField('aset_id', a.id);
-                            setAsetSearch('');
-                          }}
-                          className={`block w-full px-3 py-2 text-left text-sm hover:bg-slate-50 ${
-                            form.aset_id === a.id ? 'bg-slate-50 text-slate-900' : 'text-slate-700'
-                          }`}
-                        >
-                          <span className="font-mono text-[13px]">{a.kode_aset}</span>
-                          {(a.merek || a.tipe) && (
-                            <span className="text-slate-400"> — {[a.merek, a.tipe].filter(Boolean).join(' ')}</span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <select
+                  className="input"
+                  value={form.aset_id ?? ''}
+                  onChange={(e) => setField('aset_id', e.target.value ? Number(e.target.value) : null)}
+                >
+                  <option value="">Tanpa aset induk</option>
+                  {asetOptions.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.kode_aset}
+                      {(a.merek || a.tipe) ? ` — ${[a.merek, a.tipe].filter(Boolean).join(' ')}` : ''}
+                    </option>
+                  ))}
+                </select>
                 <p className="mt-1 text-xs text-slate-400">
                   Opsional — pilih kalau kelengkapan ini menempel ke aset tertentu (mis. mouse ini punya laptop yang mana).
                 </p>
