@@ -110,6 +110,7 @@ export default function TabKelengkapanAset() {
                 <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
                   <th className="px-6 py-3 font-medium">Kode</th>
                   <th className="px-6 py-3 font-medium">Jenis / Merek</th>
+                  <th className="px-6 py-3 font-medium">Aset Induk</th>
                   <th className="px-6 py-3 font-medium">Serial Number</th>
                   <th className="px-6 py-3 font-medium">Status</th>
                   <th className="px-6 py-3 font-medium text-right">Aksi</th>
@@ -121,6 +122,13 @@ export default function TabKelengkapanAset() {
                     <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{item.kode_kelengkapan}</td>
                     <td className="px-6 py-3 text-slate-600">
                       {item.nama || '-'} · {[item.merek, item.tipe].filter(Boolean).join(' ') || '-'}
+                    </td>
+                    <td className="px-6 py-3 text-slate-600">
+                      {item.aset ? (
+                        <span className="font-mono text-[13px]">{item.aset.kode_aset}</span>
+                      ) : (
+                        <span className="text-slate-300">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-3 text-slate-600">{item.serial_number || '-'}</td>
                     <td className="px-6 py-3">

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { AsetKelengkapan, AsetKelengkapanFormValues, AsetKelengkapanStatus } from '../../api/asetKelengkapan';
 import { createAsetKelengkapan, updateAsetKelengkapan } from '../../api/asetKelengkapan';
 import { getSupplier, type Supplier } from '../../api/supplier';
+import { getAset, type Aset } from '../../api/aset';
 
 // Style input disamakan dengan form2 lain (AsetFormModal, AsetSerahTerimaModal, dst)
 // biar border-nya konsisten di semua form inventaris.
@@ -23,6 +24,7 @@ interface Props {
 }
 
 const EMPTY_FORM: AsetKelengkapanFormValues = {
+  aset_id: null,
   nama: '',
   merek: '',
   tipe: '',
@@ -42,6 +44,7 @@ const EMPTY_FORM: AsetKelengkapanFormValues = {
 export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }: Props) {
   const [form, setForm] = useState<AsetKelengkapanFormValues>(EMPTY_FORM);
   const [supplierOptions, setSupplierOptions] = useState<Supplier[]>([]);
+  const [asetOptions, setAsetOptions] = useState<Aset[]>([]);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -51,12 +54,16 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
     getSupplier()
       .then(setSupplierOptions)
       .catch(console.error);
+    getAset()
+      .then(setAsetOptions)
+      .catch(console.error);
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
     if (editing) {
       setForm({
+        aset_id: editing.aset_id ?? null,
         nama: editing.nama || '',
         merek: editing.merek || '',
         tipe: editing.tipe || '',
@@ -180,6 +187,27 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
 
           {/* Section: Informasi Umum */}
           <Section title="Informasi Umum" subtitle="Nama, status, dan ciri fisik barang">
+            <div className="sm:col-span-2">
+              <Field label="Aset Induk" error={errors.aset_id}>
+                <select
+                  className="input"
+                  value={form.aset_id ?? ''}
+                  onChange={(e) => setField('aset_id', e.target.value ? Number(e.target.value) : null)}
+                >
+                  <option value="">Tanpa aset induk</option>
+                  {asetOptions.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.kode_aset}
+                      {(a.merek || a.tipe) ? ` — ${[a.merek, a.tipe].filter(Boolean).join(' ')}` : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-slate-400">
+                  Opsional — pilih kalau kelengkapan ini menempel ke aset tertentu (mis. mouse ini punya laptop yang mana).
+                </p>
+              </Field>
+            </div>
+
             <Field label="Nama" error={errors.nama}>
               <input className={INPUT_CLASS} value={form.nama} onChange={(e) => setField('nama', e.target.value)} />
             </Field>
