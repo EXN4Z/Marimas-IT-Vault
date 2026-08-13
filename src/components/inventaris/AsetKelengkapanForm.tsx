@@ -75,7 +75,6 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
     });
   }, [open]);
 
-  // ---- isi ulang form tiap kali target edit berubah ----
   useEffect(() => {
     if (!open) return;
     if (editing) {
