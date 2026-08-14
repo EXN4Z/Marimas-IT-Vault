@@ -31,12 +31,12 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { key: 'phone', label: 'Telepon', defaultChecked: false, get: (k) => k.phone || '-' },
   { key: 'departemen', label: 'Departemen', defaultChecked: true, get: (k) => k.departemen || '-' },
   { key: 'lokasi_kantor', label: 'Lokasi Kantor', defaultChecked: false, get: (k) => k.lokasi_kantor || '-' },
-  {
+    {
     key: 'tanggal_masuk',
     label: 'Tanggal Masuk',
     defaultChecked: true,
-    get: (k) => formatTanggalId(k.tanggal_masuk),
-  },
+    get: (k) => (k.tanggal_masuk ? formatTanggalId(k.tanggal_masuk) : '-'),
+    },
   { key: 'role', label: 'Role', defaultChecked: true, get: (k) => ROLE_LABEL[k.role] || k.role },
 ];
 
