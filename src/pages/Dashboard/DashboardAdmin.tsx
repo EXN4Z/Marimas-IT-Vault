@@ -15,7 +15,7 @@ import {
 // hero chart "Tren Pembelian Aset per Bulan" yang gak ditampilin di
 // DashboardUser maupun DashboardCabang.
 export default function DashboardAdmin() {
-  const { loading, error, user, notifications, handleMarkAsRead, departemen } = useDashboardCore();
+  const { loading, error, user, notifications, handleMarkAsRead, } = useDashboardCore();
 
   const { ringkasanAset, trenPembelianAset, asetPerhatian, asetPerMerek, aktivitasAsetTerbaru } = useDashboardAnalytics(true, {
     statusAsetDistribusi: false,

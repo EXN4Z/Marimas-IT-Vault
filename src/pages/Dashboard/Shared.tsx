@@ -23,7 +23,6 @@ import {
   Banknote,
   ArrowRight,
   Bell,
-  Users,
   TrendingUp,
   TrendingDown,
   type LucideIcon,
@@ -32,7 +31,6 @@ import { useNavigate } from 'react-router-dom';
 import type { User as UserType } from '../../types/user';
 import type {
   NotificationItem,
-  DepartemenDistribusi,
   RingkasanAset,
   AsetPerMerek,
   AsetPerhatian,
@@ -56,7 +54,6 @@ export const THEME = {
 
 // Palet warna dipakai bar chart per-item (departemen, dst) biar tiap
 // batang punya warna beda -- kesannya lebih hidup dibanding satu warna flat.
-const MULTI_COLORS = [THEME.violet, THEME.orange, THEME.emerald, THEME.amber, THEME.sky, THEME.rose, THEME.purple];
 
 export const cardClass =
   'bg-white rounded-3xl p-5 sm:p-6 shadow-[0_2px_20px_rgba(15,23,42,0.06)] border border-slate-100';
