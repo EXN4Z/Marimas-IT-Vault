@@ -24,36 +24,37 @@ export function formatTanggalWaktuId(waktuAkurat: string | null, tanggalFallback
   return formatTanggalId(tanggalFallback);
 }
 
-// Bentuk minimal yang dibutuhkan namaPemakai/userIdPemakai. SENGAJA gak
-// pakai `AsetPemakai` penuh sebagai tipe parameter: AsetPenanganan.pemakai
-// punya bentuk yang lebih ringkas ({ id, pekerja?, user? }) dan gak punya
-// field wajib AsetPemakai lain (created_at, aset_id, dst), jadi kalau
-// helper ini strict ke AsetPemakai, TS bakal nolak dipanggil dengan
+// Bentuk minimal yang dibutuhkan namaPemakai/userIdPemakai/isCabangPemakai.
+// SENGAJA gak pakai `AsetPemakai` penuh sebagai tipe parameter:
+// AsetPenanganan.pemakai punya bentuk yang lebih ringkas ({ id, user? }) dan
+// gak punya field wajib AsetPemakai lain (created_at, aset_id, dst), jadi
+// kalau helper ini strict ke AsetPemakai, TS bakal nolak dipanggil dengan
 // p.pemakai. AsetPemakai tetap otomatis cocok di sini karena dia superset
 // dari bentuk minimal ini.
 interface PemakaiLike {
-  pekerja?: { user?: { id: number; name: string } } | null;
-  user?: { id: number; name: string } | null;
+  user?: { id: number; name: string; role?: string } | null;
 }
-// di asetHelpers.ts
+
+// Sejak tabel pekerja dihapus, penerima (karyawan ATAUPUN akun cabang)
+// sama-sama nempel lewat relasi `user` -- bedanya cuma role. "Akun cabang"
+// dicek dari user.role === 'cabang', bukan lagi ada/tidaknya objek pekerja.
 export function isCabangPemakai(pemakai?: PemakaiLike | null): boolean {
-  return !pemakai?.pekerja && !!pemakai?.user;
+  return pemakai?.user?.role === 'cabang';
 }
 /**
- * Ambil nama penerima aset, entah dia karyawan (lewat pekerja.user)
- * atau akun cabang (lewat user langsung). Terima AsetPemakai penuh
- * ATAU bentuk ringkas AsetPenanganan.pemakai.
+ * Ambil nama penerima aset -- karyawan maupun akun cabang, dua-duanya
+ * lewat relasi `user` yang sama (tidak ada lagi objek `pekerja` terpisah).
+ * Terima AsetPemakai penuh ATAU bentuk ringkas AsetPenanganan.pemakai.
  */
 export function namaPemakai(pemakai?: PemakaiLike | null): string {
-  return pemakai?.pekerja?.user?.name || pemakai?.user?.name || '-';
+  return pemakai?.user?.name || '-';
 }
 
 /**
  * Ambil user id penerima aset, dipakai buat cek "apakah aku peminjamnya".
- * Sama-sama harus cek dua kemungkinan (pekerja.user.id atau user.id).
  */
 export function userIdPemakai(pemakai?: PemakaiLike | null): number | undefined {
-  return pemakai?.pekerja?.user?.id ?? pemakai?.user?.id ?? undefined;
+  return pemakai?.user?.id ?? undefined;
 }
 
 export function formatRupiah(n: number | null): string {

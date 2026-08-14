@@ -79,8 +79,8 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
   };
 
   const handleSubmit = async () => {
-    if (mode === 'karyawan' && !selected?.pekerja?.id) {
-      setError('Pilih karyawan yang datanya sudah lengkap sebagai pekerja.');
+    if (mode === 'karyawan' && !selected?.nik) {
+      setError('Pilih karyawan yang datanya sudah lengkap.');
       return;
     }
     if (mode === 'cabang' && !selected?.id) {
@@ -100,11 +100,7 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
     // sama), gak perlu request terpisah dari sini lagi.
     try {
       const formData = new FormData();
-      if (mode === 'karyawan') {
-        formData.append('pekerja_id', String(selected!.pekerja!.id));
-      } else {
-        formData.append('user_id', String(selected!.id));
-      }
+      formData.append('user_id', String(selected!.id));
       formData.append('tanggal_penerimaan', tanggalPenerimaan);
       if (catatan.trim()) formData.append('catatan_penerimaan', catatan.trim());
       fotoPenerimaan.forEach((file) => formData.append('foto_penerimaan[]', file));
@@ -202,9 +198,9 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
                   {searching && <p className="text-xs text-slate-400 px-3 py-2">Mencari...</p>}
                   {!searching &&
                     results.map((u) => {
-                      // untuk karyawan, hanya bisa dipilih kalau punya data pekerja;
-                      // untuk cabang, akun itu sendiri sudah cukup (nggak butuh pekerja)
-                      const disabled = mode === 'karyawan' && !u.pekerja;
+                      // untuk karyawan, hanya bisa dipilih kalau datanya lengkap (ada NIK);
+                      // untuk cabang, akun itu sendiri sudah cukup
+                      const disabled = mode === 'karyawan' && !u.nik;
                       return (
                         <button
                           key={u.id}
@@ -214,7 +210,7 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
                           className="w-full text-left text-sm px-3 py-2 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           {u.name}
-                          {disabled && <span className="text-xs text-slate-400"> — belum ada data pekerja</span>}
+                          {disabled && <span className="text-xs text-slate-400"> — belum ada data karyawan</span>}
                         </button>
                       );
                     })}

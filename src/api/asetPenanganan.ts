@@ -3,9 +3,9 @@ import type { Aset } from './aset';
 
 interface PenangananPemakai {
   id: number;
-  pekerja?: {
+  user?: {
     id: number;
-    user?: { id: number; name: string };
+    name: string;
   };
 }
 

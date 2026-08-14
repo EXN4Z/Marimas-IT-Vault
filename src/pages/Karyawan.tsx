@@ -7,18 +7,13 @@ import Pagination from '../components/shared/Pagination';
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'cabang';
 type TabKey = 'semua' | 'karyawan' | 'hr_manajer' | 'admin' | 'cabang';
 
-interface Pekerja {
-    nik: string;
-    departemen: { nama: string } | null;
-    jabatan: { nama: string } | null;
-}
-
 interface User {
     id: number;
     name: string;
     email: string;
     role: Role;
-    pekerja: Pekerja | null;
+    nik: string | null;
+    departemen: { nama: string } | null;
 }
 
 const roleStyles: Record<Role, string> = {
@@ -40,7 +35,7 @@ const roleLabels: Record<Role, string> = {
 const tabs: { key: TabKey; label: string; icon: JSX.Element }[] = [
     {
         key: 'semua',
-        label: 'Semua Pekerja',
+        label: 'Semua',
         icon: (
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-5.13a4 4 0 11-8 0 4 4 0 018 0zm6 3a4 4 0 10-8 0" />
@@ -290,9 +285,9 @@ function UserRow({ user, isAdmin, onDelete, onEdit }: UserRowProps) {
                 <span className={`text-xs px-3 py-1 rounded-full ${roleStyles[user.role]}`}>
                     {roleLabels[user.role]}
                 </span>
-                {user.pekerja && (
+                {user.departemen && (
                     <span className="text-xs text-gray-500">
-                        {user.pekerja.departemen?.nama || 'Departemen tidak ditentukan'}
+                        {user.departemen?.nama || 'Departemen tidak ditentukan'}
                     </span>
                 )}
                 {isAdmin && (

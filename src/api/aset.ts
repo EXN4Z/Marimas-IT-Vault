@@ -10,23 +10,16 @@ export interface KaryawanUser {
   id: number;
   name: string;
   role?: string;
-  pekerja?: {
-    id: number;
-    nik: string;
-    departemen?: { id: number; nama: string } | null;
-    jabatan?: { id: number; nama: string } | null;
-  } | null;
+  nik?: string | null;
+  departemen?: { id: number; nama: string } | null;
 }
 
 export interface AsetPemakai {
   created_at: string;
   id: number;
   aset_id: number;
-  // salah satu dari dua ini yang terisi: pekerja_id buat karyawan, user_id buat akun cabang
-  pekerja_id: number | null;
-  pekerja?: { id: number; nik: string; departemen?: { id: number; nama: string } | null; user?: { id: number; name: string } };
   user_id: number | null;
-  user?: { id: number; name: string } | null;
+  user?: { id: number; name: string; role?: string; nik?: string | null; departemen?: { id: number; nama: string } | null } | null;
   status: AsetPemakaiStatus;
   requested_by_user_id: number | null;
   nomor_penerimaan: string | null;
@@ -61,15 +54,12 @@ export interface AsetPenanganan {
   total_biaya?: number;
   durasi_hari?: number | null;
   // siapa yang lagi pegang aset ini pas dilaporkan rusak (nullable — bisa juga ketauan pas audit gudang)
-  // NOTE: sama seperti AsetPemakai, penerima bisa karyawan (lewat pekerja.user)
-  // ATAU akun cabang (lewat user langsung) — makanya dua-duanya perlu ada di sini.
-  // ⚠️ Pastikan endpoint backend yang isi field ini (aset-penanganan) juga
-  // eager-load relasi `user`, bukan cuma `pekerja.user`, kalau belum, field
-  // ini tetap kosong walau frontend sudah baca dari sini.
+  // Setelah tabel pekerja dihapus, penerima (karyawan ATAUPUN akun cabang)
+  // sama-sama lewat relasi `user` langsung -- tidak ada lagi dualisme
+  // pekerja.user vs user.
   pemakai?: {
     id: number;
-    pekerja?: { id: number; user?: { id: number; name: string } };
-    user?: { id: number; name: string } | null;
+    user?: { id: number; name: string; role?: string } | null;
   } | null;
 }
 
@@ -131,8 +121,6 @@ export interface FotoPemakaiEntry {
   id: number;
   aset_id: number;
   aset?: { id: number; kode_aset: string; merek: string | null; tipe: string | null } | null;
-  pekerja_id: number | null;
-  pekerja?: { user?: { id: number; name: string } };
   user_id: number | null;
   user?: { id: number; name: string } | null;
   tanggal_penerimaan: string | null;
@@ -218,8 +206,8 @@ export async function deleteAset(id: number, force = false): Promise<{ message: 
 
 /**
  * Cari karyawan atau akun cabang (buat dipilih sebagai pemakai aset). Pakai
- * endpoint /karyawan yang sudah ada (UserController::index), yang eager-load
- * relasi pekerja dan sudah support filter ?role=.
+ * endpoint /karyawan yang sudah ada (UserController::index), yang sudah
+ * support filter ?role=.
  *
  * Kirim role='cabang' buat nampilin akun cabang aja. Kosongkan (undefined)
  * buat perilaku lama (semua role, biasanya dipakai buat cari karyawan).
@@ -231,8 +219,8 @@ export async function searchKaryawan(query: string, role?: string): Promise<Kary
   return res.data;
 }
 
-// POST /aset/{aset}/pemakai — serah-terima aset ke pekerja ATAU akun cabang.
-// Kirim salah satu: pekerja_id (karyawan) atau user_id (cabang), jangan dua-duanya.
+// POST /aset/{aset}/pemakai — serah-terima aset ke karyawan ATAU akun cabang.
+// Kirim user_id (tabel pekerja sudah dihapus, satu-satunya identitas pemakai).
 // Dibatasi backend ke role admin.
 export async function serahTerimaAset(asetId: number, formData: FormData) {
   const res = await api.post(`/aset/${asetId}/pemakai`, formData);

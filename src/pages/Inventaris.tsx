@@ -135,7 +135,10 @@ export default function Inventaris() {
             key: t.key,
             label: t.label,
             icon: t.icon,
-            badge: counts[t.key] ?? null,
+            // Badge angka di tab "Aset" & "Penanganan Aset" dihapus atas
+            // permintaan -- tab lain (kelengkapan_aset, foto_aset,
+            // riwayat_aset) tetap tampilin badge kalau nanti dikasih count.
+            badge: t.key === 'aset' || t.key === 'penanganan_aset' ? null : counts[t.key] ?? null,
             badgeClassName: t.key === 'penanganan_aset' ? 'bg-red-50 text-red-600' : undefined,
           }))}
       />

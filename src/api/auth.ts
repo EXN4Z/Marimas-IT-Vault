@@ -6,6 +6,15 @@ interface AuthResponse {
   token: string;
 }
 
+interface ResetPasswordResponse {
+  message: string;
+  user: {
+    id: number;
+    name: string;
+  }
+  new_password: string;
+}
+
 interface RegisterResponse {
   message: string;
   registration_id: string;
@@ -31,6 +40,11 @@ export const verifyOtp = async (registration_id: string, otp_code: string): Prom
   const res = await api.post('/verify-otp', { registration_id, otp_code });
   return res.data;
 };
+
+export const resetKaryawanPassword = async(id: number): Promise<ResetPasswordResponse> => {
+  const res = await api.post<ResetPasswordResponse>(`/admin/users/${id}/reset-password`);
+  return res.data;
+}
 
 export const resendOtp = async (registration_id: string): Promise<{ message: string }> => {
   const res = await api.post('/resend-otp', { registration_id });

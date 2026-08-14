@@ -4,20 +4,12 @@ import toast from 'react-hot-toast';
 import api from '../api/axios';
 import RouteModal from '../components/shared/RouteModal';
 import { getDepartemen } from '../api/departemen';
-import { getJabatan, type Jabatan } from '../api/jabatan';
 import { getCabang, type Cabang } from '../api/cabang';
+import { resetKaryawanPassword } from '../api/auth';
 import type { Departemen } from '../api/departemen';
+import { createPortal } from 'react-dom';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest' | 'cabang';
-
-interface Pekerja {
-    id: number;
-    nik: string;
-    departemen_id: number | null;
-    jabatan_id: number | null;
-    lokasi_kantor_id: number | null;
-    tanggal_masuk: string | null;
-}
 
 interface User {
     id: number;
@@ -25,8 +17,10 @@ interface User {
     email: string | null;
     phone: string | null;
     role: Role;
-    pekerja: Pekerja | null;
+    nik: string | null;
+    departemen_id?: number | null;
     lokasi_kantor_id?: number | null;
+    tanggal_masuk: string | null;
 }
 
 interface FormState {
@@ -36,7 +30,6 @@ interface FormState {
     role: Role;
     nik: string;
     departemen_id: string;
-    jabatan_id: string;
     lokasi_kantor_id: string;
     tanggal_masuk: string;
 }
@@ -52,7 +45,6 @@ const initialForm: FormState = {
     role: 'karyawan',
     nik: '',
     departemen_id: '',
-    jabatan_id: '',
     lokasi_kantor_id: '',
     tanggal_masuk: '',
 };
@@ -63,17 +55,18 @@ export default function EditKaryawanPage() {
 
     const [form, setForm] = useState<FormState>(initialForm);
     const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
-    const [jabatanList, setJabatanList] = useState<Jabatan[]>([]);
     const [cabangList, setCabangList] = useState<Cabang[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
 
+    const [resetting, setResetting] = useState<boolean>(false);
+    const [newPassword, setNewPassword] = useState<string | null>(null);
+
     const isCabang = form.role === 'cabang';
 
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
-        getJabatan().then(setJabatanList).catch(() => {});
         getCabang().then(setCabangList).catch(() => {});
 
         api
@@ -85,15 +78,10 @@ export default function EditKaryawanPage() {
                     email: u.email ?? '',
                     phone: u.phone ?? '',
                     role: u.role,
-                    nik: u.pekerja?.nik ?? '',
-                    departemen_id: u.pekerja?.departemen_id ? String(u.pekerja.departemen_id) : '',
-                    jabatan_id: u.pekerja?.jabatan_id ? String(u.pekerja.jabatan_id) : '',
-                    lokasi_kantor_id: u.pekerja?.lokasi_kantor_id
-                        ? String(u.pekerja.lokasi_kantor_id)
-                        : u.lokasi_kantor_id
-                          ? String(u.lokasi_kantor_id)
-                          : '',
-                    tanggal_masuk: u.pekerja?.tanggal_masuk ?? '',
+                    nik: u.nik ?? '',
+                    departemen_id: u.departemen_id ? String(u.departemen_id) : '',
+                    lokasi_kantor_id: u.lokasi_kantor_id ? String(u.lokasi_kantor_id) : '',
+                    tanggal_masuk: u.tanggal_masuk ?? '',
                 });
             })
             .catch(() => {
@@ -101,6 +89,11 @@ export default function EditKaryawanPage() {
             })
             .finally(() => setLoading(false));
     }, [id]);
+
+    // Bersihin password baru dari state pas keluar halaman, biar gak ketinggalan nempel di layar
+    useEffect(() => {
+        return () => setNewPassword(null);
+    }, []);
 
     function closeModal() {
         if (window.history.state && window.history.state.idx > 0) {
@@ -126,7 +119,7 @@ export default function EditKaryawanPage() {
             ...prev,
             role: value,
             ...(value === 'cabang'
-                ? { nik: '', departemen_id: '', jabatan_id: '', tanggal_masuk: '' }
+                ? { nik: '', departemen_id: '', tanggal_masuk: '' }
                 : {}),
         }));
         setErrors((prev) => {
@@ -135,7 +128,6 @@ export default function EditKaryawanPage() {
             if (value === 'cabang') {
                 delete next.nik;
                 delete next.departemen_id;
-                delete next.jabatan_id;
                 delete next.tanggal_masuk;
             }
             return next;
@@ -152,7 +144,6 @@ export default function EditKaryawanPage() {
                 ...form,
                 nik: isCabang ? null : form.nik,
                 departemen_id: isCabang ? null : form.departemen_id || null,
-                jabatan_id: isCabang ? null : form.jabatan_id || null,
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
                 tanggal_masuk: isCabang ? null : form.tanggal_masuk || null,
             };
@@ -185,6 +176,32 @@ export default function EditKaryawanPage() {
         }
     }
 
+    // Reset password karyawan (admin only, dienforce juga di backend)
+    async function handleResetPassword() {
+        if (!window.confirm('Reset password karyawan ini? Password lama akan hilang dan tidak bisa dikembalikan.')) return;
+
+        setResetting(true);
+        try {
+            const res = await resetKaryawanPassword(Number(id));
+            setNewPassword(res.new_password);
+            toast.success('Password berhasil direset.');
+        } catch (err: any) {
+            if (err.response?.status === 403) {
+                toast.error('Anda tidak punya akses untuk mereset password.');
+            } else {
+                toast.error('Gagal mereset password. Coba lagi.');
+            }
+        } finally {
+            setResetting(false);
+        }
+    }
+
+    function copyPassword() {
+        if (!newPassword) return;
+        navigator.clipboard.writeText(newPassword);
+        toast.success('Password disalin ke clipboard.');
+    }
+
     if (loading) {
         return (
             <RouteModal title="Edit Karyawan" fallbackPath="/karyawan" onClose={closeModal}>
@@ -194,13 +211,13 @@ export default function EditKaryawanPage() {
     }
 
     return (
-        <RouteModal
-            title="Edit Karyawan"
-            description="Perbarui data pengguna ini."
-            fallbackPath="/karyawan"
-            onClose={closeModal}
-        >
-            <>
+        <>
+            <RouteModal
+                title="Edit Karyawan"
+                description="Perbarui data pengguna ini."
+                fallbackPath="/karyawan"
+                onClose={closeModal}
+            >
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <Field label="Nama" error={errors.name?.[0]}>
                         <input
@@ -258,37 +275,20 @@ export default function EditKaryawanPage() {
                     )}
 
                     {!isCabang && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <Field label="Departemen" error={errors.departemen_id?.[0]}>
-                                <select
-                                    value={form.departemen_id}
-                                    onChange={(e) => handleChange('departemen_id', e.target.value)}
-                                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                                >
-                                    <option value="">Pilih departemen</option>
-                                    {departemenList.map((d) => (
-                                        <option key={d.id} value={d.id}>
-                                            {d.nama}
-                                        </option>
-                                    ))}
-                                </select>
-                            </Field>
-
-                            <Field label="Jabatan" error={errors.jabatan_id?.[0]}>
-                                <select
-                                    value={form.jabatan_id}
-                                    onChange={(e) => handleChange('jabatan_id', e.target.value)}
-                                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                                >
-                                    <option value="">Pilih jabatan</option>
-                                    {jabatanList.map((j) => (
-                                        <option key={j.id} value={j.id}>
-                                            {j.nama}
-                                        </option>
-                                    ))}
-                                </select>
-                            </Field>
-                        </div>
+                        <Field label="Departemen" error={errors.departemen_id?.[0]}>
+                            <select
+                                value={form.departemen_id}
+                                onChange={(e) => handleChange('departemen_id', e.target.value)}
+                                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                            >
+                                <option value="">Pilih departemen</option>
+                                {departemenList.map((d) => (
+                                    <option key={d.id} value={d.id}>
+                                        {d.nama}
+                                    </option>
+                                ))}
+                            </select>
+                        </Field>
                     )}
 
                     <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]}>
@@ -319,13 +319,23 @@ export default function EditKaryawanPage() {
                     )}
 
                     <div className="flex items-center justify-between pt-2">
-                        <button
-                            type="button"
-                            onClick={handleDelete}
-                            className="text-sm text-red-600 hover:text-red-700"
-                        >
-                            Hapus karyawan
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={handleDelete}
+                                className="text-sm text-red-600 hover:text-red-700"
+                            >
+                                Hapus karyawan
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleResetPassword}
+                                disabled={resetting}
+                                className="text-sm text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                            >
+                                {resetting ? 'Mereset...' : 'Reset password'}
+                            </button>
+                        </div>
 
                         <div className="flex gap-2">
                             <button
@@ -345,8 +355,16 @@ export default function EditKaryawanPage() {
                         </div>
                     </div>
                 </form>
-            </>
-        </RouteModal>
+            </RouteModal>
+
+            {newPassword && (
+                <ResetPasswordModal
+                    password={newPassword}
+                    onClose={() => setNewPassword(null)}
+                    onCopy={copyPassword}
+                />
+            )}
+        </>
     );
 }
 
@@ -357,5 +375,56 @@ function Field({ label, error, children }: { label: string; error?: string; chil
             {children}
             {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
         </div>
+    );
+}
+
+function ResetPasswordModal({
+    password,
+    onClose,
+    onCopy,
+}: {
+    password: string;
+    onClose: () => void;
+    onCopy: () => void;
+}) {
+    return createPortal(
+        <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"
+            onClick={onClose}
+        >
+            <div
+                className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <h3 className="text-sm font-semibold text-gray-900">Password berhasil direset</h3>
+                <p className="text-xs text-gray-500 mt-1">
+                    Catat password ini sekarang. Setelah ditutup, password tidak akan ditampilkan lagi.
+                </p>
+
+                <div className="mt-4 flex items-center gap-2">
+                    <code className="flex-1 text-sm font-mono bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 break-all">
+                        {password}
+                    </code>
+                </div>
+
+                <div className="mt-5 flex justify-end gap-2">
+                    <button
+                        type="button"
+                        onClick={onCopy}
+                        className="text-sm px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50"
+                    >
+                        Salin
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="text-sm px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
+                    >
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>,
+        document.body
     );
 }

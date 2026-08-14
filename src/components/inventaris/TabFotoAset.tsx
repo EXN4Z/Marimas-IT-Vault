@@ -191,8 +191,8 @@ export default function TabFotoAset({}: Props) {
                     <tr key={e.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                       <td className="px-4 py-3 whitespace-nowrap">{asetLabel(e.aset)}</td>
                       <td className="px-4 py-3 text-slate-600 max-w-[160px]">
-                        <p className="truncate" title={namaPemakai({ pekerja: e.pekerja, user: e.user })}>
-                          {namaPemakai({ pekerja: e.pekerja, user: e.user })}
+                        <p className="truncate" title={namaPemakai({ user: e.user })}>
+                          {namaPemakai({ user: e.user })}
                         </p>
                       </td>
                       <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(waktuAkurat, tanggal)}</td>
