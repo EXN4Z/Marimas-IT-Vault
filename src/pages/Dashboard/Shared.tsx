@@ -120,7 +120,7 @@ export function WelcomeHeader({ user }: { user?: UserType | null }) {
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
       <div>
         <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
-          {greetingWord()}, {firstName} 👋
+          {greetingWord()}, {firstName}
         </h2>
         <p className="text-sm text-slate-500 mt-0.5 capitalize">{today}</p>
       </div>
@@ -242,48 +242,6 @@ export function RingkasanAsetCard({
         <LegendDot color={THEME.amber} label="Dipakai" value={asetDipakai} />
         <LegendDot color={THEME.rose} label="Rusak Berat" value={asetRusakBerat} />
         <LegendDot color="#CBD5E1" label="Dijual" value={asetDijual} />
-      </div>
-    </div>
-  );
-}
-
-// ==== Distribusi karyawan per departemen — semua role ====
-export function DepartemenDistribusiCard({ departemen }: { departemen: DepartemenDistribusi[] }) {
-  const totalKaryawan = departemen.reduce((sum, d) => sum + d.jumlah, 0);
-  const top = departemen.length ? departemen.reduce((a, b) => (b.jumlah > a.jumlah ? b : a)) : null;
-
-  return (
-    <div className={cardClass}>
-      <div className="flex items-start justify-between gap-3 mb-1">
-        <div className="flex items-center gap-2.5">
-          <CardIcon icon={Users} />
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900">Distribusi Karyawan per Departemen</h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {totalKaryawan} karyawan &middot; {departemen.length} departemen
-            </p>
-          </div>
-        </div>
-        {top && (
-          <span className="hidden sm:inline-flex text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full whitespace-nowrap">
-            Terbanyak: {top.departemen}
-          </span>
-        )}
-      </div>
-      <div className="h-64 mt-3">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={departemen} layout="vertical" margin={{ top: 5, right: 24, left: 10, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={THEME.grid} horizontal={false} />
-            <XAxis type="number" tick={{ fontSize: 12, fill: THEME.axis }} axisLine={false} tickLine={false} />
-            <YAxis dataKey="departemen" type="category" tick={{ fontSize: 12, fill: '#475569' }} axisLine={false} tickLine={false} width={70} />
-            <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
-            <Bar dataKey="jumlah" radius={[0, 8, 8, 0]} barSize={18}>
-              {departemen.map((_, i) => (
-                <Cell key={i} fill={MULTI_COLORS[i % MULTI_COLORS.length]} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
       </div>
     </div>
   );
@@ -521,58 +479,6 @@ export function AsetPerMerekCard({ asetPerMerek }: { asetPerMerek: AsetPerMerek[
               <Bar dataKey="jumlah" fill={THEME.orange} radius={[8, 8, 0, 0]} barSize={36} />
             </BarChart>
           </ResponsiveContainer>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ==== Perlu Tindakan — quick-action list, khusus admin (inventaris) ====
-// Sumber datanya SAMA PERSIS dengan AsetPerhatianCard (donut) di bawah --
-// bedanya kartu ini ditaruh dekat hero chart sebagai ringkasan "yang perlu
-// segera dicek", sementara AsetPerhatianCard tetap ada buat breakdown
-// visual (donut) yang lebih detail. Klik baris -> lempar ke tab Aset.
-export function PerluTindakanCard({ asetPerhatian }: { asetPerhatian?: AsetPerhatian }) {
-  const navigate = useNavigate();
-  const rusak = asetPerhatian?.rusak ?? 0;
-  const dalamPenanganan = asetPerhatian?.dalamPenanganan ?? 0;
-  const garansiSegeraHabis = asetPerhatian?.garansiSegeraHabis ?? 0;
-  const total = rusak + dalamPenanganan + garansiSegeraHabis;
-
-  const rows = [
-    { label: 'Rusak berat', value: rusak, icon: AlertTriangle, color: 'text-rose-500 bg-rose-50' },
-    { label: 'Dalam penanganan', value: dalamPenanganan, icon: Wrench, color: 'text-amber-500 bg-amber-50' },
-    { label: 'Garansi < 30 hari', value: garansiSegeraHabis, icon: ShieldAlert, color: 'text-orange-500 bg-orange-50' },
-  ].filter((r) => r.value > 0);
-
-  return (
-    <div className={cardClass}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold text-slate-900">Perlu Tindakan</h3>
-        {total > 0 && (
-          <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">{total}</span>
-        )}
-      </div>
-
-      {total === 0 ? (
-        <p className="text-sm text-slate-400">Tidak ada yang butuh tindakan saat ini. 🎉</p>
-      ) : (
-        <div className="flex flex-col gap-1.5">
-          {rows.map((r) => (
-            <button
-              key={r.label}
-              onClick={() => navigate('/inventaris?tab=aset')}
-              className="flex items-center justify-between gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors text-left w-full"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${r.color}`}>
-                  <r.icon size={16} />
-                </div>
-                <span className="text-sm text-slate-700 font-medium truncate">{r.label}</span>
-              </div>
-              <span className="text-base font-bold text-slate-900 flex-shrink-0">{r.value}</span>
-            </button>
-          ))}
         </div>
       )}
     </div>

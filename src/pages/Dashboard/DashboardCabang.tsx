@@ -1,6 +1,6 @@
 import { useDashboardCore } from './useDashboardData';
 import { Users, Building2, Bell } from 'lucide-react';
-import { WelcomeHeader, KpiCard, DepartemenDistribusiCard, NotifikasiCard } from './Shared';
+import { WelcomeHeader, KpiCard, NotifikasiCard } from './Shared';
 
 // Dashboard untuk role cabang — TIDAK dapet section Inventaris (itu murni
 // buat admin/hr/manajer).
@@ -40,7 +40,6 @@ export default function DashboardCabang() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <DepartemenDistribusiCard departemen={departemen} />
         <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
       </div>
     </>

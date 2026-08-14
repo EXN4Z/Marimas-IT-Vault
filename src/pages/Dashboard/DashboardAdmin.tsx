@@ -5,11 +5,9 @@ import {
   KpiCard,
   RingkasanAsetCard,
   HeroTrenPembelianAsetChart,
-  PerluTindakanCard,
   AsetPerhatianCard,
   AsetPerMerekCard,
   AktivitasAsetCard,
-  DepartemenDistribusiCard,
   NotifikasiCard,
 } from './Shared';
 
@@ -64,7 +62,6 @@ export default function DashboardAdmin() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <HeroTrenPembelianAsetChart trenPembelianAset={trenPembelianAset} />
-        <PerluTindakanCard asetPerhatian={asetPerhatian} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
@@ -74,7 +71,6 @@ export default function DashboardAdmin() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <AsetPerhatianCard asetPerhatian={asetPerhatian} />
-        <DepartemenDistribusiCard departemen={departemen} />
       </div>
 
       {/* Aktivitas Aset Terbaru + Notifikasi -- feed histori aset (sumber sama

@@ -1,6 +1,6 @@
 import { useDashboardCore } from './useDashboardData';
 import { Bell, Users } from 'lucide-react';
-import { WelcomeHeader, KpiCard, DepartemenDistribusiCard, NotifikasiCard } from './Shared';
+import { WelcomeHeader, KpiCard, NotifikasiCard } from './Shared';
 
 // Dashboard untuk role karyawan/user biasa — cuma section umum,
 // tanpa analytics (inventaris) yang khusus buat admin/hr/manajer/cabang.
@@ -57,7 +57,7 @@ export default function DashboardUser() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <DepartemenDistribusiCard departemen={departemen} />
+        {/* <DepartemenDistribusiCard departemen={departemen} /> */}
         <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
       </div>
     </>
