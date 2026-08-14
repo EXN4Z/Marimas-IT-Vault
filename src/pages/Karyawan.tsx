@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { FileDown } from 'lucide-react';
 import api from '../api/axios';
 import { importKaryawan } from '../api/auth';
+import type { Karyawan } from '../api/karyawan';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import Pagination from '../components/shared/Pagination';
+import KaryawanExportModal from '../components/laporan/KaryawanExportModal';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'cabang';
 type TabKey = 'semua' | 'karyawan' | 'hr_manajer' | 'admin' | 'cabang';
@@ -14,7 +17,14 @@ interface User {
     email: string;
     role: Role;
     nik: string | null;
+    // phone/lokasi_kantor/tanggal_masuk sebenarnya selalu ikut kekirim dari
+    // endpoint /karyawan (lihat UserController::index di backend), cuma
+    // dulu gak dimasukin ke interface ini karena belum kepake di tabel.
+    // Sekarang dipakai buat export (lihat KaryawanExportModal).
+    phone?: string | null;
     departemen: { nama: string } | null;
+    lokasi_kantor?: { nama: string } | null;
+    tanggal_masuk?: string | null;
 }
 
 const roleStyles: Record<Role, string> = {
@@ -111,6 +121,10 @@ export default function KaryawanPage() {
     const [importErrors, setImportErrors] = useState<string[]>([]);
     const [importSuccessMsg, setImportSuccessMsg] = useState<string>('');
     const [showImportModal, setShowImportModal] = useState<boolean>(false);
+
+    // BARU: state untuk modal export (Excel/PDF) — komponennya sudah ada &
+    // dipakai di halaman Laporan, di sini tinggal dipasang ulang.
+    const [showExportModal, setShowExportModal] = useState<boolean>(false);
 
     function loadUsers() {
         setLoading(true);
@@ -245,6 +259,18 @@ export default function KaryawanPage() {
                                 className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none"
                             />
                         </div>
+                            <div className="flex gap-2">
+                                {/* BARU: tombol Export (Excel/PDF) — dibuka buat semua role yang
+                                    bisa lihat halaman ini, bukan cuma admin, soalnya cuma nampilin
+                                    data yang sudah kefilter/keliatan di tabel (bukan aksi ubah data). */}
+                                <button
+                                    onClick={() => setShowExportModal(true)}
+                                    className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 whitespace-nowrap"
+                                >
+                                    <FileDown size={16} />
+                                    Export
+                                </button>
+                            </div>
                             {isAdmin && (
                                 <div className="flex gap-2">
                                     {/* BARU: tombol Import Excel */}
@@ -324,6 +350,16 @@ export default function KaryawanPage() {
                         setImportErrors([]);
                         setImportSuccessMsg('');
                     }}
+                />
+            )}
+            {/* BARU: modal export Excel/PDF — data yang dikirim udah sesuai
+                filter tab & pencarian yang lagi aktif di tabel (bukan cuma
+                halaman yang lagi ditampilin, tapi SEMUA hasil filter). */}
+            {showExportModal && (
+                <KaryawanExportModal
+                    open={showExportModal}
+                    onClose={() => setShowExportModal(false)}
+                    data={filtered as unknown as Karyawan[]}
                 />
             )}
         </>
