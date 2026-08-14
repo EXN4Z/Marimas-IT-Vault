@@ -17,8 +17,8 @@ export interface Karyawan {
   name: string
   email: string
   phone: string
-  departemen: string
-  lokasi_kantor: string
+  departemen: Departemen | null
+  lokasi_kantor: LokasiKantor | null
   tanggal_masuk: string
   role: string
   created_at?: string
