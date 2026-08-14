@@ -14,7 +14,6 @@ import {
   Database,
   ChevronDown,
   Building2,
-  BriefcaseBusiness,
   ClipboardList,
   Truck,
   Wrench,
@@ -70,7 +69,6 @@ const navItems: NavItem[] = [
     restricted: true,
     children: [
       { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen' },
-      { label: 'Jabatan', icon: BriefcaseBusiness, path: '/master-data?tab=jabatan' },
       { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier' },
     ],
   },
@@ -282,7 +280,7 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
   };
 
   // support 2 pola child path: polos ("/izin/create") atau pakai query tab
-  // ("/master-data?tab=jabatan"). Kalau child gak punya query dan URL sekarang
+  // ("/master-data?tab=departemen"). Kalau child gak punya query dan URL sekarang
   // juga gak punya query, cocok berdasarkan pathname doang. Kalau child pakai
   // query "tab", cocokin nilai tab-nya; kalau URL sekarang belum punya "tab"
   // sama sekali, anggap child pertama di grup itu sebagai default aktif.

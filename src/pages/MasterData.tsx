@@ -1,19 +1,18 @@
 import '../index.css';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, BriefcaseBusiness, Truck, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Building2, Truck, Plus, Pencil, Trash2, X } from 'lucide-react';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen } from '../api/departemen';
-import { getJabatan, createJabatan, updateJabatan, deleteJabatan } from '../api/jabatan';
 import { getSupplier, createSupplier, updateSupplier, deleteSupplier } from '../api/supplier';
 
-type TabKey = 'departemen' | 'jabatan' | 'supplier';
+type TabKey = 'departemen' | 'supplier';
 // alamat & telepon cuma dipakai tab 'supplier'
 type Item = { id: number; nama: string; alamat?: string | null; telepon?: string | null };
 type FormPayload = { nama: string; alamat?: string; telepon?: string };
 
-const TAB_KEYS: TabKey[] = ['departemen', 'jabatan', 'supplier'];
+const TAB_KEYS: TabKey[] = ['departemen', 'supplier'];
 
 function isTabKey(value: string | null): value is TabKey {
   return !!value && (TAB_KEYS as string[]).includes(value);
@@ -41,15 +40,6 @@ const tabConfig: Record<
     create: (payload) => createDepartemen(payload.nama),
     update: (id, payload) => updateDepartemen(id, payload.nama),
     remove: deleteDepartemen,
-  },
-  jabatan: {
-    label: 'Jabatan',
-    icon: BriefcaseBusiness,
-    singular: 'Jabatan',
-    get: getJabatan as () => Promise<Item[]>,
-    create: createJabatan,
-    update: updateJabatan,
-    remove: deleteJabatan,
   },
   supplier: {
     label: 'Supplier',
@@ -80,7 +70,7 @@ export default function MasterData() {
   };
 
   // kalau user klik link dropdown sidebar yang query-nya beda (mis. lagi di tab
-  // "departemen" terus klik "Jabatan"), pathname sama jadi gak remount komponen —
+  // "departemen" terus klik "Supplier"), pathname sama jadi gak remount komponen —
   // effect ini yang nangkep perubahan query dan update activeTab-nya.
   useEffect(() => {
     const fromUrl = searchParams.get('tab');
@@ -208,7 +198,7 @@ export default function MasterData() {
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <p className="text-sm text-slate-500">
-          Kelola data referensi departemen, jabatan, dan supplier yang dipakai di seluruh sistem.
+          Kelola data referensi departemen dan supplier yang dipakai di seluruh sistem.
         </p>
         <button
           onClick={openCreateModal}
