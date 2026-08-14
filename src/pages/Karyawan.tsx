@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState, type JSX } from 'react';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
+import { importKaryawan } from '../api/auth';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import Pagination from '../components/shared/Pagination';
 
@@ -104,9 +105,15 @@ export default function KaryawanPage() {
     const [currentPage, setCurrentPage] = useState<number>(1);
     const ITEMS_PER_PAGE = 10;
 
-    useEffect(() => {
-        api.get<{ role: Role }>('/user').then((res) => setCurrentRole(res.data.role)).catch(() => {});
+    // BARU: state untuk import Excel karyawan
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [importing, setImporting] = useState<boolean>(false);
+    const [importErrors, setImportErrors] = useState<string[]>([]);
+    const [importSuccessMsg, setImportSuccessMsg] = useState<string>('');
+    const [showImportModal, setShowImportModal] = useState<boolean>(false);
 
+    function loadUsers() {
+        setLoading(true);
         api
             .get<User[]>('/karyawan')
             .then((res) => setUsers(res.data))
@@ -118,6 +125,11 @@ export default function KaryawanPage() {
                 }
             })
             .finally(() => setLoading(false));
+    }
+
+    useEffect(() => {
+        api.get<{ role: Role }>('/user').then((res) => setCurrentRole(res.data.role)).catch(() => {});
+        loadUsers();
     }, []);
 
     const isAdmin = currentRole === 'admin';
@@ -165,6 +177,37 @@ export default function KaryawanPage() {
         }
     }
 
+    // BARU: handler saat user pilih file dari <input type="file">
+    async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setImporting(true);
+        setImportErrors([]);
+        setImportSuccessMsg('');
+
+        try {
+            const result = await importKaryawan(file);
+            if (result.success) {
+                setImportSuccessMsg(result.message || 'Import berhasil.');
+                loadUsers(); // refresh daftar karyawan setelah import sukses
+            } else {
+                setImportErrors(result.errors || [result.message || 'Import gagal.']);
+            }
+        } catch (err: any) {
+            const data = err.response?.data;
+            if (data?.errors) {
+                setImportErrors(data.errors);
+            } else {
+                setImportErrors([data?.message || 'Gagal import file. Coba lagi.']);
+            }
+        } finally {
+            setImporting(false);
+            // reset value biar bisa pilih file yang sama lagi kalau perlu re-upload
+            e.target.value = '';
+        }
+    }
+
     const activeTabLabel = tabs.find((t) => t.key === activeTab)?.label ?? 'Pekerja';
 
     return (
@@ -203,12 +246,21 @@ export default function KaryawanPage() {
                             />
                         </div>
                             {isAdmin && (
-                                <button
-                                    onClick={() => navigate('/karyawan/create', { state: { backgroundLocation: location } })}
-                                    className="flex items-center justify-center gap-2 bg-black text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800 whitespace-nowrap"
-                                >
-                                    + Tambah Karyawan
-                                </button>
+                                <div className="flex gap-2">
+                                    {/* BARU: tombol Import Excel */}
+                                    <button
+                                        onClick={() => setShowImportModal(true)}
+                                        className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 whitespace-nowrap"
+                                    >
+                                        Import Excel
+                                    </button>
+                                    <button
+                                        onClick={() => navigate('/karyawan/create', { state: { backgroundLocation: location } })}
+                                        className="flex items-center justify-center gap-2 bg-black text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800 whitespace-nowrap"
+                                    >
+                                        + Tambah Karyawan
+                                    </button>
+                                </div>
                             )}
                     </div>
 
@@ -256,6 +308,22 @@ export default function KaryawanPage() {
                     deleting={deleting}
                     onCancel={() => setUserToDelete(null)}
                     onConfirm={confirmDelete}
+                />
+            )}
+
+            {/* BARU: modal import Excel */}
+            {showImportModal && (
+                <ImportModal
+                    importing={importing}
+                    errors={importErrors}
+                    successMsg={importSuccessMsg}
+                    fileInputRef={fileInputRef}
+                    onFileSelected={handleFileSelected}
+                    onClose={() => {
+                        setShowImportModal(false);
+                        setImportErrors([]);
+                        setImportSuccessMsg('');
+                    }}
                 />
             )}
         </>
@@ -335,6 +403,75 @@ function ConfirmDeleteModal({ user, deleting, onCancel, onConfirm }: ConfirmDele
                         className="text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
                     >
                         {deleting ? 'Menghapus...' : 'Ya, hapus'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// BARU: modal untuk pilih & upload file Excel karyawan
+interface ImportModalProps {
+    importing: boolean;
+    errors: string[];
+    successMsg: string;
+    fileInputRef: React.RefObject<HTMLInputElement | null>;
+    onFileSelected: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onClose: () => void;
+}
+
+function ImportModal({ importing, errors, successMsg, fileInputRef, onFileSelected, onClose }: ImportModalProps) {
+    return (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+            <div className="bg-white rounded-xl w-full max-w-md p-5 max-h-[90vh] overflow-y-auto">
+                <h2 className="text-base font-semibold text-gray-900 mb-1">Import Data Karyawan</h2>
+                <p className="text-sm text-gray-500 mb-4">
+                    Upload file Excel (.xlsx) berisi kolom NIK, Nama, Email, Phone, Departemen, dan
+                    Tanggal Masuk. Karyawan baru akan otomatis dibuatkan akun dan passwordnya
+                    dikirim ke email masing-masing.
+                </p>
+
+                <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-lg py-8 cursor-pointer hover:bg-gray-50">
+                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <span className="text-sm text-gray-600">
+                        {importing ? 'Mengupload & memproses...' : 'Klik untuk pilih file Excel'}
+                    </span>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".xlsx,.xls"
+                        className="hidden"
+                        disabled={importing}
+                        onChange={onFileSelected}
+                    />
+                </label>
+
+                {successMsg && (
+                    <div className="mt-4 text-sm bg-green-50 text-green-700 rounded-lg p-3">
+                        {successMsg}
+                    </div>
+                )}
+
+                {errors.length > 0 && (
+                    <div className="mt-4 text-sm bg-red-50 text-red-700 rounded-lg p-3 max-h-40 overflow-y-auto">
+                        <p className="font-medium mb-1">Gagal import:</p>
+                        <ul className="list-disc list-inside space-y-1">
+                            {errors.map((e, i) => (
+                                <li key={i}>{e}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
+                <div className="flex justify-end gap-2 mt-5">
+                    <button
+                        onClick={onClose}
+                        disabled={importing}
+                        className="text-sm px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        Tutup
                     </button>
                 </div>
             </div>

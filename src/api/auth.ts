@@ -20,6 +20,12 @@ interface RegisterResponse {
   registration_id: string;
 }
 
+interface ImportKaryawanResponse {
+  success: boolean;
+  message?: string;
+  errors?: string[];
+}
+
 export const login = async (loginIdentifier: string, password: string): Promise<AuthResponse> => {
   const res = await api.post('/login', { login: loginIdentifier, password });
   return res.data;
@@ -66,5 +72,13 @@ export const changePassword = async (payload: {
   password_confirmation: string;
 }): Promise<{ message: string }> => {
   const res = await api.put('/change-password', payload);
+  return res.data;
+};
+
+export const importKaryawan = async (file: File): Promise<ImportKaryawanResponse> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await api.post<ImportKaryawanResponse>('/import-karyawan', formData);
   return res.data;
 };
