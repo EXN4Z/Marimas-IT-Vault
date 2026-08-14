@@ -451,7 +451,32 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     }
   };
 
-  const filteredAset = asetList
+  // KARYAWAN/CABANG cuma boleh liat aset yang masih tersedia, atau aset yang
+  // LAGI dia pinjam sendiri (bukan yang PERNAH -- begitu pengembalian sudah
+  // terjadi, otomatis maupun manual, aset itu bukan "milik" dia lagi).
+  // FIX: pakai userIdPemakai() (bukan akses langsung .pekerja?.user?.id),
+  // biar akun cabang (yang gak punya pekerja, cuma user langsung) juga
+  // kedeteksi bener sebagai pemilik record, bukan malah aset yang lagi dia
+  // pegang sendiri ikut ke-filter hilang dari tabelnya.
+  //
+  // FIX BUG: dulu filter kepemilikan ini cuma dipasang di rantai
+  // `filteredAset` (buat nentuin baris tabel), sementara `statusCounts` &
+  // badge "Semua Status" masih ngitung dari `asetList` MENTAH (belum kena
+  // filter ini). Akibatnya begitu aset karyawan dikembalikan otomatis
+  // (mis. admin tandai rusak berat), barisnya udah ilang dari tabel, tapi
+  // angka di badge tab tetap ngitung aset itu -- angka "kecantol" padahal
+  // tabelnya kosong. Sekarang filter kepemilikan ditarik jadi satu sumber
+  // (`visibleAsetList`) yang dipakai bareng oleh tabel & badge, jadi
+  // keduanya selalu sinkron.
+  const visibleAsetList = useMemo(() => {
+    if (isAdmin) return asetList;
+    return asetList.filter((a) => {
+      const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
+      return a.status === 'tersedia' || akuPeminjamnya;
+    });
+  }, [asetList, isAdmin, user?.id]);
+
+  const filteredAset = visibleAsetList
     .filter((a) => {
       const matchStatus = !statusFilter || a.status === statusFilter;
       const q = search.toLowerCase();
@@ -468,18 +493,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
       return matchStatus && matchSearch;
     })
     .filter((a) => !onlyMenipis || a.status === 'tersedia')
-    // KARYAWAN/CABANG cuma boleh liat aset yang masih tersedia, atau aset yang
-    // lagi dia pinjam sendiri. Aset yang dipakai/ditangani orang lain kehide
-    // total dari tabel (bukan cuma nama pemakainya doang).
-    // FIX: pakai userIdPemakai() (bukan akses langsung .pekerja?.user?.id),
-    // biar akun cabang (yang gak punya pekerja, cuma user langsung) juga
-    // kedeteksi bener sebagai pemilik record, bukan malah aset yang lagi dia
-    // pegang sendiri ikut ke-filter hilang dari tabelnya.
-    .filter((a) => {
-      if (isAdmin) return true;
-      const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
-      return a.status === 'tersedia' || akuPeminjamnya;
-    })
     // BARU: urutkan berdasarkan prioritas status — tersedia paling atas,
     // dipakai, lalu status dalam proses penanganan, rusak_berat, dan
     // dijual paling bawah. Lihat STATUS_PRIORITY di atas.
@@ -489,8 +502,10 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
       return a.kode_aset.localeCompare(b.kode_aset, 'id', { numeric: true });
     });
 
-  // Jumlah aset per status (dari asetList utuh, bukan yang udah difilter),
-  // dipakai buat badge angka di tiap opsi dropdown status.
+  // Jumlah aset per status (dari visibleAsetList -- yang udah kena filter
+  // kepemilikan, sama kayak sumber filteredAset -- BUKAN dari asetList
+  // mentah), dipakai buat badge angka di tiap opsi dropdown status. Ini
+  // yang bikin badge tab selalu sinkron sama isi tabelnya.
   const statusCounts = useMemo(() => {
     const counts: Record<AsetStatus, number> = {
       tersedia: 0,
@@ -500,9 +515,9 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
       rusak_berat: 0,
       dijual: 0,
     };
-    for (const a of asetList) counts[a.status] += 1;
+    for (const a of visibleAsetList) counts[a.status] += 1;
     return counts;
-  }, [asetList]);
+  }, [visibleAsetList]);
 
   const asetLastPage = Math.max(1, Math.ceil(filteredAset.length / ASET_PER_PAGE));
   const asetPageClamped = Math.min(asetPage, asetLastPage);
@@ -678,7 +693,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
           {
             key: 'semua' as const,
             label: 'Semua Status',
-            badge: asetList.length,
+            badge: visibleAsetList.length,
             badgeClassName: statusFilter === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
           },
           ...(Object.keys(STATUS_LABEL) as AsetStatus[]).map((s) => ({
