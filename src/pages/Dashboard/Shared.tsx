@@ -22,8 +22,14 @@ import {
   PlayCircle,
   Banknote,
   ArrowRight,
+  Bell,
+  Users,
+  TrendingUp,
+  TrendingDown,
+  type LucideIcon,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import type { User as UserType } from '../../types/user';
 import type {
   NotificationItem,
   DepartemenDistribusi,
@@ -42,9 +48,15 @@ export const THEME = {
   amber: '#F59E0B',
   rose: '#F04438',
   orange: '#FF7A50',
+  sky: '#38BDF8',
+  purple: '#A855F7',
   grid: '#F1F5F9',
   axis: '#94A3B8',
 };
+
+// Palet warna dipakai bar chart per-item (departemen, dst) biar tiap
+// batang punya warna beda -- kesannya lebih hidup dibanding satu warna flat.
+const MULTI_COLORS = [THEME.violet, THEME.orange, THEME.emerald, THEME.amber, THEME.sky, THEME.rose, THEME.purple];
 
 export const cardClass =
   'bg-white rounded-3xl p-5 sm:p-6 shadow-[0_2px_20px_rgba(15,23,42,0.06)] border border-slate-100';
@@ -59,6 +71,107 @@ export function LegendDot({ color, label, value }: { color: string; label: strin
         {label}
       </div>
       <span className="font-semibold text-slate-800">{value}</span>
+    </div>
+  );
+}
+
+// Header ikon kecil dipakai berulang di banyak card -- dibikin helper biar
+// konsisten (ukuran, radius, warna) tanpa copy-paste className panjang.
+export function CardIcon({ icon: Icon, tone = 'violet' }: { icon: LucideIcon; tone?: 'violet' | 'orange' | 'emerald' }) {
+  const toneClass =
+    tone === 'orange'
+      ? 'bg-orange-50 text-[#FF7A50]'
+      : tone === 'emerald'
+        ? 'bg-emerald-50 text-emerald-600'
+        : 'bg-[#EEECFF] text-[#6D5DFC]';
+  return (
+    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${toneClass}`}>
+      <Icon size={18} />
+    </div>
+  );
+}
+
+// ==== Welcome header — semua role ====
+// Sapaan personal + tanggal hari ini + badge role/departemen. Semua field
+// (name, role, departemen) sudah ada di object user (AuthContext), jadi
+// gak nambah fetch baru sama sekali.
+const GREETING_ROLE_LABEL: Record<string, string> = {
+  admin: 'Admin',
+  hr: 'HR',
+  manajer: 'Manajer',
+  karyawan: 'Karyawan',
+  cabang: 'Cabang',
+};
+
+function greetingWord(): string {
+  const h = new Date().getHours();
+  if (h < 11) return 'Selamat pagi';
+  if (h < 15) return 'Selamat siang';
+  if (h < 18) return 'Selamat sore';
+  return 'Selamat malam';
+}
+
+export function WelcomeHeader({ user }: { user?: UserType | null }) {
+  if (!user) return null;
+  const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const firstName = user.name?.split(' ')[0] ?? user.name;
+
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+      <div>
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+          {greetingWord()}, {firstName} 👋
+        </h2>
+        <p className="text-sm text-slate-500 mt-0.5 capitalize">{today}</p>
+      </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs font-semibold text-[#6D5DFC] bg-[#EEECFF] px-3 py-1.5 rounded-full whitespace-nowrap">
+          {GREETING_ROLE_LABEL[user.role] ?? user.role}
+        </span>
+        {user.departemen?.nama && (
+          <span className="text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full whitespace-nowrap">
+            {user.departemen.nama}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ==== KPI mini card — dipakai buat strip ringkasan angka di atas dashboard ====
+const KPI_TONE = {
+  default: { bg: 'bg-white', border: 'border-slate-100', iconBg: 'bg-[#EEECFF]', iconColor: 'text-[#6D5DFC]', valueColor: 'text-slate-900' },
+  amber: { bg: 'bg-amber-50', border: 'border-amber-100', iconBg: 'bg-amber-100', iconColor: 'text-amber-600', valueColor: 'text-amber-700' },
+  rose: { bg: 'bg-rose-50', border: 'border-rose-100', iconBg: 'bg-rose-100', iconColor: 'text-rose-600', valueColor: 'text-rose-700' },
+  emerald: { bg: 'bg-emerald-50', border: 'border-emerald-100', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', valueColor: 'text-emerald-700' },
+} as const;
+
+export function KpiCard({
+  icon: Icon,
+  label,
+  value,
+  tone = 'default',
+  hint,
+  className = '',
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: number | string;
+  tone?: keyof typeof KPI_TONE;
+  hint?: string;
+  className?: string;
+}) {
+  const t = KPI_TONE[tone];
+  return (
+    <div
+      className={`${t.bg} ${t.border} rounded-2xl p-4 sm:p-5 border shadow-[0_2px_16px_rgba(15,23,42,0.04)] hover:shadow-[0_4px_24px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 transition-all ${className}`}
+    >
+      <div className={`w-10 h-10 rounded-xl ${t.iconBg} ${t.iconColor} flex items-center justify-center mb-3`}>
+        <Icon size={18} />
+      </div>
+      <p className={`text-2xl font-extrabold ${t.valueColor} tracking-tight leading-none`}>{value}</p>
+      <p className="text-xs text-slate-500 mt-1.5 font-medium">{label}</p>
+      {hint && <p className="text-[11px] text-slate-400 mt-0.5">{hint}</p>}
     </div>
   );
 }
@@ -88,9 +201,7 @@ export function RingkasanAsetCard({
   return (
     <div className={`${cardClass} ${compact ? 'lg:max-w-md' : ''}`}>
       <div className="flex items-center gap-2.5 mb-4">
-        <div className="w-9 h-9 rounded-xl bg-[#EEECFF] flex items-center justify-center text-[#6D5DFC]">
-          <Boxes size={18} />
-        </div>
+        <CardIcon icon={Boxes} />
         <h3 className="text-sm font-semibold text-slate-900">Ringkasan Status Aset</h3>
       </div>
 
@@ -129,19 +240,39 @@ export function RingkasanAsetCard({
 
 // ==== Distribusi karyawan per departemen — semua role ====
 export function DepartemenDistribusiCard({ departemen }: { departemen: DepartemenDistribusi[] }) {
+  const totalKaryawan = departemen.reduce((sum, d) => sum + d.jumlah, 0);
+  const top = departemen.length ? departemen.reduce((a, b) => (b.jumlah > a.jumlah ? b : a)) : null;
+
   return (
     <div className={cardClass}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold text-slate-900">Distribusi Karyawan per Departemen</h3>
+      <div className="flex items-start justify-between gap-3 mb-1">
+        <div className="flex items-center gap-2.5">
+          <CardIcon icon={Users} />
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">Distribusi Karyawan per Departemen</h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {totalKaryawan} karyawan &middot; {departemen.length} departemen
+            </p>
+          </div>
+        </div>
+        {top && (
+          <span className="hidden sm:inline-flex text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full whitespace-nowrap">
+            Terbanyak: {top.departemen}
+          </span>
+        )}
       </div>
-      <div className="h-64">
+      <div className="h-64 mt-3">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={departemen} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 0 }}>
+          <BarChart data={departemen} layout="vertical" margin={{ top: 5, right: 24, left: 10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={THEME.grid} horizontal={false} />
             <XAxis type="number" tick={{ fontSize: 12, fill: THEME.axis }} axisLine={false} tickLine={false} />
             <YAxis dataKey="departemen" type="category" tick={{ fontSize: 12, fill: '#475569' }} axisLine={false} tickLine={false} width={70} />
             <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
-            <Bar dataKey="jumlah" fill={THEME.violet} radius={[0, 8, 8, 0]} barSize={18} />
+            <Bar dataKey="jumlah" radius={[0, 8, 8, 0]} barSize={18}>
+              {departemen.map((_, i) => (
+                <Cell key={i} fill={MULTI_COLORS[i % MULTI_COLORS.length]} />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -158,6 +289,7 @@ export function NotifikasiCard({
   onMarkAsRead: (id: string) => void;
 }) {
   const navigate = useNavigate();
+  const unreadCount = notifications.filter((n) => !n.read_at).length;
 
   const handleClick = (n: NotificationItem) => {
     if (!n.read_at) onMarkAsRead(n.id);
@@ -168,19 +300,33 @@ export function NotifikasiCard({
 
   return (
     <div className={cardClass}>
-      <h3 className="text-base font-semibold text-slate-900 mb-4">Notifikasi</h3>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <CardIcon icon={Bell} />
+          <h3 className="text-base font-semibold text-slate-900">Notifikasi</h3>
+        </div>
+        {unreadCount > 0 && (
+          <span className="text-xs font-semibold text-white bg-[#6D5DFC] px-2.5 py-1 rounded-full">{unreadCount} baru</span>
+        )}
+      </div>
       {notifications.length === 0 ? (
         <p className="text-sm text-slate-400">Belum ada notifikasi</p>
       ) : (
-        <ul className="flex flex-col gap-3 overflow-y-auto pr-1" style={{ maxHeight: `${NOTIF_VISIBLE_COUNT * 68}px` }}>
+        <ul className="flex flex-col gap-1.5 overflow-y-auto pr-1" style={{ maxHeight: `${NOTIF_VISIBLE_COUNT * 76}px` }}>
           {notifications.map((n) => {
             const unread = !n.read_at;
             return (
-              <li key={n.id} className="flex items-start gap-2 cursor-pointer" onClick={() => handleClick(n)}>
+              <li
+                key={n.id}
+                className={`flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer transition-colors ${
+                  unread ? 'bg-[#F7F6FF] hover:bg-[#EEECFF]' : 'hover:bg-slate-50'
+                }`}
+                onClick={() => handleClick(n)}
+              >
                 <span className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${unread ? 'bg-[#6D5DFC]' : 'bg-slate-200'}`} />
-                <div>
+                <div className="min-w-0">
                   <p className={`text-sm ${unread ? 'text-slate-800 font-medium' : 'text-slate-500'}`}>{n.data.message}</p>
-                  <p className="text-xs text-slate-400">{new Date(n.created_at).toLocaleString('id-ID')}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{new Date(n.created_at).toLocaleString('id-ID')}</p>
                 </div>
               </li>
             );
@@ -197,6 +343,14 @@ export function HeroTrenPembelianAsetChart({ trenPembelianAset }: { trenPembelia
   const maxJumlah = trenPembelianAset.length ? Math.max(...trenPembelianAset.map((d) => d.jumlah)) : 0;
   const avgJumlah = trenPembelianAset.length ? totalTahunIni / trenPembelianAset.length : 0;
   const peakIndex = maxJumlah > 0 ? trenPembelianAset.findIndex((d) => d.jumlah === maxJumlah) : -1;
+
+  // Delta bulan terakhir vs bulan sebelumnya -- murni turunan dari data yang
+  // sudah ada (trenPembelianAset), bukan fetch baru. Dipakai buat badge tren
+  // kecil di header biar kartu ini kerasa lebih "hidup".
+  const lastIdx = trenPembelianAset.length - 1;
+  const lastVal = lastIdx >= 0 ? trenPembelianAset[lastIdx].jumlah : 0;
+  const prevVal = lastIdx >= 1 ? trenPembelianAset[lastIdx - 1].jumlah : null;
+  const delta = prevVal !== null ? lastVal - prevVal : null;
 
   const renderPeakLabel = (props: any) => {
     const { x, y, width, value, index } = props;
@@ -215,13 +369,25 @@ export function HeroTrenPembelianAsetChart({ trenPembelianAset }: { trenPembelia
 
   return (
     <div className={`${cardClass} xl:col-span-2`}>
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between flex-wrap gap-2">
         <div>
           <h3 className="text-sm text-slate-500 font-medium">Tren Pembelian Aset per Bulan</h3>
-          <p className="text-3xl md:text-4xl font-extrabold text-slate-900 mt-1 tracking-tight">
-            {totalTahunIni}
-            <span className="text-base font-semibold text-slate-400 ml-2">aset dibeli</span>
-          </p>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <p className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+              {totalTahunIni}
+              <span className="text-base font-semibold text-slate-400 ml-2">aset dibeli</span>
+            </p>
+            {delta !== null && delta !== 0 && (
+              <span
+                className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                  delta > 0 ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'
+                }`}
+              >
+                {delta > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                {delta > 0 ? `+${delta}` : delta} bulan ini
+              </span>
+            )}
+          </div>
         </div>
         <span className="text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full whitespace-nowrap">
           6 bulan terakhir
@@ -318,9 +484,21 @@ export function StatusAsetDonutCard({ statusAsetDistribusi }: { statusAsetDistri
 }
 
 export function AsetPerMerekCard({ asetPerMerek }: { asetPerMerek: AsetPerMerek[] }) {
+  const top = asetPerMerek.length ? asetPerMerek[0] : null;
+
   return (
     <div className={cardClass}>
-      <h3 className="text-base font-semibold text-slate-900 mb-4">Distribusi Aset per Merek</h3>
+      <div className="flex items-center justify-between mb-4 gap-2">
+        <div className="flex items-center gap-2.5">
+          <CardIcon icon={Boxes} tone="orange" />
+          <h3 className="text-base font-semibold text-slate-900">Distribusi Aset per Merek</h3>
+        </div>
+        {top && (
+          <span className="hidden sm:inline-flex text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full whitespace-nowrap">
+            Terbanyak: {top.merek}
+          </span>
+        )}
+      </div>
       {asetPerMerek.length === 0 ? (
         <p className="text-sm text-slate-400">Belum ada data aset</p>
       ) : (
@@ -334,6 +512,58 @@ export function AsetPerMerekCard({ asetPerMerek }: { asetPerMerek: AsetPerMerek[
               <Bar dataKey="jumlah" fill={THEME.orange} radius={[8, 8, 0, 0]} barSize={36} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ==== Perlu Tindakan — quick-action list, khusus admin (inventaris) ====
+// Sumber datanya SAMA PERSIS dengan AsetPerhatianCard (donut) di bawah --
+// bedanya kartu ini ditaruh dekat hero chart sebagai ringkasan "yang perlu
+// segera dicek", sementara AsetPerhatianCard tetap ada buat breakdown
+// visual (donut) yang lebih detail. Klik baris -> lempar ke tab Aset.
+export function PerluTindakanCard({ asetPerhatian }: { asetPerhatian?: AsetPerhatian }) {
+  const navigate = useNavigate();
+  const rusak = asetPerhatian?.rusak ?? 0;
+  const dalamPenanganan = asetPerhatian?.dalamPenanganan ?? 0;
+  const garansiSegeraHabis = asetPerhatian?.garansiSegeraHabis ?? 0;
+  const total = rusak + dalamPenanganan + garansiSegeraHabis;
+
+  const rows = [
+    { label: 'Rusak berat', value: rusak, icon: AlertTriangle, color: 'text-rose-500 bg-rose-50' },
+    { label: 'Dalam penanganan', value: dalamPenanganan, icon: Wrench, color: 'text-amber-500 bg-amber-50' },
+    { label: 'Garansi < 30 hari', value: garansiSegeraHabis, icon: ShieldAlert, color: 'text-orange-500 bg-orange-50' },
+  ].filter((r) => r.value > 0);
+
+  return (
+    <div className={cardClass}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-base font-semibold text-slate-900">Perlu Tindakan</h3>
+        {total > 0 && (
+          <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">{total}</span>
+        )}
+      </div>
+
+      {total === 0 ? (
+        <p className="text-sm text-slate-400">Tidak ada yang butuh tindakan saat ini. 🎉</p>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          {rows.map((r) => (
+            <button
+              key={r.label}
+              onClick={() => navigate('/inventaris?tab=aset')}
+              className="flex items-center justify-between gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors text-left w-full"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${r.color}`}>
+                  <r.icon size={16} />
+                </div>
+                <span className="text-sm text-slate-700 font-medium truncate">{r.label}</span>
+              </div>
+              <span className="text-base font-bold text-slate-900 flex-shrink-0">{r.value}</span>
+            </button>
+          ))}
         </div>
       )}
     </div>
@@ -370,7 +600,10 @@ export function AsetPerhatianCard({ asetPerhatian }: { asetPerhatian?: AsetPerha
   return (
     <div className={cardClass}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold text-slate-900">Aset Butuh Perhatian</h3>
+        <div className="flex items-center gap-2.5">
+          <CardIcon icon={ShieldAlert} />
+          <h3 className="text-base font-semibold text-slate-900">Aset Butuh Perhatian</h3>
+        </div>
         {totalPerhatian > 0 && (
           <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">
             {totalPerhatian} aset
@@ -466,7 +699,10 @@ export function AktivitasAsetCard({ aktivitasAsetTerbaru }: { aktivitasAsetTerba
   return (
     <div className={cardClass}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold text-slate-900">Aktivitas Aset Terbaru</h3>
+        <div className="flex items-center gap-2.5">
+          <CardIcon icon={HandCoins} tone="emerald" />
+          <h3 className="text-base font-semibold text-slate-900">Aktivitas Aset Terbaru</h3>
+        </div>
         <button
           onClick={() => navigate('/inventaris?tab=aset')}
           className="flex items-center gap-1 text-xs font-semibold text-[#6D5DFC] hover:text-[#4C3FE0] whitespace-nowrap"
@@ -478,15 +714,17 @@ export function AktivitasAsetCard({ aktivitasAsetTerbaru }: { aktivitasAsetTerba
       {aktivitasAsetTerbaru.length === 0 ? (
         <p className="text-sm text-slate-400">Belum ada aktivitas aset.</p>
       ) : (
-        <ul className="flex flex-col gap-3.5">
+        <ul className="flex flex-col gap-1">
           {aktivitasAsetTerbaru.map((ev, idx) => {
             const s = AKTIVITAS_ASET_STYLE[ev.type];
             const kode = ev.aset?.kode_aset || '-';
             const pelaku =
               ev.nama ?? (ev.type === 'mulai_perbaikan' || ev.type === 'selesai_perbaikan' ? 'Admin' : null);
+            const isLast = idx === aktivitasAsetTerbaru.length - 1;
             return (
-              <li key={`${ev.type}-${idx}`} className="flex items-start gap-2.5">
-                <span className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${s.bg}`}>
+              <li key={`${ev.type}-${idx}`} className="relative flex items-start gap-2.5 py-1.5">
+                {!isLast && <span className="absolute left-[13px] top-9 bottom-[-6px] w-px bg-slate-100" />}
+                <span className={`relative z-10 w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${s.bg}`}>
                   {s.icon}
                 </span>
                 <div className="min-w-0">
