@@ -20,11 +20,7 @@ export default function Login() {
   // form login lagi.
   useEffect(() => {
     if (isLoading || !user) return;
-    if (!isLoading && user?.role === 'admin') {
-      navigate('/dashboard', { replace: true });
-    } else {
-      navigate('/inventaris', { replace: true });
-    }
+    navigate('/dashboard', { replace: true });
   }, [isLoading, user, navigate]);
 
   // BARU: kalau kesini gara-gara logout otomatis (password ke-reset), state

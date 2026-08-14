@@ -148,9 +148,9 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
     if (item.label === 'Master Data' && !STAFF_ROLES.includes(user?.role ?? '')) {
       return false;
     }
-    if (item.label === 'Dashboard' && user?.role !== 'admin') {
-      return false;
-    }
+    // (dulu Dashboard cuma tampil buat admin -- sekarang semua role
+    // sudah punya varian dashboard-nya sendiri: DashboardUser/DashboardCabang/
+    // DashboardAdmin, jadi menu ini gak perlu disembunyikan lagi.)
     // Laporan untuk admin/hr/manajer
     if (item.label === 'Laporan' && !STAFF_ROLES.includes(user?.role ?? '')) {
       return false;
