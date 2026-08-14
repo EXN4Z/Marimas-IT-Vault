@@ -1,22 +1,13 @@
 import '../index.css';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-<<<<<<< HEAD
-import { Building2, Truck, Plus, Pencil, Trash2, X } from 'lucide-react';
-import ScrollableTabBar from '../components/shared/ScrollableTabBar';
-import { useAuth } from '../context/AuthContext';
-import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen } from '../api/departemen';
-import { getSupplier, createSupplier, updateSupplier, deleteSupplier } from '../api/supplier';
-=======
-import { Building2, BriefcaseBusiness, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2 } from 'lucide-react';
+import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen, importDepartemen } from '../api/departemen';
-import { getJabatan, createJabatan, updateJabatan, deleteJabatan } from '../api/jabatan';
 import { getSupplier, createSupplier, updateSupplier, deleteSupplier, importSupplier } from '../api/supplier';
 import { downloadStyledExcel } from '../utils/excelReport';
->>>>>>> 35e09b5be4b6d7f98db5455672826f693be74fdd
 
 type TabKey = 'departemen' | 'supplier';
 // alamat & telepon cuma dipakai tab 'supplier'
