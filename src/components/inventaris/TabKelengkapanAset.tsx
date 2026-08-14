@@ -8,6 +8,7 @@ import {
   type AsetKelengkapan,
 } from '../../api/asetKelengkapan';
 import StatusBadge from '../shared/StatusBadge';
+import Pagination from '../shared/Pagination';
 import AsetKelengkapanForm from './AsetKelengkapanForm';
 import AsetKelengkapanExportModal from './AsetKelengkapanExportModal';
 
@@ -29,6 +30,11 @@ export default function TabKelengkapanAset() {
   const [items, setItems] = useState<AsetKelengkapan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Pagination — client-side krn API kelengkapan gak dipaging di backend,
+  // style sama kayak pager tabel Aset (10 per halaman).
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<AsetKelengkapan | null>(null);
@@ -61,6 +67,15 @@ export default function TabKelengkapanAset() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const lastPage = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
+  const pageClamped = Math.min(page, lastPage);
+  const pageItems = items.slice((pageClamped - 1) * ITEMS_PER_PAGE, pageClamped * ITEMS_PER_PAGE);
+
+  // Balik ke halaman 1 tiap kali data-nya reload (misal abis tambah/hapus/import)
+  useEffect(() => {
+    setPage(1);
+  }, [items.length]);
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -174,7 +189,7 @@ export default function TabKelengkapanAset() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((item) => (
+                {pageItems.map((item) => (
                   <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                     <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{item.kode_kelengkapan}</td>
                     <td className="px-6 py-3 text-slate-600">
@@ -219,6 +234,20 @@ export default function TabKelengkapanAset() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {!loading && !error && items.length > 0 && lastPage > 1 && (
+          <div className="px-6 py-3 border-t border-slate-100">
+            <Pagination
+              currentPage={pageClamped}
+              totalPages={lastPage}
+              onPageChange={setPage}
+              totalItems={items.length}
+              itemLabel="kelengkapan"
+              className="pt-0 mt-0 border-t-0"
+            />
           </div>
         )}
       </div>
