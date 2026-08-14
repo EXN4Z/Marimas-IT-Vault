@@ -38,14 +38,22 @@ export default function DashboardUser() {
           di-fetch useDashboardCore (notifikasi & distribusi departemen),
           gak ada fetch tambahan. */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-        <KpiCard icon={Bell} label="Total Notifikasi" value={totalNotifikasi} tone="default" />
+        <KpiCard icon={Bell} label="Total Notifikasi" value={totalNotifikasi} tone="default" hint={`${belumDibaca} belum dibaca`} />
         <KpiCard
           icon={Bell}
           label="Belum Dibaca"
           value={belumDibaca}
           tone={belumDibaca > 0 ? 'rose' : 'default'}
+          hint={`dari ${totalNotifikasi} notifikasi`}
         />
-        <KpiCard icon={Users} label="Total Karyawan" value={totalKaryawan} tone="emerald" className="col-span-2 sm:col-span-1" />
+        <KpiCard
+          icon={Users}
+          label="Total Karyawan"
+          value={totalKaryawan}
+          tone="emerald"
+          hint={`${departemen.length} departemen`}
+          className="col-span-2 sm:col-span-1"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

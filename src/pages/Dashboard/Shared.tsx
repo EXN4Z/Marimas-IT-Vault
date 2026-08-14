@@ -139,11 +139,14 @@ export function WelcomeHeader({ user }: { user?: UserType | null }) {
 }
 
 // ==== KPI mini card — dipakai buat strip ringkasan angka di atas dashboard ====
-const KPI_TONE = {
-  default: { bg: 'bg-white', border: 'border-slate-100', iconBg: 'bg-[#EEECFF]', iconColor: 'text-[#6D5DFC]', valueColor: 'text-slate-900' },
-  amber: { bg: 'bg-amber-50', border: 'border-amber-100', iconBg: 'bg-amber-100', iconColor: 'text-amber-600', valueColor: 'text-amber-700' },
-  rose: { bg: 'bg-rose-50', border: 'border-rose-100', iconBg: 'bg-rose-100', iconColor: 'text-rose-600', valueColor: 'text-rose-700' },
-  emerald: { bg: 'bg-emerald-50', border: 'border-emerald-100', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', valueColor: 'text-emerald-700' },
+// Warna solid buat lingkaran ikon (bukan tint pastel) -- biar kartu kerasa
+// "penuh" kayak referensi Argon Dashboard, gak cuma kotak putih kosong
+// dengan ikon kecil mengambang di tengah.
+const KPI_ACCENT = {
+  default: { ring: 'bg-[#6D5DFC]', border: 'border-slate-100' },
+  amber: { ring: 'bg-[#F59E0B]', border: 'border-amber-100' },
+  rose: { ring: 'bg-[#F04438]', border: 'border-rose-100' },
+  emerald: { ring: 'bg-[#12B76A]', border: 'border-emerald-100' },
 } as const;
 
 export function KpiCard({
@@ -157,21 +160,27 @@ export function KpiCard({
   icon: LucideIcon;
   label: string;
   value: number | string;
-  tone?: keyof typeof KPI_TONE;
+  tone?: keyof typeof KPI_ACCENT;
+  /** Info tambahan di bawah -- diturunkan dari data yang sama, bukan angka baru,
+      dipakai buat ngisi ruang bawah kartu (mis. "12% dari total aset"). */
   hint?: string;
   className?: string;
 }) {
-  const t = KPI_TONE[tone];
+  const t = KPI_ACCENT[tone];
   return (
     <div
-      className={`${t.bg} ${t.border} rounded-2xl p-4 sm:p-5 border shadow-[0_2px_16px_rgba(15,23,42,0.04)] hover:shadow-[0_4px_24px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 transition-all ${className}`}
+      className={`bg-white ${t.border} rounded-2xl p-4 sm:p-5 border shadow-[0_2px_16px_rgba(15,23,42,0.04)] hover:shadow-[0_4px_24px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[128px] ${className}`}
     >
-      <div className={`w-10 h-10 rounded-xl ${t.iconBg} ${t.iconColor} flex items-center justify-center mb-3`}>
-        <Icon size={18} />
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 truncate">{label}</p>
+          <p className="text-2xl font-extrabold text-slate-900 tracking-tight mt-1.5">{value}</p>
+        </div>
+        <div className={`w-11 h-11 rounded-full ${t.ring} text-white flex items-center justify-center flex-shrink-0 shadow-md`}>
+          <Icon size={19} />
+        </div>
       </div>
-      <p className={`text-2xl font-extrabold ${t.valueColor} tracking-tight leading-none`}>{value}</p>
-      <p className="text-xs text-slate-500 mt-1.5 font-medium">{label}</p>
-      {hint && <p className="text-[11px] text-slate-400 mt-0.5">{hint}</p>}
+      {hint && <p className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-50">{hint}</p>}
     </div>
   );
 }

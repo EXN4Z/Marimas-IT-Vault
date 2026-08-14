@@ -31,6 +31,10 @@ export default function DashboardAdmin() {
     );
   }
 
+  const asetTotal = ringkasanAset?.total ?? 0;
+  const tersediaPct = asetTotal > 0 ? Math.round(((ringkasanAset?.tersedia ?? 0) / asetTotal) * 100) : 0;
+  const dipakaiPct = asetTotal > 0 ? Math.round(((ringkasanAset?.dipakai ?? 0) / asetTotal) * 100) : 0;
+  const rusakBeratPct = asetTotal > 0 ? Math.round(((ringkasanAset?.rusakBerat ?? 0) / asetTotal) * 100) : 0;
   const totalPerhatian =
     (asetPerhatian?.rusak ?? 0) + (asetPerhatian?.dalamPenanganan ?? 0) + (asetPerhatian?.garansiSegeraHabis ?? 0);
 
@@ -46,10 +50,16 @@ export default function DashboardAdmin() {
           Semua nilai turunan dari ringkasanAset & asetPerhatian yang memang
           sudah di-fetch buat kartu-kartu di bawah, cuma disorot di atas. */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard icon={Boxes} label="Total Aset" value={ringkasanAset?.total ?? 0} tone="default" />
-        <KpiCard icon={Package} label="Sedang Dipakai" value={ringkasanAset?.dipakai ?? 0} tone="default" />
-        <KpiCard icon={AlertTriangle} label="Butuh Perhatian" value={totalPerhatian} tone="amber" />
-        <KpiCard icon={ShieldAlert} label="Rusak Berat" value={ringkasanAset?.rusakBerat ?? 0} tone="rose" />
+        <KpiCard icon={Boxes} label="Total Aset" value={asetTotal} tone="default" hint={`${tersediaPct}% siap pakai`} />
+        <KpiCard icon={Package} label="Sedang Dipakai" value={ringkasanAset?.dipakai ?? 0} tone="default" hint={`${dipakaiPct}% dari total aset`} />
+        <KpiCard
+          icon={AlertTriangle}
+          label="Butuh Perhatian"
+          value={totalPerhatian}
+          tone="amber"
+          hint={`${asetPerhatian?.garansiSegeraHabis ?? 0} garansi < 30 hari`}
+        />
+        <KpiCard icon={ShieldAlert} label="Rusak Berat" value={ringkasanAset?.rusakBerat ?? 0} tone="rose" hint={`${rusakBeratPct}% dari total aset`} />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

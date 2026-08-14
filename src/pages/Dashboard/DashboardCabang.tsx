@@ -27,13 +27,14 @@ export default function DashboardCabang() {
       )}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-        <KpiCard icon={Users} label="Total Karyawan" value={totalKaryawan} tone="emerald" />
-        <KpiCard icon={Building2} label="Jumlah Departemen" value={departemen.length} tone="default" />
+        <KpiCard icon={Users} label="Total Karyawan" value={totalKaryawan} tone="emerald" hint={`${departemen.length} departemen`} />
+        <KpiCard icon={Building2} label="Jumlah Departemen" value={departemen.length} tone="default" hint={`${totalKaryawan} karyawan total`} />
         <KpiCard
           icon={Bell}
           label="Notifikasi Baru"
           value={belumDibaca}
           tone={belumDibaca > 0 ? 'rose' : 'default'}
+          hint={`dari ${notifications.length} notifikasi`}
           className="col-span-2 sm:col-span-1"
         />
       </div>
