@@ -32,8 +32,7 @@ const tabConfig: Record<
     create: (payload: FormPayload) => Promise<Item>;
     update: (id: number, payload: FormPayload) => Promise<Item>;
     remove: (id: number) => Promise<{ message: string }>;
-    // import/export cuma disediakan buat Departemen & Supplier (Jabatan
-    // belum punya endpoint import di backend).
+    // import/export cuma disediakan buat Departemen & Supplier.
     import?: (file: File) => Promise<{ success: boolean; message: string }>;
     exportHeaders?: string[];
     exportRow?: (item: Item) => (string | number)[];

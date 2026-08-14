@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Plus, Pencil, Trash2, Upload, Download, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import {
   getAsetKelengkapan,
   deleteAsetKelengkapan,
+  importAsetKelengkapan,
   type AsetKelengkapan,
 } from '../../api/asetKelengkapan';
 import StatusBadge from '../shared/StatusBadge';
 import AsetKelengkapanForm from './AsetKelengkapanForm';
+import AsetKelengkapanExportModal from './AsetKelengkapanExportModal';
 
 const STATUS_LABEL: Record<string, string> = {
   tersedia: 'Tersedia',
@@ -35,6 +38,12 @@ export default function TabKelengkapanAset() {
   const [deleteError, setDeleteError] = useState('');
   const [deleteForceAvailable, setDeleteForceAvailable] = useState(false);
 
+  // Import Excel (kelengkapan berdiri sendiri, nempel ke aset induk yang
+  // sudah ada) & export Excel/PDF — pola sama kayak TabAset & MasterData.
+  const [importLoading, setImportLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+
   const loadData = async () => {
     setLoading(true);
     setError('');
@@ -52,6 +61,28 @@ export default function TabKelengkapanAset() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportLoading(true);
+    try {
+      const res = await importAsetKelengkapan(file);
+      toast.success(res.message || 'Berhasil import data kelengkapan aset.');
+      loadData();
+    } catch (err: any) {
+      const apiErrors: string[] | undefined = err.response?.data?.errors;
+      const msg =
+        (apiErrors && apiErrors[0]) ||
+        err.response?.data?.message ||
+        'Gagal import data kelengkapan aset.';
+      toast.error(msg);
+    } finally {
+      setImportLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = ''; // reset biar bisa upload file yang sama lagi
+    }
+  };
 
   const openAdd = () => {
     setEditing(null);
@@ -87,13 +118,39 @@ export default function TabKelengkapanAset() {
           Kelola kelengkapan aset (charger, tas, mouse, dll) sebagai item tersendiri — serah-terima
           dan riwayat pemakaiannya dicatat terpisah dari aset utama.
         </p>
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition flex-shrink-0"
-        >
-          <Plus size={16} />
-          Tambah Kelengkapan
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
+          <button
+            onClick={() => setExportOpen(true)}
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 transition"
+          >
+            <Download size={16} />
+            Export
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleFileSelected}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importLoading}
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            {importLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+            {importLoading ? 'Mengimport...' : 'Import Excel'}
+          </button>
+
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition"
+          >
+            <Plus size={16} />
+            Tambah Kelengkapan
+          </button>
+        </div>
       </div>
 
       <div className="border border-slate-200 rounded-lg overflow-hidden">
@@ -173,6 +230,9 @@ export default function TabKelengkapanAset() {
         onClose={() => setFormOpen(false)}
         onSaved={loadData}
       />
+
+      {/* EXPORT EXCEL/PDF */}
+      <AsetKelengkapanExportModal open={exportOpen} onClose={() => setExportOpen(false)} data={items} />
 
       {/* KONFIRMASI HAPUS */}
       {deleteTarget && (

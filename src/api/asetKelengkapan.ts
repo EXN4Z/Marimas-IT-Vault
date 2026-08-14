@@ -150,3 +150,17 @@ export async function deletePemakaiKelengkapan(pemakaiId: number): Promise<{ mes
   const res = await api.delete<{ message: string }>(`/aset-pemakai/${pemakaiId}`);
   return res.data;
 }
+
+// POST /aset-kelengkapan/import — import massal dari file Excel (.xlsx/.xls),
+// dibatasi backend ke role admin. Format kolom: Kode Aset Induk | Nama |
+// Merek | Tipe | Warna | Serial Number | Perusahaan | Supplier | Tanggal
+// Pembelian | No Surat Jalan | No Good Receive | Tanggal Garansi | Status |
+// Keterangan. "Kode Aset Induk" wajib cocok dengan aset yang sudah ada.
+export async function importAsetKelengkapan(file: File): Promise<{ success: boolean; message: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await api.post<{ success: boolean; message: string }>('/aset-kelengkapan/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data;
+}
