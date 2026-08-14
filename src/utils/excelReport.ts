@@ -22,6 +22,8 @@ const STATUS_COLORS: Record<string, { fill: string; font: string }> = {
   'Sedang Diperbaiki': { fill: 'FFFEF3C7', font: 'FFB45309' },
   'Rusak Berat': { fill: 'FFFEE2E2', font: 'FFB91C1C' },
   Dijual: { fill: 'FFF1F5F9', font: 'FF475569' },
+  // dipakai export Forum Penanganan Aset (tab "Berhasil Diperbaiki")
+  'Berhasil Diperbaiki': { fill: 'FFDCFCE7', font: 'FF15803D' },
   tersedia: { fill: 'FFDCFCE7', font: 'FF15803D' },
   telat: { fill: 'FFFEE2E2', font: 'FFB91C1C' },
   Terlambat: { fill: 'FFFEE2E2', font: 'FFB91C1C' },

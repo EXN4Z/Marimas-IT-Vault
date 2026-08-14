@@ -36,3 +36,15 @@ export async function deleteSupplier(id: number): Promise<{ message: string }> {
   const res = await api.delete<{ message: string }>(`/supplier/${id}`);
   return res.data;
 }
+
+// POST /supplier/import — import massal dari file Excel (.xlsx/.xls),
+// dibatasi backend ke role admin. Format kolom: Nama | Alamat | Telepon.
+// Baris dengan nama yang sudah ada akan di-UPDATE, bukan diduplikasi.
+export async function importSupplier(file: File): Promise<{ success: boolean; message: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await api.post<{ success: boolean; message: string }>('/supplier/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data;
+}

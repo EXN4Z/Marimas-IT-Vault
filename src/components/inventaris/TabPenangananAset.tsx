@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { X, Wrench, Printer, PlayCircle, Eye, ImageOff } from 'lucide-react';
+import { X, Wrench, Printer, PlayCircle, Eye, ImageOff, Upload, Download, Loader2 } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import api from '../../api/axios';
 import { terimaPenangananAset, selesaikanPenangananAset, type AsetPenanganan } from '../../api/aset';
@@ -9,6 +9,7 @@ import ScrollableTabBar from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
 import StatusBadge from '../shared/StatusBadge';
 import { printStruk } from '../../utils/printStruk';
+import AsetPenangananExportModal from './AsetPenangananExportModal';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 
@@ -59,9 +60,48 @@ export default function TabPenangananAset({ onCount }: Props) {
   // tombol konfirmasi di dalam modal ini.
   const [terimaTarget, setTerimaTarget] = useState<AsetPenanganan | null>(null);
 
+  // BARU: Import & Export -- SENGAJA cuma diaktifin buat 2 tab yang datanya
+  // sudah final (tanggal_selesai terisi): "Berhasil Diperbaiki" & "Rusak
+  // Berat". Tab "Menunggu Terima" & "Sedang Diperbaiki" gak dikasih tombol
+  // ini karena datanya masih berubah-ubah (belum jadi catatan final).
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importMessage, setImportMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const canImportExport = activeTab === 'diperbaiki_selesai' || activeTab === 'rusak_berat';
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setImportLoading(true);
+    setImportMessage(null);
+
+    try {
+      const res = await api.post('/import-aset-penanganan', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setImportMessage({ type: 'success', text: res.data.message });
+      load(); // refresh list biar hasil import langsung kelihatan di tabel
+    } catch (err: any) {
+      setImportMessage({
+        type: 'error',
+        text: err.response?.data?.message || 'Gagal mengimport file',
+      });
+    } finally {
+      setImportLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = ''; // reset biar bisa upload file yang sama lagi
+    }
+  };
+
   const handleTabChange = (tab: TabStatus) => {
     setActiveTab(tab);
     setPage(1); // balik ke halaman 1 tiap ganti tab biar gak nyangkut di halaman kosong
+    setImportMessage(null); // pesan import tab lama gak perlu nyangkut ke tab baru
   };
 
   const load = () => {
@@ -223,8 +263,47 @@ export default function TabPenangananAset({ onCount }: Props) {
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-      <h3 className="text-base font-semibold text-slate-900 mb-1">Forum Penanganan Aset</h3>
-      <p className="text-sm text-slate-500 mb-4">Laporan kerusakan dari peminjam yang belum/sudah ditangani.</p>
+      <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
+        <div>
+          <h3 className="text-base font-semibold text-slate-900 mb-1">Forum Penanganan Aset</h3>
+          <p className="text-sm text-slate-500">Laporan kerusakan dari peminjam yang belum/sudah ditangani.</p>
+        </div>
+
+        {/* Import & Export -- cuma tampil di tab "Berhasil Diperbaiki" &
+            "Rusak Berat" (lihat catatan di deklarasi canImportExport). */}
+        {canImportExport && (
+          <div className="flex items-center gap-2.5 flex-shrink-0">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileSelected}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importLoading}
+              className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              {importLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+              {importLoading ? 'Mengimport...' : 'Import Excel'}
+            </button>
+            <button
+              onClick={() => setExportModalOpen(true)}
+              className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition"
+            >
+              <Download size={16} />
+              Export
+            </button>
+          </div>
+        )}
+      </div>
+
+      {importMessage && (
+        <p className={`text-sm mb-4 -mt-2 ${importMessage.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+          {importMessage.text}
+        </p>
+      )}
 
       {error && (
         <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
@@ -416,6 +495,15 @@ export default function TabPenangananAset({ onCount }: Props) {
           loading={terimaLoadingId === terimaTarget.id}
           onClose={() => setTerimaTarget(null)}
           onConfirm={() => handleTerima(terimaTarget)}
+        />
+      )}
+
+      {canImportExport && (
+        <AsetPenangananExportModal
+          open={exportModalOpen}
+          onClose={() => setExportModalOpen(false)}
+          data={displayedList}
+          tabLabel={tabs.find((t) => t.key === activeTab)?.label || ''}
         />
       )}
     </div>

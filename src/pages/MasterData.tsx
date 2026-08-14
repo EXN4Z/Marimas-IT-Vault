@@ -1,11 +1,22 @@
 import '../index.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+<<<<<<< HEAD
 import { Building2, Truck, Plus, Pencil, Trash2, X } from 'lucide-react';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen } from '../api/departemen';
 import { getSupplier, createSupplier, updateSupplier, deleteSupplier } from '../api/supplier';
+=======
+import { Building2, BriefcaseBusiness, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import ScrollableTabBar from '../components/shared/ScrollableTabBar';
+import { useAuth } from '../context/AuthContext';
+import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen, importDepartemen } from '../api/departemen';
+import { getJabatan, createJabatan, updateJabatan, deleteJabatan } from '../api/jabatan';
+import { getSupplier, createSupplier, updateSupplier, deleteSupplier, importSupplier } from '../api/supplier';
+import { downloadStyledExcel } from '../utils/excelReport';
+>>>>>>> 35e09b5be4b6d7f98db5455672826f693be74fdd
 
 type TabKey = 'departemen' | 'supplier';
 // alamat & telepon cuma dipakai tab 'supplier'
@@ -30,6 +41,11 @@ const tabConfig: Record<
     create: (payload: FormPayload) => Promise<Item>;
     update: (id: number, payload: FormPayload) => Promise<Item>;
     remove: (id: number) => Promise<{ message: string }>;
+    // import/export cuma disediakan buat Departemen & Supplier (Jabatan
+    // belum punya endpoint import di backend).
+    import?: (file: File) => Promise<{ success: boolean; message: string }>;
+    exportHeaders?: string[];
+    exportRow?: (item: Item) => (string | number)[];
   }
 > = {
   departemen: {
@@ -40,6 +56,9 @@ const tabConfig: Record<
     create: (payload) => createDepartemen(payload.nama),
     update: (id, payload) => updateDepartemen(id, payload.nama),
     remove: deleteDepartemen,
+    import: importDepartemen,
+    exportHeaders: ['Nama'],
+    exportRow: (item) => [item.nama],
   },
   supplier: {
     label: 'Supplier',
@@ -49,6 +68,9 @@ const tabConfig: Record<
     create: (payload) => createSupplier(payload),
     update: (id, payload) => updateSupplier(id, { nama: payload.nama, alamat: payload.alamat, telepon: payload.telepon }),
     remove: deleteSupplier,
+    import: importSupplier,
+    exportHeaders: ['Nama', 'Alamat', 'Telepon'],
+    exportRow: (item) => [item.nama, item.alamat || '', item.telepon || ''],
   },
 };
 
@@ -95,6 +117,12 @@ export default function MasterData() {
   const [deleteTarget, setDeleteTarget] = useState<Item | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Import Excel (Departemen & Supplier) & export Excel (semua tab yang
+  // sudah dimuat di `items`).
+  const [importLoading, setImportLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const cfg = tabConfig[activeTab];
 
   const loadData = async (tab: TabKey) => {
@@ -117,6 +145,57 @@ export default function MasterData() {
   useEffect(() => {
     loadData(activeTab);
   }, [activeTab]);
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !cfg.import) return;
+
+    setImportLoading(true);
+    try {
+      const res = await cfg.import(file);
+      toast.success(res.message || `Berhasil import data ${cfg.label.toLowerCase()}.`);
+      loadData(activeTab);
+    } catch (err: any) {
+      const apiErrors: string[] | undefined = err.response?.data?.errors;
+      const msg =
+        (apiErrors && apiErrors[0]) ||
+        err.response?.data?.message ||
+        `Gagal import data ${cfg.label.toLowerCase()}.`;
+      toast.error(msg);
+    } finally {
+      setImportLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = ''; // reset biar bisa upload file yang sama lagi
+    }
+  };
+
+  const handleExport = async () => {
+    if (!cfg.exportHeaders || !cfg.exportRow) return;
+    if (items.length === 0) {
+      toast.error(`Gak ada data ${cfg.label.toLowerCase()} buat diexport.`);
+      return;
+    }
+
+    setExporting(true);
+    try {
+      const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      await downloadStyledExcel(
+        {
+          title: `Data ${cfg.label}`,
+          subtitle: `${items.length} ${cfg.label.toLowerCase()} per ${today}`,
+          headers: cfg.exportHeaders,
+          rows: items.map((item) => cfg.exportRow!(item)),
+          sheetName: `Data ${cfg.label}`,
+        },
+        `Data ${cfg.label} - ${today}.xlsx`
+      );
+      toast.success(`${items.length} ${cfg.label.toLowerCase()} berhasil diexport.`);
+    } catch (err) {
+      console.error(err);
+      toast.error(`Gagal export data ${cfg.label.toLowerCase()}.`);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const openCreateModal = () => {
     setEditing(null);
@@ -200,13 +279,46 @@ export default function MasterData() {
         <p className="text-sm text-slate-500">
           Kelola data referensi departemen dan supplier yang dipakai di seluruh sistem.
         </p>
-        <button
-          onClick={openCreateModal}
-          className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition flex-shrink-0"
-        >
-          <Plus size={16} />
-          Tambah {cfg.singular}
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
+          {cfg.exportHeaders && (
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              {exporting ? 'Mengexport...' : 'Export Excel'}
+            </button>
+          )}
+
+          {cfg.import && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelected}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importLoading}
+                className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                {importLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                {importLoading ? 'Mengimport...' : 'Import Excel'}
+              </button>
+            </>
+          )}
+
+          <button
+            onClick={openCreateModal}
+            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition"
+          >
+            <Plus size={16} />
+            Tambah {cfg.singular}
+          </button>
+        </div>
       </div>
 
       <ScrollableTabBar
