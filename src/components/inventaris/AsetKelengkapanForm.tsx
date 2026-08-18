@@ -25,6 +25,12 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
   editing?: AsetKelengkapan | null; // null/undefined = mode tambah
+  // Dipakai dari modal "Pasang Pengganti" (slot kosong di aset induk) —
+  // kalau diisi, field "Aset Induk" dikunci ke aset ini (gak bisa diubah
+  // manual) & "Lokasi Kantor" otomatis nonaktif ikut logic form.aset_id
+  // yang sudah ada. Cuma berlaku di mode tambah (editing null/undefined).
+  presetAsetId?: number;
+  presetAsetLabel?: string; // label tampilan, mis. "AST-0012 — Dell Latitude"
 }
 
 const EMPTY_FORM: AsetKelengkapanFormValues = {
@@ -46,7 +52,7 @@ const EMPTY_FORM: AsetKelengkapanFormValues = {
   status: 'tersedia',
 };
 
-export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }: Props) {
+export default function AsetKelengkapanForm({ open, onClose, onSaved, editing, presetAsetId, presetAsetLabel }: Props) {
   const [form, setForm] = useState<AsetKelengkapanFormValues>(EMPTY_FORM);
   const [supplierOptions, setSupplierOptions] = useState<Supplier[]>([]);
   const [asetOptions, setAsetOptions] = useState<Aset[]>([]);
@@ -102,7 +108,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
       });
       setFotoPreview(editing.foto || null);
     } else {
-      setForm(EMPTY_FORM);
+      setForm(presetAsetId ? { ...EMPTY_FORM, aset_id: presetAsetId } : EMPTY_FORM);
       setFotoPreview(null);
     }
     setAsetSearch('');
@@ -334,6 +340,16 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
           >
             <div className="sm:col-span-2" ref={asetFieldRef}>
               <Field label="Aset Induk" error={errors.aset_id}>
+                {presetAsetId ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0 text-slate-400">
+                      <rect x="2" y="3" width="12" height="9" rx="1.4" stroke="currentColor" strokeWidth="1.4" />
+                      <path d="M5.5 14.5h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                    <span className="font-medium">{presetAsetLabel || `Aset #${presetAsetId}`}</span>
+                    <span className="ml-auto text-xs text-slate-400">Pengganti untuk aset ini</span>
+                  </div>
+                ) : (
                 <div className="relative">
                   <div className="relative">
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -412,8 +428,11 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
                     </div>
                   )}
                 </div>
+                )}
                 <p className="mt-1 text-xs text-slate-400">
-                  Opsional — pilih kalau kelengkapan ini menempel ke aset tertentu (mis. mouse ini punya laptop yang mana).
+                  {presetAsetId
+                    ? 'Otomatis terisi dari slot yang dipilih — kelengkapan baru ini akan langsung nempel ke aset tersebut.'
+                    : 'Opsional — pilih kalau kelengkapan ini menempel ke aset tertentu (mis. mouse ini punya laptop yang mana).'}
                 </p>
               </Field>
             </div>

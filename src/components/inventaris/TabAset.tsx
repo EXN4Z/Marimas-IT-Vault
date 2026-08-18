@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2 } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, PlusCircle } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
@@ -10,6 +10,7 @@ import AsetSerahTerimaModal from './AsetSerahTerimaModal';
 import AsetPengembalianModal from './AsetPengembalianModal';
 import AsetLaporKerusakanModal from './AsetLaporKerusakanModal';
 import AsetPenangananSelesaiModal from './AsetPenangananSelesaiModal';
+import PasangPenggantiModal from './PasangPenggantiModal';
 import { useAuth } from '../../context/AuthContext';
 import { printStruk } from '../../utils/printStruk';
 import { namaPemakai, userIdPemakai, isCabangPemakai } from './asetHelpers';
@@ -134,6 +135,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   // datang dari tabel/detail panel ini.
   const [serahTerimaAset, setSerahTerimaAset] = useState<Aset | null>(null);
   const [pengembalianTarget, setPengembalianTarget] = useState<{ aset: Aset; pemakai: AsetPemakai } | null>(null);
+  const [pasangPenggantiTarget, setPasangPenggantiTarget] = useState<Aset | null>(null);
 
   const [perbaikanAsetTarget, setPerbaikanAsetTarget] = useState<Aset | null>(null);
   const [penangananSelesaiTarget, setPenangananSelesaiTarget] = useState<{ aset: Aset; penanganan: AsetPenanganan } | null>(null);
@@ -1025,36 +1027,54 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                 )}
 
                 {/* KELENGKAPAN — daftar aksesoris (tas, charger, dst) yang
-                    nempel ke aset ini lewat aset_kelengkapan.aset_id */}
-                {detail.aset_kelengkapan && detail.aset_kelengkapan.length > 0 && (
+                    nempel ke aset ini lewat aset_kelengkapan.aset_id. Section
+                    ini tetap dirender buat admin walau list kosong, biar
+                    tombol "Pasang Pengganti" (slot kosong abis kelengkapan
+                    lama dilaporkan rusak) tetap kepegang. */}
+                {((detail.aset_kelengkapan && detail.aset_kelengkapan.length > 0) || isAdmin) && (
                   <div>
-                    <p className="text-xs text-slate-400 mb-2">
-                      Kelengkapan ({detail.aset_kelengkapan.length})
-                    </p>
-                    <div className="flex flex-col gap-2">
-                      {detail.aset_kelengkapan.map((k: AsetKelengkapan) => (
-                        <div
-                          key={k.id}
-                          className="flex items-center justify-between gap-3 bg-slate-50 rounded-lg px-3 py-2 text-sm"
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-slate-400">
+                        Kelengkapan ({detail.aset_kelengkapan?.length || 0})
+                      </p>
+                      {isAdmin && (
+                        <button
+                          onClick={() => setPasangPenggantiTarget(detail)}
+                          className="flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-900 transition"
                         >
-                          <div className="min-w-0">
-                            <p className="text-slate-800 font-medium truncate">
-                              {k.nama || [k.merek, k.tipe].filter(Boolean).join(' ') || k.kode_kelengkapan}
-                            </p>
-                            <p className="text-xs text-slate-400 truncate">
-                              {k.kode_kelengkapan}
-                              {k.serial_number ? ` · S/N: ${k.serial_number}` : ''}
-                            </p>
-                          </div>
-                          <StatusBadge
-                            colorClass={KELENGKAPAN_STATUS_STYLE[k.status] || 'bg-slate-100 text-slate-600'}
-                            className="shrink-0"
-                          >
-                            {KELENGKAPAN_STATUS_LABEL[k.status] || k.status}
-                          </StatusBadge>
-                        </div>
-                      ))}
+                          <PlusCircle size={13} />
+                          Pasang Pengganti
+                        </button>
+                      )}
                     </div>
+                    {detail.aset_kelengkapan && detail.aset_kelengkapan.length > 0 ? (
+                      <div className="flex flex-col gap-2">
+                        {detail.aset_kelengkapan.map((k: AsetKelengkapan) => (
+                          <div
+                            key={k.id}
+                            className="flex items-center justify-between gap-3 bg-slate-50 rounded-lg px-3 py-2 text-sm"
+                          >
+                            <div className="min-w-0">
+                              <p className="text-slate-800 font-medium truncate">
+                                {k.nama || [k.merek, k.tipe].filter(Boolean).join(' ') || k.kode_kelengkapan}
+                              </p>
+                              <p className="text-xs text-slate-400 truncate">
+                                {k.kode_kelengkapan}
+                                {k.serial_number ? ` · S/N: ${k.serial_number}` : ''}
+                              </p>
+                            </div>
+                            <StatusBadge
+                              colorClass={KELENGKAPAN_STATUS_STYLE[k.status] || 'bg-slate-100 text-slate-600'}
+                              className="shrink-0"
+                            >
+                              {KELENGKAPAN_STATUS_LABEL[k.status] || k.status}
+                            </StatusBadge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-300 italic">Belum ada kelengkapan terpasang.</p>
+                    )}
                   </div>
                 )}
 
@@ -1398,6 +1418,24 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
           onSuccess={() => {
             setPenangananSelesaiTarget(null);
             loadList();
+            if (detailId) refreshDetail();
+          }}
+        />
+      )}
+
+      {pasangPenggantiTarget && (
+        <PasangPenggantiModal
+          open
+          asetIndukId={pasangPenggantiTarget.id}
+          asetIndukLabel={`${pasangPenggantiTarget.kode_aset}${
+            pasangPenggantiTarget.merek || pasangPenggantiTarget.tipe
+              ? ` — ${[pasangPenggantiTarget.merek, pasangPenggantiTarget.tipe].filter(Boolean).join(' ')}`
+              : ''
+          }`}
+          onClose={() => setPasangPenggantiTarget(null)}
+          onSaved={() => {
+            setPasangPenggantiTarget(null);
+            toast.success('Pengganti berhasil dipasang.');
             if (detailId) refreshDetail();
           }}
         />

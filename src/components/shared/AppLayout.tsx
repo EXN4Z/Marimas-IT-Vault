@@ -19,6 +19,7 @@ import {
   Wrench,
   Images,
   History,
+  AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import NotificationDropdown from './NotificationDropDown';
@@ -54,6 +55,7 @@ const navItems: NavItem[] = [
       // karena kelengkapan dipakai spesifik buat checklist di form
       // peminjaman aset ("pinjam laptop + tas + charger sekaligus").
       { label: 'Kelengkapan Aset', icon: ClipboardList, path: '/inventaris?tab=kelengkapan_aset' },
+      { label: 'Kelengkapan Rusak', icon: AlertTriangle, path: '/inventaris?tab=kelengkapan_rusak' },
       { label: 'Penanganan Aset', icon: Wrench, path: '/inventaris?tab=penanganan_aset', roles: ['admin'] },
       { label: 'Foto Aset', icon: Images, path: '/inventaris?tab=foto_aset', roles: ['admin'] },
       { label: 'Riwayat Aset', icon: History, path: '/inventaris?tab=riwayat_aset' },
