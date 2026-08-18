@@ -694,12 +694,16 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
             badge: visibleAsetList.length,
             badgeClassName: statusFilter === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
           },
-          ...(Object.keys(STATUS_LABEL) as AsetStatus[]).map((s) => ({
-            key: s,
-            label: STATUS_LABEL[s],
-            badge: statusCounts[s],
-            badgeClassName: statusFilter === s ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
-          })),
+          // Tab "Rusak Berat" & "Dijual" cuma buat admin -- non-admin gak
+          // perlu (dan gak boleh) lihat aset yang udah di-writeoff/dijual.
+          ...(Object.keys(STATUS_LABEL) as AsetStatus[])
+            .filter((s) => isAdmin || (s !== 'rusak_berat' && s !== 'dijual'))
+            .map((s) => ({
+              key: s,
+              label: STATUS_LABEL[s],
+              badge: statusCounts[s],
+              badgeClassName: statusFilter === s ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
+            })),
         ]}
       />
 

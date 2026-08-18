@@ -15,6 +15,7 @@ import Pagination from '../shared/Pagination';
 import AsetKelengkapanForm from './AsetKelengkapanForm';
 import AsetKelengkapanExportModal from './AsetKelengkapanExportModal';
 import { formatTanggalId } from './asetHelpers';
+import { useAuth } from '../../context/AuthContext';
 
 const STATUS_LABEL: Record<string, string> = {
   tersedia: 'Tersedia',
@@ -35,6 +36,15 @@ const STATUS_STYLE: Record<string, string> = {
 type StatusFilter = 'semua' | AsetKelengkapanStatus;
 
 export default function TabKelengkapanAset() {
+  // Non-admin (karyawan/manajer/hr) cuma boleh liat kelengkapan yang
+  // tersedia atau lagi dia pinjam sendiri (backend yang filter datanya --
+  // lihat AsetKelengkapanController::index()). Di sisi FE, tab status
+  // "Rusak" & aksi kelola (Tambah/Edit/Hapus/Import/Lapor Rusak) yang emang
+  // admin-only di backend disembunyikan biar gak nampilin tombol yang
+  // ujung-ujungnya cuma 403.
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
   const [items, setItems] = useState<AsetKelengkapan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -189,29 +199,36 @@ export default function TabKelengkapanAset() {
             Export
           </button>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={handleFileSelected}
-            className="hidden"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={importLoading}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            {importLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-            {importLoading ? 'Mengimport...' : 'Import Excel'}
-          </button>
+          {/* Import/Tambah cuma admin -- backend juga nolak (403) buat role
+              lain, disembunyikan di sini biar gak nampilin tombol yang
+              ujung-ujungnya gagal. */}
+          {isAdmin && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelected}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importLoading}
+                className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                {importLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                {importLoading ? 'Mengimport...' : 'Import Excel'}
+              </button>
 
-          <button
-            onClick={openAdd}
-            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition"
-          >
-            <Plus size={16} />
-            Tambah Kelengkapan
-          </button>
+              <button
+                onClick={openAdd}
+                className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition"
+              >
+                <Plus size={16} />
+                Tambah Kelengkapan
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -229,18 +246,23 @@ export default function TabKelengkapanAset() {
             badge: items.length,
             badgeClassName: statusFilter === 'semua' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
           },
-          ...(Object.keys(STATUS_LABEL) as AsetKelengkapanStatus[]).map((s) => ({
-            key: s,
-            label: STATUS_LABEL[s],
-            icon: s === 'rusak' ? Wrench : undefined,
-            badge: statusCounts[s] ?? 0,
-            badgeClassName:
-              statusFilter === s
-                ? s === 'rusak'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-slate-900 text-white'
-                : 'bg-slate-100 text-slate-500',
-          })),
+          // Tab "Rusak" cuma buat admin -- non-admin gak boleh liat data
+          // kelengkapan yang rusak sama sekali (backend juga udah exclude
+          // status 'rusak' dari response non-admin, ini cuma nyocokin di FE).
+          ...(Object.keys(STATUS_LABEL) as AsetKelengkapanStatus[])
+            .filter((s) => isAdmin || s !== 'rusak')
+            .map((s) => ({
+              key: s,
+              label: STATUS_LABEL[s],
+              icon: s === 'rusak' ? Wrench : undefined,
+              badge: statusCounts[s] ?? 0,
+              badgeClassName:
+                statusFilter === s
+                  ? s === 'rusak'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-slate-900 text-white'
+                  : 'bg-slate-100 text-slate-500',
+            })),
         ]}
       />
 
@@ -275,7 +297,9 @@ export default function TabKelengkapanAset() {
                   </th>
                   <th className="px-6 py-3 font-medium">{isRusakView ? 'Tanggal Rusak' : 'Serial Number'}</th>
                   <th className="px-6 py-3 font-medium">Status</th>
-                  {!isRusakView && <th className="px-6 py-3 font-medium text-right">Aksi</th>}
+                  {/* Kolom Aksi (Edit/Hapus/Lapor Rusak) cuma buat admin --
+                      backend nolak (403) buat role lain. */}
+                  {!isRusakView && isAdmin && <th className="px-6 py-3 font-medium text-right">Aksi</th>}
                 </tr>
               </thead>
               <tbody>
@@ -305,7 +329,7 @@ export default function TabKelengkapanAset() {
                         {STATUS_LABEL[item.status] || item.status}
                       </StatusBadge>
                     </td>
-                    {!isRusakView && (
+                    {!isRusakView && isAdmin && (
                       <td className="px-6 py-3">
                         <div className="flex items-center justify-end gap-1">
                           {(item.status === 'tersedia' || item.status === 'dipakai') && (
