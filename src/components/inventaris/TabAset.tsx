@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, PlusCircle } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2 } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
@@ -10,7 +10,6 @@ import AsetSerahTerimaModal from './AsetSerahTerimaModal';
 import AsetPengembalianModal from './AsetPengembalianModal';
 import AsetLaporKerusakanModal from './AsetLaporKerusakanModal';
 import AsetPenangananSelesaiModal from './AsetPenangananSelesaiModal';
-import PasangPenggantiModal from './PasangPenggantiModal';
 import { useAuth } from '../../context/AuthContext';
 import { printStruk } from '../../utils/printStruk';
 import { namaPemakai, userIdPemakai, isCabangPemakai } from './asetHelpers';
@@ -133,7 +132,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   // datang dari tabel/detail panel ini.
   const [serahTerimaAset, setSerahTerimaAset] = useState<Aset | null>(null);
   const [pengembalianTarget, setPengembalianTarget] = useState<{ aset: Aset; pemakai: AsetPemakai } | null>(null);
-  const [pasangPenggantiTarget, setPasangPenggantiTarget] = useState<Aset | null>(null);
 
   const [perbaikanAsetTarget, setPerbaikanAsetTarget] = useState<Aset | null>(null);
   const [penangananSelesaiTarget, setPenangananSelesaiTarget] = useState<{ aset: Aset; penanganan: AsetPenanganan } | null>(null);
@@ -839,13 +837,14 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
           aset={editingAset}
           supplierOptions={supplierOptions}
           onClose={() => setFormOpen(false)}
-          onSaved={(saved) => {
+          onSaved={(saved, warning) => {
             setAsetList((prev) => {
               const exists = prev.some((a) => a.id === saved.id);
               return exists ? prev.map((a) => (a.id === saved.id ? saved : a)) : [saved, ...prev];
             });
             setFormOpen(false);
             if (detailId === saved.id) refreshDetail();
+            if (warning) toast.error(warning);
           }}
         />
       )}
@@ -1025,25 +1024,15 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                 )}
 
                 {/* KELENGKAPAN — daftar aksesoris (tas, charger, dst) yang
-                    nempel ke aset ini lewat aset_kelengkapan.aset_id. Section
-                    ini tetap dirender buat admin walau list kosong, biar
-                    tombol "Pasang Pengganti" (slot kosong abis kelengkapan
-                    lama dilaporkan rusak) tetap kepegang. */}
-                {((detail.aset_kelengkapan && detail.aset_kelengkapan.length > 0) || isAdmin) && (
+                    nempel ke aset ini lewat aset_kelengkapan.aset_id.
+                    Read-only di sini; buat nambah/pasang kelengkapan baru,
+                    dilakuin lewat form Edit Aset (section Kelengkapan). */}
+                {detail.aset_kelengkapan && detail.aset_kelengkapan.length > 0 && (
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs text-slate-400">
                         Kelengkapan ({detail.aset_kelengkapan?.length || 0})
                       </p>
-                      {isAdmin && (
-                        <button
-                          onClick={() => setPasangPenggantiTarget(detail)}
-                          className="flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-900 transition"
-                        >
-                          <PlusCircle size={13} />
-                          Pasang Pengganti
-                        </button>
-                      )}
                     </div>
                     {detail.aset_kelengkapan && detail.aset_kelengkapan.length > 0 ? (
                       <div className="flex flex-col gap-2">
@@ -1416,24 +1405,6 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
           onSuccess={() => {
             setPenangananSelesaiTarget(null);
             loadList();
-            if (detailId) refreshDetail();
-          }}
-        />
-      )}
-
-      {pasangPenggantiTarget && (
-        <PasangPenggantiModal
-          open
-          asetIndukId={pasangPenggantiTarget.id}
-          asetIndukLabel={`${pasangPenggantiTarget.kode_aset}${
-            pasangPenggantiTarget.merek || pasangPenggantiTarget.tipe
-              ? ` — ${[pasangPenggantiTarget.merek, pasangPenggantiTarget.tipe].filter(Boolean).join(' ')}`
-              : ''
-          }`}
-          onClose={() => setPasangPenggantiTarget(null)}
-          onSaved={() => {
-            setPasangPenggantiTarget(null);
-            toast.success('Pengganti berhasil dipasang.');
             if (detailId) refreshDetail();
           }}
         />

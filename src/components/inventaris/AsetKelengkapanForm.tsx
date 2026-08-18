@@ -24,12 +24,25 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
   editing?: AsetKelengkapan | null; // null/undefined = mode tambah
-  // Dipakai dari modal "Pasang Pengganti" (slot kosong di aset induk) —
-  // kalau diisi, field "Aset Induk" dikunci ke aset ini (gak bisa diubah
-  // manual) & "Lokasi Kantor" otomatis nonaktif ikut logic form.aset_id
-  // yang sudah ada. Cuma berlaku di mode tambah (editing null/undefined).
+  // Dipakai dari section "Kelengkapan" di form edit/create aset — kalau
+  // diisi, field "Aset Induk" dikunci ke aset ini (gak bisa diubah manual)
+  // & "Lokasi Kantor" otomatis nonaktif ikut logic form.aset_id yang sudah
+  // ada. Cuma berlaku di mode tambah (editing null/undefined).
   presetAsetId?: number;
   presetAsetLabel?: string; // label tampilan, mis. "AST-0012 — Dell Latitude"
+  // Paksa tampilan field "Aset Induk" ke mode terkunci (pakai
+  // presetAsetLabel) walau presetAsetId belum keisi angka beneran -- dipakai
+  // pas aset induknya baru dalam proses dibuat (mode create) jadi belum
+  // punya id sama sekali. aset_id yang beneran akan ditimpa pemanggil
+  // setelah aset induknya kesimpen (lihat AsetKelengkapanPicker).
+  lockAsetField?: boolean;
+  // Mode staged: dipakai kalau form ini dibuka DI DALAM form aset induk yang
+  // belum tentu punya id (mis. lagi mode create). Kalau diisi, submit TIDAK
+  // langsung panggil API create/update -- cuma validasi lalu balikin form
+  // values ke pemanggil buat ditahan (staged) dan diproses belakangan
+  // setelah aset induknya kesimpen. onSaved tidak dipanggil sama sekali di
+  // mode ini, cuma onStage lalu onClose.
+  onStage?: (values: AsetKelengkapanFormValues) => void;
 }
 
 const EMPTY_FORM: AsetKelengkapanFormValues = {
@@ -51,7 +64,7 @@ const EMPTY_FORM: AsetKelengkapanFormValues = {
   status: 'tersedia',
 };
 
-export default function AsetKelengkapanForm({ open, onClose, onSaved, editing, presetAsetId, presetAsetLabel }: Props) {
+export default function AsetKelengkapanForm({ open, onClose, onSaved, editing, presetAsetId, presetAsetLabel, lockAsetField, onStage }: Props) {
   const [form, setForm] = useState<AsetKelengkapanFormValues>(EMPTY_FORM);
   const [supplierOptions, setSupplierOptions] = useState<Supplier[]>([]);
   const [asetOptions, setAsetOptions] = useState<Aset[]>([]);
@@ -249,6 +262,14 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing, p
     e.preventDefault();
     if (saving) return;
     if (!validate()) return;
+    // Mode staged: gak ada aset induk beneran di backend buat nempelin
+    // kelengkapan ini (mis. lagi create aset baru), jadi cuma balikin form
+    // values ke pemanggil -- gak ada API yang dipanggil sama sekali di sini.
+    if (onStage) {
+      onStage(form);
+      onClose();
+      return;
+    }
     setSaving(true);
     try {
       if (editing) {
@@ -274,7 +295,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing, p
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-[fadeIn_150ms_ease-out]"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-[fadeIn_150ms_ease-out]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget && !saving) onClose();
       }}
@@ -339,14 +360,14 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing, p
           >
             <div className="sm:col-span-2" ref={asetFieldRef}>
               <Field label="Aset Induk" error={errors.aset_id}>
-                {presetAsetId ? (
+                {presetAsetId || lockAsetField ? (
                   <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0 text-slate-400">
                       <rect x="2" y="3" width="12" height="9" rx="1.4" stroke="currentColor" strokeWidth="1.4" />
                       <path d="M5.5 14.5h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                     </svg>
-                    <span className="font-medium">{presetAsetLabel || `Aset #${presetAsetId}`}</span>
-                    <span className="ml-auto text-xs text-slate-400">Pengganti untuk aset ini</span>
+                    <span className="font-medium">{presetAsetLabel || (presetAsetId ? `Aset #${presetAsetId}` : 'Aset ini')}</span>
+                    <span className="ml-auto text-xs text-slate-400">Nempel ke aset ini</span>
                   </div>
                 ) : (
                 <div className="relative">
@@ -429,8 +450,8 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing, p
                 </div>
                 )}
                 <p className="mt-1 text-xs text-slate-400">
-                  {presetAsetId
-                    ? 'Otomatis terisi dari slot yang dipilih — kelengkapan baru ini akan langsung nempel ke aset tersebut.'
+                  {presetAsetId || lockAsetField
+                    ? 'Otomatis terisi dari aset yang lagi diedit/dibuat — kelengkapan baru ini akan langsung nempel ke aset tersebut.'
                     : 'Opsional — pilih kalau kelengkapan ini menempel ke aset tertentu (mis. mouse ini punya laptop yang mana).'}
                 </p>
               </Field>
