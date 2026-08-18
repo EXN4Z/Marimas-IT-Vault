@@ -11,6 +11,7 @@ import {
   type AsetKelengkapanStatus,
 } from '../../api/asetKelengkapan';
 import StatusBadge from '../shared/StatusBadge';
+import Tooltip from '../shared/Tooltip';
 import Pagination from '../shared/Pagination';
 import AsetKelengkapanForm from './AsetKelengkapanForm';
 import AsetKelengkapanExportModal from './AsetKelengkapanExportModal';
@@ -287,7 +288,7 @@ export default function TabKelengkapanAset() {
 
         {!loading && !error && filteredItems.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-[880px] text-sm">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
                   <th className="px-6 py-3 font-medium">Kode</th>
@@ -306,17 +307,25 @@ export default function TabKelengkapanAset() {
                 {pageItems.map((item) => (
                   <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                     <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{item.kode_kelengkapan}</td>
-                    <td className="px-6 py-3 text-slate-600">
-                      {item.nama || '-'} · {[item.merek, item.tipe].filter(Boolean).join(' ') || '-'}
+                    <td className="px-6 py-3 text-slate-600 max-w-[220px]">
+                      <Tooltip content={`${item.nama || '-'} · ${[item.merek, item.tipe].filter(Boolean).join(' ') || '-'}`}>
+                        <p className="truncate">
+                          {item.nama || '-'} · {[item.merek, item.tipe].filter(Boolean).join(' ') || '-'}
+                        </p>
+                      </Tooltip>
                     </td>
-                    <td className="px-6 py-3 text-slate-600">
+                    <td className="px-6 py-3 text-slate-600 max-w-[180px]">
                       {item.aset ? (
-                        <span className="font-mono text-[13px]">{item.aset.kode_aset}</span>
+                        <Tooltip content={item.aset.kode_aset}>
+                          <span className="font-mono text-[13px] truncate block">{item.aset.kode_aset}</span>
+                        </Tooltip>
                       ) : item.lokasiKantor ? (
-                        <span className="inline-flex items-center gap-1.5 text-slate-600">
-                          <MapPin size={13} className="text-slate-300 shrink-0" />
-                          {item.lokasiKantor.nama}
-                        </span>
+                        <Tooltip content={item.lokasiKantor.nama}>
+                          <span className="inline-flex items-center gap-1.5 text-slate-600 min-w-0">
+                            <MapPin size={13} className="text-slate-300 shrink-0" />
+                            <span className="truncate">{item.lokasiKantor.nama}</span>
+                          </span>
+                        </Tooltip>
                       ) : (
                         <span className="text-slate-300">-</span>
                       )}

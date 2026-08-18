@@ -5,6 +5,7 @@ import Pagination from '../shared/Pagination';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
 import StatusBadge from '../shared/StatusBadge';
+import Tooltip from '../shared/Tooltip';
 import AsetFormModal from './AsetFormModal';
 import AsetSerahTerimaModal from './AsetSerahTerimaModal';
 import AsetPengembalianModal from './AsetPengembalianModal';
@@ -725,7 +726,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
 
         {!loading && !error && filteredAset.length > 0 && (
           <div className="hidden sm:block overflow-x-auto">
-            <table className="w-[1180px] text-sm min-w-[760px]">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-middle text-xs text-slate-400 uppercase tracking-wide">
                   <th className="px-6 py-3 font-medium">Kode Aset</th>
@@ -742,21 +743,25 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                     <tr key={a.id} className="text-center border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                       <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{a.kode_aset}</td>
                       <td className="px-6 py-3 text-slate-600 max-w-[160px]">
-                        <p className="truncate" title={[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}>
-                          {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}
-                        </p>
+                        <Tooltip content={[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}>
+                          <p className="truncate">
+                            {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}
+                          </p>
+                        </Tooltip>
                       </td>
                       <td className="px-6 py-3 text-slate-600 whitespace-nowrap">{a.jumlah ?? 1}</td>
                       <td className="px-6 py-3 whitespace-nowrap">
                         <StatusBadge colorClass={STATUS_STYLE[a.status]}>{STATUS_LABEL[a.status]}</StatusBadge>
                       </td>
                       <td className="px-6 py-3 text-slate-600 max-w-[160px]">
-                        <p className="truncate" title={a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
-                          {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}
-                          {a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && (
-                            <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
-                          )}
-                        </p>
+                        <Tooltip content={a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
+                          <p className="truncate">
+                            {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}
+                            {a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && (
+                              <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
+                            )}
+                          </p>
+                        </Tooltip>
                       </td>
                       <td className="px-6 py-3">
                         <div className="flex items-center justify-end gap-1 flex-nowrap">
