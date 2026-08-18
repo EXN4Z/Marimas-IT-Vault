@@ -187,8 +187,7 @@ export default function TabKelengkapanAset() {
     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <p className="text-sm text-slate-500">
-          Kelola kelengkapan aset (charger, tas, mouse, dll) sebagai item tersendiri — serah-terima
-          dan riwayat pemakaiannya dicatat terpisah dari aset utama.
+          Kelola kelengkapan aset sebagai entitas berdiri sendiri, yang bisa dipasang ke aset induk atau dilepas.
         </p>
         <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
           <button
