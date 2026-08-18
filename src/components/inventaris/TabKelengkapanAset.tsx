@@ -185,9 +185,10 @@ export default function TabKelengkapanAset() {
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-        <p className="text-sm text-slate-500">
-          Kelola kelengkapan aset sebagai entitas berdiri sendiri, yang bisa dipasang ke aset induk atau dilepas.
+      <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
+        <p className="text-sm text-slate-500 flex-1 min-w-[240px]">
+          Kelola kelengkapan aset (charger, tas, mouse, dll) sebagai item tersendiri — serah-terima
+          dan riwayat pemakaiannya dicatat terpisah dari aset utama.
         </p>
         <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
           <button
@@ -286,7 +287,7 @@ export default function TabKelengkapanAset() {
 
         {!loading && !error && filteredItems.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[720px]">
+            <table className="w-[880px] text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
                   <th className="px-6 py-3 font-medium">Kode</th>
