@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Plus, Pencil, Trash2, Upload, Download, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload, Download, Loader2, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   getAsetKelengkapan,
@@ -182,7 +182,7 @@ export default function TabKelengkapanAset() {
                 <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
                   <th className="px-6 py-3 font-medium">Kode</th>
                   <th className="px-6 py-3 font-medium">Jenis / Merek</th>
-                  <th className="px-6 py-3 font-medium">Aset Induk</th>
+                  <th className="px-6 py-3 font-medium">Aset Induk / Lokasi</th>
                   <th className="px-6 py-3 font-medium">Serial Number</th>
                   <th className="px-6 py-3 font-medium">Status</th>
                   <th className="px-6 py-3 font-medium text-right">Aksi</th>
@@ -198,6 +198,11 @@ export default function TabKelengkapanAset() {
                     <td className="px-6 py-3 text-slate-600">
                       {item.aset ? (
                         <span className="font-mono text-[13px]">{item.aset.kode_aset}</span>
+                      ) : item.lokasiKantor ? (
+                        <span className="inline-flex items-center gap-1.5 text-slate-600">
+                          <MapPin size={13} className="text-slate-300 shrink-0" />
+                          {item.lokasiKantor.nama}
+                        </span>
                       ) : (
                         <span className="text-slate-300">-</span>
                       )}

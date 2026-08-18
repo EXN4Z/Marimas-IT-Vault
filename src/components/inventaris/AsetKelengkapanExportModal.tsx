@@ -30,6 +30,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { key: 'warna', label: 'Warna', defaultChecked: false, get: (k) => k.warna || '-' },
   { key: 'serial_number', label: 'Serial Number', defaultChecked: true, get: (k) => k.serial_number || '-' },
   { key: 'aset_induk', label: 'Aset Induk', defaultChecked: true, get: (k) => k.aset?.kode_aset || '-' },
+  { key: 'lokasi_kantor', label: 'Lokasi (Tanpa Induk)', defaultChecked: false, get: (k) => k.lokasiKantor?.nama || '-' },
   { key: 'status', label: 'Status', defaultChecked: true, get: (k) => STATUS_LABEL[k.status] },
   { key: 'pemakai_saat_ini', label: 'Pemakai Saat Ini', defaultChecked: true, get: (k) => namaPemakai(k.pemakai_saat_ini) },
   { key: 'tanggal_garansi', label: 'Tanggal Garansi', defaultChecked: false, get: (k) => formatTanggalId(k.tanggal_garansi) },

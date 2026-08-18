@@ -3,6 +3,7 @@ import type { AsetKelengkapan, AsetKelengkapanFormValues, AsetKelengkapanStatus 
 import { createAsetKelengkapan, updateAsetKelengkapan } from '../../api/asetKelengkapan';
 import { getSupplier, type Supplier } from '../../api/supplier';
 import { getAset, type Aset } from '../../api/aset';
+import { getLokasiKantor, type LokasiKantor } from '../../api/lokasiKantor';
 
 const STATUS_OPTIONS: { value: AsetKelengkapanStatus; label: string; dot: string; ring: string }[] = [
   { value: 'tersedia', label: 'Tersedia', dot: 'bg-emerald-500', ring: 'ring-emerald-100 border-emerald-400 bg-emerald-50/60' },
@@ -28,6 +29,7 @@ interface Props {
 
 const EMPTY_FORM: AsetKelengkapanFormValues = {
   aset_id: null,
+  lokasi_kantor_id: null,
   nama: '',
   merek: '',
   tipe: '',
@@ -48,6 +50,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
   const [form, setForm] = useState<AsetKelengkapanFormValues>(EMPTY_FORM);
   const [supplierOptions, setSupplierOptions] = useState<Supplier[]>([]);
   const [asetOptions, setAsetOptions] = useState<Aset[]>([]);
+  const [lokasiOptions, setLokasiOptions] = useState<LokasiKantor[]>([]);
   const [asetSearch, setAsetSearch] = useState('');
   const [asetDropdownOpen, setAsetDropdownOpen] = useState(false);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
@@ -65,10 +68,11 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
   useEffect(() => {
     if (!open) return;
     setLoadingRefs(true);
-    Promise.allSettled([getSupplier(), getAset()]).then(([sup, aset]) => {
+    Promise.allSettled([getSupplier(), getAset(), getLokasiKantor()]).then(([sup, aset, lokasi]) => {
       if (sup.status === 'fulfilled') setSupplierOptions(sup.value);
       if (aset.status === 'fulfilled') setAsetOptions(aset.value);
-      if (sup.status === 'rejected' || aset.status === 'rejected') {
+      if (lokasi.status === 'fulfilled') setLokasiOptions(lokasi.value);
+      if (sup.status === 'rejected' || aset.status === 'rejected' || lokasi.status === 'rejected') {
         setErrors((prev) => ({ ...prev, _general: 'Sebagian data referensi gagal dimuat. Coba buka ulang form ini.' }));
       }
       setLoadingRefs(false);
@@ -80,6 +84,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
     if (editing) {
       setForm({
         aset_id: editing.aset_id ?? null,
+        lokasi_kantor_id: editing.lokasi_kantor_id ?? null,
         nama: editing.nama || '',
         merek: editing.merek || '',
         tipe: editing.tipe || '',
@@ -161,6 +166,19 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
   function setField<K extends keyof AsetKelengkapanFormValues>(key: K, value: AsetKelengkapanFormValues[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: '' }));
+  }
+
+  // Aset induk & lokasi kantor saling meniadakan — kelengkapan yang nempel
+  // ke aset induk ikut lokasi aset itu, jadi begitu pilih aset induk,
+  // lokasi manual yang sempat diisi otomatis dikosongkan (dan sebaliknya).
+  function pilihAsetInduk(id: number | null) {
+    setForm((prev) => ({ ...prev, aset_id: id, lokasi_kantor_id: id ? null : prev.lokasi_kantor_id }));
+    if (errors.aset_id) setErrors((prev) => ({ ...prev, aset_id: '' }));
+  }
+
+  function pilihLokasiKantor(id: number | null) {
+    setForm((prev) => ({ ...prev, lokasi_kantor_id: id, aset_id: id ? null : prev.aset_id }));
+    if (errors.lokasi_kantor_id) setErrors((prev) => ({ ...prev, lokasi_kantor_id: '' }));
   }
 
   function applyFoto(file: File | null) {
@@ -343,7 +361,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
                       </span>
                       <button
                         type="button"
-                        onClick={() => setField('aset_id', null)}
+                        onClick={() => pilihAsetInduk(null)}
                         className="text-slate-400 hover:text-slate-600 transition-colors"
                         aria-label="Hapus pilihan aset induk"
                       >
@@ -358,7 +376,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
                       <button
                         type="button"
                         onClick={() => {
-                          setField('aset_id', null);
+                          pilihAsetInduk(null);
                           setAsetSearch('');
                           setAsetDropdownOpen(false);
                         }}
@@ -377,7 +395,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
                           key={a.id}
                           type="button"
                           onClick={() => {
-                            setField('aset_id', a.id);
+                            pilihAsetInduk(a.id);
                             setAsetSearch('');
                             setAsetDropdownOpen(false);
                           }}
@@ -396,6 +414,26 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
                 </div>
                 <p className="mt-1 text-xs text-slate-400">
                   Opsional — pilih kalau kelengkapan ini menempel ke aset tertentu (mis. mouse ini punya laptop yang mana).
+                </p>
+              </Field>
+            </div>
+
+            <div className="sm:col-span-2">
+              <Field label="Lokasi Kantor" error={errors.lokasi_kantor_id}>
+                <SelectField
+                  value={form.lokasi_kantor_id ?? ''}
+                  onChange={(v) => pilihLokasiKantor(v ? Number(v) : null)}
+                  disabled={!!form.aset_id}
+                >
+                  <option value="">Tidak diisi</option>
+                  {lokasiOptions.map((l) => (
+                    <option key={l.id} value={l.id}>{l.nama}</option>
+                  ))}
+                </SelectField>
+                <p className="mt-1 text-xs text-slate-400">
+                  {form.aset_id
+                    ? 'Nonaktif — kelengkapan ini ikut lokasi aset induknya.'
+                    : 'Opsional — isi kalau kelengkapan ini berdiri sendiri (tanpa aset induk) supaya tetap ketahuan lokasi fisiknya.'}
                 </p>
               </Field>
             </div>
@@ -695,17 +733,20 @@ function Field({
 function SelectField({
   value,
   onChange,
+  disabled,
   children,
 }: {
   value: string | number;
   onChange: (value: string) => void;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div className="relative">
       <select
-        className={`${inputClass} appearance-none pr-9 cursor-pointer`}
+        className={`${inputClass} appearance-none pr-9 cursor-pointer disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400`}
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
       >
         {children}

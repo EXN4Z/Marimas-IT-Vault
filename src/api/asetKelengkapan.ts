@@ -1,6 +1,7 @@
 import api from './axios';
 import type { Supplier } from './supplier';
 import type { Aset, KaryawanUser } from './aset';
+import type { LokasiKantor } from './lokasiKantor';
 
 export type AsetKelengkapanStatus = 'tersedia' | 'dipakai' | 'rusak' | 'diperbaiki';
 
@@ -9,6 +10,8 @@ export interface AsetKelengkapan {
   kode_kelengkapan: string;
   aset_id: number | null;
   aset?: Aset | null; // aset induk tempat kelengkapan ini menempel
+  lokasi_kantor_id: number | null;
+  lokasiKantor?: LokasiKantor | null; // lokasi kelengkapan kalau berdiri sendiri (tanpa aset induk)
   nama: string;
   merek: string | null;
   tipe: string | null;
@@ -47,6 +50,7 @@ export interface AsetKelengkapanPemakai {
 
 export interface AsetKelengkapanFormValues {
   aset_id?: number | null;
+  lokasi_kantor_id?: number | null;
   nama?: string;
   merek?: string;
   tipe?: string;
@@ -66,6 +70,7 @@ export interface AsetKelengkapanFormValues {
 function buildAsetKelengkapanFormData(values: AsetKelengkapanFormValues): FormData {
   const fd = new FormData();
   if (values.aset_id != null) fd.append('aset_id', String(values.aset_id));
+  if (values.lokasi_kantor_id != null) fd.append('lokasi_kantor_id', String(values.lokasi_kantor_id));
   if (values.nama != null) fd.append('nama', String(values.nama));
   if (values.merek) fd.append('merek', values.merek);
   if (values.tipe) fd.append('tipe', values.tipe);
@@ -152,10 +157,13 @@ export async function deletePemakaiKelengkapan(pemakaiId: number): Promise<{ mes
 }
 
 // POST /aset-kelengkapan/import — import massal dari file Excel (.xlsx/.xls),
-// dibatasi backend ke role admin. Format kolom: Kode Aset Induk | Nama |
-// Merek | Tipe | Warna | Serial Number | Perusahaan | Supplier | Tanggal
-// Pembelian | No Surat Jalan | No Good Receive | Tanggal Garansi | Status |
-// Keterangan. "Kode Aset Induk" wajib cocok dengan aset yang sudah ada.
+// dibatasi backend ke role admin. Format kolom: Kode Aset Induk | Lokasi
+// Kantor | Nama | Merek | Tipe | Warna | Serial Number | Perusahaan |
+// Supplier | Tanggal Pembelian | No Surat Jalan | No Good Receive |
+// Tanggal Garansi | Status | Keterangan. Isi salah satu per baris: "Kode
+// Aset Induk" (kalau kelengkapan nempel ke aset yang sudah ada) ATAU
+// "Lokasi Kantor" (kalau berdiri sendiri, harus cocok nama lokasi/cabang
+// yang sudah ada) — kalau dua-duanya diisi, "Kode Aset Induk" menang.
 export async function importAsetKelengkapan(file: File): Promise<{ success: boolean; message: string }> {
   const formData = new FormData();
   formData.append('file', file);
