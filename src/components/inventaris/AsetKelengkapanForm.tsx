@@ -9,7 +9,6 @@ const STATUS_OPTIONS: { value: AsetKelengkapanStatus; label: string; dot: string
   { value: 'tersedia', label: 'Tersedia', dot: 'bg-emerald-500', ring: 'ring-emerald-100 border-emerald-400 bg-emerald-50/60' },
   { value: 'dipakai', label: 'Dipakai', dot: 'bg-blue-500', ring: 'ring-blue-100 border-blue-400 bg-blue-50/60' },
   { value: 'rusak', label: 'Rusak', dot: 'bg-red-500', ring: 'ring-red-100 border-red-400 bg-red-50/60' },
-  { value: 'diperbaiki', label: 'Diperbaiki', dot: 'bg-amber-500', ring: 'ring-amber-100 border-amber-400 bg-amber-50/60' },
 ];
 
 const MAX_FOTO_MB = 4;

@@ -35,14 +35,12 @@ const KELENGKAPAN_STATUS_LABEL: Record<AsetKelengkapanStatus, string> = {
   tersedia: 'Tersedia',
   dipakai: 'Dipakai',
   rusak: 'Rusak',
-  diperbaiki: 'Sedang Diperbaiki',
 };
 
 const KELENGKAPAN_STATUS_STYLE: Record<AsetKelengkapanStatus, string> = {
   tersedia: 'bg-emerald-50 text-emerald-700',
   dipakai: 'bg-amber-50 text-amber-700',
   rusak: 'bg-red-100 text-red-800',
-  diperbaiki: 'bg-orange-50 text-orange-700',
 };
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';

@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Package, ClipboardList, Wrench, Images, History, AlertTriangle } from 'lucide-react';
+import { Package, ClipboardList, Wrench, Images, History } from 'lucide-react';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import TabAset from '../components/inventaris/TabAset';
 import TabPenangananAset from '../components/inventaris/TabPenangananAset';
 import TabFotoAset from '../components/inventaris/TabFotoAset';
 import TabKelengkapanAset from '../components/inventaris/TabKelengkapanAset';
-import TabKelengkapanRusak from '../components/inventaris/TabKelengkapanRusak';
 import TabRiwayatAset from '../components/inventaris/TabRiwayatAset';
 import { useAuth } from '../context/AuthContext';
 import { getAset, type AsetPenanganan } from '../api/aset';
@@ -16,9 +15,9 @@ import api from '../api/axios';
 // Aset, Riwayat Aset -- pola sama kayak child-class di MasterData.tsx, dan
 // sekarang juga punya dropdown sendiri di sidebar (lihat AppLayout.tsx) yang
 // nyambung lewat query "?tab=" persis kayak Master Data.
-type TabKey = 'aset' | 'kelengkapan_aset' | 'kelengkapan_rusak' | 'penanganan_aset' | 'foto_aset' | 'riwayat_aset';
+type TabKey = 'aset' | 'kelengkapan_aset' | 'penanganan_aset' | 'foto_aset' | 'riwayat_aset';
 
-const TAB_KEYS: TabKey[] = ['aset', 'kelengkapan_aset', 'kelengkapan_rusak', 'penanganan_aset', 'foto_aset', 'riwayat_aset'];
+const TAB_KEYS: TabKey[] = ['aset', 'kelengkapan_aset', 'penanganan_aset', 'foto_aset', 'riwayat_aset'];
 
 function isTabKey(value: string | null): value is TabKey {
   return !!value && (TAB_KEYS as string[]).includes(value);
@@ -36,6 +35,11 @@ export default function Inventaris() {
     // ngirim /inventaris?tab=penanganan, bukan "penanganan_aset") -- tetep
     // didukung biar link lama/backend gak perlu ikut diubah.
     if (fromUrl === 'penanganan' && isAdmin) return 'penanganan_aset';
+    // alias lama: "Kelengkapan Rusak" dulu tab halaman terpisah, sekarang
+    // digabung jadi filter status di dalam "kelengkapan_aset" -- bookmark
+    // lama tetep diarahkan ke sana (filter "Rusak"-nya tinggal dipilih
+    // manual di dalam, gak perlu ikut di-encode ke URL top-level).
+    if (fromUrl === 'kelengkapan_rusak') return 'kelengkapan_aset';
     return 'aset';
   });
 
@@ -57,6 +61,10 @@ export default function Inventaris() {
     }
     if (fromUrl === 'penanganan' && isAdmin && activeTab !== 'penanganan_aset') {
       setActiveTabState('penanganan_aset');
+      return;
+    }
+    if (fromUrl === 'kelengkapan_rusak' && activeTab !== 'kelengkapan_aset') {
+      setActiveTabState('kelengkapan_aset');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -115,10 +123,10 @@ export default function Inventaris() {
     // dipakai buat checklist di form peminjaman aset -- makanya ditaruh di
     // Inventaris, bukan Master Data (yang isinya data referensi umum).
     { key: 'kelengkapan_aset', label: 'Kelengkapan Aset', icon: ClipboardList },
-    // Arsip kelengkapan yang udah dilaporkan rusak (lihat alur "Kelengkapan
-    // Rusak -> Lepas Otomatis -> Ganti Pengganti") -- gak dihapus, cuma
-    // dipindah ke sini biar TabKelengkapanAset gak numpuk item rusak lama.
-    { key: 'kelengkapan_rusak', label: 'Kelengkapan Rusak', icon: AlertTriangle },
+    // Arsip "Kelengkapan Rusak" (alur "Kelengkapan Rusak -> Lepas Otomatis
+    // -> Ganti Pengganti") gak lagi jadi tab halaman terpisah -- sekarang
+    // digabung jadi filter status "Rusak" di dalam TabKelengkapanAset.tsx
+    // (ScrollableTabBar), sama pola kayak filter status di tab Aset.
     { key: 'penanganan_aset', label: 'Penanganan Aset', icon: Wrench, adminOnly: true },
     { key: 'foto_aset', label: 'Foto Aset', icon: Images, adminOnly: true },
     { key: 'riwayat_aset', label: 'Riwayat Aset', icon: History },
@@ -152,8 +160,6 @@ export default function Inventaris() {
         <TabAset onCount={handleCountAset} />
       ) : activeTab === 'kelengkapan_aset' ? (
         <TabKelengkapanAset />
-      ) : activeTab === 'kelengkapan_rusak' ? (
-        <TabKelengkapanRusak />
       ) : activeTab === 'penanganan_aset' ? (
         <TabPenangananAset onCount={handleCountPenanganan} />
       ) : activeTab === 'foto_aset' ? (

@@ -3,7 +3,7 @@ import type { Supplier } from './supplier';
 import type { Aset, KaryawanUser } from './aset';
 import type { LokasiKantor } from './lokasiKantor';
 
-export type AsetKelengkapanStatus = 'tersedia' | 'dipakai' | 'rusak' | 'diperbaiki';
+export type AsetKelengkapanStatus = 'tersedia' | 'dipakai' | 'rusak';
 
 export interface AsetKelengkapan {
   id: number;
@@ -186,114 +186,31 @@ export interface PaginatedAsetKelengkapan {
   per_page: number;
 }
 
-//ini data dummy// — dipakai bareng ketiga fungsi dummy di bawah, biar list
-// Rusak & simulasi lapor-rusak/pasang-pengganti konsisten satu sama lain
-// selama backend orang 2/3 belum deploy endpoint aslinya.
-const DUMMY_KELENGKAPAN_RUSAK: AsetKelengkapan[] = [
-  {
-    id: 9001,
-    kode_kelengkapan: 'KLP-0091',
-    aset_id: null,
-    aset: null,
-    lokasi_kantor_id: 1,
-    lokasiKantor: { id: 1, nama: 'Kantor Pusat' } as LokasiKantor,
-    nama: 'Tas Laptop',
-    merek: 'Targus',
-    tipe: 'Backpack',
-    warna: 'Hitam',
-    serial_number: null,
-    tanggal_garansi: null,
-    perusahaan: null,
-    keterangan: 'Retsleting jebol, gak bisa dipake lagi.',
-    foto: null,
-    supplier_id: null,
-    tanggal_pembelian: null,
-    no_surat_jalan: null,
-    no_good_receive: null,
-    status: 'rusak',
-    tanggal_rusak: '2026-08-15T09:12:00Z',
-  },
-  {
-    id: 9002,
-    kode_kelengkapan: 'KLP-0104',
-    aset_id: null,
-    aset: null,
-    lokasi_kantor_id: null,
-    lokasiKantor: null,
-    nama: 'Charger Laptop',
-    merek: 'Dell',
-    tipe: '65W',
-    warna: null,
-    serial_number: 'SN-CHG-4471',
-    tanggal_garansi: null,
-    perusahaan: null,
-    keterangan: 'Kabel putus di dalam, gak ngecas.',
-    foto: null,
-    supplier_id: null,
-    tanggal_pembelian: null,
-    no_surat_jalan: null,
-    no_good_receive: null,
-    status: 'rusak',
-    tanggal_rusak: '2026-08-10T14:30:00Z',
-  },
-];
-
-function dummyDelay<T>(value: T, ms = 350): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
-}
-
 // POST /aset-kelengkapan/{id}/lapor-rusak — lepas dari induk (kalau ada),
-// tutup paksa peminjaman aktif, status jadi 'rusak'. TODO: ganti ke fetch
-// beneran begitu endpoint backend siap.
+// tutup paksa peminjaman aktif, status jadi 'rusak'. Final, gak bisa
+// dibatalin (gak ada opsi "diperbaiki" buat kelengkapan).
 export async function laporRusak(id: number): Promise<AsetKelengkapan> {
-  //ini data dummy//
-  const found = DUMMY_KELENGKAPAN_RUSAK.find((k) => k.id === id);
-  return dummyDelay(
-    found || {
-      ...DUMMY_KELENGKAPAN_RUSAK[0],
-      id,
-      aset_id: null,
-      aset: null,
-      status: 'rusak',
-      tanggal_rusak: new Date().toISOString(),
-    }
-  );
+  const res = await api.post<AsetKelengkapan>(`/aset-kelengkapan/${id}/lapor-rusak`);
+  return res.data;
 }
 
 // POST /aset-kelengkapan/{id}/pasang-pengganti — body { aset_id } (induk
-// tujuan), status pengganti nyesuain kondisi induk sekali pas assign. TODO:
-// ganti ke fetch beneran begitu endpoint backend siap.
+// tujuan), status pengganti nyesuain kondisi induk sekali pas assign
+// (snapshot, bukan sinkron terus-menerus).
 export async function pasangPengganti(id: number, asetId: number): Promise<AsetKelengkapan> {
-  //ini data dummy//
-  return dummyDelay({
-    ...DUMMY_KELENGKAPAN_RUSAK[0],
-    id,
-    aset_id: asetId,
-    status: 'tersedia', // asumsi induk lagi nganggur — sesuaiin manual pas testing kalau perlu
-    tanggal_rusak: null,
-  });
+  const res = await api.post<AsetKelengkapan>(`/aset-kelengkapan/${id}/pasang-pengganti`, { aset_id: asetId });
+  return res.data;
 }
 
 // GET /aset-kelengkapan/rusak?page=&per_page=&search= — list arsip
 // kelengkapan berstatus 'rusak', paginated, order by tanggal_rusak desc.
-// TODO: ganti ke fetch beneran begitu endpoint backend siap.
 export async function getRusak(params?: { page?: number; per_page?: number; search?: string }): Promise<PaginatedAsetKelengkapan> {
-  //ini data dummy//
-  const page = params?.page ?? 1;
-  const perPage = params?.per_page ?? 10;
-  const search = (params?.search ?? '').trim().toLowerCase();
-
-  const filtered = search
-    ? DUMMY_KELENGKAPAN_RUSAK.filter((k) =>
-        [k.kode_kelengkapan, k.nama, k.merek].filter(Boolean).join(' ').toLowerCase().includes(search)
-      )
-    : DUMMY_KELENGKAPAN_RUSAK;
-
-  return dummyDelay({
-    data: filtered.slice((page - 1) * perPage, page * perPage),
-    current_page: page,
-    last_page: Math.max(1, Math.ceil(filtered.length / perPage)),
-    total: filtered.length,
-    per_page: perPage,
+  const res = await api.get<PaginatedAsetKelengkapan>('/aset-kelengkapan/rusak', {
+    params: {
+      page: params?.page,
+      per_page: params?.per_page,
+      search: params?.search || undefined,
+    },
   });
+  return res.data;
 }
