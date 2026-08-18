@@ -1,395 +1,240 @@
-import { useEffect, useRef, useState } from 'react';
-import { Plus, Pencil, Trash2, Upload, Download, Loader2, MapPin, AlertTriangle } from 'lucide-react';
-import toast from 'react-hot-toast';
-import {
-  getAsetKelengkapan,
-  deleteAsetKelengkapan,
-  importAsetKelengkapan,
-  laporRusak,
-  type AsetKelengkapan,
-} from '../../api/asetKelengkapan';
-import StatusBadge from '../shared/StatusBadge';
-import Pagination from '../shared/Pagination';
+import { useEffect, useState } from 'react';
+import { PackageSearch, PlusCircle, Search, CheckCircle2 } from 'lucide-react';
+import { getAsetKelengkapan, pasangPengganti, type AsetKelengkapan } from '../../api/asetKelengkapan';
 import AsetKelengkapanForm from './AsetKelengkapanForm';
-import AsetKelengkapanExportModal from './AsetKelengkapanExportModal';
 
-const STATUS_LABEL: Record<string, string> = {
-  tersedia: 'Tersedia',
-  dipakai: 'Dipakai',
-  rusak: 'Rusak',
-  diperbaiki: 'Sedang Diperbaiki',
-};
+// Modal "Pasang Pengganti" — dibuka dari slot kosong di detail aset induk
+// (kelengkapan lama sudah dilepas otomatis lewat Lapor Rusak). Dua opsi:
+// Tab 1 pilih dari stok kelengkapan yang tersedia & belum nempel ke aset
+// manapun, Tab 2 tambah kelengkapan baru langsung nempel ke aset ini.
 
-const STATUS_STYLE: Record<string, string> = {
-  tersedia: 'bg-emerald-50 text-emerald-700',
-  dipakai: 'bg-amber-50 text-amber-700',
-  rusak: 'bg-red-100 text-red-800',
-  diperbaiki: 'bg-orange-50 text-orange-700',
-};
+type ModalTab = 'stok' | 'baru';
 
-export default function TabKelengkapanAset() {
-  const [items, setItems] = useState<AsetKelengkapan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => void; // refresh detail aset induk setelah berhasil
+  asetIndukId: number | null;
+  asetIndukLabel?: string; // mis. "AST-0012 — Dell Latitude 5420"
+}
 
-  // Pagination — client-side krn API kelengkapan gak dipaging di backend,
-  // style sama kayak pager tabel Aset (10 per halaman).
-  const [page, setPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
+export default function PasangPenggantiModal({ open, onClose, onSaved, asetIndukId, asetIndukLabel }: Props) {
+  const [tab, setTab] = useState<ModalTab>('stok');
 
-  const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<AsetKelengkapan | null>(null);
+  // ---- Tab 1: pilih dari stok ----
+  const [stokItems, setStokItems] = useState<AsetKelengkapan[]>([]);
+  const [stokLoading, setStokLoading] = useState(false);
+  const [stokError, setStokError] = useState('');
+  const [stokSearch, setStokSearch] = useState('');
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [assigning, setAssigning] = useState(false);
+  const [assignError, setAssignError] = useState('');
 
-  const [deleteTarget, setDeleteTarget] = useState<AsetKelengkapan | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState('');
-  const [deleteForceAvailable, setDeleteForceAvailable] = useState(false);
-
-  // Lapor Rusak — final, gak bisa dibatalin. Beda dialog dari hapus krn
-  // konsekuensinya beda (arsip ke tab Rusak, bukan hilang permanen).
-  const [rusakTarget, setRusakTarget] = useState<AsetKelengkapan | null>(null);
-  const [rusakSubmitting, setRusakSubmitting] = useState(false);
-  const [rusakError, setRusakError] = useState('');
-
-  // Import Excel (kelengkapan berdiri sendiri, nempel ke aset induk yang
-  // sudah ada) & export Excel/PDF — pola sama kayak TabAset & MasterData.
-  const [importLoading, setImportLoading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [exportOpen, setExportOpen] = useState(false);
-
-  const loadData = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const data = await getAsetKelengkapan();
-      setItems(data);
-    } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status;
-      setError(status === 403 ? 'Anda tidak punya akses ke halaman ini.' : 'Gagal memuat data kelengkapan aset.');
-    } finally {
-      setLoading(false);
-    }
+  const loadStok = () => {
+    setStokLoading(true);
+    setStokError('');
+    getAsetKelengkapan()
+      .then((data) => {
+        // Stok yang boleh dipasang: status tersedia DAN belum nempel ke
+        // aset manapun (aset_id null) -- kalau masih nempel ke aset lain
+        // berarti bukan stok bebas, jangan ditawarkan di sini.
+        setStokItems(data.filter((k) => k.status === 'tersedia' && k.aset_id === null));
+      })
+      .catch((err) => {
+        console.error(err);
+        setStokError('Gagal memuat daftar stok kelengkapan.');
+      })
+      .finally(() => setStokLoading(false));
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!open) return;
+    setTab('stok');
+    setStokSearch('');
+    setSelectedId(null);
+    setAssignError('');
+    loadStok();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
-  const lastPage = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
-  const pageClamped = Math.min(page, lastPage);
-  const pageItems = items.slice((pageClamped - 1) * ITEMS_PER_PAGE, pageClamped * ITEMS_PER_PAGE);
+  if (!open) return null;
 
-  // Balik ke halaman 1 tiap kali data-nya reload (misal abis tambah/hapus/import)
-  useEffect(() => {
-    setPage(1);
-  }, [items.length]);
+  // Tab "Tambah Baru" reuse AsetKelengkapanForm APA ADANYA (form itu sudah
+  // punya modal card/header/footer sendiri) -- jadi begitu tab ini aktif,
+  // modal Pilih Stok di bawah diganti total sama form ini, BUKAN ditumpuk
+  // jadi dua overlay bertingkat. Tombol X di form = balik nutup modal
+  // Pasang Pengganti seutuhnya (konsisten sama tombol X di tab Pilih Stok).
+  if (tab === 'baru') {
+    return (
+      <AsetKelengkapanForm
+        open
+        onClose={onClose}
+        onSaved={() => {
+          onSaved();
+          onClose();
+        }}
+        presetAsetId={asetIndukId ?? undefined}
+        presetAsetLabel={asetIndukLabel}
+      />
+    );
+  }
 
-  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const filteredStok = stokItems.filter((k) => {
+    const q = stokSearch.trim().toLowerCase();
+    if (!q) return true;
+    return [k.kode_kelengkapan, k.nama, k.merek].filter(Boolean).join(' ').toLowerCase().includes(q);
+  });
 
-    setImportLoading(true);
+  const handleAssign = async () => {
+    if (!selectedId || !asetIndukId) return;
+    setAssigning(true);
+    setAssignError('');
     try {
-      const res = await importAsetKelengkapan(file);
-      toast.success(res.message || 'Berhasil import data kelengkapan aset.');
-      loadData();
+      await pasangPengganti(selectedId, asetIndukId);
+      onSaved();
+      onClose();
     } catch (err: any) {
-      const apiErrors: string[] | undefined = err.response?.data?.errors;
-      const msg =
-        (apiErrors && apiErrors[0]) ||
-        err.response?.data?.message ||
-        'Gagal import data kelengkapan aset.';
-      toast.error(msg);
+      setAssignError(err.response?.data?.message || 'Gagal memasang pengganti.');
     } finally {
-      setImportLoading(false);
-      if (fileInputRef.current) fileInputRef.current.value = ''; // reset biar bisa upload file yang sama lagi
-    }
-  };
-
-  const openAdd = () => {
-    setEditing(null);
-    setFormOpen(true);
-  };
-
-  const openEdit = (item: AsetKelengkapan) => {
-    setEditing(item);
-    setFormOpen(true);
-  };
-
-  const confirmDelete = async (force = false) => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    setDeleteError('');
-    try {
-      await deleteAsetKelengkapan(deleteTarget.id, force);
-      setItems((prev) => prev.filter((i) => i.id !== deleteTarget.id));
-      setDeleteTarget(null);
-      setDeleteForceAvailable(false);
-    } catch (err: any) {
-      setDeleteError(err.response?.data?.message || 'Gagal menghapus kelengkapan.');
-      setDeleteForceAvailable(!!err.response?.data?.force_available);
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const confirmRusak = async () => {
-    if (!rusakTarget) return;
-    setRusakSubmitting(true);
-    setRusakError('');
-    try {
-      await laporRusak(rusakTarget.id);
-      setRusakTarget(null);
-      loadData(); // refresh — item pindah ke tab Rusak, gak muncul lagi di list ini
-      toast.success(`${rusakTarget.kode_kelengkapan} dilaporkan rusak.`);
-    } catch (err: any) {
-      setRusakError(err.response?.data?.message || 'Gagal melaporkan kerusakan.');
-    } finally {
-      setRusakSubmitting(false);
+      setAssigning(false);
     }
   };
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-        <p className="text-sm text-slate-500">
-          Kelola kelengkapan aset (charger, tas, mouse, dll) sebagai item tersendiri — serah-terima
-          dan riwayat pemakaiannya dicatat terpisah dari aset utama.
-        </p>
-        <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget && !assigning) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pasang-pengganti-title"
+    >
+      <div className="bg-white rounded-2xl shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5 w-full max-w-lg max-h-[85vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Slot kosong</p>
+            <h3 id="pasang-pengganti-title" className="text-lg font-semibold text-slate-900">
+              Pasang Pengganti
+            </h3>
+            {asetIndukLabel && <p className="text-xs text-slate-400 mt-0.5">Untuk aset: {asetIndukLabel}</p>}
+          </div>
           <button
-            onClick={() => setExportOpen(true)}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 transition"
+            type="button"
+            onClick={onClose}
+            disabled={assigning}
+            aria-label="Tutup"
+            className="grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-40 transition-colors"
           >
-            <Download size={16} />
-            Export
-          </button>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={handleFileSelected}
-            className="hidden"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={importLoading}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            {importLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-            {importLoading ? 'Mengimport...' : 'Import Excel'}
-          </button>
-
-          <button
-            onClick={openAdd}
-            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition"
-          >
-            <Plus size={16} />
-            Tambah Kelengkapan
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M1 1L15 15M15 1L1 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
           </button>
         </div>
-      </div>
 
-      <div className="border border-slate-200 rounded-lg overflow-hidden">
-        {loading && <p className="text-sm text-slate-400 text-center py-8">Memuat data...</p>}
-        {!loading && error && <p className="text-sm text-red-500 text-center py-8">{error}</p>}
-        {!loading && !error && items.length === 0 && (
-          <p className="text-sm text-slate-400 text-center py-8">Belum ada kelengkapan aset.</p>
-        )}
+        {/* Tab switcher */}
+        <div className="flex gap-1 px-6 pt-3 shrink-0">
+          <button
+            type="button"
+            onClick={() => setTab('stok')}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-t-lg border-b-2 border-slate-900 text-slate-900 transition-colors"
+          >
+            <PackageSearch size={15} />
+            Pilih dari Stok
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('baru')}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            <PlusCircle size={15} />
+            Tambah Baru
+          </button>
+        </div>
 
-        {!loading && !error && items.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[720px]">
-              <thead>
-                <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
-                  <th className="px-6 py-3 font-medium">Kode</th>
-                  <th className="px-6 py-3 font-medium">Jenis / Merek</th>
-                  <th className="px-6 py-3 font-medium">Aset Induk / Lokasi</th>
-                  <th className="px-6 py-3 font-medium">Serial Number</th>
-                  <th className="px-6 py-3 font-medium">Status</th>
-                  <th className="px-6 py-3 font-medium text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pageItems.map((item) => (
-                  <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                    <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{item.kode_kelengkapan}</td>
-                    <td className="px-6 py-3 text-slate-600">
-                      {item.nama || '-'} · {[item.merek, item.tipe].filter(Boolean).join(' ') || '-'}
-                    </td>
-                    <td className="px-6 py-3 text-slate-600">
-                      {item.aset ? (
-                        <span className="font-mono text-[13px]">{item.aset.kode_aset}</span>
-                      ) : item.lokasiKantor ? (
-                        <span className="inline-flex items-center gap-1.5 text-slate-600">
-                          <MapPin size={13} className="text-slate-300 shrink-0" />
-                          {item.lokasiKantor.nama}
-                        </span>
-                      ) : (
-                        <span className="text-slate-300">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-3 text-slate-600">{item.serial_number || '-'}</td>
-                    <td className="px-6 py-3">
-                      <StatusBadge colorClass={STATUS_STYLE[item.status] || 'bg-slate-100 text-slate-600'}>
-                        {STATUS_LABEL[item.status] || item.status}
-                      </StatusBadge>
-                    </td>
-                    <td className="px-6 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        {(item.status === 'tersedia' || item.status === 'dipakai') && (
-                          <button
-                            onClick={() => {
-                              setRusakError('');
-                              setRusakTarget(item);
-                            }}
-                            title="Lapor Rusak"
-                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                          >
-                            <AlertTriangle size={15} />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => openEdit(item)}
-                          title="Edit"
-                          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setDeleteError('');
-                            setDeleteForceAvailable(false);
-                            setDeleteTarget(item);
-                          }}
-                          title="Hapus"
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {!loading && !error && items.length > 0 && lastPage > 1 && (
-          <div className="px-6 py-3 border-t border-slate-100">
-            <Pagination
-              currentPage={pageClamped}
-              totalPages={lastPage}
-              onPageChange={setPage}
-              totalItems={items.length}
-              itemLabel="kelengkapan"
-              className="pt-0 mt-0 border-t-0"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* FORM TAMBAH / EDIT */}
-      <AsetKelengkapanForm
-        open={formOpen}
-        editing={editing}
-        onClose={() => setFormOpen(false)}
-        onSaved={loadData}
-      />
-
-      {/* EXPORT EXCEL/PDF */}
-      <AsetKelengkapanExportModal open={exportOpen} onClose={() => setExportOpen(false)} data={items} />
-
-      {/* KONFIRMASI HAPUS */}
-      {deleteTarget && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] px-4">
-          <div className="bg-white rounded-xl w-full max-w-sm p-5">
-            <h2 className="text-base font-semibold text-slate-900 mb-1">Hapus kelengkapan?</h2>
-            <p className="text-sm text-slate-500 mb-3">
-              <span className="font-medium text-slate-700">{deleteTarget.kode_kelengkapan}</span> akan dihapus
-              permanen beserta riwayatnya, dan tidak bisa dikembalikan.
-            </p>
-            {deleteError && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
-                {deleteError}
-                {deleteForceAvailable && ' Item ini punya riwayat, tapi bisa dihapus paksa kalau memang data lama/test.'}
-              </p>
-            )}
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setDeleteTarget(null);
-                  setDeleteError('');
-                  setDeleteForceAvailable(false);
-                }}
-                disabled={deleting}
-                className="text-sm px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
-              >
-                Batal
-              </button>
-              <button
-                onClick={() => confirmDelete(false)}
-                disabled={deleting}
-                className="text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleting ? 'Menghapus...' : 'Ya, hapus'}
-              </button>
-              {deleteForceAvailable && (
-                <button
-                  onClick={() => confirmDelete(true)}
-                  disabled={deleting}
-                  className="text-sm px-4 py-2 rounded-lg bg-red-800 text-white hover:bg-red-900 disabled:opacity-50"
-                >
-                  {deleting ? 'Menghapus...' : 'Hapus Paksa'}
-                </button>
+        <div className="px-6 pt-4 shrink-0">
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={stokSearch}
+                  onChange={(e) => setStokSearch(e.target.value)}
+                  placeholder="Cari kode, nama, atau merek..."
+                  className="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                />
+              </div>
+              {assignError && (
+                <p className="mt-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {assignError}
+                </p>
               )}
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* KONFIRMASI LAPOR RUSAK — final, gak bisa dibatalin setelah confirm */}
-      {rusakTarget && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] px-4">
-          <div className="bg-white rounded-xl w-full max-w-sm p-5">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle size={18} className="text-red-600 shrink-0" />
-              <h2 className="text-base font-semibold text-slate-900">Lapor kelengkapan rusak?</h2>
+            <div className="px-6 py-3 overflow-y-auto flex-1">
+              {stokLoading && <p className="text-sm text-slate-400 text-center py-8">Memuat stok...</p>}
+              {!stokLoading && stokError && <p className="text-sm text-red-500 text-center py-8">{stokError}</p>}
+              {!stokLoading && !stokError && filteredStok.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                  <PackageSearch size={28} className="mb-2" />
+                  <p className="text-sm">
+                    {stokSearch
+                      ? `Tidak ada hasil untuk "${stokSearch}".`
+                      : 'Belum ada stok kelengkapan tersedia (tanpa induk).'}
+                  </p>
+                </div>
+              )}
+              {!stokLoading && !stokError && filteredStok.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  {filteredStok.map((k) => {
+                    const active = selectedId === k.id;
+                    return (
+                      <button
+                        key={k.id}
+                        type="button"
+                        onClick={() => setSelectedId(k.id)}
+                        className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors ${
+                          active
+                            ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900'
+                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-800 truncate">
+                            {k.nama || [k.merek, k.tipe].filter(Boolean).join(' ') || k.kode_kelengkapan}
+                          </p>
+                          <p className="text-xs text-slate-400 truncate">
+                            {k.kode_kelengkapan}
+                            {k.serial_number ? ` · S/N: ${k.serial_number}` : ''}
+                          </p>
+                        </div>
+                        {active && <CheckCircle2 size={18} className="text-slate-900 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-            <p className="text-sm text-slate-500 mb-3">
-              <span className="font-medium text-slate-700">{rusakTarget.kode_kelengkapan}</span> — Kelengkapan
-              ini beneran rusak? Setelah dilaporkan, gak bisa dibatalin.
-            </p>
-            {rusakError && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
-                {rusakError}
-              </p>
-            )}
-            <div className="flex justify-end gap-2">
+
+            <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 shrink-0">
               <button
-                onClick={() => {
-                  setRusakTarget(null);
-                  setRusakError('');
-                }}
-                disabled={rusakSubmitting}
-                className="text-sm px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+                type="button"
+                onClick={onClose}
+                disabled={assigning}
+                className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
               >
                 Batal
               </button>
               <button
-                onClick={confirmRusak}
-                disabled={rusakSubmitting}
-                className="text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                type="button"
+                onClick={handleAssign}
+                disabled={!selectedId || assigning}
+                className="px-4 py-2 text-sm rounded-lg bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 transition-colors"
               >
-                {rusakSubmitting ? 'Melaporkan...' : 'Ya, Lapor Rusak'}
+                {assigning ? 'Memasang...' : 'Pasang Pengganti'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
