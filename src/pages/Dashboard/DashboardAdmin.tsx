@@ -65,7 +65,11 @@ export default function DashboardAdmin() {
       {/* Hero chart (2/3) + Kalender (1/3) -- Kalender ngisi slot yang dulu
           kosong di sebelah hero chart pada layar xl (hero cuma col-span-2
           dari 3 kolom), sekalian gantiin slot "Distribusi Aset per Merek". */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      {/* items-start -- biar tinggi kartu chart & kalender independen
+          (default grid nyamain tinggi keduanya ke yang paling tinggi,
+          jadinya kartu chart ikut "melar" ke bawah pas kalender lagi
+          tinggi karena ada daftar aktivitas). */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <HeroTrenPembelianAsetChart trenPembelianAset={trenPembelianAset} />
         <CalendarCard aktivitas={aktivitasAsetKalender} />
       </div>

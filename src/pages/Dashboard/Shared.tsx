@@ -1,4 +1,3 @@
-import type { JSX } from 'react';
 import { useMemo, useState } from 'react';
 import {
   BarChart,
@@ -19,9 +18,6 @@ import {
   Wrench,
   ShieldAlert,
   HandCoins,
-  Undo2,
-  PlayCircle,
-  Banknote,
   ArrowRight,
   Bell,
   TrendingUp,
@@ -139,14 +135,15 @@ export function WelcomeHeader({ user }: { user?: UserType | null }) {
 }
 
 // ==== KPI mini card — dipakai buat strip ringkasan angka di atas dashboard ====
-// Warna solid buat lingkaran ikon (bukan tint pastel) -- biar kartu kerasa
-// "penuh" kayak referensi Argon Dashboard, gak cuma kotak putih kosong
-// dengan ikon kecil mengambang di tengah.
+// Redesign: aksen warna di tepi kiri (bar tipis, bukan lingkaran ikon solid)
+// + ikon polos berwarna di pojok kanan atas (gak ada bg tint/circle lagi).
+// Bar aksen pakai overflow-hidden + absolute bar (bukan border-left CSS),
+// biar tetep nyatu mulus sama rounded-2xl card, gak ada sudut kotak.
 const KPI_ACCENT = {
-  default: { ring: 'bg-[#6D5DFC]', border: 'border-slate-100' },
-  amber: { ring: 'bg-[#F59E0B]', border: 'border-amber-100' },
-  rose: { ring: 'bg-[#F04438]', border: 'border-rose-100' },
-  emerald: { ring: 'bg-[#12B76A]', border: 'border-emerald-100' },
+  default: '#6D5DFC',
+  amber: '#F59E0B',
+  rose: '#F04438',
+  emerald: '#12B76A',
 } as const;
 
 export function KpiCard({
@@ -166,19 +163,18 @@ export function KpiCard({
   hint?: string;
   className?: string;
 }) {
-  const t = KPI_ACCENT[tone];
+  const accent = KPI_ACCENT[tone];
   return (
     <div
-      className={`bg-white ${t.border} rounded-2xl p-4 sm:p-5 border shadow-[0_2px_16px_rgba(15,23,42,0.04)] hover:shadow-[0_4px_24px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[128px] ${className}`}
+      className={`relative overflow-hidden bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 pl-5 sm:pl-6 shadow-[0_2px_16px_rgba(15,23,42,0.04)] hover:shadow-[0_4px_24px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[128px] ${className}`}
     >
+      <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: accent }} />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 truncate">{label}</p>
           <p className="text-2xl font-extrabold text-slate-900 tracking-tight mt-1.5">{value}</p>
         </div>
-        <div className={`w-11 h-11 rounded-full ${t.ring} text-white flex items-center justify-center flex-shrink-0 shadow-md`}>
-          <Icon size={19} />
-        </div>
+        <Icon size={20} style={{ color: accent }} className="flex-shrink-0" />
       </div>
       {hint && <p className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-50">{hint}</p>}
     </div>
@@ -627,30 +623,14 @@ export function CalendarCard({ aktivitas = [] }: { aktivitas?: AktivitasAsetTerb
         {aktivitasHariIni.length === 0 ? (
           <p className="text-sm text-slate-400">Tidak ada aktivitas aset pada tanggal ini.</p>
         ) : (
-          <ul className="flex flex-col gap-2.5 max-h-56 overflow-y-auto pr-1">
-            {aktivitasHariIni.map((ev, idx) => {
-              const s = AKTIVITAS_ASET_STYLE[ev.type];
-              const kode = ev.aset?.kode_aset || ev.aset?.kode_kelengkapan || '-';
-              const pelaku =
-                ev.nama ?? (ev.type === 'mulai_perbaikan' || ev.type === 'selesai_perbaikan' ? 'Admin' : null);
-              return (
-                <li key={`${ev.type}-${idx}`} className="flex items-start gap-2.5">
-                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${s.bg}`}>
-                    {s.icon}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm text-slate-700 leading-snug">
-                      {pelaku && <span className="font-medium text-slate-800">{pelaku} </span>}
-                      {s.label} <span className="font-medium text-slate-800">{kode}</span>
-                    </p>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      {new Date(ev.waktu).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
-                    </p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="max-h-56 overflow-y-auto pr-1">
+            <AktivitasTimelineList
+              events={aktivitasHariIni}
+              timeFormatter={(waktu) =>
+                `${new Date(waktu).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`
+              }
+            />
+          </div>
         )}
       </div>
     </div>
@@ -762,17 +742,53 @@ function formatWaktuSingkat(iso: string): string {
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 }
 
-const AKTIVITAS_ASET_STYLE: Record<
-  AktivitasAsetTerbaru['type'],
-  { bg: string; icon: JSX.Element; label: string }
-> = {
-  pinjam: { bg: 'bg-amber-50 text-amber-600', icon: <HandCoins size={15} />, label: 'menerima' },
-  kembali: { bg: 'bg-emerald-50 text-emerald-600', icon: <Undo2 size={15} />, label: 'mengembalikan' },
-  lapor_rusak: { bg: 'bg-red-50 text-red-600', icon: <AlertTriangle size={15} />, label: 'melaporkan kerusakan' },
-  mulai_perbaikan: { bg: 'bg-orange-50 text-orange-600', icon: <PlayCircle size={15} />, label: 'mulai memperbaiki' },
-  selesai_perbaikan: { bg: 'bg-sky-50 text-sky-600', icon: <Wrench size={15} />, label: 'selesai memperbaiki' },
-  dijual: { bg: 'bg-purple-50 text-purple-600', icon: <Banknote size={15} />, label: 'menjual' },
+// Opsi D — gaya timeline garis (titik + garis vertikal) buat daftar
+// aktivitas aset, gantiin kotak ikon lama. Dipakai bareng oleh
+// AktivitasAsetCard (widget "Riwayat") dan daftar aktivitas per-tanggal
+// di CalendarCard, biar konsisten satu gaya visual di kedua tempat.
+const AKTIVITAS_ASET_STYLE: Record<AktivitasAsetTerbaru['type'], { color: string; label: string }> = {
+  pinjam: { color: THEME.amber, label: 'menerima' },
+  kembali: { color: THEME.emerald, label: 'mengembalikan' },
+  lapor_rusak: { color: THEME.rose, label: 'melaporkan kerusakan' },
+  mulai_perbaikan: { color: THEME.orange, label: 'mulai memperbaiki' },
+  selesai_perbaikan: { color: THEME.sky, label: 'selesai memperbaiki' },
+  dijual: { color: THEME.purple, label: 'menjual' },
 };
+
+function AktivitasTimelineList({
+  events,
+  timeFormatter,
+}: {
+  events: AktivitasAsetTerbaru[];
+  timeFormatter: (waktu: string) => string;
+}) {
+  return (
+    <ul className="flex flex-col">
+      {events.map((ev, idx) => {
+        const s = AKTIVITAS_ASET_STYLE[ev.type];
+        const kode = ev.aset?.kode_aset || ev.aset?.kode_kelengkapan || '-';
+        const pelaku =
+          ev.nama ?? (ev.type === 'mulai_perbaikan' || ev.type === 'selesai_perbaikan' ? 'Admin' : null);
+        const isLast = idx === events.length - 1;
+        return (
+          <li key={`${ev.type}-${idx}`} className="flex gap-3">
+            <div className="flex flex-col items-center">
+              <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: s.color }} />
+              {!isLast && <span className="w-px flex-1 bg-slate-100 mt-1" />}
+            </div>
+            <div className={`min-w-0 ${isLast ? 'pb-1' : 'pb-4'}`}>
+              <p className="text-sm text-slate-700 leading-snug">
+                {pelaku && <span className="font-medium text-slate-800">{pelaku} </span>}
+                {s.label} <span className="font-medium text-slate-800">{kode}</span>
+              </p>
+              <p className="text-xs text-slate-400 mt-0.5">{timeFormatter(ev.waktu)}</p>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 // ==== Aktivitas aset terbaru — khusus admin (inventaris) ====
 // Ringkasan 5 event teraktual dari feed yang sama dengan tab "Riwayat Aset"
@@ -801,30 +817,7 @@ export function AktivitasAsetCard({ aktivitasAsetTerbaru }: { aktivitasAsetTerba
       {aktivitasAsetTerbaru.length === 0 ? (
         <p className="text-sm text-slate-400">Belum ada aktivitas aset.</p>
       ) : (
-        <ul className="flex flex-col gap-1">
-          {aktivitasAsetTerbaru.map((ev, idx) => {
-            const s = AKTIVITAS_ASET_STYLE[ev.type];
-            const kode = ev.aset?.kode_aset || '-';
-            const pelaku =
-              ev.nama ?? (ev.type === 'mulai_perbaikan' || ev.type === 'selesai_perbaikan' ? 'Admin' : null);
-            const isLast = idx === aktivitasAsetTerbaru.length - 1;
-            return (
-              <li key={`${ev.type}-${idx}`} className="relative flex items-start gap-2.5 py-1.5">
-                {!isLast && <span className="absolute left-[13px] top-9 bottom-[-6px] w-px bg-slate-100" />}
-                <span className={`relative z-10 w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${s.bg}`}>
-                  {s.icon}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm text-slate-700 leading-snug">
-                    {pelaku && <span className="font-medium text-slate-800">{pelaku} </span>}
-                    {s.label} <span className="font-medium text-slate-800">{kode}</span>
-                  </p>
-                  <p className="text-xs text-slate-400 mt-0.5">{formatWaktuSingkat(ev.waktu)}</p>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <AktivitasTimelineList events={aktivitasAsetTerbaru} timeFormatter={formatWaktuSingkat} />
       )}
     </div>
   );
