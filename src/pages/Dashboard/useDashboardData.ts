@@ -136,6 +136,16 @@ export async function fetchAktivitasAsetTerbaru(): Promise<AktivitasAsetTerbaru[
   return res.data.slice(0, 5);
 }
 
+// Aktivitas aset dalam jumlah lebih banyak (bukan cuma 5 teratas) -- dipakai
+// widget Kalender di dashboard biar penanda titik & daftar aktivitas per
+// tanggal gak cuma nyakup aktivitas paling baru, tapi punya cakupan
+// beberapa bulan ke belakang. Tetap satu panggilan API aja (bukan loop per
+// tanggal), sumbernya sama persis dengan tab Riwayat Aset di Inventaris.
+export async function fetchAktivitasAsetKalender(): Promise<AktivitasAsetTerbaru[]> {
+  const res = await getRiwayatAset(1, 200);
+  return res.data;
+}
+
 const GARANSI_WARNING_DAYS = 30;
 
 const BULAN_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -414,6 +424,7 @@ export function useDashboardAnalytics(
     trenPembelianAset?: boolean;
     statusAsetDistribusi?: boolean;
     aktivitasAsetTerbaru?: boolean;
+    aktivitasAsetKalender?: boolean;
   } = {}
 ) {
   const {
@@ -423,6 +434,7 @@ export function useDashboardAnalytics(
     trenPembelianAset: wantTrenPembelianAset = true,
     statusAsetDistribusi: wantStatusAsetDistribusi = true,
     aktivitasAsetTerbaru: wantAktivitasAsetTerbaru = true,
+    aktivitasAsetKalender: wantAktivitasAsetKalender = true,
   } = include;
 
   const { data: ringkasanAset } = useQuery({
@@ -469,6 +481,15 @@ export function useDashboardAnalytics(
     staleTime: 30 * 1000,
   });
 
+  // Sama staleTime-nya dengan feed "terbaru" -- ini juga feed aktivitas,
+  // cuma dipotong lebih banyak buat kebutuhan widget Kalender.
+  const { data: aktivitasAsetKalender } = useQuery({
+    queryKey: ['aktivitas-aset-kalender'],
+    queryFn: fetchAktivitasAsetKalender,
+    enabled: enabled && wantAktivitasAsetKalender,
+    staleTime: 30 * 1000,
+  });
+
   return {
     ringkasanAset,
     asetPerMerek: asetPerMerek ?? [],
@@ -476,5 +497,6 @@ export function useDashboardAnalytics(
     trenPembelianAset: trenPembelianAset ?? [],
     statusAsetDistribusi: statusAsetDistribusi ?? [],
     aktivitasAsetTerbaru: aktivitasAsetTerbaru ?? [],
+    aktivitasAsetKalender: aktivitasAsetKalender ?? [],
   };
 }

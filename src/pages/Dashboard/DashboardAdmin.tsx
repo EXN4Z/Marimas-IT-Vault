@@ -17,10 +17,11 @@ import {
 export default function DashboardAdmin() {
   const { loading, error, user, notifications, handleMarkAsRead, } = useDashboardCore();
 
-  const { ringkasanAset, trenPembelianAset, asetPerhatian, aktivitasAsetTerbaru } = useDashboardAnalytics(true, {
-    statusAsetDistribusi: false,
-    asetPerMerek: false,
-  });
+  const { ringkasanAset, trenPembelianAset, asetPerhatian, aktivitasAsetTerbaru, aktivitasAsetKalender } =
+    useDashboardAnalytics(true, {
+      statusAsetDistribusi: false,
+      asetPerMerek: false,
+    });
 
   if (loading) {
     return (
@@ -66,7 +67,7 @@ export default function DashboardAdmin() {
           dari 3 kolom), sekalian gantiin slot "Distribusi Aset per Merek". */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <HeroTrenPembelianAsetChart trenPembelianAset={trenPembelianAset} />
-        <CalendarCard />
+        <CalendarCard aktivitas={aktivitasAsetKalender} />
       </div>
 
       {/* Ringkasan Status Aset + Aset Butuh Perhatian -- dua kartu ringkasan

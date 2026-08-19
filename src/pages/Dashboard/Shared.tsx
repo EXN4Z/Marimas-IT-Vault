@@ -485,7 +485,14 @@ function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-export function CalendarCard() {
+// Kunci tanggal LOKAL (bukan ISO/UTC lewat toISOString) -- biar aktivitas
+// yang kejadian malam hari WIB gak "geser" ke tanggal berikutnya kalau
+// dikonversi ke UTC dulu.
+function dateKeyLocal(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+export function CalendarCard({ aktivitas = [] }: { aktivitas?: AktivitasAsetTerbaru[] }) {
   const today = useMemo(() => new Date(), []);
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState<Date>(today);
@@ -496,6 +503,27 @@ export function CalendarCard() {
   );
   const weeks: { date: Date; inMonth: boolean }[][] = [];
   for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+
+  // Kelompokkan aktivitas per tanggal sekali aja lewat useMemo, dipakai
+  // buat (1) nandain titik di tanggal yang punya aktivitas dan (2) daftar
+  // aktivitas tanggal yang lagi dipilih di bawah grid.
+  const aktivitasPerTanggal = useMemo(() => {
+    const map = new Map<string, AktivitasAsetTerbaru[]>();
+    for (const ev of aktivitas) {
+      const d = new Date(ev.waktu);
+      if (isNaN(d.getTime())) continue;
+      const key = dateKeyLocal(d);
+      const list = map.get(key);
+      if (list) list.push(ev);
+      else map.set(key, [ev]);
+    }
+    return map;
+  }, [aktivitas]);
+
+  const aktivitasHariIni = useMemo(() => {
+    const list = aktivitasPerTanggal.get(dateKeyLocal(selected)) ?? [];
+    return [...list].sort((a, b) => new Date(b.waktu).getTime() - new Date(a.waktu).getTime());
+  }, [aktivitasPerTanggal, selected]);
 
   const goToMonth = (offset: number) => {
     setViewDate((d) => new Date(d.getFullYear(), d.getMonth() + offset, 1));
@@ -553,11 +581,12 @@ export function CalendarCard() {
         {weeks.flat().map((cell, idx) => {
           const isToday = isSameDay(cell.date, today);
           const isSelected = !isToday && isSameDay(cell.date, selected);
+          const hasAktivitas = aktivitasPerTanggal.has(dateKeyLocal(cell.date));
           return (
             <button
               key={idx}
               onClick={() => setSelected(cell.date)}
-              className={`mx-auto w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-sm transition-colors ${
+              className={`relative mx-auto w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-sm transition-colors ${
                 isToday
                   ? 'bg-[#12B76A] text-white font-bold shadow-sm'
                   : isSelected
@@ -568,9 +597,61 @@ export function CalendarCard() {
               }`}
             >
               {cell.date.getDate()}
+              {/* Titik penanda -- nunjukin tanggal ini punya aktivitas aset
+                  (tambah/pinjam/kembali/lapor rusak/dst) tanpa harus diklik
+                  dulu satu-satu. */}
+              {hasAktivitas && (
+                <span
+                  className={`absolute left-1/2 -translate-x-1/2 bottom-0.5 sm:bottom-1 w-1 h-1 rounded-full ${
+                    isToday || isSelected ? 'bg-white' : 'bg-[#6D5DFC]'
+                  }`}
+                />
+              )}
             </button>
           );
         })}
+      </div>
+
+      {/* Aktivitas di tanggal terpilih -- muncul begitu tanggal manapun
+          dipencet (termasuk hari ini secara default). Sumbernya sama
+          persis dengan AktivitasAsetCard & tab Riwayat di Inventaris,
+          cuma difilter ke satu tanggal ini aja. */}
+      <div className="mt-4 pt-4 border-t border-slate-100">
+        <p className="text-xs font-semibold text-slate-500 mb-2.5">
+          Aktivitas{' '}
+          {isSameDay(selected, today)
+            ? 'hari ini'
+            : selected.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
+
+        {aktivitasHariIni.length === 0 ? (
+          <p className="text-sm text-slate-400">Tidak ada aktivitas aset pada tanggal ini.</p>
+        ) : (
+          <ul className="flex flex-col gap-2.5 max-h-56 overflow-y-auto pr-1">
+            {aktivitasHariIni.map((ev, idx) => {
+              const s = AKTIVITAS_ASET_STYLE[ev.type];
+              const kode = ev.aset?.kode_aset || ev.aset?.kode_kelengkapan || '-';
+              const pelaku =
+                ev.nama ?? (ev.type === 'mulai_perbaikan' || ev.type === 'selesai_perbaikan' ? 'Admin' : null);
+              return (
+                <li key={`${ev.type}-${idx}`} className="flex items-start gap-2.5">
+                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${s.bg}`}>
+                    {s.icon}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm text-slate-700 leading-snug">
+                      {pelaku && <span className="font-medium text-slate-800">{pelaku} </span>}
+                      {s.label} <span className="font-medium text-slate-800">{kode}</span>
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {new Date(ev.waktu).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </div>
   );
