@@ -179,11 +179,32 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing, p
     );
   }, [asetOptions, asetSearch]);
 
+  // Kelengkapan berstatus "tersedia" gak boleh masih nempel ke aset induk
+  // (aset induk cuma relevan kalau kelengkapan lagi dipakai/menempel ke
+  // sesuatu). Dipakai buat nonaktifkan field Aset Induk di UI.
+  const asetIndukDisabled = form.status === 'tersedia';
+
   if (!open) return null;
 
   function setField<K extends keyof AsetKelengkapanFormValues>(key: K, value: AsetKelengkapanFormValues[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: '' }));
+  }
+
+  // Ganti status kelengkapan. Begitu status jadi "tersedia", aset_id ikut
+  // dikosongkan otomatis (lihat asetIndukDisabled) — dan dropdown/pencarian
+  // aset induk yang mungkin lagi kebuka juga ditutup.
+  function pilihStatus(status: AsetKelengkapanStatus) {
+    setForm((prev) => ({
+      ...prev,
+      status,
+      aset_id: status === 'tersedia' ? null : prev.aset_id,
+    }));
+    if (errors.status) setErrors((prev) => ({ ...prev, status: '' }));
+    if (status === 'tersedia' && asetDropdownOpen) {
+      setAsetDropdownOpen(false);
+      setAsetSearch('');
+    }
   }
 
   // Aset induk & lokasi kantor saling meniadakan — kelengkapan yang nempel
@@ -377,14 +398,17 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing, p
                       <path d="M14.5 14.5L11 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                     </svg>
                     <input
-                      className={`${inputClass} pl-8`}
+                      className={`${inputClass} pl-8 ${asetIndukDisabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}`}
                       placeholder="Cari kode aset, merek, atau tipe…"
                       value={asetSearch}
+                      disabled={asetIndukDisabled}
                       onChange={(e) => {
                         setAsetSearch(e.target.value);
                         setAsetDropdownOpen(true);
                       }}
-                      onFocus={() => setAsetDropdownOpen(true)}
+                      onFocus={() => {
+                        if (!asetIndukDisabled) setAsetDropdownOpen(true);
+                      }}
                     />
                   </div>
                   {asetTerpilih && !asetDropdownOpen && (
@@ -407,7 +431,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing, p
                       </button>
                     </div>
                   )}
-                  {asetDropdownOpen && (
+                  {asetDropdownOpen && !asetIndukDisabled && (
                     <div className="absolute z-10 mt-1.5 max-h-48 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg animate-[dropIn_140ms_ease-out]">
                       <button
                         type="button"
@@ -452,6 +476,8 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing, p
                 <p className="mt-1 text-xs text-slate-400">
                   {presetAsetId || lockAsetField
                     ? 'Otomatis terisi dari aset yang lagi diedit/dibuat — kelengkapan baru ini akan langsung nempel ke aset tersebut.'
+                    : asetIndukDisabled
+                    ? 'Nonaktif — kelengkapan berstatus "Tersedia" tidak bisa terikat ke aset induk.'
                     : 'Opsional — pilih kalau kelengkapan ini menempel ke aset tertentu (mis. mouse ini punya laptop yang mana).'}
                 </p>
               </Field>
@@ -506,7 +532,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing, p
                           name="status"
                           className="sr-only"
                           checked={active}
-                          onChange={() => setField('status', s.value)}
+                          onChange={() => pilihStatus(s.value)}
                         />
                         <span className={`h-1.5 w-1.5 rounded-full ${s.dot} transition-transform duration-150 ${active ? 'scale-125' : ''}`} />
                         {s.label}
