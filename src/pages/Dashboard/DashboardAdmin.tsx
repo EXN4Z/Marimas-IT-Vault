@@ -6,7 +6,7 @@ import {
   RingkasanAsetCard,
   HeroTrenPembelianAsetChart,
   AsetPerhatianCard,
-  AsetPerMerekCard,
+  CalendarCard,
   AktivitasAsetCard,
   NotifikasiCard,
 } from './Shared';
@@ -17,8 +17,9 @@ import {
 export default function DashboardAdmin() {
   const { loading, error, user, notifications, handleMarkAsRead, } = useDashboardCore();
 
-  const { ringkasanAset, trenPembelianAset, asetPerhatian, asetPerMerek, aktivitasAsetTerbaru } = useDashboardAnalytics(true, {
+  const { ringkasanAset, trenPembelianAset, asetPerhatian, aktivitasAsetTerbaru } = useDashboardAnalytics(true, {
     statusAsetDistribusi: false,
+    asetPerMerek: false,
   });
 
   if (loading) {
@@ -64,23 +65,25 @@ export default function DashboardAdmin() {
         <HeroTrenPembelianAsetChart trenPembelianAset={trenPembelianAset} />
       </div>
 
+      {/* Ringkasan Status Aset + Kalender -- dua kartu ringkas berdampingan,
+          gantiin slot "Distribusi Aset per Merek" yang lama. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <RingkasanAsetCard ringkasanAset={ringkasanAset} />
-        <AsetPerMerekCard asetPerMerek={asetPerMerek} />
+        <CalendarCard />
       </div>
 
+      {/* Aset Butuh Perhatian + Notifikasi -- dipasangin biar gak ada baris
+          yang cuma kepakai setengah lebar (sebelumnya AsetPerhatianCard
+          sendirian di baris lg:grid-cols-2). */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <AsetPerhatianCard asetPerhatian={asetPerhatian} />
+        <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
       </div>
 
-      {/* Aktivitas Aset Terbaru + Notifikasi -- feed histori aset (sumber sama
-          dengan tab Riwayat di Inventaris) ditemenin notifikasi pribadi admin,
-          biar dashboard gak cuma soal angka tapi juga "apa yang baru terjadi". */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
-        <div className="xl:col-span-2">
-          <AktivitasAsetCard aktivitasAsetTerbaru={aktivitasAsetTerbaru} />
-        </div>
-        <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
+      {/* Aktivitas Aset Terbaru -- feed histori aset (sumber sama dengan tab
+          Riwayat di Inventaris), full width biar daftarnya lega dibaca. */}
+      <div className="mt-6">
+        <AktivitasAsetCard aktivitasAsetTerbaru={aktivitasAsetTerbaru} />
       </div>
     </>
   );

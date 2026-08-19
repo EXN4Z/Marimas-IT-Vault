@@ -1,4 +1,5 @@
 import type { JSX } from 'react';
+import { useMemo, useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -25,6 +26,9 @@ import {
   Bell,
   TrendingUp,
   TrendingDown,
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays,
   type LucideIcon,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -32,7 +36,6 @@ import type { User as UserType } from '../../types/user';
 import type {
   NotificationItem,
   RingkasanAset,
-  AsetPerMerek,
   AsetPerhatian,
   TrenPembelianAset,
   StatusAsetDistribusi,
@@ -447,37 +450,128 @@ export function StatusAsetDonutCard({ statusAsetDistribusi }: { statusAsetDistri
   );
 }
 
-export function AsetPerMerekCard({ asetPerMerek }: { asetPerMerek: AsetPerMerek[] }) {
-  const top = asetPerMerek.length ? asetPerMerek[0] : null;
+// ==== Kalender — semua role ====
+// Kalender bulanan interaktif (murni UI, gak nge-fetch apa-apa) buat
+// gantiin "Distribusi Aset per Merek" di layout dashboard. Hari ini
+// otomatis ke-highlight, user bisa klik tanggal lain buat nandain, dan
+// panah kiri/kanan buat pindah bulan. Minggu dimulai dari Minggu biar
+// konsisten sama pola kalender Indonesia pada umumnya.
+const HARI_LABEL = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+const BULAN_LABEL = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+
+function buildCalendarGrid(year: number, month: number): { date: Date; inMonth: boolean }[] {
+  const firstOfMonth = new Date(year, month, 1);
+  const startWeekday = firstOfMonth.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const cells: { date: Date; inMonth: boolean }[] = [];
+  for (let i = startWeekday; i > 0; i--) {
+    cells.push({ date: new Date(year, month, 1 - i), inMonth: false });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ date: new Date(year, month, d), inMonth: true });
+  }
+  let nextDay = 1;
+  while (cells.length % 7 !== 0) {
+    cells.push({ date: new Date(year, month + 1, nextDay++), inMonth: false });
+  }
+  return cells;
+}
+
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+export function CalendarCard() {
+  const today = useMemo(() => new Date(), []);
+  const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selected, setSelected] = useState<Date>(today);
+
+  const cells = useMemo(
+    () => buildCalendarGrid(viewDate.getFullYear(), viewDate.getMonth()),
+    [viewDate]
+  );
+  const weeks: { date: Date; inMonth: boolean }[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+
+  const goToMonth = (offset: number) => {
+    setViewDate((d) => new Date(d.getFullYear(), d.getMonth() + offset, 1));
+  };
+  const goToToday = () => {
+    setViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
+    setSelected(today);
+  };
+
+  const isCurrentMonthView = viewDate.getFullYear() === today.getFullYear() && viewDate.getMonth() === today.getMonth();
 
   return (
     <div className={cardClass}>
       <div className="flex items-center justify-between mb-4 gap-2">
         <div className="flex items-center gap-2.5">
-          <CardIcon icon={Boxes} tone="orange" />
-          <h3 className="text-base font-semibold text-slate-900">Distribusi Aset per Merek</h3>
+          <CardIcon icon={CalendarDays} />
+          <h3 className="text-base font-semibold text-slate-900">Kalender</h3>
         </div>
-        {top && (
-          <span className="hidden sm:inline-flex text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full whitespace-nowrap">
-            Terbanyak: {top.merek}
-          </span>
+        {!isCurrentMonthView && (
+          <button
+            onClick={goToToday}
+            className="text-xs font-semibold text-[#6D5DFC] hover:text-[#4C3FE0] bg-[#EEECFF] px-2.5 py-1 rounded-full whitespace-nowrap"
+          >
+            Hari ini
+          </button>
         )}
       </div>
-      {asetPerMerek.length === 0 ? (
-        <p className="text-sm text-slate-400">Belum ada data aset</p>
-      ) : (
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={asetPerMerek} margin={{ top: 16, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" stroke={THEME.grid} />
-              <XAxis dataKey="merek" tick={false} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: THEME.axis }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
-              <Bar dataKey="jumlah" fill={THEME.orange} radius={[8, 8, 0, 0]} barSize={36} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => goToMonth(-1)}
+          aria-label="Bulan sebelumnya"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
+        >
+          <ChevronLeft size={16} />
+        </button>
+        <p className="text-sm font-semibold text-slate-900">
+          {BULAN_LABEL[viewDate.getMonth()]} {viewDate.getFullYear()}
+        </p>
+        <button
+          onClick={() => goToMonth(1)}
+          aria-label="Bulan berikutnya"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
+        >
+          <ChevronRight size={16} />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 gap-y-1.5 text-center">
+        {HARI_LABEL.map((h) => (
+          <span key={h} className="text-[11px] font-semibold text-slate-400 pb-1">
+            {h}
+          </span>
+        ))}
+        {weeks.flat().map((cell, idx) => {
+          const isToday = isSameDay(cell.date, today);
+          const isSelected = !isToday && isSameDay(cell.date, selected);
+          return (
+            <button
+              key={idx}
+              onClick={() => setSelected(cell.date)}
+              className={`mx-auto w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-sm transition-colors ${
+                isToday
+                  ? 'bg-[#12B76A] text-white font-bold shadow-sm'
+                  : isSelected
+                    ? 'bg-[#6D5DFC] text-white font-semibold'
+                    : cell.inMonth
+                      ? 'text-slate-700 hover:bg-slate-100 font-medium'
+                      : 'text-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              {cell.date.getDate()}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
