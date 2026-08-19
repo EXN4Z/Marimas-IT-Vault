@@ -61,29 +61,29 @@ export default function DashboardAdmin() {
         <KpiCard icon={ShieldAlert} label="Rusak Berat" value={ringkasanAset?.rusakBerat ?? 0} tone="rose" hint={`${rusakBeratPct}% dari total aset`} />
       </div>
 
+      {/* Hero chart (2/3) + Kalender (1/3) -- Kalender ngisi slot yang dulu
+          kosong di sebelah hero chart pada layar xl (hero cuma col-span-2
+          dari 3 kolom), sekalian gantiin slot "Distribusi Aset per Merek". */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <HeroTrenPembelianAsetChart trenPembelianAset={trenPembelianAset} />
-      </div>
-
-      {/* Ringkasan Status Aset + Kalender -- dua kartu ringkas berdampingan,
-          gantiin slot "Distribusi Aset per Merek" yang lama. */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        <RingkasanAsetCard ringkasanAset={ringkasanAset} />
         <CalendarCard />
       </div>
 
-      {/* Aset Butuh Perhatian + Notifikasi -- dipasangin biar gak ada baris
-          yang cuma kepakai setengah lebar (sebelumnya AsetPerhatianCard
-          sendirian di baris lg:grid-cols-2). */}
+      {/* Ringkasan Status Aset + Aset Butuh Perhatian -- dua kartu ringkasan
+          kondisi aset berdampingan. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <RingkasanAsetCard ringkasanAset={ringkasanAset} />
         <AsetPerhatianCard asetPerhatian={asetPerhatian} />
-        <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
       </div>
 
-      {/* Aktivitas Aset Terbaru -- feed histori aset (sumber sama dengan tab
-          Riwayat di Inventaris), full width biar daftarnya lega dibaca. */}
-      <div className="mt-6">
-        <AktivitasAsetCard aktivitasAsetTerbaru={aktivitasAsetTerbaru} />
+      {/* Aktivitas Aset Terbaru (2/3) + Notifikasi (1/3) -- feed histori aset
+          (sumber sama dengan tab Riwayat di Inventaris) ditemenin notifikasi
+          pribadi admin. */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+        <div className="xl:col-span-2">
+          <AktivitasAsetCard aktivitasAsetTerbaru={aktivitasAsetTerbaru} />
+        </div>
+        <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
       </div>
     </>
   );
