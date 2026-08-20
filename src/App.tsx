@@ -49,7 +49,14 @@ function AppRoutes() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/inventaris" element={<Inventaris />} />
           <Route path="/aset" element={<Navigate to="/inventaris" replace />} />
-          <Route path="/karyawan" element={<Karyawan />} />
+          <Route
+            path="/karyawan"
+            element={
+              <RoleRoute roles={['admin']}>
+                <Karyawan />
+              </RoleRoute>
+            }
+          />
           {/* Dashboard Analytics sekarang jadi tab di dalam /dashboard, bukan halaman sendiri.
               Redirect ini cuma buat jaga-jaga kalau ada bookmark/link lama ke /dashboard-analytics. */}
           <Route path="/dashboard-analytics" element={<Navigate to="/dashboard?tab=analytics" replace />} />
@@ -67,7 +74,14 @@ function AppRoutes() {
             }
           />
           <Route path="/master-data" element={<MasterData />} />
-          <Route path="/cabang" element={<CabangPage />} />
+          <Route
+            path="/cabang"
+            element={
+              <RoleRoute roles={['admin']}>
+                <CabangPage />
+              </RoleRoute>
+            }
+          />
 
           {/* Fallback: kalau /karyawan/create atau /karyawan/:id/edit diakses langsung
               (refresh browser / paste link / belum ada backgroundLocation), route ini

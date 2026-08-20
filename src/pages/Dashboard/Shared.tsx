@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import { useMemo, useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -18,13 +18,13 @@ import {
   Wrench,
   ShieldAlert,
   HandCoins,
-  Undo2,
-  PlayCircle,
-  Banknote,
   ArrowRight,
   Bell,
   TrendingUp,
   TrendingDown,
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays,
   type LucideIcon,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -32,7 +32,6 @@ import type { User as UserType } from '../../types/user';
 import type {
   NotificationItem,
   RingkasanAset,
-  AsetPerMerek,
   AsetPerhatian,
   TrenPembelianAset,
   StatusAsetDistribusi,
@@ -136,14 +135,15 @@ export function WelcomeHeader({ user }: { user?: UserType | null }) {
 }
 
 // ==== KPI mini card — dipakai buat strip ringkasan angka di atas dashboard ====
-// Warna solid buat lingkaran ikon (bukan tint pastel) -- biar kartu kerasa
-// "penuh" kayak referensi Argon Dashboard, gak cuma kotak putih kosong
-// dengan ikon kecil mengambang di tengah.
+// Redesign: aksen warna di tepi kiri (bar tipis, bukan lingkaran ikon solid)
+// + ikon polos berwarna di pojok kanan atas (gak ada bg tint/circle lagi).
+// Bar aksen pakai overflow-hidden + absolute bar (bukan border-left CSS),
+// biar tetep nyatu mulus sama rounded-2xl card, gak ada sudut kotak.
 const KPI_ACCENT = {
-  default: { ring: 'bg-[#6D5DFC]', border: 'border-slate-100' },
-  amber: { ring: 'bg-[#F59E0B]', border: 'border-amber-100' },
-  rose: { ring: 'bg-[#F04438]', border: 'border-rose-100' },
-  emerald: { ring: 'bg-[#12B76A]', border: 'border-emerald-100' },
+  default: '#6D5DFC',
+  amber: '#F59E0B',
+  rose: '#F04438',
+  emerald: '#12B76A',
 } as const;
 
 export function KpiCard({
@@ -163,19 +163,18 @@ export function KpiCard({
   hint?: string;
   className?: string;
 }) {
-  const t = KPI_ACCENT[tone];
+  const accent = KPI_ACCENT[tone];
   return (
     <div
-      className={`bg-white ${t.border} rounded-2xl p-4 sm:p-5 border shadow-[0_2px_16px_rgba(15,23,42,0.04)] hover:shadow-[0_4px_24px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[128px] ${className}`}
+      className={`relative overflow-hidden bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 pl-5 sm:pl-6 shadow-[0_2px_16px_rgba(15,23,42,0.04)] hover:shadow-[0_4px_24px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[128px] ${className}`}
     >
+      <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: accent }} />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 truncate">{label}</p>
           <p className="text-2xl font-extrabold text-slate-900 tracking-tight mt-1.5">{value}</p>
         </div>
-        <div className={`w-11 h-11 rounded-full ${t.ring} text-white flex items-center justify-center flex-shrink-0 shadow-md`}>
-          <Icon size={19} />
-        </div>
+        <Icon size={20} style={{ color: accent }} className="flex-shrink-0" />
       </div>
       {hint && <p className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-50">{hint}</p>}
     </div>
@@ -447,37 +446,193 @@ export function StatusAsetDonutCard({ statusAsetDistribusi }: { statusAsetDistri
   );
 }
 
-export function AsetPerMerekCard({ asetPerMerek }: { asetPerMerek: AsetPerMerek[] }) {
-  const top = asetPerMerek.length ? asetPerMerek[0] : null;
+// ==== Kalender — semua role ====
+// Kalender bulanan interaktif (murni UI, gak nge-fetch apa-apa) buat
+// gantiin "Distribusi Aset per Merek" di layout dashboard. Hari ini
+// otomatis ke-highlight, user bisa klik tanggal lain buat nandain, dan
+// panah kiri/kanan buat pindah bulan. Minggu dimulai dari Minggu biar
+// konsisten sama pola kalender Indonesia pada umumnya.
+const HARI_LABEL = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+const BULAN_LABEL = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+
+function buildCalendarGrid(year: number, month: number): { date: Date; inMonth: boolean }[] {
+  const firstOfMonth = new Date(year, month, 1);
+  const startWeekday = firstOfMonth.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const cells: { date: Date; inMonth: boolean }[] = [];
+  for (let i = startWeekday; i > 0; i--) {
+    cells.push({ date: new Date(year, month, 1 - i), inMonth: false });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ date: new Date(year, month, d), inMonth: true });
+  }
+  let nextDay = 1;
+  while (cells.length % 7 !== 0) {
+    cells.push({ date: new Date(year, month + 1, nextDay++), inMonth: false });
+  }
+  return cells;
+}
+
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+// Kunci tanggal LOKAL (bukan ISO/UTC lewat toISOString) -- biar aktivitas
+// yang kejadian malam hari WIB gak "geser" ke tanggal berikutnya kalau
+// dikonversi ke UTC dulu.
+function dateKeyLocal(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+export function CalendarCard({ aktivitas = [] }: { aktivitas?: AktivitasAsetTerbaru[] }) {
+  const today = useMemo(() => new Date(), []);
+  const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selected, setSelected] = useState<Date>(today);
+
+  const cells = useMemo(
+    () => buildCalendarGrid(viewDate.getFullYear(), viewDate.getMonth()),
+    [viewDate]
+  );
+  const weeks: { date: Date; inMonth: boolean }[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+
+  // Kelompokkan aktivitas per tanggal sekali aja lewat useMemo, dipakai
+  // buat (1) nandain titik di tanggal yang punya aktivitas dan (2) daftar
+  // aktivitas tanggal yang lagi dipilih di bawah grid.
+  const aktivitasPerTanggal = useMemo(() => {
+    const map = new Map<string, AktivitasAsetTerbaru[]>();
+    for (const ev of aktivitas) {
+      const d = new Date(ev.waktu);
+      if (isNaN(d.getTime())) continue;
+      const key = dateKeyLocal(d);
+      const list = map.get(key);
+      if (list) list.push(ev);
+      else map.set(key, [ev]);
+    }
+    return map;
+  }, [aktivitas]);
+
+  const aktivitasHariIni = useMemo(() => {
+    const list = aktivitasPerTanggal.get(dateKeyLocal(selected)) ?? [];
+    return [...list].sort((a, b) => new Date(b.waktu).getTime() - new Date(a.waktu).getTime());
+  }, [aktivitasPerTanggal, selected]);
+
+  const goToMonth = (offset: number) => {
+    setViewDate((d) => new Date(d.getFullYear(), d.getMonth() + offset, 1));
+  };
+  const goToToday = () => {
+    setViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
+    setSelected(today);
+  };
+
+  const isCurrentMonthView = viewDate.getFullYear() === today.getFullYear() && viewDate.getMonth() === today.getMonth();
 
   return (
     <div className={cardClass}>
       <div className="flex items-center justify-between mb-4 gap-2">
         <div className="flex items-center gap-2.5">
-          <CardIcon icon={Boxes} tone="orange" />
-          <h3 className="text-base font-semibold text-slate-900">Distribusi Aset per Merek</h3>
+          <CardIcon icon={CalendarDays} />
+          <h3 className="text-base font-semibold text-slate-900">Kalender</h3>
         </div>
-        {top && (
-          <span className="hidden sm:inline-flex text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full whitespace-nowrap">
-            Terbanyak: {top.merek}
-          </span>
+        {!isCurrentMonthView && (
+          <button
+            onClick={goToToday}
+            className="text-xs font-semibold text-[#6D5DFC] hover:text-[#4C3FE0] bg-[#EEECFF] px-2.5 py-1 rounded-full whitespace-nowrap"
+          >
+            Hari ini
+          </button>
         )}
       </div>
-      {asetPerMerek.length === 0 ? (
-        <p className="text-sm text-slate-400">Belum ada data aset</p>
-      ) : (
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={asetPerMerek} margin={{ top: 16, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" stroke={THEME.grid} />
-              <XAxis dataKey="merek" tick={false} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: THEME.axis }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
-              <Bar dataKey="jumlah" fill={THEME.orange} radius={[8, 8, 0, 0]} barSize={36} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => goToMonth(-1)}
+          aria-label="Bulan sebelumnya"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
+        >
+          <ChevronLeft size={16} />
+        </button>
+        <p className="text-sm font-semibold text-slate-900">
+          {BULAN_LABEL[viewDate.getMonth()]} {viewDate.getFullYear()}
+        </p>
+        <button
+          onClick={() => goToMonth(1)}
+          aria-label="Bulan berikutnya"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
+        >
+          <ChevronRight size={16} />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 gap-y-1.5 text-center">
+        {HARI_LABEL.map((h) => (
+          <span key={h} className="text-[11px] font-semibold text-slate-400 pb-1">
+            {h}
+          </span>
+        ))}
+        {weeks.flat().map((cell, idx) => {
+          const isToday = isSameDay(cell.date, today);
+          const isSelected = !isToday && isSameDay(cell.date, selected);
+          const hasAktivitas = aktivitasPerTanggal.has(dateKeyLocal(cell.date));
+          return (
+            <button
+              key={idx}
+              onClick={() => setSelected(cell.date)}
+              className={`relative mx-auto w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-sm transition-colors ${
+                isToday
+                  ? 'bg-[#12B76A] text-white font-bold shadow-sm'
+                  : isSelected
+                    ? 'bg-[#6D5DFC] text-white font-semibold'
+                    : cell.inMonth
+                      ? 'text-slate-700 hover:bg-slate-100 font-medium'
+                      : 'text-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              {cell.date.getDate()}
+              {/* Titik penanda -- nunjukin tanggal ini punya aktivitas aset
+                  (tambah/pinjam/kembali/lapor rusak/dst) tanpa harus diklik
+                  dulu satu-satu. */}
+              {hasAktivitas && (
+                <span
+                  className={`absolute left-1/2 -translate-x-1/2 bottom-0.5 sm:bottom-1 w-1 h-1 rounded-full ${
+                    isToday || isSelected ? 'bg-white' : 'bg-[#6D5DFC]'
+                  }`}
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Aktivitas di tanggal terpilih -- muncul begitu tanggal manapun
+          dipencet (termasuk hari ini secara default). Sumbernya sama
+          persis dengan AktivitasAsetCard & tab Riwayat di Inventaris,
+          cuma difilter ke satu tanggal ini aja. */}
+      <div className="mt-4 pt-4 border-t border-slate-100">
+        <p className="text-xs font-semibold text-slate-500 mb-2.5">
+          Aktivitas{' '}
+          {isSameDay(selected, today)
+            ? 'hari ini'
+            : selected.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
+
+        {aktivitasHariIni.length === 0 ? (
+          <p className="text-sm text-slate-400">Tidak ada aktivitas aset pada tanggal ini.</p>
+        ) : (
+          <div className="max-h-56 overflow-y-auto pr-1">
+            <AktivitasTimelineList
+              events={aktivitasHariIni}
+              timeFormatter={(waktu) =>
+                `${new Date(waktu).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`
+              }
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -587,17 +742,53 @@ function formatWaktuSingkat(iso: string): string {
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 }
 
-const AKTIVITAS_ASET_STYLE: Record<
-  AktivitasAsetTerbaru['type'],
-  { bg: string; icon: JSX.Element; label: string }
-> = {
-  pinjam: { bg: 'bg-amber-50 text-amber-600', icon: <HandCoins size={15} />, label: 'menerima' },
-  kembali: { bg: 'bg-emerald-50 text-emerald-600', icon: <Undo2 size={15} />, label: 'mengembalikan' },
-  lapor_rusak: { bg: 'bg-red-50 text-red-600', icon: <AlertTriangle size={15} />, label: 'melaporkan kerusakan' },
-  mulai_perbaikan: { bg: 'bg-orange-50 text-orange-600', icon: <PlayCircle size={15} />, label: 'mulai memperbaiki' },
-  selesai_perbaikan: { bg: 'bg-sky-50 text-sky-600', icon: <Wrench size={15} />, label: 'selesai memperbaiki' },
-  dijual: { bg: 'bg-purple-50 text-purple-600', icon: <Banknote size={15} />, label: 'menjual' },
+// Opsi D — gaya timeline garis (titik + garis vertikal) buat daftar
+// aktivitas aset, gantiin kotak ikon lama. Dipakai bareng oleh
+// AktivitasAsetCard (widget "Riwayat") dan daftar aktivitas per-tanggal
+// di CalendarCard, biar konsisten satu gaya visual di kedua tempat.
+const AKTIVITAS_ASET_STYLE: Record<AktivitasAsetTerbaru['type'], { color: string; label: string }> = {
+  pinjam: { color: THEME.amber, label: 'menerima' },
+  kembali: { color: THEME.emerald, label: 'mengembalikan' },
+  lapor_rusak: { color: THEME.rose, label: 'melaporkan kerusakan' },
+  mulai_perbaikan: { color: THEME.orange, label: 'mulai memperbaiki' },
+  selesai_perbaikan: { color: THEME.sky, label: 'selesai memperbaiki' },
+  dijual: { color: THEME.purple, label: 'menjual' },
 };
+
+function AktivitasTimelineList({
+  events,
+  timeFormatter,
+}: {
+  events: AktivitasAsetTerbaru[];
+  timeFormatter: (waktu: string) => string;
+}) {
+  return (
+    <ul className="flex flex-col">
+      {events.map((ev, idx) => {
+        const s = AKTIVITAS_ASET_STYLE[ev.type];
+        const kode = ev.aset?.kode_aset || ev.aset?.kode_kelengkapan || '-';
+        const pelaku =
+          ev.nama ?? (ev.type === 'mulai_perbaikan' || ev.type === 'selesai_perbaikan' ? 'Admin' : null);
+        const isLast = idx === events.length - 1;
+        return (
+          <li key={`${ev.type}-${idx}`} className="flex gap-3">
+            <div className="flex flex-col items-center">
+              <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: s.color }} />
+              {!isLast && <span className="w-px flex-1 bg-slate-100 mt-1" />}
+            </div>
+            <div className={`min-w-0 ${isLast ? 'pb-1' : 'pb-4'}`}>
+              <p className="text-sm text-slate-700 leading-snug">
+                {pelaku && <span className="font-medium text-slate-800">{pelaku} </span>}
+                {s.label} <span className="font-medium text-slate-800">{kode}</span>
+              </p>
+              <p className="text-xs text-slate-400 mt-0.5">{timeFormatter(ev.waktu)}</p>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 // ==== Aktivitas aset terbaru — khusus admin (inventaris) ====
 // Ringkasan 5 event teraktual dari feed yang sama dengan tab "Riwayat Aset"
@@ -626,30 +817,7 @@ export function AktivitasAsetCard({ aktivitasAsetTerbaru }: { aktivitasAsetTerba
       {aktivitasAsetTerbaru.length === 0 ? (
         <p className="text-sm text-slate-400">Belum ada aktivitas aset.</p>
       ) : (
-        <ul className="flex flex-col gap-1">
-          {aktivitasAsetTerbaru.map((ev, idx) => {
-            const s = AKTIVITAS_ASET_STYLE[ev.type];
-            const kode = ev.aset?.kode_aset || '-';
-            const pelaku =
-              ev.nama ?? (ev.type === 'mulai_perbaikan' || ev.type === 'selesai_perbaikan' ? 'Admin' : null);
-            const isLast = idx === aktivitasAsetTerbaru.length - 1;
-            return (
-              <li key={`${ev.type}-${idx}`} className="relative flex items-start gap-2.5 py-1.5">
-                {!isLast && <span className="absolute left-[13px] top-9 bottom-[-6px] w-px bg-slate-100" />}
-                <span className={`relative z-10 w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${s.bg}`}>
-                  {s.icon}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm text-slate-700 leading-snug">
-                    {pelaku && <span className="font-medium text-slate-800">{pelaku} </span>}
-                    {s.label} <span className="font-medium text-slate-800">{kode}</span>
-                  </p>
-                  <p className="text-xs text-slate-400 mt-0.5">{formatWaktuSingkat(ev.waktu)}</p>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <AktivitasTimelineList events={aktivitasAsetTerbaru} timeFormatter={formatWaktuSingkat} />
       )}
     </div>
   );

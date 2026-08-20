@@ -10,7 +10,6 @@ const STATUS_LABEL: Record<AsetKelengkapanStatus, string> = {
   tersedia: 'Tersedia',
   dipakai: 'Dipakai',
   rusak: 'Rusak',
-  diperbaiki: 'Sedang Diperbaiki',
 };
 
 // Daftar kolom yang bisa diexport, urutannya = urutan kolom di file export &

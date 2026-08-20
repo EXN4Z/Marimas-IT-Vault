@@ -1,35 +1,56 @@
-import { useEffect, useRef, useState } from 'react';
-import { Plus, Pencil, Trash2, Upload, Download, Loader2, MapPin } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Plus, Pencil, Trash2, Upload, Download, Loader2, MapPin, AlertTriangle, Wrench } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ScrollableTabBar from '../shared/ScrollableTabBar';
 import {
   getAsetKelengkapan,
   deleteAsetKelengkapan,
   importAsetKelengkapan,
+  laporRusak,
   type AsetKelengkapan,
+  type AsetKelengkapanStatus,
 } from '../../api/asetKelengkapan';
 import StatusBadge from '../shared/StatusBadge';
+import Tooltip from '../shared/Tooltip';
 import Pagination from '../shared/Pagination';
 import AsetKelengkapanForm from './AsetKelengkapanForm';
 import AsetKelengkapanExportModal from './AsetKelengkapanExportModal';
+import { formatTanggalId } from './asetHelpers';
+import { useAuth } from '../../context/AuthContext';
 
 const STATUS_LABEL: Record<string, string> = {
   tersedia: 'Tersedia',
   dipakai: 'Dipakai',
   rusak: 'Rusak',
-  diperbaiki: 'Sedang Diperbaiki',
 };
 
 const STATUS_STYLE: Record<string, string> = {
   tersedia: 'bg-emerald-50 text-emerald-700',
   dipakai: 'bg-amber-50 text-amber-700',
   rusak: 'bg-red-100 text-red-800',
-  diperbaiki: 'bg-orange-50 text-orange-700',
 };
 
+// Filter status jadi tab nav (ScrollableTabBar), sama pola kayak TabAset.tsx.
+// "Rusak" dulunya halaman/tab terpisah (TabKelengkapanRusak.tsx) -- sekarang
+// digabung ke sini jadi salah satu filter status, biar user gak perlu
+// pindah-pindah halaman buat lihat arsip kelengkapan rusak.
+type StatusFilter = 'semua' | AsetKelengkapanStatus;
+
 export default function TabKelengkapanAset() {
+  // Non-admin (karyawan/manajer/hr) cuma boleh liat kelengkapan yang
+  // tersedia atau lagi dia pinjam sendiri (backend yang filter datanya --
+  // lihat AsetKelengkapanController::index()). Di sisi FE, tab status
+  // "Rusak" & aksi kelola (Tambah/Edit/Hapus/Import/Lapor Rusak) yang emang
+  // admin-only di backend disembunyikan biar gak nampilin tombol yang
+  // ujung-ujungnya cuma 403.
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
   const [items, setItems] = useState<AsetKelengkapan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('semua');
 
   // Pagination — client-side krn API kelengkapan gak dipaging di backend,
   // style sama kayak pager tabel Aset (10 per halaman).
@@ -43,6 +64,12 @@ export default function TabKelengkapanAset() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [deleteForceAvailable, setDeleteForceAvailable] = useState(false);
+
+  // Lapor Rusak — final, gak bisa dibatalin. Beda dialog dari hapus krn
+  // konsekuensinya beda (pindah ke filter Rusak, bukan hilang permanen).
+  const [rusakTarget, setRusakTarget] = useState<AsetKelengkapan | null>(null);
+  const [rusakSubmitting, setRusakSubmitting] = useState(false);
+  const [rusakError, setRusakError] = useState('');
 
   // Import Excel (kelengkapan berdiri sendiri, nempel ke aset induk yang
   // sudah ada) & export Excel/PDF — pola sama kayak TabAset & MasterData.
@@ -68,14 +95,29 @@ export default function TabKelengkapanAset() {
     loadData();
   }, []);
 
-  const lastPage = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
-  const pageClamped = Math.min(page, lastPage);
-  const pageItems = items.slice((pageClamped - 1) * ITEMS_PER_PAGE, pageClamped * ITEMS_PER_PAGE);
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { tersedia: 0, dipakai: 0, rusak: 0 };
+    items.forEach((i) => {
+      counts[i.status] = (counts[i.status] ?? 0) + 1;
+    });
+    return counts;
+  }, [items]);
 
-  // Balik ke halaman 1 tiap kali data-nya reload (misal abis tambah/hapus/import)
+  const filteredItems = useMemo(() => {
+    if (statusFilter === 'semua') return items;
+    return items.filter((i) => i.status === statusFilter);
+  }, [items, statusFilter]);
+
+  const isRusakView = statusFilter === 'rusak';
+
+  const lastPage = Math.max(1, Math.ceil(filteredItems.length / ITEMS_PER_PAGE));
+  const pageClamped = Math.min(page, lastPage);
+  const pageItems = filteredItems.slice((pageClamped - 1) * ITEMS_PER_PAGE, pageClamped * ITEMS_PER_PAGE);
+
+  // Balik ke halaman 1 tiap kali data atau filter status-nya berubah.
   useEffect(() => {
     setPage(1);
-  }, [items.length]);
+  }, [filteredItems.length, statusFilter]);
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -126,10 +168,26 @@ export default function TabKelengkapanAset() {
     }
   };
 
+  const confirmRusak = async () => {
+    if (!rusakTarget) return;
+    setRusakSubmitting(true);
+    setRusakError('');
+    try {
+      await laporRusak(rusakTarget.id);
+      setRusakTarget(null);
+      loadData(); // refresh — item pindah ke filter Rusak, ilang dari filter lain
+      toast.success(`${rusakTarget.kode_kelengkapan} dilaporkan rusak.`);
+    } catch (err: any) {
+      setRusakError(err.response?.data?.message || 'Gagal melaporkan kerusakan.');
+    } finally {
+      setRusakSubmitting(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-        <p className="text-sm text-slate-500">
+      <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
+        <p className="text-sm text-slate-500 flex-1 min-w-[240px]">
           Kelola kelengkapan aset (charger, tas, mouse, dll) sebagai item tersendiri — serah-terima
           dan riwayat pemakaiannya dicatat terpisah dari aset utama.
         </p>
@@ -142,99 +200,180 @@ export default function TabKelengkapanAset() {
             Export
           </button>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={handleFileSelected}
-            className="hidden"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={importLoading}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            {importLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-            {importLoading ? 'Mengimport...' : 'Import Excel'}
-          </button>
+          {/* Import/Tambah cuma admin -- backend juga nolak (403) buat role
+              lain, disembunyikan di sini biar gak nampilin tombol yang
+              ujung-ujungnya gagal. */}
+          {isAdmin && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelected}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importLoading}
+                className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                {importLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                {importLoading ? 'Mengimport...' : 'Import Excel'}
+              </button>
 
-          <button
-            onClick={openAdd}
-            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition"
-          >
-            <Plus size={16} />
-            Tambah Kelengkapan
-          </button>
+              <button
+                onClick={openAdd}
+                className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition"
+              >
+                <Plus size={16} />
+                Tambah Kelengkapan
+              </button>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Filter status pakai tab nav (ScrollableTabBar), sama pola kayak
+          tab status di halaman Aset -- "Rusak" termasuk di sini juga
+          (arsip, dilepas otomatis dari induk pas dilaporkan). */}
+      <ScrollableTabBar
+        className="mb-4"
+        activeTab={statusFilter}
+        onChange={setStatusFilter}
+        tabs={[
+          {
+            key: 'semua' as const,
+            label: 'Semua Status',
+            badge: items.length,
+            badgeClassName: statusFilter === 'semua' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
+          },
+          // Tab "Rusak" cuma buat admin -- non-admin gak boleh liat data
+          // kelengkapan yang rusak sama sekali (backend juga udah exclude
+          // status 'rusak' dari response non-admin, ini cuma nyocokin di FE).
+          ...(Object.keys(STATUS_LABEL) as AsetKelengkapanStatus[])
+            .filter((s) => isAdmin || s !== 'rusak')
+            .map((s) => ({
+              key: s,
+              label: STATUS_LABEL[s],
+              icon: s === 'rusak' ? Wrench : undefined,
+              badge: statusCounts[s] ?? 0,
+              badgeClassName:
+                statusFilter === s
+                  ? s === 'rusak'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-slate-900 text-white'
+                  : 'bg-slate-100 text-slate-500',
+            })),
+        ]}
+      />
+
+      {isRusakView && (
+        <p className="text-xs text-slate-400 mb-4 -mt-1">
+          Arsip kelengkapan yang sudah dilaporkan rusak — dilepas otomatis dari aset induk, tidak
+          dihapus, dan tidak bisa dikembalikan ke status semula.
+        </p>
+      )}
 
       <div className="border border-slate-200 rounded-lg overflow-hidden">
         {loading && <p className="text-sm text-slate-400 text-center py-8">Memuat data...</p>}
         {!loading && error && <p className="text-sm text-red-500 text-center py-8">{error}</p>}
-        {!loading && !error && items.length === 0 && (
-          <p className="text-sm text-slate-400 text-center py-8">Belum ada kelengkapan aset.</p>
+        {!loading && !error && filteredItems.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+            {isRusakView && <Wrench size={32} className="mb-2" />}
+            <p className="text-sm">
+              {isRusakView ? 'Belum ada kelengkapan yang dilaporkan rusak.' : 'Belum ada kelengkapan.'}
+            </p>
+          </div>
         )}
 
-        {!loading && !error && items.length > 0 && (
+        {!loading && !error && filteredItems.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[720px]">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
                   <th className="px-6 py-3 font-medium">Kode</th>
                   <th className="px-6 py-3 font-medium">Jenis / Merek</th>
-                  <th className="px-6 py-3 font-medium">Aset Induk / Lokasi</th>
-                  <th className="px-6 py-3 font-medium">Serial Number</th>
+                  <th className="px-6 py-3 font-medium">
+                    {isRusakView ? 'Asal Lokasi' : 'Aset Induk / Lokasi'}
+                  </th>
+                  <th className="px-6 py-3 font-medium">{isRusakView ? 'Tanggal Rusak' : 'Serial Number'}</th>
                   <th className="px-6 py-3 font-medium">Status</th>
-                  <th className="px-6 py-3 font-medium text-right">Aksi</th>
+                  {/* Kolom Aksi (Edit/Hapus/Lapor Rusak) cuma buat admin --
+                      backend nolak (403) buat role lain. */}
+                  {!isRusakView && isAdmin && <th className="px-6 py-3 font-medium text-right">Aksi</th>}
                 </tr>
               </thead>
               <tbody>
                 {pageItems.map((item) => (
                   <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                     <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{item.kode_kelengkapan}</td>
-                    <td className="px-6 py-3 text-slate-600">
-                      {item.nama || '-'} · {[item.merek, item.tipe].filter(Boolean).join(' ') || '-'}
+                    <td className="px-6 py-3 text-slate-600 max-w-[220px]">
+                      <Tooltip content={`${item.nama || '-'} · ${[item.merek, item.tipe].filter(Boolean).join(' ') || '-'}`}>
+                        <p className="truncate">
+                          {item.nama || '-'} · {[item.merek, item.tipe].filter(Boolean).join(' ') || '-'}
+                        </p>
+                      </Tooltip>
                     </td>
-                    <td className="px-6 py-3 text-slate-600">
+                    <td className="px-6 py-3 text-slate-600 max-w-[180px]">
                       {item.aset ? (
-                        <span className="font-mono text-[13px]">{item.aset.kode_aset}</span>
+                        <Tooltip content={item.aset.kode_aset}>
+                          <span className="font-mono text-[13px] truncate block">{item.aset.kode_aset}</span>
+                        </Tooltip>
                       ) : item.lokasiKantor ? (
-                        <span className="inline-flex items-center gap-1.5 text-slate-600">
-                          <MapPin size={13} className="text-slate-300 shrink-0" />
-                          {item.lokasiKantor.nama}
-                        </span>
+                        <Tooltip content={item.lokasiKantor.nama}>
+                          <span className="inline-flex items-center gap-1.5 text-slate-600 min-w-0">
+                            <MapPin size={13} className="text-slate-300 shrink-0" />
+                            <span className="truncate">{item.lokasiKantor.nama}</span>
+                          </span>
+                        </Tooltip>
                       ) : (
                         <span className="text-slate-300">-</span>
                       )}
                     </td>
-                    <td className="px-6 py-3 text-slate-600">{item.serial_number || '-'}</td>
+                    <td className="px-6 py-3 text-slate-600 whitespace-nowrap">
+                      {isRusakView ? formatTanggalId(item.tanggal_rusak) : item.serial_number || '-'}
+                    </td>
                     <td className="px-6 py-3">
                       <StatusBadge colorClass={STATUS_STYLE[item.status] || 'bg-slate-100 text-slate-600'}>
                         {STATUS_LABEL[item.status] || item.status}
                       </StatusBadge>
                     </td>
-                    <td className="px-6 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => openEdit(item)}
-                          title="Edit"
-                          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setDeleteError('');
-                            setDeleteForceAvailable(false);
-                            setDeleteTarget(item);
-                          }}
-                          title="Hapus"
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
+                    {!isRusakView && isAdmin && (
+                      <td className="px-6 py-3">
+                        <div className="flex items-center justify-end gap-1">
+                          {(item.status === 'tersedia' || item.status === 'dipakai') && (
+                            <button
+                              onClick={() => {
+                                setRusakError('');
+                                setRusakTarget(item);
+                              }}
+                              title="Lapor Rusak"
+                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                            >
+                              <AlertTriangle size={15} />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => openEdit(item)}
+                            title="Edit"
+                            className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeleteError('');
+                              setDeleteForceAvailable(false);
+                              setDeleteTarget(item);
+                            }}
+                            title="Hapus"
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -243,13 +382,13 @@ export default function TabKelengkapanAset() {
         )}
 
         {/* Pagination */}
-        {!loading && !error && items.length > 0 && lastPage > 1 && (
+        {!loading && !error && filteredItems.length > 0 && lastPage > 1 && (
           <div className="px-6 py-3 border-t border-slate-100">
             <Pagination
               currentPage={pageClamped}
               totalPages={lastPage}
               onPageChange={setPage}
-              totalItems={items.length}
+              totalItems={filteredItems.length}
               itemLabel="kelengkapan"
               className="pt-0 mt-0 border-t-0"
             />
@@ -311,6 +450,46 @@ export default function TabKelengkapanAset() {
                   {deleting ? 'Menghapus...' : 'Hapus Paksa'}
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* KONFIRMASI LAPOR RUSAK — final, gak bisa dibatalin setelah confirm */}
+      {rusakTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] px-4">
+          <div className="bg-white rounded-xl w-full max-w-sm p-5">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle size={18} className="text-red-600 shrink-0" />
+              <h2 className="text-base font-semibold text-slate-900">Lapor kelengkapan rusak?</h2>
+            </div>
+            <p className="text-sm text-slate-500 mb-3">
+              <span className="font-medium text-slate-700">{rusakTarget.kode_kelengkapan}</span> — Kelengkapan
+              ini beneran rusak? Setelah dilaporkan, gak bisa dibatalin.
+            </p>
+            {rusakError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
+                {rusakError}
+              </p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setRusakTarget(null);
+                  setRusakError('');
+                }}
+                disabled={rusakSubmitting}
+                className="text-sm px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmRusak}
+                disabled={rusakSubmitting}
+                className="text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {rusakSubmitting ? 'Melaporkan...' : 'Ya, Lapor Rusak'}
+              </button>
             </div>
           </div>
         </div>

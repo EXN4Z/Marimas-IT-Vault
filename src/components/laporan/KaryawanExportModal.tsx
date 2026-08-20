@@ -78,7 +78,7 @@ export default function KaryawanExportModal({ open, onClose, data }: Props) {
       return;
     }
     if (data.length === 0) {
-      toast.error('Gak ada data karyawan buat diexport.');
+      toast.error('Gak ada data user buat diexport.');
       return;
     }
 
@@ -100,28 +100,28 @@ export default function KaryawanExportModal({ open, onClose, data }: Props) {
       if (fileType === 'excel') {
         await downloadStyledExcel(
           {
-            title: 'Data Karyawan',
-            subtitle: `${data.length} karyawan sesuai filter saat ini`,
+            title: 'Data User',
+            subtitle: `${data.length} user sesuai filter saat ini`,
             headers,
             rows,
-            sheetName: 'Data Karyawan',
+            sheetName: 'Data User',
             statusColumnIndexes: [],
           },
-          `Data Karyawan - ${today}.xlsx`
+          `Data User - ${today}.xlsx`
         );
       } else if (printWindow) {
         printRowsAsReport(
           headers,
           rows,
-          { title: 'Data Karyawan', periodLabel: `Diexport ${today} — ${data.length} karyawan` },
+          { title: 'Data User', periodLabel: `Diexport ${today} — ${data.length} user` },
           printWindow
         );
       }
-      toast.success(`${data.length} karyawan berhasil diexport.`);
+      toast.success(`${data.length} user berhasil diexport.`);
       onClose();
     } catch (err) {
       console.error(err);
-      toast.error('Gagal export data karyawan.');
+      toast.error('Gagal export data user.');
     } finally {
       setExporting(false);
     }
@@ -132,8 +132,8 @@ export default function KaryawanExportModal({ open, onClose, data }: Props) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">Export Data Karyawan</h2>
-            <p className="text-xs text-slate-400 mt-0.5">{data.length} karyawan sesuai filter saat ini akan diexport</p>
+            <h2 className="text-base font-semibold text-slate-900">Export Data User</h2>
+            <p className="text-xs text-slate-400 mt-0.5">{data.length} user sesuai filter saat ini akan diexport</p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition">
             <X size={20} />
@@ -217,7 +217,7 @@ export default function KaryawanExportModal({ open, onClose, data }: Props) {
             disabled={exporting}
             className="px-4 py-2.5 text-sm font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition disabled:opacity-50"
           >
-            {exporting ? 'Mengexport...' : `Export ${data.length} Karyawan`}
+            {exporting ? 'Mengexport...' : `Export ${data.length} User`}
           </button>
         </div>
       </div>

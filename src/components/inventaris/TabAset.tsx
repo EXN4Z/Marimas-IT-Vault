@@ -5,6 +5,7 @@ import Pagination from '../shared/Pagination';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
 import StatusBadge from '../shared/StatusBadge';
+import Tooltip from '../shared/Tooltip';
 import AsetFormModal from './AsetFormModal';
 import AsetSerahTerimaModal from './AsetSerahTerimaModal';
 import AsetPengembalianModal from './AsetPengembalianModal';
@@ -34,14 +35,12 @@ const KELENGKAPAN_STATUS_LABEL: Record<AsetKelengkapanStatus, string> = {
   tersedia: 'Tersedia',
   dipakai: 'Dipakai',
   rusak: 'Rusak',
-  diperbaiki: 'Sedang Diperbaiki',
 };
 
 const KELENGKAPAN_STATUS_STYLE: Record<AsetKelengkapanStatus, string> = {
   tersedia: 'bg-emerald-50 text-emerald-700',
   dipakai: 'bg-amber-50 text-amber-700',
   rusak: 'bg-red-100 text-red-800',
-  diperbaiki: 'bg-orange-50 text-orange-700',
 };
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
@@ -696,12 +695,16 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
             badge: visibleAsetList.length,
             badgeClassName: statusFilter === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
           },
-          ...(Object.keys(STATUS_LABEL) as AsetStatus[]).map((s) => ({
-            key: s,
-            label: STATUS_LABEL[s],
-            badge: statusCounts[s],
-            badgeClassName: statusFilter === s ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
-          })),
+          // Tab "Rusak Berat" & "Dijual" cuma buat admin -- non-admin gak
+          // perlu (dan gak boleh) lihat aset yang udah di-writeoff/dijual.
+          ...(Object.keys(STATUS_LABEL) as AsetStatus[])
+            .filter((s) => isAdmin || (s !== 'rusak_berat' && s !== 'dijual'))
+            .map((s) => ({
+              key: s,
+              label: STATUS_LABEL[s],
+              badge: statusCounts[s],
+              badgeClassName: statusFilter === s ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
+            })),
         ]}
       />
 
@@ -723,7 +726,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
 
         {!loading && !error && filteredAset.length > 0 && (
           <div className="hidden sm:block overflow-x-auto">
-            <table className="w-[1180px] text-sm min-w-[760px]">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-middle text-xs text-slate-400 uppercase tracking-wide">
                   <th className="px-6 py-3 font-medium">Kode Aset</th>
@@ -740,21 +743,25 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                     <tr key={a.id} className="text-center border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                       <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{a.kode_aset}</td>
                       <td className="px-6 py-3 text-slate-600 max-w-[160px]">
-                        <p className="truncate" title={[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}>
-                          {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}
-                        </p>
+                        <Tooltip content={[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}>
+                          <p className="truncate">
+                            {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}
+                          </p>
+                        </Tooltip>
                       </td>
                       <td className="px-6 py-3 text-slate-600 whitespace-nowrap">{a.jumlah ?? 1}</td>
                       <td className="px-6 py-3 whitespace-nowrap">
                         <StatusBadge colorClass={STATUS_STYLE[a.status]}>{STATUS_LABEL[a.status]}</StatusBadge>
                       </td>
                       <td className="px-6 py-3 text-slate-600 max-w-[160px]">
-                        <p className="truncate" title={a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
-                          {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}
-                          {a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && (
-                            <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
-                          )}
-                        </p>
+                        <Tooltip content={a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
+                          <p className="truncate">
+                            {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}
+                            {a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && (
+                              <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
+                            )}
+                          </p>
+                        </Tooltip>
                       </td>
                       <td className="px-6 py-3">
                         <div className="flex items-center justify-end gap-1 flex-nowrap">
@@ -839,13 +846,14 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
           aset={editingAset}
           supplierOptions={supplierOptions}
           onClose={() => setFormOpen(false)}
-          onSaved={(saved) => {
+          onSaved={(saved, warning) => {
             setAsetList((prev) => {
               const exists = prev.some((a) => a.id === saved.id);
               return exists ? prev.map((a) => (a.id === saved.id ? saved : a)) : [saved, ...prev];
             });
             setFormOpen(false);
             if (detailId === saved.id) refreshDetail();
+            if (warning) toast.error(warning);
           }}
         />
       )}
@@ -1025,36 +1033,44 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                 )}
 
                 {/* KELENGKAPAN — daftar aksesoris (tas, charger, dst) yang
-                    nempel ke aset ini lewat aset_kelengkapan.aset_id */}
+                    nempel ke aset ini lewat aset_kelengkapan.aset_id.
+                    Read-only di sini; buat nambah/pasang kelengkapan baru,
+                    dilakuin lewat form Edit Aset (section Kelengkapan). */}
                 {detail.aset_kelengkapan && detail.aset_kelengkapan.length > 0 && (
                   <div>
-                    <p className="text-xs text-slate-400 mb-2">
-                      Kelengkapan ({detail.aset_kelengkapan.length})
-                    </p>
-                    <div className="flex flex-col gap-2">
-                      {detail.aset_kelengkapan.map((k: AsetKelengkapan) => (
-                        <div
-                          key={k.id}
-                          className="flex items-center justify-between gap-3 bg-slate-50 rounded-lg px-3 py-2 text-sm"
-                        >
-                          <div className="min-w-0">
-                            <p className="text-slate-800 font-medium truncate">
-                              {k.nama || [k.merek, k.tipe].filter(Boolean).join(' ') || k.kode_kelengkapan}
-                            </p>
-                            <p className="text-xs text-slate-400 truncate">
-                              {k.kode_kelengkapan}
-                              {k.serial_number ? ` · S/N: ${k.serial_number}` : ''}
-                            </p>
-                          </div>
-                          <StatusBadge
-                            colorClass={KELENGKAPAN_STATUS_STYLE[k.status] || 'bg-slate-100 text-slate-600'}
-                            className="shrink-0"
-                          >
-                            {KELENGKAPAN_STATUS_LABEL[k.status] || k.status}
-                          </StatusBadge>
-                        </div>
-                      ))}
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-slate-400">
+                        Kelengkapan ({detail.aset_kelengkapan?.length || 0})
+                      </p>
                     </div>
+                    {detail.aset_kelengkapan && detail.aset_kelengkapan.length > 0 ? (
+                      <div className="flex flex-col gap-2">
+                        {detail.aset_kelengkapan.map((k: AsetKelengkapan) => (
+                          <div
+                            key={k.id}
+                            className="flex items-center justify-between gap-3 bg-slate-50 rounded-lg px-3 py-2 text-sm"
+                          >
+                            <div className="min-w-0">
+                              <p className="text-slate-800 font-medium truncate">
+                                {k.nama || [k.merek, k.tipe].filter(Boolean).join(' ') || k.kode_kelengkapan}
+                              </p>
+                              <p className="text-xs text-slate-400 truncate">
+                                {k.kode_kelengkapan}
+                                {k.serial_number ? ` · S/N: ${k.serial_number}` : ''}
+                              </p>
+                            </div>
+                            <StatusBadge
+                              colorClass={KELENGKAPAN_STATUS_STYLE[k.status] || 'bg-slate-100 text-slate-600'}
+                              className="shrink-0"
+                            >
+                              {KELENGKAPAN_STATUS_LABEL[k.status] || k.status}
+                            </StatusBadge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-300 italic">Belum ada kelengkapan terpasang.</p>
+                    )}
                   </div>
                 )}
 

@@ -12,6 +12,7 @@ interface FormState {
     name: string;
     email: string;
     phone: string;
+    password: string;
     role: Role;
     nik: string;
     departemen_id: string;
@@ -27,6 +28,7 @@ const initialForm: FormState = {
     name: '',
     email: '',
     phone: '',
+    password: '',
     role: 'karyawan',
     nik: '',
     departemen_id: '',
@@ -42,9 +44,6 @@ export default function CreateKaryawanPage() {
     const [cabangList, setCabangList] = useState<Cabang[]>([]);
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
-
-    const [generatedPassword, setGeneratedPassword] = useState<string>('');
-    const [createdName, setCreatedName] = useState<string>('');
 
     const isCabang = form.role === 'cabang';
 
@@ -106,51 +105,26 @@ export default function CreateKaryawanPage() {
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
                 tanggal_masuk: isCabang ? null : form.tanggal_masuk || null,
             };
-            const res = await api.post('/karyawan', payload);
-            toast.success('Karyawan berhasil dibuat.');
-            setGeneratedPassword(res.data.password);
-            setCreatedName(res.data.user.name);
+            await api.post('/karyawan', payload);
+            toast.success('User berhasil dibuat.');
+            navigate('/karyawan');
         } catch (err: any) {
             if (err.response?.status === 422) {
                 setErrors(err.response.data.errors ?? {});
                 toast.error('Periksa kembali data yang diisi.');
             } else if (err.response?.status === 403) {
-                toast.error('Anda tidak punya akses untuk menambah karyawan.');
+                toast.error('Anda tidak punya akses untuk menambah user.');
             } else {
-                toast.error('Gagal menyimpan karyawan. Coba lagi.');
+                toast.error('Gagal menyimpan user. Coba lagi.');
             }
         } finally {
             setSaving(false);
         }
     }
 
-    if (generatedPassword) {
-        return (
-            <RouteModal title="Karyawan Berhasil Dibuat" fallbackPath="/karyawan">
-                <div className="text-center">
-                    <p className="text-sm text-gray-500 mb-4">
-                        Catat atau kirim password ini ke <span className="font-medium">{createdName}</span>.
-                        Password hanya ditampilkan sekali dan tidak bisa dilihat lagi.
-                    </p>
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg py-3 px-4 mb-6">
-                        <p className="text-2xl font-mono font-bold tracking-wider text-gray-900">
-                            {generatedPassword}
-                        </p>
-                    </div>
-                    <button
-                        onClick={() => navigate('/karyawan')}
-                        className="w-full text-sm px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
-                    >
-                        Selesai
-                    </button>
-                </div>
-            </RouteModal>
-        );
-    }
-
     return (
         <RouteModal
-            title="Tambah Karyawan"
+            title="Tambah User"
             description="Buat akun & data kepegawaian baru."
             fallbackPath="/karyawan"
             onClose={closeModal}
@@ -182,6 +156,16 @@ export default function CreateKaryawanPage() {
                             value={form.phone}
                             onChange={(e) => handleChange('phone', e.target.value)}
                             className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                        />
+                    </Field>
+
+                    <Field label="Password" error={errors.password?.[0]}>
+                        <input
+                            type="password"
+                            value={form.password}
+                            onChange={(e) => handleChange('password', e.target.value)}
+                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                            required
                         />
                     </Field>
 
@@ -271,7 +255,7 @@ export default function CreateKaryawanPage() {
                             disabled={saving}
                             className="text-sm px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
                         >
-                            {saving ? 'Menyimpan...' : 'Simpan Karyawan'}
+                            {saving ? 'Menyimpan...' : 'Simpan User'}
                         </button>
                     </div>
                 </form>

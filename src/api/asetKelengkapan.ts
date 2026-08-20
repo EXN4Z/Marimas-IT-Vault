@@ -3,7 +3,7 @@ import type { Supplier } from './supplier';
 import type { Aset, KaryawanUser } from './aset';
 import type { LokasiKantor } from './lokasiKantor';
 
-export type AsetKelengkapanStatus = 'tersedia' | 'dipakai' | 'rusak' | 'diperbaiki';
+export type AsetKelengkapanStatus = 'tersedia' | 'dipakai' | 'rusak';
 
 export interface AsetKelengkapan {
   id: number;
@@ -27,6 +27,7 @@ export interface AsetKelengkapan {
   no_surat_jalan: string | null;
   no_good_receive: string | null;
   status: AsetKelengkapanStatus;
+  tanggal_rusak: string | null; // ISO datetime, keisi otomatis begitu status jadi 'rusak' (laporRusak)
   pemakai_saat_ini?: AsetKelengkapanPemakai | null;
   pemakai?: AsetKelengkapanPemakai[]; // riwayat lengkap, cuma keisi di endpoint show()
 }
@@ -169,6 +170,47 @@ export async function importAsetKelengkapan(file: File): Promise<{ success: bool
   formData.append('file', file);
   const res = await api.post<{ success: boolean; message: string }>('/aset-kelengkapan/import', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data;
+}
+
+// ================================================================
+// Kelengkapan Rusak → Lepas Otomatis → Ganti Pengganti
+// ================================================================
+
+export interface PaginatedAsetKelengkapan {
+  data: AsetKelengkapan[];
+  current_page: number;
+  last_page: number;
+  total: number;
+  per_page: number;
+}
+
+// POST /aset-kelengkapan/{id}/lapor-rusak — lepas dari induk (kalau ada),
+// tutup paksa peminjaman aktif, status jadi 'rusak'. Final, gak bisa
+// dibatalin (gak ada opsi "diperbaiki" buat kelengkapan).
+export async function laporRusak(id: number): Promise<AsetKelengkapan> {
+  const res = await api.post<AsetKelengkapan>(`/aset-kelengkapan/${id}/lapor-rusak`);
+  return res.data;
+}
+
+// POST /aset-kelengkapan/{id}/pasang-pengganti — body { aset_id } (induk
+// tujuan), status pengganti nyesuain kondisi induk sekali pas assign
+// (snapshot, bukan sinkron terus-menerus).
+export async function pasangPengganti(id: number, asetId: number): Promise<AsetKelengkapan> {
+  const res = await api.post<AsetKelengkapan>(`/aset-kelengkapan/${id}/pasang-pengganti`, { aset_id: asetId });
+  return res.data;
+}
+
+// GET /aset-kelengkapan/rusak?page=&per_page=&search= — list arsip
+// kelengkapan berstatus 'rusak', paginated, order by tanggal_rusak desc.
+export async function getRusak(params?: { page?: number; per_page?: number; search?: string }): Promise<PaginatedAsetKelengkapan> {
+  const res = await api.get<PaginatedAsetKelengkapan>('/aset-kelengkapan/rusak', {
+    params: {
+      page: params?.page,
+      per_page: params?.per_page,
+      search: params?.search || undefined,
+    },
   });
   return res.data;
 }

@@ -9,12 +9,11 @@ const STATUS_OPTIONS: { value: AsetKelengkapanStatus; label: string; dot: string
   { value: 'tersedia', label: 'Tersedia', dot: 'bg-emerald-500', ring: 'ring-emerald-100 border-emerald-400 bg-emerald-50/60' },
   { value: 'dipakai', label: 'Dipakai', dot: 'bg-blue-500', ring: 'ring-blue-100 border-blue-400 bg-blue-50/60' },
   { value: 'rusak', label: 'Rusak', dot: 'bg-red-500', ring: 'ring-red-100 border-red-400 bg-red-50/60' },
-  { value: 'diperbaiki', label: 'Diperbaiki', dot: 'bg-amber-500', ring: 'ring-amber-100 border-amber-400 bg-amber-50/60' },
 ];
 
 const MAX_FOTO_MB = 4;
 const ACCEPTED_FOTO_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
-const KETERANGAN_MAX = 500;
+const KETERANGAN_MAX = 255;
 
 const inputClass =
   'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 shadow-sm outline-none transition-all duration-150 hover:border-slate-400 focus:border-slate-900 focus:ring-4 focus:ring-slate-900/[0.06]';
@@ -25,6 +24,25 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
   editing?: AsetKelengkapan | null; // null/undefined = mode tambah
+  // Dipakai dari section "Kelengkapan" di form edit/create aset — kalau
+  // diisi, field "Aset Induk" dikunci ke aset ini (gak bisa diubah manual)
+  // & "Lokasi Kantor" otomatis nonaktif ikut logic form.aset_id yang sudah
+  // ada. Cuma berlaku di mode tambah (editing null/undefined).
+  presetAsetId?: number;
+  presetAsetLabel?: string; // label tampilan, mis. "AST-0012 — Dell Latitude"
+  // Paksa tampilan field "Aset Induk" ke mode terkunci (pakai
+  // presetAsetLabel) walau presetAsetId belum keisi angka beneran -- dipakai
+  // pas aset induknya baru dalam proses dibuat (mode create) jadi belum
+  // punya id sama sekali. aset_id yang beneran akan ditimpa pemanggil
+  // setelah aset induknya kesimpen (lihat AsetKelengkapanPicker).
+  lockAsetField?: boolean;
+  // Mode staged: dipakai kalau form ini dibuka DI DALAM form aset induk yang
+  // belum tentu punya id (mis. lagi mode create). Kalau diisi, submit TIDAK
+  // langsung panggil API create/update -- cuma validasi lalu balikin form
+  // values ke pemanggil buat ditahan (staged) dan diproses belakangan
+  // setelah aset induknya kesimpen. onSaved tidak dipanggil sama sekali di
+  // mode ini, cuma onStage lalu onClose.
+  onStage?: (values: AsetKelengkapanFormValues) => void;
 }
 
 const EMPTY_FORM: AsetKelengkapanFormValues = {
@@ -46,7 +64,7 @@ const EMPTY_FORM: AsetKelengkapanFormValues = {
   status: 'tersedia',
 };
 
-export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }: Props) {
+export default function AsetKelengkapanForm({ open, onClose, onSaved, editing, presetAsetId, presetAsetLabel, lockAsetField, onStage }: Props) {
   const [form, setForm] = useState<AsetKelengkapanFormValues>(EMPTY_FORM);
   const [supplierOptions, setSupplierOptions] = useState<Supplier[]>([]);
   const [asetOptions, setAsetOptions] = useState<Aset[]>([]);
@@ -102,7 +120,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
       });
       setFotoPreview(editing.foto || null);
     } else {
-      setForm(EMPTY_FORM);
+      setForm(presetAsetId ? { ...EMPTY_FORM, aset_id: presetAsetId } : EMPTY_FORM);
       setFotoPreview(null);
     }
     setAsetSearch('');
@@ -161,11 +179,32 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
     );
   }, [asetOptions, asetSearch]);
 
+  // Kelengkapan berstatus "tersedia" gak boleh masih nempel ke aset induk
+  // (aset induk cuma relevan kalau kelengkapan lagi dipakai/menempel ke
+  // sesuatu). Dipakai buat nonaktifkan field Aset Induk di UI.
+  const asetIndukDisabled = form.status === 'tersedia';
+
   if (!open) return null;
 
   function setField<K extends keyof AsetKelengkapanFormValues>(key: K, value: AsetKelengkapanFormValues[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: '' }));
+  }
+
+  // Ganti status kelengkapan. Begitu status jadi "tersedia", aset_id ikut
+  // dikosongkan otomatis (lihat asetIndukDisabled) — dan dropdown/pencarian
+  // aset induk yang mungkin lagi kebuka juga ditutup.
+  function pilihStatus(status: AsetKelengkapanStatus) {
+    setForm((prev) => ({
+      ...prev,
+      status,
+      aset_id: status === 'tersedia' ? null : prev.aset_id,
+    }));
+    if (errors.status) setErrors((prev) => ({ ...prev, status: '' }));
+    if (status === 'tersedia' && asetDropdownOpen) {
+      setAsetDropdownOpen(false);
+      setAsetSearch('');
+    }
   }
 
   // Aset induk & lokasi kantor saling meniadakan — kelengkapan yang nempel
@@ -244,6 +283,14 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
     e.preventDefault();
     if (saving) return;
     if (!validate()) return;
+    // Mode staged: gak ada aset induk beneran di backend buat nempelin
+    // kelengkapan ini (mis. lagi create aset baru), jadi cuma balikin form
+    // values ke pemanggil -- gak ada API yang dipanggil sama sekali di sini.
+    if (onStage) {
+      onStage(form);
+      onClose();
+      return;
+    }
     setSaving(true);
     try {
       if (editing) {
@@ -269,7 +316,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-[fadeIn_150ms_ease-out]"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-[fadeIn_150ms_ease-out]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget && !saving) onClose();
       }}
@@ -334,6 +381,16 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
           >
             <div className="sm:col-span-2" ref={asetFieldRef}>
               <Field label="Aset Induk" error={errors.aset_id}>
+                {presetAsetId || lockAsetField ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0 text-slate-400">
+                      <rect x="2" y="3" width="12" height="9" rx="1.4" stroke="currentColor" strokeWidth="1.4" />
+                      <path d="M5.5 14.5h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                    <span className="font-medium">{presetAsetLabel || (presetAsetId ? `Aset #${presetAsetId}` : 'Aset ini')}</span>
+                    <span className="ml-auto text-xs text-slate-400">Nempel ke aset ini</span>
+                  </div>
+                ) : (
                 <div className="relative">
                   <div className="relative">
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -341,14 +398,17 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
                       <path d="M14.5 14.5L11 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                     </svg>
                     <input
-                      className={`${inputClass} pl-8`}
+                      className={`${inputClass} pl-8 ${asetIndukDisabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}`}
                       placeholder="Cari kode aset, merek, atau tipe…"
                       value={asetSearch}
+                      disabled={asetIndukDisabled}
                       onChange={(e) => {
                         setAsetSearch(e.target.value);
                         setAsetDropdownOpen(true);
                       }}
-                      onFocus={() => setAsetDropdownOpen(true)}
+                      onFocus={() => {
+                        if (!asetIndukDisabled) setAsetDropdownOpen(true);
+                      }}
                     />
                   </div>
                   {asetTerpilih && !asetDropdownOpen && (
@@ -371,7 +431,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
                       </button>
                     </div>
                   )}
-                  {asetDropdownOpen && (
+                  {asetDropdownOpen && !asetIndukDisabled && (
                     <div className="absolute z-10 mt-1.5 max-h-48 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg animate-[dropIn_140ms_ease-out]">
                       <button
                         type="button"
@@ -412,8 +472,13 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
                     </div>
                   )}
                 </div>
+                )}
                 <p className="mt-1 text-xs text-slate-400">
-                  Opsional — pilih kalau kelengkapan ini menempel ke aset tertentu (mis. mouse ini punya laptop yang mana).
+                  {presetAsetId || lockAsetField
+                    ? 'Otomatis terisi dari aset yang lagi diedit/dibuat — kelengkapan baru ini akan langsung nempel ke aset tersebut.'
+                    : asetIndukDisabled
+                    ? 'Nonaktif — kelengkapan berstatus "Tersedia" tidak bisa terikat ke aset induk.'
+                    : 'Opsional — pilih kalau kelengkapan ini menempel ke aset tertentu (mis. mouse ini punya laptop yang mana).'}
                 </p>
               </Field>
             </div>
@@ -467,7 +532,7 @@ export default function AsetKelengkapanForm({ open, onClose, onSaved, editing }:
                           name="status"
                           className="sr-only"
                           checked={active}
-                          onChange={() => setField('status', s.value)}
+                          onChange={() => pilihStatus(s.value)}
                         />
                         <span className={`h-1.5 w-1.5 rounded-full ${s.dot} transition-transform duration-150 ${active ? 'scale-125' : ''}`} />
                         {s.label}

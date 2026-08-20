@@ -6,8 +6,7 @@ import {
   RingkasanAsetCard,
   HeroTrenPembelianAsetChart,
   AsetPerhatianCard,
-  AsetPerMerekCard,
-  AktivitasAsetCard,
+  CalendarCard,
   NotifikasiCard,
 } from './Shared';
 
@@ -17,9 +16,12 @@ import {
 export default function DashboardAdmin() {
   const { loading, error, user, notifications, handleMarkAsRead, } = useDashboardCore();
 
-  const { ringkasanAset, trenPembelianAset, asetPerhatian, asetPerMerek, aktivitasAsetTerbaru } = useDashboardAnalytics(true, {
-    statusAsetDistribusi: false,
-  });
+  const { ringkasanAset, trenPembelianAset, asetPerhatian, aktivitasAsetKalender } =
+    useDashboardAnalytics(true, {
+      statusAsetDistribusi: false,
+      asetPerMerek: false,
+      aktivitasAsetTerbaru: false,
+    });
 
   if (loading) {
     return (
@@ -60,27 +62,26 @@ export default function DashboardAdmin() {
         <KpiCard icon={ShieldAlert} label="Rusak Berat" value={ringkasanAset?.rusakBerat ?? 0} tone="rose" hint={`${rusakBeratPct}% dari total aset`} />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      {/* Hero chart (2/3) + Notifikasi (1/3) -- Notifikasi ngisi slot yang
+          dulu kosong di sebelah hero chart pada layar xl (hero cuma
+          col-span-2 dari 3 kolom). */}
+      {/* items-start -- biar tinggi kartu chart & notifikasi independen
+          (default grid nyamain tinggi keduanya ke yang paling tinggi). */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <HeroTrenPembelianAsetChart trenPembelianAset={trenPembelianAset} />
+        <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
       </div>
 
+      {/* Ringkasan Status Aset + Aset Butuh Perhatian -- dua kartu ringkasan
+          kondisi aset berdampingan. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <RingkasanAsetCard ringkasanAset={ringkasanAset} />
-        <AsetPerMerekCard asetPerMerek={asetPerMerek} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <AsetPerhatianCard asetPerhatian={asetPerhatian} />
       </div>
 
-      {/* Aktivitas Aset Terbaru + Notifikasi -- feed histori aset (sumber sama
-          dengan tab Riwayat di Inventaris) ditemenin notifikasi pribadi admin,
-          biar dashboard gak cuma soal angka tapi juga "apa yang baru terjadi". */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
-        <div className="xl:col-span-2">
-          <AktivitasAsetCard aktivitasAsetTerbaru={aktivitasAsetTerbaru} />
-        </div>
-        <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
+      {/* Kalender aktivitas aset -- div sendiri, full width. */}
+      <div className="mt-6">
+        <CalendarCard aktivitas={aktivitasAsetKalender} />
       </div>
     </>
   );

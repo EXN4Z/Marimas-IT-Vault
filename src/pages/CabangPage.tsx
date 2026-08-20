@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Building2, MapPin, Phone, Users, Map, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Building2, MapPin, Phone, Users, Map, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getCabang, createCabang, updateCabang, deleteCabang, type Cabang } from '../api/cabang';
+import RouteModal from '../components/shared/RouteModal';
 
 const STAFF_ROLES = ['admin', 'hr'];
 
@@ -227,76 +228,69 @@ export default function CabangPage() {
 
       {/* MODAL TAMBAH / EDIT */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-slate-900">
-                {editing ? 'Edit Cabang' : 'Tambah Cabang'}
-              </h3>
-              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600">
-                <X size={20} />
-              </button>
+        <RouteModal
+          title={editing ? 'Edit Cabang' : 'Tambah Cabang'}
+          onClose={closeModal}
+          maxWidthClassName="max-w-md"
+        >
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="text-xs font-medium text-slate-500 mb-1 block">Nama Cabang</label>
+              <input
+                value={formNama}
+                onChange={(e) => setFormNama(e.target.value)}
+                maxLength={150}
+                placeholder="Contoh: Kantor Pusat Semarang"
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+              />
             </div>
 
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="text-xs font-medium text-slate-500 mb-1 block">Nama Cabang</label>
-                <input
-                  value={formNama}
-                  onChange={(e) => setFormNama(e.target.value)}
-                  maxLength={150}
-                  placeholder="Contoh: Kantor Pusat Semarang"
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-slate-500 mb-1 block">Alamat</label>
-                <textarea
-                  value={formAlamat}
-                  onChange={(e) => setFormAlamat(e.target.value)}
-                  rows={2}
-                  placeholder="Alamat lengkap cabang..."
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-slate-500 mb-1 block">Nomor Telepon</label>
-                <input
-                  value={formTelepon}
-                  onChange={(e) => setFormTelepon(e.target.value)}
-                  placeholder="cth. 024-1234567"
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-slate-500 mb-1 block">Link Lokasi (Google Maps, dsb)</label>
-                <input
-                  value={formLink}
-                  onChange={(e) => setFormLink(e.target.value)}
-                  placeholder="https://maps.app.goo.gl/..."
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-              </div>
-
-              {formError && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  {formError}
-                </p>
-              )}
-
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="w-full text-white text-sm font-semibold py-3 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed bg-slate-900 hover:bg-slate-800"
-              >
-                {submitting ? 'Menyimpan...' : 'Simpan'}
-              </button>
+            <div>
+              <label className="text-xs font-medium text-slate-500 mb-1 block">Alamat</label>
+              <textarea
+                value={formAlamat}
+                onChange={(e) => setFormAlamat(e.target.value)}
+                rows={2}
+                placeholder="Alamat lengkap cabang..."
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
+              />
             </div>
+
+            <div>
+              <label className="text-xs font-medium text-slate-500 mb-1 block">Nomor Telepon</label>
+              <input
+                value={formTelepon}
+                onChange={(e) => setFormTelepon(e.target.value)}
+                placeholder="cth. 024-1234567"
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-slate-500 mb-1 block">Link Lokasi (Google Maps, dsb)</label>
+              <input
+                value={formLink}
+                onChange={(e) => setFormLink(e.target.value)}
+                placeholder="https://maps.app.goo.gl/..."
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+              />
+            </div>
+
+            {formError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {formError}
+              </p>
+            )}
+
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="w-full text-white text-sm font-semibold py-3 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed bg-slate-900 hover:bg-slate-800"
+            >
+              {submitting ? 'Menyimpan...' : 'Simpan'}
+            </button>
           </div>
-        </div>
+        </RouteModal>
       )}
 
       {/* MODAL KONFIRMASI HAPUS */}

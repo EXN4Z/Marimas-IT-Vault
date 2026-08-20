@@ -35,6 +35,11 @@ export default function Inventaris() {
     // ngirim /inventaris?tab=penanganan, bukan "penanganan_aset") -- tetep
     // didukung biar link lama/backend gak perlu ikut diubah.
     if (fromUrl === 'penanganan' && isAdmin) return 'penanganan_aset';
+    // alias lama: "Kelengkapan Rusak" dulu tab halaman terpisah, sekarang
+    // digabung jadi filter status di dalam "kelengkapan_aset" -- bookmark
+    // lama tetep diarahkan ke sana (filter "Rusak"-nya tinggal dipilih
+    // manual di dalam, gak perlu ikut di-encode ke URL top-level).
+    if (fromUrl === 'kelengkapan_rusak') return 'kelengkapan_aset';
     return 'aset';
   });
 
@@ -56,6 +61,10 @@ export default function Inventaris() {
     }
     if (fromUrl === 'penanganan' && isAdmin && activeTab !== 'penanganan_aset') {
       setActiveTabState('penanganan_aset');
+      return;
+    }
+    if (fromUrl === 'kelengkapan_rusak' && activeTab !== 'kelengkapan_aset') {
+      setActiveTabState('kelengkapan_aset');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -114,6 +123,10 @@ export default function Inventaris() {
     // dipakai buat checklist di form peminjaman aset -- makanya ditaruh di
     // Inventaris, bukan Master Data (yang isinya data referensi umum).
     { key: 'kelengkapan_aset', label: 'Kelengkapan Aset', icon: ClipboardList },
+    // Arsip "Kelengkapan Rusak" (alur "Kelengkapan Rusak -> Lepas Otomatis
+    // -> Ganti Pengganti") gak lagi jadi tab halaman terpisah -- sekarang
+    // digabung jadi filter status "Rusak" di dalam TabKelengkapanAset.tsx
+    // (ScrollableTabBar), sama pola kayak filter status di tab Aset.
     { key: 'penanganan_aset', label: 'Penanganan Aset', icon: Wrench, adminOnly: true },
     { key: 'foto_aset', label: 'Foto Aset', icon: Images, adminOnly: true },
     { key: 'riwayat_aset', label: 'Riwayat Aset', icon: History },

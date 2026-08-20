@@ -42,7 +42,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { label: 'Data Karyawan', icon: Users, path: '/karyawan', matchPrefix: '/karyawan' },
+  { label: 'Data User', icon: Users, path: '/karyawan', matchPrefix: '/karyawan' },
   {
     label: 'Inventaris',
     icon: Package,
@@ -54,6 +54,8 @@ const navItems: NavItem[] = [
       // karena kelengkapan dipakai spesifik buat checklist di form
       // peminjaman aset ("pinjam laptop + tas + charger sekaligus").
       { label: 'Kelengkapan Aset', icon: ClipboardList, path: '/inventaris?tab=kelengkapan_aset' },
+      // "Kelengkapan Rusak" gak lagi link sidebar terpisah -- sekarang jadi
+      // filter status "Rusak" di dalam tab Kelengkapan Aset itu sendiri.
       { label: 'Penanganan Aset', icon: Wrench, path: '/inventaris?tab=penanganan_aset', roles: ['admin'] },
       { label: 'Foto Aset', icon: Images, path: '/inventaris?tab=foto_aset', roles: ['admin'] },
       { label: 'Riwayat Aset', icon: History, path: '/inventaris?tab=riwayat_aset' },
@@ -146,6 +148,10 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
     }
     // Master Data hanya untuk admin/hr
     if (item.label === 'Master Data' && !STAFF_ROLES.includes(user?.role ?? '')) {
+      return false;
+    }
+    // Data User & Cabang hanya untuk admin
+    if ((item.label === 'Data User' || item.label === 'Cabang') && user?.role !== 'admin') {
       return false;
     }
     // (dulu Dashboard cuma tampil buat admin -- sekarang semua role
