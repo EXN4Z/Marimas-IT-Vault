@@ -3,11 +3,8 @@ import { createAset, getAsetById, updateAset, type Aset } from '../../api/aset';
 import type { Supplier } from '../../api/supplier';
 import { createAsetKelengkapan, pasangPengganti, type AsetKelengkapan } from '../../api/asetKelengkapan';
 import AsetKelengkapanPicker, { type StagedKelengkapan } from './AsetKelengkapanPicker';
-<<<<<<< HEAD
 
 const KETERANGAN_MAX = 255;
-=======
->>>>>>> ddd2da9c1401209c08a90fa77d0e97828e90bf66
 
 interface AsetFormModalProps {
   aset: Aset | null; // null = mode tambah
