@@ -1,12 +1,16 @@
-import { useState } from 'react';
-import { createAset, updateAset, type Aset } from '../../api/aset';
+import { useEffect, useState } from 'react';
+import { createAset, getAsetById, updateAset, type Aset } from '../../api/aset';
 import type { Supplier } from '../../api/supplier';
+import { createAsetKelengkapan, pasangPengganti, type AsetKelengkapan } from '../../api/asetKelengkapan';
+import AsetKelengkapanPicker, { type StagedKelengkapan } from './AsetKelengkapanPicker';
+
+const KETERANGAN_MAX = 255;
 
 interface AsetFormModalProps {
   aset: Aset | null; // null = mode tambah
   supplierOptions: Supplier[];
   onClose: () => void;
-  onSaved: (aset: Aset) => void;
+  onSaved: (aset: Aset, warning?: string) => void;
 }
 
 interface FormState {
@@ -47,6 +51,27 @@ export default function AsetFormModal({
   const [foto, setFoto] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [stagedKelengkapan, setStagedKelengkapan] = useState<StagedKelengkapan[]>([]);
+  const [existingKelengkapan, setExistingKelengkapan] = useState<AsetKelengkapan[]>([]);
+
+  // Mode edit: fetch ulang detail aset (list row yang dilempar ke form
+  // belum tentu bawa relasi aset_kelengkapan) biar section Kelengkapan
+  // nunjukin apa yang udah beneran nempel.
+  useEffect(() => {
+    if (!aset) return;
+    getAsetById(aset.id)
+      .then((data) => setExistingKelengkapan(data.aset_kelengkapan || []))
+      .catch(() => {});
+  }, [aset]);
+
+  // Kelengkapan cuma boleh dipasang ke aset serialized (jumlah 1) -- kalau
+  // user ubah jumlah jadi >1 setelah sempat milih kelengkapan, kosongin
+  // staged-nya biar gak nyangkut nempel ke aset yang salah semantiknya.
+  const jumlahValid = form.jumlah === '' || Number(form.jumlah) === 1;
+  useEffect(() => {
+    if (!jumlahValid && stagedKelengkapan.length > 0) setStagedKelengkapan([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jumlahValid]);
 
   const set = (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -72,6 +97,31 @@ export default function AsetFormModal({
       };
 
       const saved = aset ? await updateAset(aset.id, values) : await createAset(values);
+
+      if (stagedKelengkapan.length > 0) {
+        try {
+          for (const item of stagedKelengkapan) {
+            if (item.type === 'stok') {
+              await pasangPengganti(item.item.id, saved.id);
+            } else {
+              await createAsetKelengkapan({ ...item.values, aset_id: saved.id });
+            }
+          }
+        } catch (kelengkapanErr: any) {
+          // Aset-nya sendiri udah kesimpen -- jangan diulang, cuma kasih
+          // tau kalau ada kelengkapan yang gagal nempel (modal ini bakal
+          // ditutup sama pemanggil begitu onSaved dipanggil, jadi warning-nya
+          // dilempar ke atas buat ditampilin di sana, mis. lewat toast).
+          onSaved(
+            saved,
+            kelengkapanErr.response?.data?.message ||
+              'Aset berhasil disimpan, tapi ada kelengkapan yang gagal ditambahkan. Coba lagi lewat edit aset ini.'
+          );
+          setSubmitting(false);
+          return;
+        }
+      }
+
       onSaved(saved);
     } catch (err: any) {
       const msg =
@@ -192,13 +242,19 @@ export default function AsetFormModal({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Keterangan</label>
-            <textarea
-              value={form.keterangan}
-              onChange={set('keterangan')}
-              rows={2}
-              placeholder="cth. keadaan baik"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-            />
+            <div className="relative">
+              <textarea
+                value={form.keterangan}
+                onChange={set('keterangan')}
+                rows={2}
+                maxLength={KETERANGAN_MAX}
+                placeholder="cth. keadaan baik"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+              />
+              <span className="pointer-events-none absolute bottom-2 right-2.5 text-[11px] text-slate-300">
+                {(form.keterangan ?? '').length}/{KETERANGAN_MAX}
+              </span>
+            </div>
           </div>
 
           <div>
@@ -259,6 +315,21 @@ export default function AsetFormModal({
           {!aset && (
             <p className="text-xs text-slate-400">Kode aset (IT-tahun-nomor urut) akan dibuat otomatis oleh sistem.</p>
           )}
+
+          <div className="pt-2 border-t border-slate-100">
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Kelengkapan</label>
+            {jumlahValid ? (
+              <AsetKelengkapanPicker
+                staged={stagedKelengkapan}
+                onChange={setStagedKelengkapan}
+                existing={existingKelengkapan}
+                asetLabel={[form.merek, form.tipe].filter(Boolean).join(' ') || undefined}
+                presetAsetId={aset?.id}
+              />
+            ) : (
+              <p className="text-xs text-slate-400">Kelengkapan cuma bisa dipasang kalau Jumlah = 1 (barang serialized).</p>
+            )}
+          </div>
         </div>
 
         {error && (
