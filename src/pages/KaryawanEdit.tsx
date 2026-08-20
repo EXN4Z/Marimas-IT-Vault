@@ -5,7 +5,7 @@ import api from '../api/axios';
 import RouteModal from '../components/shared/RouteModal';
 import { getDepartemen } from '../api/departemen';
 import { getCabang, type Cabang } from '../api/cabang';
-import { resetKaryawanPassword } from '../api/auth';
+import { resetKaryawanPassword, setKaryawanPassword } from '../api/auth';
 import type { Departemen } from '../api/departemen';
 import { createPortal } from 'react-dom';
 
@@ -62,6 +62,9 @@ export default function EditKaryawanPage() {
 
     const [resetting, setResetting] = useState<boolean>(false);
     const [newPassword, setNewPassword] = useState<string | null>(null);
+
+    // BARU: state buat modal "Ubah password" (admin nentuin sendiri password-nya)
+    const [showSetPassword, setShowSetPassword] = useState<boolean>(false);
 
     const isCabang = form.role === 'cabang';
 
@@ -194,6 +197,13 @@ export default function EditKaryawanPage() {
         } finally {
             setResetting(false);
         }
+    }
+
+    // BARU: admin nentuin sendiri password baru untuk karyawan ini (bukan random)
+    async function handleSetPassword(password: string, passwordConfirmation: string) {
+        await setKaryawanPassword(Number(id), password, passwordConfirmation);
+        toast.success('Password berhasil diubah.');
+        setShowSetPassword(false);
     }
 
     function copyPassword() {
@@ -335,6 +345,13 @@ export default function EditKaryawanPage() {
                             >
                                 {resetting ? 'Mereset...' : 'Reset password'}
                             </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowSetPassword(true)}
+                                className="text-sm text-blue-600 hover:text-blue-700"
+                            >
+                                Ubah password
+                            </button>
                         </div>
 
                         <div className="flex gap-2">
@@ -362,6 +379,13 @@ export default function EditKaryawanPage() {
                     password={newPassword}
                     onClose={() => setNewPassword(null)}
                     onCopy={copyPassword}
+                />
+            )}
+
+            {showSetPassword && (
+                <SetPasswordModal
+                    onClose={() => setShowSetPassword(false)}
+                    onSubmit={handleSetPassword}
                 />
             )}
         </>
@@ -424,6 +448,113 @@ function ResetPasswordModal({
                     </button>
                 </div>
             </div>
+        </div>,
+        document.body
+    );
+}
+
+// BARU: modal buat admin nentuin sendiri password baru (bukan random kayak Reset password)
+function SetPasswordModal({
+    onClose,
+    onSubmit,
+}: {
+    onClose: () => void;
+    onSubmit: (password: string, passwordConfirmation: string) => Promise<void>;
+}) {
+    const [password, setPassword] = useState('');
+    const [confirmation, setConfirmation] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    async function handleSubmit(e: FormEvent) {
+        e.preventDefault();
+        setError(null);
+
+        if (password.length < 8) {
+            setError('Password minimal 8 karakter.');
+            return;
+        }
+        if (password !== confirmation) {
+            setError('Konfirmasi password tidak sama.');
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            await onSubmit(password, confirmation);
+        } catch (err: any) {
+            if (err.response?.status === 422) {
+                const errors = err.response.data?.errors ?? {};
+                setError(errors.password?.[0] ?? 'Periksa kembali password yang diisi.');
+            } else if (err.response?.status === 403) {
+                setError('Anda tidak punya akses untuk mengubah password ini.');
+            } else {
+                setError('Gagal mengubah password. Coba lagi.');
+            }
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    return createPortal(
+        <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"
+            onClick={onClose}
+        >
+            <form
+                onSubmit={handleSubmit}
+                className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <h3 className="text-sm font-semibold text-gray-900">Ubah password</h3>
+                <p className="text-xs text-gray-500 mt-1">
+                    Tentukan password baru untuk akun ini secara langsung.
+                </p>
+
+                <div className="mt-4 space-y-3">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Password baru</label>
+                        <input
+                            type="password"
+                            autoFocus
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            minLength={8}
+                            required
+                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Konfirmasi password</label>
+                        <input
+                            type="password"
+                            value={confirmation}
+                            onChange={(e) => setConfirmation(e.target.value)}
+                            minLength={8}
+                            required
+                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                        />
+                    </div>
+                    {error && <p className="text-xs text-red-600">{error}</p>}
+                </div>
+
+                <div className="mt-5 flex justify-end gap-2">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="text-sm px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={submitting}
+                        className="text-sm px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+                    >
+                        {submitting ? 'Menyimpan...' : 'Simpan password'}
+                    </button>
+                </div>
+            </form>
         </div>,
         document.body
     );
