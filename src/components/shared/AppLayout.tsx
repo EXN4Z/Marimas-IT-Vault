@@ -150,6 +150,10 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
     if (item.label === 'Master Data' && !STAFF_ROLES.includes(user?.role ?? '')) {
       return false;
     }
+    // Data Karyawan & Cabang hanya untuk admin
+    if ((item.label === 'Data Karyawan' || item.label === 'Cabang') && user?.role !== 'admin') {
+      return false;
+    }
     // (dulu Dashboard cuma tampil buat admin -- sekarang semua role
     // sudah punya varian dashboard-nya sendiri: DashboardUser/DashboardCabang/
     // DashboardAdmin, jadi menu ini gak perlu disembunyikan lagi.)
