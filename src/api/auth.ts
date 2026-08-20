@@ -6,15 +6,6 @@ interface AuthResponse {
   token: string;
 }
 
-interface ResetPasswordResponse {
-  message: string;
-  user: {
-    id: number;
-    name: string;
-  }
-  new_password: string;
-}
-
 interface SetPasswordResponse {
   message: string;
   user: {
@@ -54,11 +45,6 @@ export const verifyOtp = async (registration_id: string, otp_code: string): Prom
   const res = await api.post('/verify-otp', { registration_id, otp_code });
   return res.data;
 };
-
-export const resetKaryawanPassword = async(id: number): Promise<ResetPasswordResponse> => {
-  const res = await api.post<ResetPasswordResponse>(`/admin/users/${id}/reset-password`);
-  return res.data;
-}
 
 // BARU: admin nentuin sendiri password barunya (bukan random) buat akun manapun.
 export const setKaryawanPassword = async(

@@ -5,7 +5,7 @@ import api from '../api/axios';
 import RouteModal from '../components/shared/RouteModal';
 import { getDepartemen } from '../api/departemen';
 import { getCabang, type Cabang } from '../api/cabang';
-import { resetKaryawanPassword, setKaryawanPassword } from '../api/auth';
+import { setKaryawanPassword } from '../api/auth';
 import type { Departemen } from '../api/departemen';
 import { createPortal } from 'react-dom';
 
@@ -60,8 +60,7 @@ export default function EditKaryawanPage() {
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
 
-    const [resetting, setResetting] = useState<boolean>(false);
-    const [newPassword, setNewPassword] = useState<string | null>(null);
+
 
     // BARU: state buat modal "Ubah password" (admin nentuin sendiri password-nya)
     const [showSetPassword, setShowSetPassword] = useState<boolean>(false);
@@ -179,37 +178,11 @@ export default function EditKaryawanPage() {
         }
     }
 
-    // Reset password karyawan (admin only, dienforce juga di backend)
-    async function handleResetPassword() {
-        if (!window.confirm('Reset password karyawan ini? Password lama akan hilang dan tidak bisa dikembalikan.')) return;
-
-        setResetting(true);
-        try {
-            const res = await resetKaryawanPassword(Number(id));
-            setNewPassword(res.new_password);
-            toast.success('Password berhasil direset.');
-        } catch (err: any) {
-            if (err.response?.status === 403) {
-                toast.error('Anda tidak punya akses untuk mereset password.');
-            } else {
-                toast.error('Gagal mereset password. Coba lagi.');
-            }
-        } finally {
-            setResetting(false);
-        }
-    }
-
     // BARU: admin nentuin sendiri password baru untuk karyawan ini (bukan random)
     async function handleSetPassword(password: string, passwordConfirmation: string) {
         await setKaryawanPassword(Number(id), password, passwordConfirmation);
         toast.success('Password berhasil diubah.');
         setShowSetPassword(false);
-    }
-
-    function copyPassword() {
-        if (!newPassword) return;
-        navigator.clipboard.writeText(newPassword);
-        toast.success('Password disalin ke clipboard.');
     }
 
     if (loading) {
@@ -339,14 +312,6 @@ export default function EditKaryawanPage() {
                             </button>
                             <button
                                 type="button"
-                                onClick={handleResetPassword}
-                                disabled={resetting}
-                                className="text-sm text-blue-600 hover:text-blue-700 disabled:opacity-50"
-                            >
-                                {resetting ? 'Mereset...' : 'Reset password'}
-                            </button>
-                            <button
-                                type="button"
                                 onClick={() => setShowSetPassword(true)}
                                 className="text-sm text-blue-600 hover:text-blue-700"
                             >
@@ -374,14 +339,6 @@ export default function EditKaryawanPage() {
                 </form>
             </RouteModal>
 
-            {newPassword && (
-                <ResetPasswordModal
-                    password={newPassword}
-                    onClose={() => setNewPassword(null)}
-                    onCopy={copyPassword}
-                />
-            )}
-
             {showSetPassword && (
                 <SetPasswordModal
                     onClose={() => setShowSetPassword(false)}
@@ -402,58 +359,7 @@ function Field({ label, error, children }: { label: string; error?: string; chil
     );
 }
 
-function ResetPasswordModal({
-    password,
-    onClose,
-    onCopy,
-}: {
-    password: string;
-    onClose: () => void;
-    onCopy: () => void;
-}) {
-    return createPortal(
-        <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"
-            onClick={onClose}
-        >
-            <div
-                className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <h3 className="text-sm font-semibold text-gray-900">Password berhasil direset</h3>
-                <p className="text-xs text-gray-500 mt-1">
-                    Catat password ini sekarang. Setelah ditutup, password tidak akan ditampilkan lagi.
-                </p>
-
-                <div className="mt-4 flex items-center gap-2">
-                    <code className="flex-1 text-sm font-mono bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 break-all">
-                        {password}
-                    </code>
-                </div>
-
-                <div className="mt-5 flex justify-end gap-2">
-                    <button
-                        type="button"
-                        onClick={onCopy}
-                        className="text-sm px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50"
-                    >
-                        Salin
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-sm px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
-                    >
-                        Tutup
-                    </button>
-                </div>
-            </div>
-        </div>,
-        document.body
-    );
-}
-
-// BARU: modal buat admin nentuin sendiri password baru (bukan random kayak Reset password)
+// BARU: modal buat admin nentuin sendiri password baru untuk karyawan
 function SetPasswordModal({
     onClose,
     onSubmit,
