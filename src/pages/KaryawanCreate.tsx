@@ -106,16 +106,16 @@ export default function CreateKaryawanPage() {
                 tanggal_masuk: isCabang ? null : form.tanggal_masuk || null,
             };
             await api.post('/karyawan', payload);
-            toast.success('Karyawan berhasil dibuat.');
+            toast.success('User berhasil dibuat.');
             navigate('/karyawan');
         } catch (err: any) {
             if (err.response?.status === 422) {
                 setErrors(err.response.data.errors ?? {});
                 toast.error('Periksa kembali data yang diisi.');
             } else if (err.response?.status === 403) {
-                toast.error('Anda tidak punya akses untuk menambah karyawan.');
+                toast.error('Anda tidak punya akses untuk menambah user.');
             } else {
-                toast.error('Gagal menyimpan karyawan. Coba lagi.');
+                toast.error('Gagal menyimpan user. Coba lagi.');
             }
         } finally {
             setSaving(false);
@@ -124,7 +124,7 @@ export default function CreateKaryawanPage() {
 
     return (
         <RouteModal
-            title="Tambah Karyawan"
+            title="Tambah User"
             description="Buat akun & data kepegawaian baru."
             fallbackPath="/karyawan"
             onClose={closeModal}
@@ -255,7 +255,7 @@ export default function CreateKaryawanPage() {
                             disabled={saving}
                             className="text-sm px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
                         >
-                            {saving ? 'Menyimpan...' : 'Simpan Karyawan'}
+                            {saving ? 'Menyimpan...' : 'Simpan User'}
                         </button>
                     </div>
                 </form>

@@ -87,7 +87,7 @@ export default function EditKaryawanPage() {
                 });
             })
             .catch(() => {
-                toast.error('Gagal memuat data karyawan.');
+                toast.error('Gagal memuat data user.');
             })
             .finally(() => setLoading(false));
     }, [id]);
@@ -162,14 +162,14 @@ export default function EditKaryawanPage() {
     }
 
     async function handleDelete() {
-        if (!window.confirm('Hapus karyawan ini? Tindakan ini tidak bisa dibatalkan.')) return;
+        if (!window.confirm('Hapus user ini? Tindakan ini tidak bisa dibatalkan.')) return;
 
         try {
             await api.delete(`/karyawan/${id}`);
-            toast.success('Karyawan berhasil dihapus.');
+            toast.success('User berhasil dihapus.');
             navigate('/karyawan');
         } catch {
-            toast.error('Gagal menghapus karyawan.');
+            toast.error('Gagal menghapus user.');
         }
     }
 
@@ -182,7 +182,7 @@ export default function EditKaryawanPage() {
 
     if (loading) {
         return (
-            <RouteModal title="Edit Karyawan" fallbackPath="/karyawan" onClose={closeModal}>
+            <RouteModal title="Edit User" fallbackPath="/karyawan" onClose={closeModal}>
                 <p className="text-center text-sm text-gray-400 py-16">Memuat data...</p>
             </RouteModal>
         );
@@ -191,7 +191,7 @@ export default function EditKaryawanPage() {
     return (
         <>
             <RouteModal
-                title="Edit Karyawan"
+                title="Edit User"
                 description="Perbarui data pengguna ini."
                 fallbackPath="/karyawan"
                 onClose={closeModal}
@@ -303,7 +303,7 @@ export default function EditKaryawanPage() {
                                 onClick={handleDelete}
                                 className="text-sm text-red-600 hover:text-red-700"
                             >
-                                Hapus karyawan
+                                Hapus user
                             </button>
                             <button
                                 type="button"
