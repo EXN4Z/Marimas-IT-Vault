@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 
@@ -29,6 +29,10 @@ export default function RouteModal({
   maxWidthClassName = 'max-w-xl',
 }: RouteModalProps) {
   const navigate = useNavigate();
+  // BARU: fix bug "drag-select teks lalu kepeleset ke backdrop = modal ketutup".
+  // Klik dianggap "nutup modal" cuma kalau mousedown DAN mouseup dua-duanya
+  // kena backdrop-nya sendiri (bukan hasil drag yang start-nya dari dalam panel).
+  const mouseDownOnBackdrop = useRef(false);
 
   function handleClose() {
     if (onClose) return onClose();
@@ -55,10 +59,22 @@ export default function RouteModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function handleBackdropMouseDown(e: MouseEvent<HTMLDivElement>) {
+    mouseDownOnBackdrop.current = e.target === e.currentTarget;
+  }
+
+  function handleBackdropClick(e: MouseEvent<HTMLDivElement>) {
+    if (mouseDownOnBackdrop.current && e.target === e.currentTarget) {
+      handleClose();
+    }
+    mouseDownOnBackdrop.current = false;
+  }
+
   return (
     <div
       className="route-modal-backdrop fixed inset-0 z-[70] flex items-start sm:items-center justify-center bg-black/50 backdrop-blur-[2px] px-4 py-6 overflow-y-auto"
-      onClick={handleClose}
+      onMouseDown={handleBackdropMouseDown}
+      onClick={handleBackdropClick}
     >
       <div
         className={`route-modal-panel w-full ${maxWidthClassName} bg-white rounded-xl shadow-2xl my-auto`}
