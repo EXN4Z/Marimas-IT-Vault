@@ -470,10 +470,6 @@ function SetPasswordModal({
         e.preventDefault();
         setError(null);
 
-        if (password.length < 8) {
-            setError('Password minimal 8 karakter.');
-            return;
-        }
         if (password !== confirmation) {
             setError('Konfirmasi password tidak sama.');
             return;
@@ -519,7 +515,6 @@ function SetPasswordModal({
                             autoFocus
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            minLength={8}
                             required
                             className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
                         />
@@ -530,7 +525,6 @@ function SetPasswordModal({
                             type="password"
                             value={confirmation}
                             onChange={(e) => setConfirmation(e.target.value)}
-                            minLength={8}
                             required
                             className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
                         />
