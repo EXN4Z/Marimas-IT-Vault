@@ -1,9 +1,10 @@
 import '../index.css';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2 } from 'lucide-react';
+import { Building2, Truck, Plus, Pencil, Trash2, Upload, Download, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
+import RouteModal from '../components/shared/RouteModal';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen, importDepartemen } from '../api/departemen';
 import { getSupplier, createSupplier, updateSupplier, deleteSupplier, importSupplier } from '../api/supplier';
@@ -384,67 +385,60 @@ export default function MasterData() {
 
       {/* MODAL TAMBAH / EDIT */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-slate-900">
-                {editing ? `Edit ${cfg.singular}` : `Tambah ${cfg.singular}`}
-              </h3>
-              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600">
-                <X size={20} />
-              </button>
+        <RouteModal
+          title={editing ? `Edit ${cfg.singular}` : `Tambah ${cfg.singular}`}
+          onClose={closeModal}
+          maxWidthClassName="max-w-md"
+        >
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="text-xs font-medium text-slate-500 mb-1 block">Nama {cfg.singular}</label>
+              <input
+                value={formNama}
+                onChange={(e) => setFormNama(e.target.value)}
+                maxLength={150}
+                placeholder={`Contoh: ${cfg.label}`}
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+              />
             </div>
 
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="text-xs font-medium text-slate-500 mb-1 block">Nama {cfg.singular}</label>
-                <input
-                  value={formNama}
-                  onChange={(e) => setFormNama(e.target.value)}
-                  maxLength={150}
-                  placeholder={`Contoh: ${cfg.label}`}
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-              </div>
+            {activeTab === 'supplier' && (
+              <>
+                <div>
+                  <label className="text-xs font-medium text-slate-500 mb-1 block">Alamat</label>
+                  <input
+                    value={formAlamat}
+                    onChange={(e) => setFormAlamat(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-slate-500 mb-1 block">Telepon</label>
+                  <input
+                    value={formTelepon}
+                    onChange={(e) => setFormTelepon(e.target.value)}
+                    placeholder="cth. 0812xxxxxxx"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                </div>
+              </>
+            )}
 
-              {activeTab === 'supplier' && (
-                <>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 mb-1 block">Alamat</label>
-                    <input
-                      value={formAlamat}
-                      onChange={(e) => setFormAlamat(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 mb-1 block">Telepon</label>
-                    <input
-                      value={formTelepon}
-                      onChange={(e) => setFormTelepon(e.target.value)}
-                      placeholder="cth. 0812xxxxxxx"
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                    />
-                  </div>
-                </>
-              )}
+            {formError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {formError}
+              </p>
+            )}
 
-              {formError && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  {formError}
-                </p>
-              )}
-
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="w-full text-white text-sm font-semibold py-3 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed bg-slate-900 hover:bg-slate-800"
-              >
-                {submitting ? 'Menyimpan...' : 'Simpan'}
-              </button>
-            </div>
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="w-full text-white text-sm font-semibold py-3 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed bg-slate-900 hover:bg-slate-800"
+            >
+              {submitting ? 'Menyimpan...' : 'Simpan'}
+            </button>
           </div>
-        </div>
+        </RouteModal>
       )}
 
       {/* MODAL KONFIRMASI HAPUS */}
