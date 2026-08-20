@@ -47,7 +47,7 @@ export default function Login() {
       setUser(data.user);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Email/No HP atau password salah');
+      setError(err.response?.data?.message || 'Email/No HP/Nama atau password salah');
     } finally {
       setLoading(false);
     }
@@ -112,7 +112,7 @@ export default function Login() {
                 value={loginId}
                 onChange={(e) => setLoginId(e.target.value)}
                 required
-                placeholder="Email atau No. HP"
+                placeholder="Email, No. HP, atau Nama"
                 className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
               />
             </div>
