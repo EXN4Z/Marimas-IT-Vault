@@ -382,7 +382,7 @@ function UserRow({ user, isAdmin, onDelete, onEdit }: UserRowProps) {
                 </div>
                 <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.nik || user.email || '-'}</p>
                 </div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">

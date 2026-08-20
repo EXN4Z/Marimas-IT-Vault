@@ -92,11 +92,6 @@ export default function EditKaryawanPage() {
             .finally(() => setLoading(false));
     }, [id]);
 
-    // Bersihin password baru dari state pas keluar halaman, biar gak ketinggalan nempel di layar
-    useEffect(() => {
-        return () => setNewPassword(null);
-    }, []);
-
     function closeModal() {
         if (window.history.state && window.history.state.idx > 0) {
             navigate(-1);
