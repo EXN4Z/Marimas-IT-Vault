@@ -181,9 +181,9 @@ export default function KaryawanPage() {
             setUserToDelete(null);
         } catch (err: any) {
             if (err.response?.status === 403) {
-                setErrorMsg('Anda tidak punya akses untuk menghapus karyawan ini.');
+                setErrorMsg('Anda tidak punya akses untuk menghapus user ini.');
             } else {
-                setErrorMsg('Gagal menghapus karyawan. Coba lagi.');
+                setErrorMsg('Gagal menghapus user. Coba lagi.');
             }
             setUserToDelete(null);
         } finally {
@@ -228,7 +228,7 @@ export default function KaryawanPage() {
         <>
             <div className="max-w-6xl mx-auto">
                 <div className="mb-6">
-                    <h1 className="text-xl font-bold text-gray-900">Data Karyawan</h1>
+                    <h1 className="text-xl font-bold text-gray-900">Data User</h1>
                     <p className="text-sm text-gray-500 mt-1">Kelola data seluruh pengguna sistem.</p>
                 </div>
 
@@ -284,7 +284,7 @@ export default function KaryawanPage() {
                                         onClick={() => navigate('/karyawan/create', { state: { backgroundLocation: location } })}
                                         className="flex items-center justify-center gap-2 bg-black text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800 whitespace-nowrap"
                                     >
-                                        + Tambah Karyawan
+                                        + Tambah User
                                     </button>
                                 </div>
                             )}
@@ -299,7 +299,7 @@ export default function KaryawanPage() {
                     {!loading && errorMsg && <p className="text-center text-sm text-gray-400 py-8">{errorMsg}</p>}
 
                     {!loading && !errorMsg && filtered.length === 0 && (
-                        <p className="text-center text-sm text-gray-400 py-8">Tidak ada karyawan yang cocok dengan filter ini.</p>
+                        <p className="text-center text-sm text-gray-400 py-8">Tidak ada user yang cocok dengan filter ini.</p>
                     )}
 
                     {!loading && !errorMsg && filtered.length > 0 && (
@@ -321,7 +321,7 @@ export default function KaryawanPage() {
                                 totalPages={totalPages}
                                 onPageChange={setCurrentPage}
                                 totalItems={filtered.length}
-                                itemLabel="karyawan"
+                                itemLabel="user"
                             />
                         </>
                     )}
@@ -382,7 +382,7 @@ function UserRow({ user, isAdmin, onDelete, onEdit }: UserRowProps) {
                 </div>
                 <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.nik || user.email || '-'}</p>
                 </div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
@@ -420,7 +420,7 @@ function ConfirmDeleteModal({ user, deleting, onCancel, onConfirm }: ConfirmDele
     return (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
             <div className="bg-white rounded-xl w-full max-w-sm p-5 max-h-[90vh] overflow-y-auto">
-                <h2 className="text-base font-semibold text-gray-900 mb-1">Hapus karyawan?</h2>
+                <h2 className="text-base font-semibold text-gray-900 mb-1">Hapus user?</h2>
                 <p className="text-sm text-gray-500 mb-5">
                     <span className="font-medium text-gray-700">{user.name}</span> akan dihapus permanen dan
                     tidak bisa dikembalikan.

@@ -13,7 +13,7 @@ const STATUS_OPTIONS: { value: AsetKelengkapanStatus; label: string; dot: string
 
 const MAX_FOTO_MB = 4;
 const ACCEPTED_FOTO_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
-const KETERANGAN_MAX = 500;
+const KETERANGAN_MAX = 255;
 
 const inputClass =
   'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 shadow-sm outline-none transition-all duration-150 hover:border-slate-400 focus:border-slate-900 focus:ring-4 focus:ring-slate-900/[0.06]';

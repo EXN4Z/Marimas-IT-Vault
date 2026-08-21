@@ -432,54 +432,41 @@ export default function MasterData() {
               </button>
             </div>
 
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="text-xs font-medium text-slate-500 mb-1 block">Nama {cfg.singular}</label>
-                <input
-                  value={formNama}
-                  onChange={(e) => setFormNama(e.target.value)}
-                  maxLength={150}
-                  placeholder={`Contoh: ${cfg.label}`}
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-              </div>
+            {activeTab === 'supplier' && (
+              <>
+                <div>
+                  <label className="text-xs font-medium text-slate-500 mb-1 block">Alamat</label>
+                  <input
+                    value={formAlamat}
+                    onChange={(e) => setFormAlamat(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-slate-500 mb-1 block">Telepon</label>
+                  <input
+                    value={formTelepon}
+                    onChange={(e) => setFormTelepon(e.target.value)}
+                    placeholder="cth. 0812xxxxxxx"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                </div>
+              </>
+            )}
 
-              {activeTab === 'supplier' && (
-                <>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 mb-1 block">Alamat</label>
-                    <input
-                      value={formAlamat}
-                      onChange={(e) => setFormAlamat(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 mb-1 block">Telepon</label>
-                    <input
-                      value={formTelepon}
-                      onChange={(e) => setFormTelepon(e.target.value)}
-                      placeholder="cth. 0812xxxxxxx"
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                    />
-                  </div>
-                </>
-              )}
+            {formError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {formError}
+              </p>
+            )}
 
-              {formError && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  {formError}
-                </p>
-              )}
-
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="w-full text-white text-sm font-semibold py-3 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed bg-slate-900 hover:bg-slate-800"
-              >
-                {submitting ? 'Menyimpan...' : 'Simpan'}
-              </button>
-            </div>
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="w-full text-white text-sm font-semibold py-3 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed bg-slate-900 hover:bg-slate-800"
+            >
+              {submitting ? 'Menyimpan...' : 'Simpan'}
+            </button>
           </div>
         </div>
       )}

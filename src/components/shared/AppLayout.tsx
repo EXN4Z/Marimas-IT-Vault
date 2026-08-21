@@ -42,7 +42,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { label: 'Data Karyawan', icon: Users, path: '/karyawan', matchPrefix: '/karyawan' },
+  { label: 'Data User', icon: Users, path: '/karyawan', matchPrefix: '/karyawan' },
   {
     // dulu "Inventaris" -- sekarang cuma nyisa Penanganan Aset di sini,
     // karena Aset & Kelengkapan Aset pindah ke Master Data, sementara
@@ -169,8 +169,8 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
     if (item.label === 'Master Data' && !STAFF_ROLES.includes(user?.role ?? '')) {
       return false;
     }
-    // Data Karyawan & Cabang hanya untuk admin
-    if ((item.label === 'Data Karyawan' || item.label === 'Cabang') && user?.role !== 'admin') {
+    // Data User & Cabang hanya untuk admin
+    if ((item.label === 'Data User' || item.label === 'Cabang') && user?.role !== 'admin') {
       return false;
     }
     // (dulu Dashboard cuma tampil buat admin -- sekarang semua role

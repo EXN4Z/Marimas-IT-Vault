@@ -4,6 +4,8 @@ import type { Supplier } from '../../api/supplier';
 import { createAsetKelengkapan, pasangPengganti, type AsetKelengkapan } from '../../api/asetKelengkapan';
 import AsetKelengkapanPicker, { type StagedKelengkapan } from './AsetKelengkapanPicker';
 
+const KETERANGAN_MAX = 255;
+
 interface AsetFormModalProps {
   aset: Aset | null; // null = mode tambah
   supplierOptions: Supplier[];
@@ -240,13 +242,19 @@ export default function AsetFormModal({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Keterangan</label>
-            <textarea
-              value={form.keterangan}
-              onChange={set('keterangan')}
-              rows={2}
-              placeholder="cth. keadaan baik"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-            />
+            <div className="relative">
+              <textarea
+                value={form.keterangan}
+                onChange={set('keterangan')}
+                rows={2}
+                maxLength={KETERANGAN_MAX}
+                placeholder="cth. keadaan baik"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+              />
+              <span className="pointer-events-none absolute bottom-2 right-2.5 text-[11px] text-slate-300">
+                {(form.keterangan ?? '').length}/{KETERANGAN_MAX}
+              </span>
+            </div>
           </div>
 
           <div>
