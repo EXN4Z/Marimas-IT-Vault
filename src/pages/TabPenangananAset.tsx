@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { X, Wrench, Printer, PlayCircle, Eye, ImageOff, Upload, Download, Loader2 } from 'lucide-react';
-import Pagination from '../shared/Pagination';
-import api from '../../api/axios';
-import { terimaPenangananAset, selesaikanPenangananAset, type AsetPenanganan } from '../../api/aset';
-import { formatTanggalId, namaPemakai } from './asetHelpers';
-import ScrollableTabBar from '../shared/ScrollableTabBar';
-import SearchInput from '../shared/SearchInput';
-import StatusBadge from '../shared/StatusBadge';
-import { printStruk } from '../../utils/printStruk';
-import AsetPenangananExportModal from './AsetPenangananExportModal';
+import Pagination from '../components/shared/Pagination';
+import api from '../api/axios';
+import { terimaPenangananAset, selesaikanPenangananAset, type AsetPenanganan } from '../api/aset';
+import { formatTanggalId, namaPemakai } from '../components/inventaris/asetHelpers';
+import ScrollableTabBar from '../components/shared/ScrollableTabBar';
+import SearchInput from '../components/shared/SearchInput';
+import StatusBadge from '../components/shared/StatusBadge';
+import { printStruk } from '../utils/printStruk';
+import AsetPenangananExportModal from '../components/inventaris/AsetPenangananExportModal';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 

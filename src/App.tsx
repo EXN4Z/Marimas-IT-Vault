@@ -7,7 +7,6 @@ import AppLayout from './components/shared/AppLayout';
 import Login from './pages/Login';
 import VerifyOtp from './pages/VerifyOtp';
 import Dashboard from './pages/Dashboard';
-import Inventaris from './pages/Inventaris';
 import Karyawan from './pages/Karyawan';
 import KaryawanEdit from './pages/KaryawanEdit';
 import KaryawanCreate from './pages/KaryawanCreate';
@@ -16,6 +15,7 @@ import AuditLog from './pages/AuditLog';
 import Laporan from './pages/Laporan';
 import MasterData from './pages/MasterData';
 import CabangPage from './pages/CabangPage';
+import PenangananAset from './pages/TabPenangananAset';
 
 interface LocationState {
   backgroundLocation?: Location;
@@ -47,8 +47,14 @@ function AppRoutes() {
             dropdown yang lagi kebuka, dll gak reset tiap ganti halaman. */}
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/inventaris" element={<Inventaris />} />
-          <Route path="/aset" element={<Navigate to="/inventaris" replace />} />
+          {/* Inventaris.tsx udah dihapus -- Aset & Kelengkapan Aset pindah ke
+              Master Data, Foto Aset & Riwayat Aset pindah ke Laporan, dan
+              Penanganan Aset punya halaman sendiri. Alias ini jaga-jaga buat
+              bookmark/link lama ke /inventaris. */}
+          <Route path="/inventaris" element={<Navigate to="/laporan" replace />} />
+          {/* Aset sekarang isinya di halaman Master Data (tab "aset"), bukan
+              lagi di Inventaris -- alias lama ini diarahin ke sana. */}
+          <Route path="/aset" element={<Navigate to="/master-data?tab=aset" replace />} />
           <Route
             path="/karyawan"
             element={
@@ -74,6 +80,7 @@ function AppRoutes() {
             }
           />
           <Route path="/master-data" element={<MasterData />} />
+          <Route path='/penanganan-aset' element={<PenangananAset />} />
           <Route
             path="/cabang"
             element={

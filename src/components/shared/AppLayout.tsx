@@ -44,25 +44,39 @@ const navItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Data Karyawan', icon: Users, path: '/karyawan', matchPrefix: '/karyawan' },
   {
-    label: 'Inventaris',
+    // dulu "Inventaris" -- sekarang cuma nyisa Penanganan Aset di sini,
+    // karena Aset & Kelengkapan Aset pindah ke Master Data, sementara
+    // Foto Aset & Riwayat Aset pindah ke Laporan. Penanganan Aset sendiri
+    // udah bukan tab di dalam /inventaris lagi (component TabPenangananAset
+    // di components/inventaris/TabPenangananAset sekarang dipakai di
+    // halaman sendiri) -- makanya path & matchPrefix-nya diganti ke
+    // '/penanganan-aset', bukan lagi query "?tab=" di /inventaris.
+    label: 'Transaksi',
     icon: Package,
     path: null,
-    matchPrefix: '/inventaris',
+    matchPrefix: '/penanganan-aset',
     children: [
-      { label: 'Aset', icon: Package, path: '/inventaris?tab=aset' },
-      // dulu CRUD kelengkapan_master ada di Master Data -- pindah ke sini
-      // karena kelengkapan dipakai spesifik buat checklist di form
-      // peminjaman aset ("pinjam laptop + tas + charger sekaligus").
-      { label: 'Kelengkapan Aset', icon: ClipboardList, path: '/inventaris?tab=kelengkapan_aset' },
-      // "Kelengkapan Rusak" gak lagi link sidebar terpisah -- sekarang jadi
-      // filter status "Rusak" di dalam tab Kelengkapan Aset itu sendiri.
-      { label: 'Penanganan Aset', icon: Wrench, path: '/inventaris?tab=penanganan_aset', roles: ['admin'] },
-      { label: 'Foto Aset', icon: Images, path: '/inventaris?tab=foto_aset', roles: ['admin'] },
-      { label: 'Riwayat Aset', icon: History, path: '/inventaris?tab=riwayat_aset' },
+      { label: 'Penanganan Aset', icon: Wrench, path: '/penanganan-aset', roles: ['admin'] },
     ],
   },
   { label: 'Cabang', icon: Building2, path: '/cabang', matchPrefix: '/cabang' },
-  { label: 'Laporan', icon: FileSpreadsheet, path: '/laporan', restricted: true},
+  {
+    // dulu link tunggal ke /laporan -- sekarang jadi dropdown. Halaman lamanya
+    // sendiri tetap ada di sini, cuma dilabel ulang jadi "Export Data".
+    // Foto Aset & Riwayat Aset (pindahan dari Inventaris.tsx, yang udah
+    // dihapus) sekarang juga dirender langsung di Laporan.tsx, jadi path-nya
+    // ikut pindah ke /laporan?tab=... (bukan /inventaris?tab=... lagi).
+    label: 'Laporan',
+    icon: FileSpreadsheet,
+    path: null,
+    matchPrefix: '/laporan',
+    restricted: true,
+    children: [
+      { label: 'Export Data', icon: FileSpreadsheet, path: '/laporan' },
+      { label: 'Foto Aset', icon: Images, path: '/laporan?tab=foto_aset', roles: ['admin'] },
+      { label: 'Riwayat Aset', icon: History, path: '/laporan?tab=riwayat_aset' },
+    ],
+  },
   {
     label: 'Master Data',
     icon: Database,
@@ -70,6 +84,11 @@ const navItems: NavItem[] = [
     matchPrefix: '/master-data',
     restricted: true,
     children: [
+      // Aset & Kelengkapan Aset kontennya sekarang dirender langsung di
+      // MasterData.tsx (bukan lagi di Inventaris.tsx), jadi path-nya juga
+      // udah /master-data?tab=..., bukan /inventaris?tab=... lagi.
+      { label: 'Aset', icon: Package, path: '/master-data?tab=aset' },
+      { label: 'Kelengkapan Aset', icon: ClipboardList, path: '/master-data?tab=kelengkapan_aset' },
       { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen' },
       { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier' },
     ],
