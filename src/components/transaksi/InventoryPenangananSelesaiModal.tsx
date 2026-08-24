@@ -5,7 +5,7 @@ import type { InventoryPenanganan } from '../../api/transaksi/inventoryPenangana
 import type { Inventory } from '../../api/masterData/inventory';
 
 interface Props {
-  aset: Inventory;
+  inventory: Inventory;
   penanganan: InventoryPenanganan;
   onClose: () => void;
   onSuccess: () => void;
@@ -15,7 +15,7 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export default function InventoryPenangananSelesaiModal({ aset, penanganan, onClose, onSuccess }: Props) {
+export default function InventoryPenangananSelesaiModal({ inventory, penanganan, onClose, onSuccess }: Props) {
   const [tanggalSelesai, setTanggalSelesai] = useState(todayIso());
   const [hargaJasa, setHargaJasa] = useState(penanganan.harga_jasa != null ? String(penanganan.harga_jasa) : '');
   const [biayaKomponen, setBiayaKomponen] = useState(penanganan.biaya_komponen != null ? String(penanganan.biaya_komponen) : '');
@@ -74,7 +74,7 @@ export default function InventoryPenangananSelesaiModal({ aset, penanganan, onCl
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              {aset.kode_inventory} · {penanganan.jenis_kerusakan} — {penanganan.keluhan}
+              {inventory.kode_inventory} · {penanganan.jenis_kerusakan} — {penanganan.keluhan}
             </p>
             <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
               <CheckCircle2 size={18} className="text-emerald-600" />

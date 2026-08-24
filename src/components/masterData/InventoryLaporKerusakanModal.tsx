@@ -5,12 +5,12 @@ import type { Inventory } from '../../api/masterData/inventory';
 import InventoryFotoUpload from './InventoryFotoUpload';
 
 interface Props {
-  aset: Inventory;
+  inventory: Inventory;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function InventoryLaporKerusakanModal({ aset, onClose, onSuccess }: Props) {
+export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuccess }: Props) {
   const [jenisKerusakan, setJenisKerusakan] = useState<'' | 'hardware' | 'software'>('');
   const [keluhan, setKeluhan] = useState('');
   const [fotoKerusakan, setFotoKerusakan] = useState<File[]>([]);
@@ -30,7 +30,7 @@ export default function InventoryLaporKerusakanModal({ aset, onClose, onSuccess 
     setError('');
     try {
       await laporKerusakanInventory({
-        inventory_id: aset.id,
+        inventory_id: inventory.id,
         // sudah divalidasi non-kosong di atas (!jenisKerusakan.trim()), aman di-assert ke union type
         jenis_kerusakan: jenisKerusakan as 'hardware' | 'software',
         keluhan: keluhan.trim(),
@@ -60,7 +60,7 @@ export default function InventoryLaporKerusakanModal({ aset, onClose, onSuccess 
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              {aset.kode_inventory} · {[aset.merek, aset.tipe].filter(Boolean).join(' ') || '-'}
+              {inventory.kode_inventory} · {[inventory.merek, inventory.tipe].filter(Boolean).join(' ') || '-'}
             </p>
             <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
               <AlertTriangle size={18} className="text-red-500" />
