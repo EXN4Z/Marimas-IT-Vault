@@ -16,7 +16,7 @@ interface RoleRouteProps {
  * lempar ke `redirectTo` (default /dashboard) alih-alih nampilin halaman
  * kosong/pesan "tidak punya akses" di dalam halamannya sendiri.
  */
-export default function RoleRoute({ roles, children, redirectTo = '/inventaris?tab=aset' }: RoleRouteProps) {
+export default function RoleRoute({ roles, children, redirectTo = '/dashboard' }: RoleRouteProps) {
   const { user, isLoading } = useAuth();
 
   // Tunggu status auth selesai dicek dulu -- kalau langsung diputuskan

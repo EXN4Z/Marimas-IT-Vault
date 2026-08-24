@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { laporKerusakanAset } from '../../api/asetPenanganan';
-import type { Aset } from '../../api/aset';
-import AsetFotoUpload from './AsetFotoUpload';
+import { laporKerusakanInventory } from '../../api/transaksi/inventoryPenanganan';
+import type { Inventory } from '../../api/masterData/inventory';
+import InventoryFotoUpload from './InventoryFotoUpload';
 
 interface Props {
-  aset: Aset;
+  aset: Inventory;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function AsetLaporKerusakanModal({ aset, onClose, onSuccess }: Props) {
-  const [jenisKerusakan, setJenisKerusakan] = useState('');
+export default function InventoryLaporKerusakanModal({ aset, onClose, onSuccess }: Props) {
+  const [jenisKerusakan, setJenisKerusakan] = useState<'' | 'hardware' | 'software'>('');
   const [keluhan, setKeluhan] = useState('');
   const [fotoKerusakan, setFotoKerusakan] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -29,9 +29,10 @@ export default function AsetLaporKerusakanModal({ aset, onClose, onSuccess }: Pr
     setSubmitting(true);
     setError('');
     try {
-      await laporKerusakanAset({
-        aset_id: aset.id,
-        jenis_kerusakan: jenisKerusakan.trim(),
+      await laporKerusakanInventory({
+        inventory_id: aset.id,
+        // sudah divalidasi non-kosong di atas (!jenisKerusakan.trim()), aman di-assert ke union type
+        jenis_kerusakan: jenisKerusakan as 'hardware' | 'software',
         keluhan: keluhan.trim(),
         foto: fotoKerusakan[0], // ambil 1 file pertama, sesuai kolom foto di backend
       });
@@ -59,7 +60,7 @@ export default function AsetLaporKerusakanModal({ aset, onClose, onSuccess }: Pr
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              {aset.kode_aset} · {[aset.merek, aset.tipe].filter(Boolean).join(' ') || '-'}
+              {aset.kode_inventory} · {[aset.merek, aset.tipe].filter(Boolean).join(' ') || '-'}
             </p>
             <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
               <AlertTriangle size={18} className="text-red-500" />
@@ -85,7 +86,7 @@ export default function AsetLaporKerusakanModal({ aset, onClose, onSuccess }: Pr
             <label className="block text-sm font-medium text-slate-700 mb-1">Jenis Kerusakan</label>
             <select
               value={jenisKerusakan}
-              onChange={(e) => setJenisKerusakan(e.target.value)}
+              onChange={(e) => setJenisKerusakan(e.target.value as '' | 'hardware' | 'software')}
               className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
             >
               <option value="">Pilih jenis...</option>
@@ -104,7 +105,7 @@ export default function AsetLaporKerusakanModal({ aset, onClose, onSuccess }: Pr
             />
           </div>
 
-          <AsetFotoUpload
+          <InventoryFotoUpload
             files={fotoKerusakan}
             onChange={setFotoKerusakan}
             max={1}

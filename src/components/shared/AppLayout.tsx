@@ -19,6 +19,8 @@ import {
   Wrench,
   Images,
   History,
+  Layers,
+  Tags,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import NotificationDropdown from './NotificationDropDown';
@@ -54,9 +56,9 @@ const navItems: NavItem[] = [
     label: 'Transaksi',
     icon: Package,
     path: null,
-    matchPrefix: '/penanganan-aset',
+    matchPrefix: '/penanganan-inventory',
     children: [
-      { label: 'Penanganan Aset', icon: Wrench, path: '/penanganan-aset', roles: ['admin'] },
+      { label: 'Penanganan Inventory', icon: Wrench, path: '/penanganan-inventory', roles: ['admin'] },
     ],
   },
   { label: 'Cabang', icon: Building2, path: '/cabang', matchPrefix: '/cabang' },
@@ -73,8 +75,8 @@ const navItems: NavItem[] = [
     restricted: true,
     children: [
       { label: 'Export Data', icon: FileSpreadsheet, path: '/laporan' },
-      { label: 'Foto Aset', icon: Images, path: '/laporan?tab=foto_aset', roles: ['admin'] },
-      { label: 'Riwayat Aset', icon: History, path: '/laporan?tab=riwayat_aset' },
+      { label: 'Foto Inventory', icon: Images, path: '/laporan?tab=foto_inventory', roles: ['admin'] },
+      { label: 'Riwayat Inventory', icon: History, path: '/laporan?tab=riwayat_inventory' },
     ],
   },
   {
@@ -87,8 +89,10 @@ const navItems: NavItem[] = [
       // Aset & Kelengkapan Aset kontennya sekarang dirender langsung di
       // MasterData.tsx (bukan lagi di Inventaris.tsx), jadi path-nya juga
       // udah /master-data?tab=..., bukan /inventaris?tab=... lagi.
-      { label: 'Aset', icon: Package, path: '/master-data?tab=aset' },
-      { label: 'Kelengkapan Aset', icon: ClipboardList, path: '/master-data?tab=kelengkapan_aset' },
+      { label: 'Inventory', icon: Package, path: '/master-data?tab=inventory' },
+      { label: 'Kelengkapan Inventory', icon: ClipboardList, path: '/master-data?tab=kelengkapan_inventory' },
+      { label: 'Master Kategori', icon: Layers, path: '/master-data?tab=master_kategori' },
+      { label: 'Kategori', icon: Tags, path: '/master-data?tab=kategori' },
       { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen' },
       { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier' },
     ],

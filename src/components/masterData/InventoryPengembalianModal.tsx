@@ -1,21 +1,22 @@
 import { useState } from 'react';
-import { kembalikanAset, type Aset, type AsetPemakai } from '../../api/aset';
-import { namaPemakai } from './asetHelpers';
-import AsetFotoUpload from './AsetFotoUpload';
+import type { Inventory } from '../../api/masterData/inventory';
+import { kembalikanInventory, type InventoryPemakai } from '../../api/transaksi/inventoryPemakai';
+import { namaPemakai } from './inventoryHelpers';
+import InventoryFotoUpload from './InventoryFotoUpload';
 
-interface AsetPengembalianModalProps {
-  aset: Aset;
-  pemakai: AsetPemakai;
+interface InventoryPengembalianModalProps {
+  inventory: Inventory;
+  pemakai: InventoryPemakai;
   isAdmin: boolean;
   onClose: () => void;
-  onSuccess: (pemakai: AsetPemakai) => void;
+  onSuccess: (pemakai: InventoryPemakai) => void;
 }
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose, onSuccess }: AsetPengembalianModalProps) {
+export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin, onClose, onSuccess }: InventoryPengembalianModalProps) {
   const [kodeStruk, setKodeStruk] = useState('');
   const [tanggalPengembalian, setTanggalPengembalian] = useState(todayIso());
   const [catatan, setCatatan] = useState('');
@@ -42,7 +43,7 @@ export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose,
       if (catatan.trim()) formData.append('catatan_pengembalian', catatan.trim());
       fotoPengembalian.forEach((file) => formData.append('foto_pengembalian[]', file));
 
-      const res = await kembalikanAset(pemakai.id, formData);
+      const res = await kembalikanInventory(pemakai.id, formData);
       onSuccess(res);
     } catch (err: any) {
       setError(
@@ -69,7 +70,7 @@ export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose,
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Pengembalian</p>
             <h3 className="text-lg font-semibold text-slate-900">
-              {isAdmin ? `Terima Kembali Aset ${aset.kode_aset}` : `Kembalikan Aset ${aset.kode_aset}`}
+              {isAdmin ? `Terima Kembali Inventory ${inventory.kode_inventory}` : `Kembalikan Inventory ${inventory.kode_inventory}`}
             </h3>
           </div>
           <button
@@ -105,8 +106,8 @@ export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose,
             />
             <p className="text-xs text-slate-400 mt-1">
               {isAdmin
-                ? 'Minta karyawan menunjukkan struk penerimaan aset, lalu ketik kodenya di sini sebagai bukti pengembalian sah.'
-                : 'Cek struk penerimaan fisik yang kamu terima waktu serah-terima aset ini, lalu ketik kodenya di sini.'}
+                ? 'Minta karyawan menunjukkan struk penerimaan inventory, lalu ketik kodenya di sini sebagai bukti pengembalian sah.'
+                : 'Cek struk penerimaan fisik yang kamu terima waktu serah-terima inventory ini, lalu ketik kodenya di sini.'}
             </p>
           </div>
           <div>
@@ -129,11 +130,11 @@ export default function AsetPengembalianModal({ aset, pemakai, isAdmin, onClose,
             />
           </div>
 
-          <AsetFotoUpload
+          <InventoryFotoUpload
             files={fotoPengembalian}
             onChange={setFotoPengembalian}
             max={3}
-            label="Foto Bukti Kondisi Aset (3 Foto)"
+            label="Foto Bukti Kondisi Inventory (3 Foto)"
           />
         </div>
 

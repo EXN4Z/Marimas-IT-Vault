@@ -248,7 +248,7 @@ export function printCsvAsReport(
 /**
  * Sama seperti printCsvAsReport, tapi buat data yang sudah kebentuk
  * headers + rows di memori (bukan hasil fetch CSV dari backend) — dipakai
- * misalnya sama export Aset yang datanya sudah ada di state React, jadi
+ * misalnya sama export Inventory yang datanya sudah ada di state React, jadi
  * gak perlu bolak-balik ke CSV cuma buat di-parse ulang.
  *
  * PENTING: sama seperti printCsvAsReport, `targetWindow` harus dibuka lewat

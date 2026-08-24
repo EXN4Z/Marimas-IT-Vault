@@ -3,22 +3,15 @@ import toast from 'react-hot-toast';
 import { X, Wrench, Printer, PlayCircle, Eye, ImageOff, Upload, Download, Loader2 } from 'lucide-react';
 import Pagination from '../components/shared/Pagination';
 import api from '../api/axios';
-import { terimaPenangananAset, selesaikanPenangananAset, type AsetPenanganan } from '../api/aset';
-import { formatTanggalId, namaPemakai } from '../components/inventaris/asetHelpers';
+import { terimaPenangananInventory, selesaikanPenangananInventory, getInventoryPenanganan, type InventoryPenanganan } from '../api/transaksi/inventoryPenanganan';
+import { formatTanggalId, namaPemakai } from '../components/masterData/inventoryHelpers';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import SearchInput from '../components/shared/SearchInput';
 import StatusBadge from '../components/shared/StatusBadge';
 import { printStruk } from '../utils/printStruk';
-import AsetPenangananExportModal from '../components/inventaris/AsetPenangananExportModal';
+import InventoryPenangananExportModal from '../components/transaksi/InventoryPenangananExportModal';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
-
-// pakai tipe dari api/aset.ts (yang sudah punya tanggal_diterima), tapi hit
-// endpoint yang sama '/aset-penanganan' — konsisten sama tab Aset & backend.
-async function getAsetPenanganan(): Promise<AsetPenanganan[]> {
-  const res = await api.get<AsetPenanganan[]>('/aset-penanganan');
-  return res.data;
-}
 
 interface Props {
   onCount?: (count: number) => void;
@@ -37,11 +30,11 @@ type TabStatus = 'menunggu' | 'diperbaiki' | 'diperbaiki_selesai' | 'rusak_berat
 
 const ITEMS_PER_PAGE = 10;
 
-export default function TabPenangananAset({ onCount }: Props) {
-  const [penangananList, setPenangananList] = useState<AsetPenanganan[]>([]);
+export default function PenangananInventory({ onCount }: Props) {
+  const [penangananList, setPenangananList] = useState<InventoryPenanganan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activePenanganan, setActivePenanganan] = useState<AsetPenanganan | null>(null);
+  const [activePenanganan, setActivePenanganan] = useState<InventoryPenanganan | null>(null);
   const [activeTab, setActiveTab] = useState<TabStatus>('menunggu');
   const [page, setPage] = useState(1);
 
@@ -52,13 +45,13 @@ export default function TabPenangananAset({ onCount }: Props) {
 
   // Detail utk "Berhasil Diperbaiki" & "Rusak Berat" sama-sama munculnya
   // lewat modal kecil (absolute, nutupin layar), bukan expand inline lagi.
-  const [detailModalTarget, setDetailModalTarget] = useState<AsetPenanganan | null>(null);
+  const [detailModalTarget, setDetailModalTarget] = useState<InventoryPenanganan | null>(null);
 
   // BARU: laporan yang lagi direview sebelum diterima -- klik "Terima Laporan"
   // di card gak langsung nembak API lagi, tapi buka modal detail (termasuk
   // foto bukti kerusakan) dulu. Aksi terima yang sebenarnya dipicu dari
   // tombol konfirmasi di dalam modal ini.
-  const [terimaTarget, setTerimaTarget] = useState<AsetPenanganan | null>(null);
+  const [terimaTarget, setTerimaTarget] = useState<InventoryPenanganan | null>(null);
 
   // BARU: Import & Export -- SENGAJA cuma diaktifin buat 2 tab yang datanya
   // sudah final (tanggal_selesai terisi): "Berhasil Diperbaiki" & "Rusak
@@ -82,7 +75,7 @@ export default function TabPenangananAset({ onCount }: Props) {
     setImportMessage(null);
 
     try {
-      const res = await api.post('/import-aset-penanganan', formData, {
+      const res = await api.post('/inventory-penanganan/import', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setImportMessage({ type: 'success', text: res.data.message });
@@ -107,7 +100,7 @@ export default function TabPenangananAset({ onCount }: Props) {
   const load = () => {
     setLoading(true);
     setError('');
-    getAsetPenanganan()
+    getInventoryPenanganan()
       .then(setPenangananList)
       .catch((err) => {
         setError('Gagal memuat laporan penanganan aset.');
@@ -118,7 +111,7 @@ export default function TabPenangananAset({ onCount }: Props) {
 
   // versi diam-diam buat polling — gak nyalain loading spinner / error state
   const loadSilent = () => {
-    getAsetPenanganan()
+    getInventoryPenanganan()
       .then(setPenangananList)
       .catch((err) => console.error(err));
   };
@@ -147,10 +140,10 @@ export default function TabPenangananAset({ onCount }: Props) {
   const [terimaLoadingId, setTerimaLoadingId] = useState<number | null>(null);
 
   // dipanggil dari dalam modal TerimaLaporanModal, bukan langsung dari card lagi
-  const handleTerima = async (p: AsetPenanganan) => {
+  const handleTerima = async (p: InventoryPenanganan) => {
     setTerimaLoadingId(p.id);
     try {
-      const updated = await terimaPenangananAset(p.id);
+      const updated = await terimaPenangananInventory(p.id);
       setPenangananList((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
       toast.success('Laporan diterima, aset ditandai sedang diperbaiki.');
       setTerimaTarget(null);
@@ -161,13 +154,13 @@ export default function TabPenangananAset({ onCount }: Props) {
     }
   };
 
-  const handleSelesai = (updated: AsetPenanganan) => {
+  const handleSelesai = (updated: InventoryPenanganan) => {
     setPenangananList((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
     setActivePenanganan(null);
     toast.success('Perbaikan selesai dicatat.');
   };
 
-  const handlePrintStruk = (p: AsetPenanganan) => {
+  const handlePrintStruk = (p: InventoryPenanganan) => {
     if (!p.no_struk) return;
     const rusakBerat = p.hasil === 'rusak_berat';
 
@@ -176,7 +169,7 @@ export default function TabPenangananAset({ onCount }: Props) {
       // -- cuma hasil & durasi (catatan & no. struk udah otomatis ke-print
       // di luar rows lewat parameter catatan/noStruk)
       printStruk({
-        judul: 'Bukti Penanganan Aset',
+        judul: 'Bukti Penanganan Inventory',
         noStruk: p.no_struk,
         tanggal: formatTanggalId(p.tanggal_selesai),
         rows: [
@@ -190,11 +183,11 @@ export default function TabPenangananAset({ onCount }: Props) {
 
     const totalBiaya = (Number(p.harga_jasa) || 0) + (Number(p.biaya_komponen) || 0);
     printStruk({
-      judul: 'Bukti Penanganan Aset',
+      judul: 'Bukti Penanganan Inventory',
       noStruk: p.no_struk,
       tanggal: formatTanggalId(p.tanggal_selesai),
       rows: [
-        { label: 'Aset', value: p.aset?.kode_aset || '-' },
+        { label: 'Inventory', value: p.inventory?.kode_inventory || '-' },
         { label: 'Jenis Kerusakan', value: p.jenis_kerusakan === 'hardware' ? 'Hardware' : 'Software' },
         { label: 'Keluhan', value: p.keluhan },
         { label: 'Hasil', value: p.hasil || '-' },
@@ -223,11 +216,11 @@ export default function TabPenangananAset({ onCount }: Props) {
 
   // Cocokin kata kunci ke kode aset, jenis kerusakan, keluhan, dan nama pelapor
   // -- dipakai buat search bar di tab "Berhasil Diperbaiki" & "Rusak Berat".
-  const matchSearch = (p: AsetPenanganan, keyword: string) => {
+  const matchSearch = (p: InventoryPenanganan, keyword: string) => {
     const q = keyword.trim().toLowerCase();
     if (!q) return true;
     return (
-      (p.aset?.kode_aset || '').toLowerCase().includes(q) ||
+      (p.inventory?.kode_inventory || '').toLowerCase().includes(q) ||
       (p.jenis_kerusakan || '').toLowerCase().includes(q) ||
       (p.keluhan || '').toLowerCase().includes(q) ||
       (namaPemakai(p.pemakai)).toLowerCase().includes(q)
@@ -237,7 +230,7 @@ export default function TabPenangananAset({ onCount }: Props) {
   const diperbaikiSelesaiFiltered = diperbaikiSelesaiList.filter((p) => matchSearch(p, searchSelesai));
   const rusakBeratFiltered = rusakBeratList.filter((p) => matchSearch(p, searchRusakBerat));
 
-  const tabs: { key: TabStatus; label: string; list: AsetPenanganan[] }[] = [
+  const tabs: { key: TabStatus; label: string; list: InventoryPenanganan[] }[] = [
     { key: 'menunggu', label: 'Menunggu Terima', list: menungguList },
     { key: 'diperbaiki', label: 'Sedang Diperbaiki', list: diperbaikiList },
     { key: 'diperbaiki_selesai', label: 'Berhasil Diperbaiki', list: diperbaikiSelesaiList },
@@ -265,7 +258,7 @@ export default function TabPenangananAset({ onCount }: Props) {
     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
       <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
         <div>
-          <h3 className="text-base font-semibold text-slate-900 mb-1">Forum Penanganan Aset</h3>
+          <h3 className="text-base font-semibold text-slate-900 mb-1">Forum Penanganan Inventory</h3>
           <p className="text-sm text-slate-500">Laporan kerusakan dari peminjam yang belum/sudah ditangani.</p>
         </div>
 
@@ -351,7 +344,7 @@ export default function TabPenangananAset({ onCount }: Props) {
             <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wide">
-                  <th className="px-4 py-3 font-medium text-left">Kode Aset</th>
+                  <th className="px-4 py-3 font-medium text-left">Kode Inventory</th>
                   <th className="px-4 py-3 font-medium text-left">Kerusakan</th>
                   <th className="px-4 py-3 font-medium text-left">Pelapor</th>
                   <th className="px-4 py-3 font-medium text-left">Tanggal Selesai</th>
@@ -364,7 +357,7 @@ export default function TabPenangananAset({ onCount }: Props) {
                   const rusakBerat = p.hasil === 'rusak_berat';
                   return (
                     <tr key={p.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                      <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{p.aset?.kode_aset}</td>
+                      <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{p.inventory?.kode_inventory}</td>
                       <td className="px-4 py-3 text-slate-600 max-w-[220px]">
                         <p className="font-medium text-slate-800 truncate">{p.jenis_kerusakan}</p>
                       </td>
@@ -419,7 +412,7 @@ export default function TabPenangananAset({ onCount }: Props) {
             return (
               <div key={p.id} className="border border-slate-200 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium text-slate-800">{p.aset?.kode_aset}</span>
+                  <span className="text-sm font-medium text-slate-800">{p.inventory?.kode_inventory}</span>
                   <StatusBadge colorClass={statusStyle} size="xs">{statusLabel}</StatusBadge>
                 </div>
                 <p className="text-xs text-slate-500">
@@ -499,7 +492,7 @@ export default function TabPenangananAset({ onCount }: Props) {
       )}
 
       {canImportExport && (
-        <AsetPenangananExportModal
+        <InventoryPenangananExportModal
           open={exportModalOpen}
           onClose={() => setExportModalOpen(false)}
           data={displayedList}
@@ -521,7 +514,7 @@ function TerimaLaporanModal({
   onClose,
   onConfirm,
 }: {
-  penanganan: AsetPenanganan;
+  penanganan: InventoryPenanganan;
   loading: boolean;
   onClose: () => void;
   onConfirm: () => void;
@@ -555,7 +548,7 @@ function TerimaLaporanModal({
         </div>
 
         <div className="text-sm text-slate-600 bg-slate-50 rounded-lg p-4 flex flex-col gap-2 mb-4">
-          <p><span className="font-medium text-slate-800">Aset:</span> {penanganan.aset?.kode_aset || '-'}</p>
+          <p><span className="font-medium text-slate-800">Inventory:</span> {penanganan.inventory?.kode_inventory || '-'}</p>
           <p><span className="font-medium text-slate-800">Jenis Kerusakan:</span> {penanganan.jenis_kerusakan}</p>
           <p><span className="font-medium text-slate-800">Keluhan:</span> {penanganan.keluhan}</p>
           <p><span className="font-medium text-slate-800">Dilaporkan Oleh:</span> {namaPemakai(penanganan.pemakai)}</p>
@@ -588,9 +581,9 @@ function DetailPenangananModal({
   onClose,
   onPrint,
 }: {
-  penanganan: AsetPenanganan;
+  penanganan: InventoryPenanganan;
   onClose: () => void;
-  onPrint: (p: AsetPenanganan) => void;
+  onPrint: (p: InventoryPenanganan) => void;
 }) {
   const rusakBerat = penanganan.hasil === 'rusak_berat';
 
@@ -618,7 +611,7 @@ function DetailPenangananModal({
         )}
 
         <p className="text-xs text-slate-400 mb-4">
-          {penanganan.aset?.kode_aset} · {penanganan.jenis_kerusakan} — {penanganan.keluhan}
+          {penanganan.inventory?.kode_inventory} · {penanganan.jenis_kerusakan} — {penanganan.keluhan}
         </p>
 
         <div className="text-sm text-slate-600 bg-slate-50 rounded-lg p-4 flex flex-col gap-2">
@@ -657,9 +650,9 @@ function FormPerbaikanModal({
   onClose,
   onSuccess,
 }: {
-  penanganan: AsetPenanganan;
+  penanganan: InventoryPenanganan;
   onClose: () => void;
-  onSuccess: (updated: AsetPenanganan) => void;
+  onSuccess: (updated: InventoryPenanganan) => void;
 }) {
   const [tanggalSelesai, setTanggalSelesai] = useState(todayIso());
   const [hasil, setHasil] = useState<'diperbaiki' | 'rusak_berat'>('diperbaiki');
@@ -685,7 +678,7 @@ function FormPerbaikanModal({
     setSubmitting(true);
     setError('');
     try {
-      const updated = await selesaikanPenangananAset(penanganan.id, {
+      const updated = await selesaikanPenangananInventory(penanganan.id, {
         tanggal_selesai: tanggalSelesai,
         biaya_komponen: biayaKomponen.trim() ? Number(biayaKomponen) : null,
         harga_jasa: hargaJasa.trim() ? Number(hargaJasa) : null,
@@ -717,7 +710,7 @@ function FormPerbaikanModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              {penanganan.aset?.kode_aset} · {penanganan.jenis_kerusakan} — {penanganan.keluhan}
+              {penanganan.inventory?.kode_inventory} · {penanganan.jenis_kerusakan} — {penanganan.keluhan}
             </p>
             <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
               <Wrench size={18} className="text-emerald-600" />

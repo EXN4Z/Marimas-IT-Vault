@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { FileSpreadsheet, FileText, X, CheckSquare, Square } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { type AsetPenanganan } from '../../api/aset';
-import { formatTanggalId, namaPemakai, formatRupiah } from './asetHelpers';
+import { type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
+import { formatTanggalId, namaPemakai, formatRupiah } from '../masterData/inventoryHelpers';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
 
@@ -16,17 +16,17 @@ const HASIL_LABEL: Record<string, string> = {
 };
 
 // Daftar kolom yang bisa diexport, urutannya = urutan kolom di file export &
-// urutan checkbox di modal. Sengaja ngikutin pola AsetExportModal.tsx biar
+// urutan checkbox di modal. Sengaja ngikutin pola InventoryExportModal.tsx biar
 // konsisten across halaman Inventaris.
 interface ExportColumn {
   key: string;
   label: string;
   defaultChecked: boolean;
-  get: (p: AsetPenanganan) => string;
+  get: (p: InventoryPenanganan) => string;
 }
 
 const EXPORT_COLUMNS: ExportColumn[] = [
-  { key: 'kode_aset', label: 'Kode Aset', defaultChecked: true, get: (p) => p.aset?.kode_aset || '-' },
+  { key: 'kode_inventory', label: 'Kode Inventory', defaultChecked: true, get: (p) => p.inventory?.kode_inventory || '-' },
   {
     key: 'jenis_kerusakan',
     label: 'Jenis Kerusakan',
@@ -53,12 +53,12 @@ interface Props {
   open: boolean;
   onClose: () => void;
   /** data yang mau diexport — sudah difilter sesuai tab & search yang aktif saat ini */
-  data: AsetPenanganan[];
+  data: InventoryPenanganan[];
   /** dipakai buat judul & nama file, mis. "Berhasil Diperbaiki" / "Rusak Berat" */
   tabLabel: string;
 }
 
-export default function AsetPenangananExportModal({ open, onClose, data, tabLabel }: Props) {
+export default function InventoryPenangananExportModal({ open, onClose, data, tabLabel }: Props) {
   const [fileType, setFileType] = useState<FileType>('excel');
   const [checkedKeys, setCheckedKeys] = useState<Set<string>>(
     () => new Set(EXPORT_COLUMNS.filter((c) => c.defaultChecked).map((c) => c.key))
@@ -107,9 +107,9 @@ export default function AsetPenangananExportModal({ open, onClose, data, tabLabe
       const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       // Kalau kolom "Hasil" dicentang, index-nya dikirim ke builder Excel
       // biar sel-nya diwarnai badge (hijau/merah) otomatis, sama kayak
-      // export Data Aset.
+      // export Data Inventory.
       const hasilColIdx = selectedColumns.findIndex((c) => c.key === 'hasil');
-      const judul = `Penanganan Aset - ${tabLabel}`;
+      const judul = `Penanganan Inventory - ${tabLabel}`;
 
       if (fileType === 'excel') {
         await downloadStyledExcel(
@@ -135,7 +135,7 @@ export default function AsetPenangananExportModal({ open, onClose, data, tabLabe
       onClose();
     } catch (err) {
       console.error(err);
-      toast.error('Gagal export data penanganan aset.');
+      toast.error('Gagal export data penanganan inventory.');
     } finally {
       setExporting(false);
     }
@@ -146,7 +146,7 @@ export default function AsetPenangananExportModal({ open, onClose, data, tabLabe
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">Export Penanganan Aset — {tabLabel}</h2>
+            <h2 className="text-base font-semibold text-slate-900">Export Penanganan Inventory — {tabLabel}</h2>
             <p className="text-xs text-slate-400 mt-0.5">{data.length} laporan sesuai filter saat ini akan diexport</p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition">

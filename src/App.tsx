@@ -15,7 +15,7 @@ import AuditLog from './pages/AuditLog';
 import Laporan from './pages/Laporan';
 import MasterData from './pages/MasterData';
 import CabangPage from './pages/CabangPage';
-import PenangananAset from './pages/TabPenangananAset';
+import PenangananInventory from './pages/PenangananInventory';
 
 interface LocationState {
   backgroundLocation?: Location;
@@ -47,14 +47,14 @@ function AppRoutes() {
             dropdown yang lagi kebuka, dll gak reset tiap ganti halaman. */}
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          {/* Inventaris.tsx udah dihapus -- Aset & Kelengkapan Aset pindah ke
-              Master Data, Foto Aset & Riwayat Aset pindah ke Laporan, dan
-              Penanganan Aset punya halaman sendiri. Alias ini jaga-jaga buat
+          {/* Inventaris.tsx udah dihapus -- Inventory & Kelengkapan Inventory pindah ke
+              Master Data, Foto Inventory & Riwayat Inventory pindah ke Laporan, dan
+              Penanganan Inventory punya halaman sendiri. Alias ini jaga-jaga buat
               bookmark/link lama ke /inventaris. */}
           <Route path="/inventaris" element={<Navigate to="/laporan" replace />} />
-          {/* Aset sekarang isinya di halaman Master Data (tab "aset"), bukan
+          {/* Inventory sekarang isinya di halaman Master Data (tab "inventory"), bukan
               lagi di Inventaris -- alias lama ini diarahin ke sana. */}
-          <Route path="/aset" element={<Navigate to="/master-data?tab=aset" replace />} />
+          <Route path="/inventory" element={<Navigate to="/master-data?tab=inventory" replace />} />
           <Route
             path="/karyawan"
             element={
@@ -80,7 +80,7 @@ function AppRoutes() {
             }
           />
           <Route path="/master-data" element={<MasterData />} />
-          <Route path='/penanganan-aset' element={<PenangananAset />} />
+          <Route path='/penanganan-inventory' element={<PenangananInventory />} />
           <Route
             path="/cabang"
             element={

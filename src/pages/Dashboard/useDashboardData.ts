@@ -5,7 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import { getEcho } from '../../lib/echo';
 import type { User as UserType } from '../../types/user';
-import { getAset, getRiwayatAset, type RiwayatAsetEvent } from '../../api/aset';
+import { getInventory } from '../../api/masterData/inventory';
+import { getRiwayatInventory, type RiwayatInventoryEvent } from '../../api/transaksi/inventoryPemakai';
 
 // ============================================================================
 // TYPES
@@ -17,13 +18,13 @@ export interface DepartemenDistribusi {
   percent: number;
 }
 
-// Ringkasan status seluruh aset/barang inventaris — dipakai kartu
-// "Ringkasan Status Aset" di dashboard.
-// Catatan: status backend aset ada 6 (tersedia, dipakai, menunggu_perbaikan,
+// Ringkasan status seluruh inventory/barang inventaris — dipakai kartu
+// "Ringkasan Status Inventory" di dashboard.
+// Catatan: status backend inventory ada 6 (tersedia, dipakai, menunggu_perbaikan,
 // diperbaiki, rusak_berat, dijual). Supaya kartu tetap simpel 4 kategori,
-// menunggu_perbaikan & diperbaiki (aset yang lagi dalam proses penanganan)
+// menunggu_perbaikan & diperbaiki (inventory yang lagi dalam proses penanganan)
 // digabung ke bucket "dipakai" karena sama-sama belum tersedia dipinjam.
-export interface RingkasanAset {
+export interface RingkasanInventory {
   total: number;
   tersedia: number;
   dipakai: number;
@@ -31,42 +32,42 @@ export interface RingkasanAset {
   dijual: number;
 }
 
-// Distribusi jumlah aset per merek (Asus, HP, Logitech, dst) — dipakai
-// kartu "Distribusi Aset per Merek" di dashboard admin. Sebelumnya per
-// jenis_id, tapi kolom itu udah dihapus dari tabel aset jadi sumbernya
+// Distribusi jumlah inventory per merek (Asus, HP, Logitech, dst) — dipakai
+// kartu "Distribusi Inventory per Merek" di dashboard admin. Sebelumnya per
+// jenis_id, tapi kolom itu udah dihapus dari tabel inventory jadi sumbernya
 // sekarang kolom `merek` langsung biar fiturnya tetap jalan.
-export interface AsetPerMerek {
+export interface InventoryPerMerek {
   merek: string;
   jumlah: number;
 }
 
-// Tren jumlah aset dibeli per bulan (6 bulan terakhir, dari tanggal_pembelian)
-// — dipakai hero chart "Tren Pembelian Aset per Bulan" di dashboard admin.
-export interface TrenPembelianAset {
+// Tren jumlah inventory dibeli per bulan (6 bulan terakhir, dari tanggal_pembelian)
+// — dipakai hero chart "Tren Pembelian Inventory per Bulan" di dashboard admin.
+export interface TrenPembelianInventory {
   bulan: string;
   jumlah: number;
 }
 
-// Distribusi jumlah aset per status (tersedia/dipakai/dst) — dipakai
-// donut chart "Distribusi Status Aset" di dashboard admin.
-export interface StatusAsetDistribusi {
+// Distribusi jumlah inventory per status (tersedia/dipakai/dst) — dipakai
+// donut chart "Distribusi Status Inventory" di dashboard admin.
+export interface StatusInventoryDistribusi {
   status: string;
   jumlah: number;
 }
 
-// Ringkasan aset yang butuh perhatian: lagi rusak/proses perbaikan, atau
+// Ringkasan inventory yang butuh perhatian: lagi rusak/proses perbaikan, atau
 // garansinya bakal habis dalam 30 hari ke depan — dipakai kartu
-// "Aset Butuh Perhatian" di dashboard admin.
-export interface AsetPerhatian {
+// "Inventory Butuh Perhatian" di dashboard admin.
+export interface InventoryPerhatian {
   rusak: number; // status rusak_berat
   dalamPenanganan: number; // status menunggu_perbaikan + diperbaiki
   garansiSegeraHabis: number; // tanggal_garansi <= 30 hari dari sekarang
 }
 
-// 5 aktivitas aset terbaru (pinjam/kembali/lapor rusak/dst) — dipakai
-// widget "Aktivitas Aset Terbaru" di dashboard admin, biar histori aset
+// 5 aktivitas inventory terbaru (pinjam/kembali/lapor rusak/dst) — dipakai
+// widget "Aktivitas Inventory Terbaru" di dashboard admin, biar histori inventory
 // gak cuma keliatan kalau user sadar buka tab Riwayat di dalam Inventaris.
-export type AktivitasAsetTerbaru = RiwayatAsetEvent;
+export type AktivitasInventoryTerbaru = RiwayatInventoryEvent;
 
 export interface NotificationItem {
   id: string;
@@ -99,8 +100,8 @@ export async function fetchDepartemenDistribusi(): Promise<DepartemenDistribusi[
   return res.data;
 }
 
-export async function fetchRingkasanAset(): Promise<RingkasanAset> {
-  const list = await getAset();
+export async function fetchRingkasanInventory(): Promise<RingkasanInventory> {
+  const list = await getInventory({ kategori: 'barang_utama' });
   let tersedia = 0;
   let dipakai = 0;
   let rusakBerat = 0;
@@ -128,21 +129,21 @@ export async function fetchRingkasanAset(): Promise<RingkasanAset> {
   return { total: list.length, tersedia, dipakai, rusakBerat, dijual };
 }
 
-// 5 event teratas dari endpoint riwayat aset yang sudah ada (halaman 1,
-// tanpa filter type/search) — sumber sama persis dengan tab "Riwayat Aset"
+// 5 event teratas dari endpoint riwayat inventory yang sudah ada (halaman 1,
+// tanpa filter type/search) — sumber sama persis dengan tab "Riwayat Inventory"
 // di Inventaris, cuma dipotong ke 5 item terbaru buat widget dashboard.
-export async function fetchAktivitasAsetTerbaru(): Promise<AktivitasAsetTerbaru[]> {
-  const res = await getRiwayatAset(1, 10);
+export async function fetchAktivitasInventoryTerbaru(): Promise<AktivitasInventoryTerbaru[]> {
+  const res = await getRiwayatInventory(1, 10);
   return res.data.slice(0, 5);
 }
 
-// Aktivitas aset dalam jumlah lebih banyak (bukan cuma 5 teratas) -- dipakai
+// Aktivitas inventory dalam jumlah lebih banyak (bukan cuma 5 teratas) -- dipakai
 // widget Kalender di dashboard biar penanda titik & daftar aktivitas per
 // tanggal gak cuma nyakup aktivitas paling baru, tapi punya cakupan
 // beberapa bulan ke belakang. Tetap satu panggilan API aja (bukan loop per
-// tanggal), sumbernya sama persis dengan tab Riwayat Aset di Inventaris.
-export async function fetchAktivitasAsetKalender(): Promise<AktivitasAsetTerbaru[]> {
-  const res = await getRiwayatAset(1, 200);
+// tanggal), sumbernya sama persis dengan tab Riwayat Inventory di Inventaris.
+export async function fetchAktivitasInventoryKalender(): Promise<AktivitasInventoryTerbaru[]> {
+  const res = await getRiwayatInventory(1, 200);
   return res.data;
 }
 
@@ -159,8 +160,8 @@ const STATUS_LABEL: Record<string, string> = {
   dijual: 'Dijual',
 };
 
-export async function fetchAsetPerMerek(): Promise<AsetPerMerek[]> {
-  const list = await getAset();
+export async function fetchInventoryPerMerek(): Promise<InventoryPerMerek[]> {
+  const list = await getInventory({ kategori: 'barang_utama' });
   const counts = new Map<string, number>();
 
   for (const a of list) {
@@ -173,9 +174,9 @@ export async function fetchAsetPerMerek(): Promise<AsetPerMerek[]> {
     .sort((a, b) => b.jumlah - a.jumlah);
 }
 
-// 6 bulan terakhir, jumlah aset yang tanggal_pembelian-nya jatuh di bulan itu.
-export async function fetchTrenPembelianAset(): Promise<TrenPembelianAset[]> {
-  const list = await getAset();
+// 6 bulan terakhir, jumlah inventory yang tanggal_pembelian-nya jatuh di bulan itu.
+export async function fetchTrenPembelianInventory(): Promise<TrenPembelianInventory[]> {
+  const list = await getInventory({ kategori: 'barang_utama' });
   const now = new Date();
 
   const bulanKeys: { key: string; label: string }[] = [];
@@ -197,8 +198,8 @@ export async function fetchTrenPembelianAset(): Promise<TrenPembelianAset[]> {
   return bulanKeys.map((b) => ({ bulan: b.label, jumlah: counts.get(b.key) ?? 0 }));
 }
 
-export async function fetchStatusAsetDistribusi(): Promise<StatusAsetDistribusi[]> {
-  const list = await getAset();
+export async function fetchStatusInventoryDistribusi(): Promise<StatusInventoryDistribusi[]> {
+  const list = await getInventory({ kategori: 'barang_utama' });
   const counts = new Map<string, number>();
 
   for (const a of list) {
@@ -211,8 +212,8 @@ export async function fetchStatusAsetDistribusi(): Promise<StatusAsetDistribusi[
     .filter((s) => s.jumlah > 0);
 }
 
-export async function fetchAsetPerhatian(): Promise<AsetPerhatian> {
-  const list = await getAset();
+export async function fetchInventoryPerhatian(): Promise<InventoryPerhatian> {
+  const list = await getInventory({ kategori: 'barang_utama' });
   const now = Date.now();
   const warningMs = GARANSI_WARNING_DAYS * 24 * 60 * 60 * 1000;
 
@@ -418,85 +419,85 @@ export function useDashboardCore() {
 export function useDashboardAnalytics(
   enabled: boolean,
   include: {
-    ringkasanAset?: boolean;
-    asetPerMerek?: boolean;
-    asetPerhatian?: boolean;
-    trenPembelianAset?: boolean;
-    statusAsetDistribusi?: boolean;
-    aktivitasAsetTerbaru?: boolean;
-    aktivitasAsetKalender?: boolean;
+    ringkasanInventory?: boolean;
+    inventoryPerMerek?: boolean;
+    inventoryPerhatian?: boolean;
+    trenPembelianInventory?: boolean;
+    statusInventoryDistribusi?: boolean;
+    aktivitasInventoryTerbaru?: boolean;
+    aktivitasInventoryKalender?: boolean;
   } = {}
 ) {
   const {
-    ringkasanAset: wantRingkasanAset = true,
-    asetPerMerek: wantAsetPerMerek = true,
-    asetPerhatian: wantAsetPerhatian = true,
-    trenPembelianAset: wantTrenPembelianAset = true,
-    statusAsetDistribusi: wantStatusAsetDistribusi = true,
-    aktivitasAsetTerbaru: wantAktivitasAsetTerbaru = true,
-    aktivitasAsetKalender: wantAktivitasAsetKalender = true,
+    ringkasanInventory: wantRingkasanInventory = true,
+    inventoryPerMerek: wantInventoryPerMerek = true,
+    inventoryPerhatian: wantInventoryPerhatian = true,
+    trenPembelianInventory: wantTrenPembelianInventory = true,
+    statusInventoryDistribusi: wantStatusInventoryDistribusi = true,
+    aktivitasInventoryTerbaru: wantAktivitasInventoryTerbaru = true,
+    aktivitasInventoryKalender: wantAktivitasInventoryKalender = true,
   } = include;
 
-  const { data: ringkasanAset } = useQuery({
-    queryKey: ['ringkasan-aset'],
-    queryFn: fetchRingkasanAset,
-    enabled: enabled && wantRingkasanAset,
+  const { data: ringkasanInventory } = useQuery({
+    queryKey: ['ringkasan-inventory'],
+    queryFn: fetchRingkasanInventory,
+    enabled: enabled && wantRingkasanInventory,
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: asetPerMerek } = useQuery({
-    queryKey: ['aset-per-merek'],
-    queryFn: fetchAsetPerMerek,
-    enabled: enabled && wantAsetPerMerek,
+  const { data: inventoryPerMerek } = useQuery({
+    queryKey: ['inventory-per-merek'],
+    queryFn: fetchInventoryPerMerek,
+    enabled: enabled && wantInventoryPerMerek,
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: asetPerhatian } = useQuery({
-    queryKey: ['aset-perhatian'],
-    queryFn: fetchAsetPerhatian,
-    enabled: enabled && wantAsetPerhatian,
+  const { data: inventoryPerhatian } = useQuery({
+    queryKey: ['inventory-perhatian'],
+    queryFn: fetchInventoryPerhatian,
+    enabled: enabled && wantInventoryPerhatian,
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: trenPembelianAset } = useQuery({
-    queryKey: ['tren-pembelian-aset'],
-    queryFn: fetchTrenPembelianAset,
-    enabled: enabled && wantTrenPembelianAset,
+  const { data: trenPembelianInventory } = useQuery({
+    queryKey: ['tren-pembelian-inventory'],
+    queryFn: fetchTrenPembelianInventory,
+    enabled: enabled && wantTrenPembelianInventory,
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: statusAsetDistribusi } = useQuery({
-    queryKey: ['status-aset-distribusi'],
-    queryFn: fetchStatusAsetDistribusi,
-    enabled: enabled && wantStatusAsetDistribusi,
+  const { data: statusInventoryDistribusi } = useQuery({
+    queryKey: ['status-inventory-distribusi'],
+    queryFn: fetchStatusInventoryDistribusi,
+    enabled: enabled && wantStatusInventoryDistribusi,
     staleTime: 2 * 60 * 1000,
   });
 
   // staleTime pendek (30 detik) -- ini feed aktivitas, harus lebih "segar"
   // dibanding kartu ringkasan/statistik lain yang wajar agak nge-lag.
-  const { data: aktivitasAsetTerbaru } = useQuery({
-    queryKey: ['aktivitas-aset-terbaru'],
-    queryFn: fetchAktivitasAsetTerbaru,
-    enabled: enabled && wantAktivitasAsetTerbaru,
+  const { data: aktivitasInventoryTerbaru } = useQuery({
+    queryKey: ['aktivitas-inventory-terbaru'],
+    queryFn: fetchAktivitasInventoryTerbaru,
+    enabled: enabled && wantAktivitasInventoryTerbaru,
     staleTime: 30 * 1000,
   });
 
   // Sama staleTime-nya dengan feed "terbaru" -- ini juga feed aktivitas,
   // cuma dipotong lebih banyak buat kebutuhan widget Kalender.
-  const { data: aktivitasAsetKalender } = useQuery({
-    queryKey: ['aktivitas-aset-kalender'],
-    queryFn: fetchAktivitasAsetKalender,
-    enabled: enabled && wantAktivitasAsetKalender,
+  const { data: aktivitasInventoryKalender } = useQuery({
+    queryKey: ['aktivitas-inventory-kalender'],
+    queryFn: fetchAktivitasInventoryKalender,
+    enabled: enabled && wantAktivitasInventoryKalender,
     staleTime: 30 * 1000,
   });
 
   return {
-    ringkasanAset,
-    asetPerMerek: asetPerMerek ?? [],
-    asetPerhatian,
-    trenPembelianAset: trenPembelianAset ?? [],
-    statusAsetDistribusi: statusAsetDistribusi ?? [],
-    aktivitasAsetTerbaru: aktivitasAsetTerbaru ?? [],
-    aktivitasAsetKalender: aktivitasAsetKalender ?? [],
+    ringkasanInventory,
+    inventoryPerMerek: inventoryPerMerek ?? [],
+    inventoryPerhatian,
+    trenPembelianInventory: trenPembelianInventory ?? [],
+    statusInventoryDistribusi: statusInventoryDistribusi ?? [],
+    aktivitasInventoryTerbaru: aktivitasInventoryTerbaru ?? [],
+    aktivitasInventoryKalender: aktivitasInventoryKalender ?? [],
   };
 }

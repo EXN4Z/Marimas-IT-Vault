@@ -31,11 +31,11 @@ import { useNavigate } from 'react-router-dom';
 import type { User as UserType } from '../../types/user';
 import type {
   NotificationItem,
-  RingkasanAset,
-  AsetPerhatian,
-  TrenPembelianAset,
-  StatusAsetDistribusi,
-  AktivitasAsetTerbaru,
+  RingkasanInventory,
+  InventoryPerhatian,
+  TrenPembelianInventory,
+  StatusInventoryDistribusi,
+  AktivitasInventoryTerbaru,
 } from './useDashboardData';
 
 export const THEME = {
@@ -159,7 +159,7 @@ export function KpiCard({
   value: number | string;
   tone?: keyof typeof KPI_ACCENT;
   /** Info tambahan di bawah -- diturunkan dari data yang sama, bukan angka baru,
-      dipakai buat ngisi ruang bawah kartu (mis. "12% dari total aset"). */
+      dipakai buat ngisi ruang bawah kartu (mis. "12% dari total inventory"). */
   hint?: string;
   className?: string;
 }) {
@@ -181,47 +181,47 @@ export function KpiCard({
   );
 }
 
-// ==== Ringkasan Status Aset — dipakai Admin ====
+// ==== Ringkasan Status Inventory — dipakai Admin ====
 // Mencatat semua status barang di Inventaris: Tersedia, Dipakai, Rusak Berat,
-// Dijual. Persentase badge dihitung dari proporsi aset yang "Tersedia".
-export function RingkasanAsetCard({
-  ringkasanAset,
+// Dijual. Persentase badge dihitung dari proporsi inventory yang "Tersedia".
+export function RingkasanInventoryCard({
+  ringkasanInventory,
   compact,
 }: {
-  ringkasanAset?: RingkasanAset;
+  ringkasanInventory?: RingkasanInventory;
   /** true kalau tampil sendirian (tanpa hero chart di sebelahnya), misal dashboard cabang */
   compact?: boolean;
 }) {
-  const asetTotal = ringkasanAset?.total ?? 0;
-  const asetTersedia = ringkasanAset?.tersedia ?? 0;
-  const asetDipakai = ringkasanAset?.dipakai ?? 0;
-  const asetRusakBerat = ringkasanAset?.rusakBerat ?? 0;
-  const asetDijual = ringkasanAset?.dijual ?? 0;
-  const tersediaPct = asetTotal > 0 ? (asetTersedia / asetTotal) * 100 : 0;
-  const dipakaiPct = asetTotal > 0 ? (asetDipakai / asetTotal) * 100 : 0;
-  const rusakBeratPct = asetTotal > 0 ? (asetRusakBerat / asetTotal) * 100 : 0;
-  const dijualPct = asetTotal > 0 ? (asetDijual / asetTotal) * 100 : 0;
-  const tersediaRatePct = asetTotal > 0 ? Math.round((asetTersedia / asetTotal) * 100) : null;
+  const inventoryTotal = ringkasanInventory?.total ?? 0;
+  const inventoryTersedia = ringkasanInventory?.tersedia ?? 0;
+  const inventoryDipakai = ringkasanInventory?.dipakai ?? 0;
+  const inventoryRusakBerat = ringkasanInventory?.rusakBerat ?? 0;
+  const inventoryDijual = ringkasanInventory?.dijual ?? 0;
+  const tersediaPct = inventoryTotal > 0 ? (inventoryTersedia / inventoryTotal) * 100 : 0;
+  const dipakaiPct = inventoryTotal > 0 ? (inventoryDipakai / inventoryTotal) * 100 : 0;
+  const rusakBeratPct = inventoryTotal > 0 ? (inventoryRusakBerat / inventoryTotal) * 100 : 0;
+  const dijualPct = inventoryTotal > 0 ? (inventoryDijual / inventoryTotal) * 100 : 0;
+  const tersediaRatePct = inventoryTotal > 0 ? Math.round((inventoryTersedia / inventoryTotal) * 100) : null;
 
   return (
     <div className={`${cardClass} ${compact ? 'lg:max-w-md' : ''}`}>
       <div className="flex items-center gap-2.5 mb-4">
         <CardIcon icon={Boxes} />
-        <h3 className="text-sm font-semibold text-slate-900">Ringkasan Status Aset</h3>
+        <h3 className="text-sm font-semibold text-slate-900">Ringkasan Status Inventory</h3>
       </div>
 
       <div className="flex items-center gap-2">
-        <p className="text-3xl font-extrabold text-slate-900">{asetTotal}</p>
+        <p className="text-3xl font-extrabold text-slate-900">{inventoryTotal}</p>
         {tersediaRatePct !== null && (
           <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
             {tersediaRatePct}% tersedia
           </span>
         )}
       </div>
-      <p className="text-xs text-slate-400 mt-1">Total aset tercatat</p>
+      <p className="text-xs text-slate-400 mt-1">Total inventory tercatat</p>
 
       <div className="flex w-full h-2.5 rounded-full overflow-hidden mt-5 bg-slate-100">
-        {asetTotal > 0 ? (
+        {inventoryTotal > 0 ? (
           <>
             <div style={{ width: `${tersediaPct}%`, background: THEME.violet }} />
             <div style={{ width: `${dipakaiPct}%`, background: THEME.amber }} />
@@ -234,10 +234,10 @@ export function RingkasanAsetCard({
       </div>
 
       <div className="flex flex-col gap-3 mt-5">
-        <LegendDot color={THEME.violet} label="Tersedia" value={asetTersedia} />
-        <LegendDot color={THEME.amber} label="Dipakai" value={asetDipakai} />
-        <LegendDot color={THEME.rose} label="Rusak Berat" value={asetRusakBerat} />
-        <LegendDot color="#CBD5E1" label="Dijual" value={asetDijual} />
+        <LegendDot color={THEME.violet} label="Tersedia" value={inventoryTersedia} />
+        <LegendDot color={THEME.amber} label="Dipakai" value={inventoryDipakai} />
+        <LegendDot color={THEME.rose} label="Rusak Berat" value={inventoryRusakBerat} />
+        <LegendDot color="#CBD5E1" label="Dijual" value={inventoryDijual} />
       </div>
     </div>
   );
@@ -300,19 +300,19 @@ export function NotifikasiCard({
   );
 }
 
-// ==== Hero chart "Tren Pembelian Aset per Bulan" — khusus admin (inventaris) ====
-export function HeroTrenPembelianAsetChart({ trenPembelianAset }: { trenPembelianAset: TrenPembelianAset[] }) {
-  const totalTahunIni = trenPembelianAset.reduce((sum, d) => sum + d.jumlah, 0);
-  const maxJumlah = trenPembelianAset.length ? Math.max(...trenPembelianAset.map((d) => d.jumlah)) : 0;
-  const avgJumlah = trenPembelianAset.length ? totalTahunIni / trenPembelianAset.length : 0;
-  const peakIndex = maxJumlah > 0 ? trenPembelianAset.findIndex((d) => d.jumlah === maxJumlah) : -1;
+// ==== Hero chart "Tren Pembelian Inventory per Bulan" — khusus admin (inventaris) ====
+export function HeroTrenPembelianInventoryChart({ trenPembelianInventory }: { trenPembelianInventory: TrenPembelianInventory[] }) {
+  const totalTahunIni = trenPembelianInventory.reduce((sum, d) => sum + d.jumlah, 0);
+  const maxJumlah = trenPembelianInventory.length ? Math.max(...trenPembelianInventory.map((d) => d.jumlah)) : 0;
+  const avgJumlah = trenPembelianInventory.length ? totalTahunIni / trenPembelianInventory.length : 0;
+  const peakIndex = maxJumlah > 0 ? trenPembelianInventory.findIndex((d) => d.jumlah === maxJumlah) : -1;
 
   // Delta bulan terakhir vs bulan sebelumnya -- murni turunan dari data yang
-  // sudah ada (trenPembelianAset), bukan fetch baru. Dipakai buat badge tren
+  // sudah ada (trenPembelianInventory), bukan fetch baru. Dipakai buat badge tren
   // kecil di header biar kartu ini kerasa lebih "hidup".
-  const lastIdx = trenPembelianAset.length - 1;
-  const lastVal = lastIdx >= 0 ? trenPembelianAset[lastIdx].jumlah : 0;
-  const prevVal = lastIdx >= 1 ? trenPembelianAset[lastIdx - 1].jumlah : null;
+  const lastIdx = trenPembelianInventory.length - 1;
+  const lastVal = lastIdx >= 0 ? trenPembelianInventory[lastIdx].jumlah : 0;
+  const prevVal = lastIdx >= 1 ? trenPembelianInventory[lastIdx - 1].jumlah : null;
   const delta = prevVal !== null ? lastVal - prevVal : null;
 
   const renderPeakLabel = (props: any) => {
@@ -334,11 +334,11 @@ export function HeroTrenPembelianAsetChart({ trenPembelianAset }: { trenPembelia
     <div className={`${cardClass} xl:col-span-2`}>
       <div className="flex items-start justify-between flex-wrap gap-2">
         <div>
-          <h3 className="text-sm text-slate-500 font-medium">Tren Pembelian Aset per Bulan</h3>
+          <h3 className="text-sm text-slate-500 font-medium">Tren Pembelian Inventory per Bulan</h3>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <p className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
               {totalTahunIni}
-              <span className="text-base font-semibold text-slate-400 ml-2">aset dibeli</span>
+              <span className="text-base font-semibold text-slate-400 ml-2">inventory dibeli</span>
             </p>
             {delta !== null && delta !== 0 && (
               <span
@@ -360,7 +360,7 @@ export function HeroTrenPembelianAsetChart({ trenPembelianAset }: { trenPembelia
       <div className="flex items-center gap-4 mt-4 mb-2">
         <div className="flex items-center gap-1.5 text-xs text-slate-500">
           <span className="w-2 h-2 rounded-full" style={{ background: THEME.orange }} />
-          Aset Dibeli
+          Inventory Dibeli
         </div>
         <div className="flex items-center gap-1.5 text-xs text-slate-500">
           <span className="w-2.5 h-0 border-t-2 border-dashed" style={{ borderColor: THEME.orange }} />
@@ -370,7 +370,7 @@ export function HeroTrenPembelianAsetChart({ trenPembelianAset }: { trenPembelia
 
       <div className="h-72 mt-2">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={trenPembelianAset} margin={{ top: 36, right: 8, left: -20, bottom: 0 }}>
+          <BarChart data={trenPembelianInventory} margin={{ top: 36, right: 8, left: -20, bottom: 0 }}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" stroke={THEME.grid} />
             <XAxis dataKey="bulan" tick={{ fontSize: 12, fill: THEME.axis }} axisLine={false} tickLine={false} />
             <YAxis hide domain={[0, (dataMax: number) => Math.max(dataMax * 1.35, 4)]} />
@@ -378,7 +378,7 @@ export function HeroTrenPembelianAsetChart({ trenPembelianAset }: { trenPembelia
               <ReferenceLine y={avgJumlah} stroke={THEME.orange} strokeDasharray="5 5" strokeOpacity={0.5} />
             )}
             <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
-            <Bar dataKey="jumlah" name="Aset Dibeli" fill={THEME.orange} radius={[8, 8, 0, 0]} barSize={28} label={renderPeakLabel} />
+            <Bar dataKey="jumlah" name="Inventory Dibeli" fill={THEME.orange} radius={[8, 8, 0, 0]} barSize={28} label={renderPeakLabel} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -386,7 +386,7 @@ export function HeroTrenPembelianAsetChart({ trenPembelianAset }: { trenPembelia
   );
 }
 
-// ==== Distribusi status aset (donut) — khusus admin (inventaris) ====
+// ==== Distribusi status inventory (donut) — khusus admin (inventaris) ====
 const STATUS_ASET_COLOR: Record<string, string> = {
   Tersedia: THEME.emerald,
   Dipakai: THEME.violet,
@@ -396,21 +396,21 @@ const STATUS_ASET_COLOR: Record<string, string> = {
   Dijual: THEME.axis,
 };
 
-export function StatusAsetDonutCard({ statusAsetDistribusi }: { statusAsetDistribusi: StatusAsetDistribusi[] }) {
-  const total = statusAsetDistribusi.reduce((sum, d) => sum + d.jumlah, 0);
+export function StatusInventoryDonutCard({ statusInventoryDistribusi }: { statusInventoryDistribusi: StatusInventoryDistribusi[] }) {
+  const total = statusInventoryDistribusi.reduce((sum, d) => sum + d.jumlah, 0);
 
   return (
     <div className={cardClass}>
-      <h3 className="text-base font-semibold text-slate-900 mb-4">Distribusi Status Aset</h3>
+      <h3 className="text-base font-semibold text-slate-900 mb-4">Distribusi Status Inventory</h3>
       {total === 0 ? (
-        <p className="text-sm text-slate-400">Belum ada data aset</p>
+        <p className="text-sm text-slate-400">Belum ada data inventory</p>
       ) : (
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <div className="h-56 w-full sm:w-1/2 relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={statusAsetDistribusi}
+                  data={statusInventoryDistribusi}
                   dataKey="jumlah"
                   nameKey="status"
                   innerRadius={55}
@@ -418,7 +418,7 @@ export function StatusAsetDonutCard({ statusAsetDistribusi }: { statusAsetDistri
                   paddingAngle={2}
                   strokeWidth={0}
                 >
-                  {statusAsetDistribusi.map((entry) => (
+                  {statusInventoryDistribusi.map((entry) => (
                     <Cell key={entry.status} fill={STATUS_ASET_COLOR[entry.status] ?? THEME.axis} />
                   ))}
                 </Pie>
@@ -427,11 +427,11 @@ export function StatusAsetDonutCard({ statusAsetDistribusi }: { statusAsetDistri
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-2xl font-extrabold text-slate-900">{total}</span>
-              <span className="text-xs text-slate-400">total aset</span>
+              <span className="text-xs text-slate-400">total inventory</span>
             </div>
           </div>
           <div className="flex flex-col gap-2.5 w-full sm:w-1/2">
-            {statusAsetDistribusi.map((d) => (
+            {statusInventoryDistribusi.map((d) => (
               <LegendDot
                 key={d.status}
                 color={STATUS_ASET_COLOR[d.status] ?? THEME.axis}
@@ -448,7 +448,7 @@ export function StatusAsetDonutCard({ statusAsetDistribusi }: { statusAsetDistri
 
 // ==== Kalender — semua role ====
 // Kalender bulanan interaktif (murni UI, gak nge-fetch apa-apa) buat
-// gantiin "Distribusi Aset per Merek" di layout dashboard. Hari ini
+// gantiin "Distribusi Inventory per Merek" di layout dashboard. Hari ini
 // otomatis ke-highlight, user bisa klik tanggal lain buat nandain, dan
 // panah kiri/kanan buat pindah bulan. Minggu dimulai dari Minggu biar
 // konsisten sama pola kalender Indonesia pada umumnya.
@@ -488,7 +488,7 @@ function dateKeyLocal(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export function CalendarCard({ aktivitas = [] }: { aktivitas?: AktivitasAsetTerbaru[] }) {
+export function CalendarCard({ aktivitas = [] }: { aktivitas?: AktivitasInventoryTerbaru[] }) {
   const today = useMemo(() => new Date(), []);
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState<Date>(today);
@@ -504,7 +504,7 @@ export function CalendarCard({ aktivitas = [] }: { aktivitas?: AktivitasAsetTerb
   // buat (1) nandain titik di tanggal yang punya aktivitas dan (2) daftar
   // aktivitas tanggal yang lagi dipilih di bawah grid.
   const aktivitasPerTanggal = useMemo(() => {
-    const map = new Map<string, AktivitasAsetTerbaru[]>();
+    const map = new Map<string, AktivitasInventoryTerbaru[]>();
     for (const ev of aktivitas) {
       const d = new Date(ev.waktu);
       if (isNaN(d.getTime())) continue;
@@ -593,7 +593,7 @@ export function CalendarCard({ aktivitas = [] }: { aktivitas?: AktivitasAsetTerb
               }`}
             >
               {cell.date.getDate()}
-              {/* Titik penanda -- nunjukin tanggal ini punya aktivitas aset
+              {/* Titik penanda -- nunjukin tanggal ini punya aktivitas inventory
                   (tambah/pinjam/kembali/lapor rusak/dst) tanpa harus diklik
                   dulu satu-satu. */}
               {hasAktivitas && (
@@ -610,7 +610,7 @@ export function CalendarCard({ aktivitas = [] }: { aktivitas?: AktivitasAsetTerb
 
       {/* Aktivitas di tanggal terpilih -- muncul begitu tanggal manapun
           dipencet (termasuk hari ini secara default). Sumbernya sama
-          persis dengan AktivitasAsetCard & tab Riwayat di Inventaris,
+          persis dengan AktivitasInventoryCard & tab Riwayat di Inventaris,
           cuma difilter ke satu tanggal ini aja. */}
       <div className="mt-4 pt-4 border-t border-slate-100">
         <p className="text-xs font-semibold text-slate-500 mb-2.5">
@@ -621,7 +621,7 @@ export function CalendarCard({ aktivitas = [] }: { aktivitas?: AktivitasAsetTerb
         </p>
 
         {aktivitasHariIni.length === 0 ? (
-          <p className="text-sm text-slate-400">Tidak ada aktivitas aset pada tanggal ini.</p>
+          <p className="text-sm text-slate-400">Tidak ada aktivitas inventory pada tanggal ini.</p>
         ) : (
           <div className="max-h-56 overflow-y-auto pr-1">
             <AktivitasTimelineList
@@ -637,10 +637,10 @@ export function CalendarCard({ aktivitas = [] }: { aktivitas?: AktivitasAsetTerb
   );
 }
 
-// ==== Aset butuh perhatian — khusus admin (inventaris) ====
+// ==== Inventory butuh perhatian — khusus admin (inventaris) ====
 // Donut chart (bukan cuma daftar) biar area kartu ini gak keliatan kosong
 // sebelah kanan seperti sebelumnya -- pola visualnya disamain dengan
-// StatusAsetDonutCard di atas. Daftar angka tetap ditampilkan di bawah
+// StatusInventoryDonutCard di atas. Daftar angka tetap ditampilkan di bawah
 // donut, karena tiap baris bisa jadi actionable checklist buat admin.
 const ASET_PERHATIAN_COLOR: Record<string, string> = {
   'Rusak Berat': THEME.rose,
@@ -648,10 +648,10 @@ const ASET_PERHATIAN_COLOR: Record<string, string> = {
   'Garansi < 30 Hari': THEME.orange,
 };
 
-export function AsetPerhatianCard({ asetPerhatian }: { asetPerhatian?: AsetPerhatian }) {
-  const rusak = asetPerhatian?.rusak ?? 0;
-  const dalamPenanganan = asetPerhatian?.dalamPenanganan ?? 0;
-  const garansiSegeraHabis = asetPerhatian?.garansiSegeraHabis ?? 0;
+export function InventoryPerhatianCard({ inventoryPerhatian }: { inventoryPerhatian?: InventoryPerhatian }) {
+  const rusak = inventoryPerhatian?.rusak ?? 0;
+  const dalamPenanganan = inventoryPerhatian?.dalamPenanganan ?? 0;
+  const garansiSegeraHabis = inventoryPerhatian?.garansiSegeraHabis ?? 0;
   const totalPerhatian = rusak + dalamPenanganan + garansiSegeraHabis;
 
   const rows = [
@@ -661,7 +661,7 @@ export function AsetPerhatianCard({ asetPerhatian }: { asetPerhatian?: AsetPerha
   ];
 
   // Data buat donut -- cuma masukin baris yang jumlahnya > 0, sama kayak
-  // pola StatusAsetDistribusi (biar slice kosong gak nongol di chart).
+  // pola StatusInventoryDistribusi (biar slice kosong gak nongol di chart).
   const donutData = rows.filter((r) => r.value > 0).map((r) => ({ label: r.label, jumlah: r.value }));
 
   return (
@@ -669,17 +669,17 @@ export function AsetPerhatianCard({ asetPerhatian }: { asetPerhatian?: AsetPerha
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
           <CardIcon icon={ShieldAlert} />
-          <h3 className="text-base font-semibold text-slate-900">Aset Butuh Perhatian</h3>
+          <h3 className="text-base font-semibold text-slate-900">Inventory Butuh Perhatian</h3>
         </div>
         {totalPerhatian > 0 && (
           <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">
-            {totalPerhatian} aset
+            {totalPerhatian} inventory
           </span>
         )}
       </div>
 
       {totalPerhatian === 0 ? (
-        <p className="text-sm text-slate-400">Semua aset dalam kondisi aman.</p>
+        <p className="text-sm text-slate-400">Semua inventory dalam kondisi aman.</p>
       ) : (
         <>
           <div className="h-48 relative mb-2">
@@ -743,10 +743,10 @@ function formatWaktuSingkat(iso: string): string {
 }
 
 // Opsi D — gaya timeline garis (titik + garis vertikal) buat daftar
-// aktivitas aset, gantiin kotak ikon lama. Dipakai bareng oleh
-// AktivitasAsetCard (widget "Riwayat") dan daftar aktivitas per-tanggal
+// aktivitas inventory, gantiin kotak ikon lama. Dipakai bareng oleh
+// AktivitasInventoryCard (widget "Riwayat") dan daftar aktivitas per-tanggal
 // di CalendarCard, biar konsisten satu gaya visual di kedua tempat.
-const AKTIVITAS_ASET_STYLE: Record<AktivitasAsetTerbaru['type'], { color: string; label: string }> = {
+const AKTIVITAS_ASET_STYLE: Record<AktivitasInventoryTerbaru['type'], { color: string; label: string }> = {
   pinjam: { color: THEME.amber, label: 'menerima' },
   kembali: { color: THEME.emerald, label: 'mengembalikan' },
   lapor_rusak: { color: THEME.rose, label: 'melaporkan kerusakan' },
@@ -759,14 +759,14 @@ function AktivitasTimelineList({
   events,
   timeFormatter,
 }: {
-  events: AktivitasAsetTerbaru[];
+  events: AktivitasInventoryTerbaru[];
   timeFormatter: (waktu: string) => string;
 }) {
   return (
     <ul className="flex flex-col">
       {events.map((ev, idx) => {
         const s = AKTIVITAS_ASET_STYLE[ev.type];
-        const kode = ev.aset?.kode_aset || ev.aset?.kode_kelengkapan || '-';
+        const kode = ev.inventory?.kode_inventory || '-';
         const pelaku =
           ev.nama ?? (ev.type === 'mulai_perbaikan' || ev.type === 'selesai_perbaikan' ? 'Admin' : null);
         const isLast = idx === events.length - 1;
@@ -790,13 +790,13 @@ function AktivitasTimelineList({
   );
 }
 
-// ==== Aktivitas aset terbaru — khusus admin (inventaris) ====
-// Ringkasan 5 event teraktual dari feed yang sama dengan tab "Riwayat Aset"
+// ==== Aktivitas inventory terbaru — khusus admin (inventaris) ====
+// Ringkasan 5 event teraktual dari feed yang sama dengan tab "Riwayat Inventory"
 // di halaman Inventaris. Ditaruh di dashboard (halaman pertama yang dibuka
-// user) supaya histori aset kelihatan tanpa harus sadar dulu ada tab
+// user) supaya histori inventory kelihatan tanpa harus sadar dulu ada tab
 // Riwayat yang harus diklik manual. Klik "Lihat semua" -> lempar ke tab
 // Riwayat di Inventaris buat detail lengkap + filter/search/pagination.
-export function AktivitasAsetCard({ aktivitasAsetTerbaru }: { aktivitasAsetTerbaru: AktivitasAsetTerbaru[] }) {
+export function AktivitasInventoryCard({ aktivitasInventoryTerbaru }: { aktivitasInventoryTerbaru: AktivitasInventoryTerbaru[] }) {
   const navigate = useNavigate();
 
   return (
@@ -804,20 +804,20 @@ export function AktivitasAsetCard({ aktivitasAsetTerbaru }: { aktivitasAsetTerba
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
           <CardIcon icon={HandCoins} tone="emerald" />
-          <h3 className="text-base font-semibold text-slate-900">Aktivitas Aset Terbaru</h3>
+          <h3 className="text-base font-semibold text-slate-900">Aktivitas Inventory Terbaru</h3>
         </div>
         <button
-          onClick={() => navigate('/inventaris?tab=aset')}
+          onClick={() => navigate('/laporan?tab=riwayat_inventory')}
           className="flex items-center gap-1 text-xs font-semibold text-[#6D5DFC] hover:text-[#4C3FE0] whitespace-nowrap"
         >
           Lihat semua <ArrowRight size={13} />
         </button>
       </div>
 
-      {aktivitasAsetTerbaru.length === 0 ? (
-        <p className="text-sm text-slate-400">Belum ada aktivitas aset.</p>
+      {aktivitasInventoryTerbaru.length === 0 ? (
+        <p className="text-sm text-slate-400">Belum ada aktivitas inventory.</p>
       ) : (
-        <AktivitasTimelineList events={aktivitasAsetTerbaru} timeFormatter={formatWaktuSingkat} />
+        <AktivitasTimelineList events={aktivitasInventoryTerbaru} timeFormatter={formatWaktuSingkat} />
       )}
     </div>
   );

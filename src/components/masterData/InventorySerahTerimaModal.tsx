@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Search, Check } from 'lucide-react';
-import { serahTerimaAset, searchKaryawan, type Aset, type AsetPemakai, type KaryawanUser } from '../../api/aset';
-import AsetFotoUpload from './AsetFotoUpload';
+import type { Inventory } from '../../api/masterData/inventory';
+import { serahTerimaInventory, searchKaryawan, type InventoryPemakai, type KaryawanUser } from '../../api/transaksi/inventoryPemakai';
+import InventoryFotoUpload from './InventoryFotoUpload';
 
-interface AsetSerahTerimaModalProps {
-  aset: Aset; // aset utama yang mau diserahkan (mis. laptop) -- diklik dari tabel/detail
+interface InventorySerahTerimaModalProps {
+  inventory: Inventory; // inventory utama yang mau diserahkan (mis. laptop) -- diklik dari tabel/detail
   onClose: () => void;
-  // dikirim SETELAH semua item (aset utama + kelengkapan yang dicentang)
-  // berhasil diserahkan. Array selalu berisi minimal 1 elemen (aset utama).
-  onSuccess: (results: { aset: Aset; pemakai: AsetPemakai }[]) => void;
+  // dikirim SETELAH semua item (inventory utama + kelengkapan yang dicentang)
+  // berhasil diserahkan. Array selalu berisi minimal 1 elemen (inventory utama).
+  onSuccess: (results: { inventory: Inventory; pemakai: InventoryPemakai }[]) => void;
 }
 
 type PenerimaMode = 'karyawan' | 'cabang';
@@ -17,7 +18,7 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetSerahTerimaModalProps) {
+export default function InventorySerahTerimaModal({ inventory, onClose, onSuccess }: InventorySerahTerimaModalProps) {
   const [mode, setMode] = useState<PenerimaMode>('karyawan');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<KaryawanUser[]>([]);
@@ -32,11 +33,11 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
   const [error, setError] = useState('');
 
   // Kelengkapan (tas, charger, dst) TIDAK bisa dipinjam sendiri lagi -- dia
-  // wajib nempel & ikut status aset induknya. Begitu aset ini diserahkan,
+  // wajib nempel & ikut status inventory induknya. Begitu inventory ini diserahkan,
   // backend otomatis ikut serahkan semua kelengkapan miliknya yang masih
   // 'tersedia' (satu struk & foto yang sama). Di sini kita cuma tampilkan
   // daftarnya sebagai info, tidak ada checklist/pilihan manual lagi.
-  const kelengkapanTersedia = (aset.aset_kelengkapan ?? []).filter((k) => k.status === 'tersedia');
+  const kelengkapanTersedia = (inventory.children ?? []).filter((k) => k.status === 'tersedia');
 
   function handleModeChange(next: PenerimaMode) {
     setMode(next);
@@ -56,7 +57,7 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       try {
-        // TODO: pastikan searchKaryawan di api/aset.ts menerima param role
+        // TODO: pastikan searchKaryawan di api/inventory.ts menerima param role
         // dan meneruskannya sebagai query string ke endpoint pencarian,
         // misal: GET /karyawan/search?q=...&role=cabang
         const data = await searchKaryawan(query.trim(), mode === 'cabang' ? 'cabang' : undefined);
@@ -95,7 +96,7 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
     setSubmitting(true);
     setError('');
 
-    // Cuma aset utama yang diserahkan lewat sini -- kelengkapan yang masih
+    // Cuma inventory utama yang diserahkan lewat sini -- kelengkapan yang masih
     // 'tersedia' otomatis ikut diserahkan di backend (satu struk & foto yang
     // sama), gak perlu request terpisah dari sini lagi.
     try {
@@ -105,8 +106,8 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
       if (catatan.trim()) formData.append('catatan_penerimaan', catatan.trim());
       fotoPenerimaan.forEach((file) => formData.append('foto_penerimaan[]', file));
 
-      const pemakai = await serahTerimaAset(aset.id, formData);
-      onSuccess([{ aset, pemakai }]);
+      const pemakai = await serahTerimaInventory(inventory.id, formData);
+      onSuccess([{ inventory, pemakai }]);
     } catch (err: any) {
       setError(
         err.response?.data?.errors?.foto_penerimaan?.[0] ||
@@ -130,7 +131,7 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Serah Terima</p>
-            <h3 className="text-lg font-semibold text-slate-900">Serahkan Aset {aset.kode_aset}</h3>
+            <h3 className="text-lg font-semibold text-slate-900">Serahkan Inventory {inventory.kode_inventory}</h3>
           </div>
           <button
             type="button"
@@ -246,7 +247,7 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
           </div>
 
           {/* Kelengkapan bukan lagi checklist manual -- semua kelengkapan
-              aset ini yang statusnya 'tersedia' otomatis ikut diserahkan
+              inventory ini yang statusnya 'tersedia' otomatis ikut diserahkan
               bareng, ditampilkan di sini cuma sebagai info. */}
           {kelengkapanTersedia.length > 0 && (
             <div>
@@ -259,17 +260,17 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
                     key={k.id}
                     className="text-xs font-medium bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full"
                   >
-                    {k.kode_kelengkapan} · {k.nama}
+                    {k.kode_inventory} · {k.nama}
                   </span>
                 ))}
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                Item di atas ikut berstatus "dipakai" otomatis begitu aset ini diserahkan.
+                Item di atas ikut berstatus "dipakai" otomatis begitu inventory ini diserahkan.
               </p>
             </div>
           )}
 
-          <AsetFotoUpload files={fotoPenerimaan} onChange={setFotoPenerimaan} max={3} label="Foto Bukti Serah Terima (3 Foto)" />
+          <InventoryFotoUpload files={fotoPenerimaan} onChange={setFotoPenerimaan} max={3} label="Foto Bukti Serah Terima (3 Foto)" />
         </div>
 
         {error && (
@@ -300,8 +301,8 @@ export default function AsetSerahTerimaModal({ aset, onClose, onSuccess }: AsetS
             {submitting
               ? 'Memproses...'
               : kelengkapanTersedia.length > 0
-              ? `Serahkan Aset + ${kelengkapanTersedia.length} Kelengkapan`
-              : 'Serahkan Aset'}
+              ? `Serahkan Inventory + ${kelengkapanTersedia.length} Kelengkapan`
+              : 'Serahkan Inventory'}
           </button>
         </div>
       </div>

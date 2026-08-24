@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 import { PackageSearch, PlusCircle, Search, X } from 'lucide-react';
-import { getAsetKelengkapan, type AsetKelengkapan, type AsetKelengkapanFormValues } from '../../api/asetKelengkapan';
-import AsetKelengkapanForm from './AsetKelengkapanForm';
+import { getInventory, type Inventory } from '../../api/masterData/inventory';
+import InventoryFormModal, { type KelengkapanFormValues } from './InventoryFormModal';
 
-// Dipakai di dalam AsetFormModal (create & edit). Beda sama modal "Pasang
+// Dipakai di dalam InventoryFormModal (create & edit). Beda sama modal "Pasang
 // Pengganti" yang lama: di sini user bisa milih BEBERAPA kelengkapan
-// sekaligus (staged), baru beneran diproses (pasangPengganti /
-// createAsetKelengkapan) pas tombol Simpan di form aset ditekan -- lihat
-// AsetFormModal buat eksekusinya. Komponen ini cuma ngumpulin pilihan.
+// sekaligus (staged), baru beneran diproses (pasangPenggantiKelengkapan /
+// createInventory) pas tombol Simpan di form inventory ditekan -- lihat
+// InventoryFormModal buat eksekusinya. Komponen ini cuma ngumpulin pilihan.
 
 export type StagedKelengkapan =
-  | { type: 'stok'; item: AsetKelengkapan }
-  | { type: 'baru'; values: AsetKelengkapanFormValues };
+  | { type: 'stok'; item: Inventory }
+  | { type: 'baru'; values: KelengkapanFormValues };
 
 interface Props {
   staged: StagedKelengkapan[];
@@ -19,17 +19,17 @@ interface Props {
   // Kelengkapan yang sudah nempel beneran di backend (mode edit) -- cuma
   // ditampilin buat referensi, gak bisa dilepas dari sini (lepasnya lewat
   // Lapor Rusak di halaman lain).
-  existing?: AsetKelengkapan[];
-  // Label aset induk buat preset di tab "Tambah Baru", mis. "HP 14s-dq5001TU".
-  asetLabel?: string;
-  presetAsetId?: number; // cuma keisi kalau mode edit (aset udah punya id)
+  existing?: Inventory[];
+  // Label inventory induk buat preset di tab "Tambah Baru", mis. "HP 14s-dq5001TU".
+  inventoryLabel?: string;
+  presetInventoryId?: number; // cuma keisi kalau mode edit (inventory udah punya id)
 }
 
 type PickerTab = 'stok' | 'baru';
 
-export default function AsetKelengkapanPicker({ staged, onChange, existing, asetLabel, presetAsetId }: Props) {
+export default function InventoryKelengkapanPicker({ staged, onChange, existing, inventoryLabel, presetInventoryId }: Props) {
   const [tab, setTab] = useState<PickerTab>('stok');
-  const [stokItems, setStokItems] = useState<AsetKelengkapan[]>([]);
+  const [stokItems, setStokItems] = useState<Inventory[]>([]);
   const [stokLoading, setStokLoading] = useState(false);
   const [stokError, setStokError] = useState('');
   const [stokSearch, setStokSearch] = useState('');
@@ -38,8 +38,8 @@ export default function AsetKelengkapanPicker({ staged, onChange, existing, aset
   useEffect(() => {
     setStokLoading(true);
     setStokError('');
-    getAsetKelengkapan()
-      .then((data) => setStokItems(data.filter((k) => k.status === 'tersedia' && k.aset_id === null)))
+    getInventory({ kategori: 'kelengkapan' })
+      .then((data) => setStokItems(data.filter((k) => k.status === 'tersedia' && k.parent_id === null)))
       .catch(() => setStokError('Gagal memuat daftar stok kelengkapan.'))
       .finally(() => setStokLoading(false));
   }, []);
@@ -52,10 +52,10 @@ export default function AsetKelengkapanPicker({ staged, onChange, existing, aset
     if (stagedStokIds.has(k.id)) return false;
     const q = stokSearch.trim().toLowerCase();
     if (!q) return true;
-    return [k.kode_kelengkapan, k.nama, k.merek].filter(Boolean).join(' ').toLowerCase().includes(q);
+    return [k.kode_inventory, k.nama, k.merek].filter(Boolean).join(' ').toLowerCase().includes(q);
   });
 
-  function tambahDariStok(k: AsetKelengkapan) {
+  function tambahDariStok(k: Inventory) {
     onChange([...staged, { type: 'stok', item: k }]);
   }
 
@@ -73,14 +73,14 @@ export default function AsetKelengkapanPicker({ staged, onChange, existing, aset
               <div key={k.id} className="flex items-center justify-between gap-3 bg-slate-50 rounded-lg px-3 py-2 text-sm">
                 <div className="min-w-0">
                   <p className="text-slate-700 font-medium truncate">
-                    {k.nama || [k.merek, k.tipe].filter(Boolean).join(' ') || k.kode_kelengkapan}
+                    {k.nama || [k.merek, k.tipe].filter(Boolean).join(' ') || k.kode_inventory}
                   </p>
-                  <p className="text-xs text-slate-400 truncate">{k.kode_kelengkapan}</p>
+                  <p className="text-xs text-slate-400 truncate">{k.kode_inventory}</p>
                 </div>
               </div>
             ))}
           </div>
-          <p className="text-xs text-slate-300 mt-1">Buat lepas kelengkapan yang sudah terpasang, pakai Lapor Rusak di detail aset.</p>
+          <p className="text-xs text-slate-300 mt-1">Buat lepas kelengkapan yang sudah terpasang, pakai Lapor Rusak di detail inventory.</p>
         </div>
       )}
 
@@ -93,11 +93,11 @@ export default function AsetKelengkapanPicker({ staged, onChange, existing, aset
                 <div className="min-w-0">
                   <p className="text-slate-800 font-medium truncate">
                     {s.type === 'stok'
-                      ? s.item.nama || [s.item.merek, s.item.tipe].filter(Boolean).join(' ') || s.item.kode_kelengkapan
+                      ? s.item.nama || [s.item.merek, s.item.tipe].filter(Boolean).join(' ') || s.item.kode_inventory
                       : s.values.nama || s.values.merek || 'Kelengkapan baru'}
                   </p>
                   <p className="text-xs text-slate-400 truncate">
-                    {s.type === 'stok' ? `Dari stok · ${s.item.kode_kelengkapan}` : 'Baru'}
+                    {s.type === 'stok' ? `Dari stok · ${s.item.kode_inventory}` : 'Baru'}
                   </p>
                 </div>
                 <button type="button" onClick={() => hapusStaged(i)} className="text-slate-400 hover:text-red-600 shrink-0 transition-colors">
@@ -168,10 +168,10 @@ export default function AsetKelengkapanPicker({ staged, onChange, existing, aset
                 >
                   <div className="min-w-0">
                     <p className="font-medium text-slate-800 truncate">
-                      {k.nama || [k.merek, k.tipe].filter(Boolean).join(' ') || k.kode_kelengkapan}
+                      {k.nama || [k.merek, k.tipe].filter(Boolean).join(' ') || k.kode_inventory}
                     </p>
                     <p className="text-slate-400 truncate">
-                      {k.kode_kelengkapan}
+                      {k.kode_inventory}
                       {k.serial_number ? ` · S/N: ${k.serial_number}` : ''}
                     </p>
                   </div>
@@ -183,16 +183,18 @@ export default function AsetKelengkapanPicker({ staged, onChange, existing, aset
       )}
 
       {showTambahBaru && (
-        <AsetKelengkapanForm
-          open
+        <InventoryFormModal
+          inventory={null}
+          kategoriKode="kelengkapan"
+          supplierOptions={[]}
           onClose={() => {
             setShowTambahBaru(false);
             setTab('stok');
           }}
           onSaved={() => {}}
-          presetAsetId={presetAsetId}
-          presetAsetLabel={asetLabel}
-          lockAsetField
+          presetInventoryId={presetInventoryId}
+          presetInventoryLabel={inventoryLabel}
+          lockInventoryField
           onStage={(values) => onChange([...staged, { type: 'baru', values }])}
         />
       )}

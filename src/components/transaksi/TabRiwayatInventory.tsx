@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { Search, HandCoins, Undo2, AlertTriangle, PlayCircle, Wrench, Banknote, X } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import { useAuth } from '../../context/AuthContext';
-import { getRiwayatAset, type RiwayatAsetEvent } from '../../api/aset';
+import { getRiwayatInventory, type RiwayatInventoryEvent } from '../../api/transaksi/inventoryPemakai';
 
 function formatWaktu(iso: string): string {
   const date = new Date(iso);
@@ -17,9 +17,9 @@ function formatWaktu(iso: string): string {
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 }
 
-type RiwayatFilter = 'semua' | RiwayatAsetEvent['type'];
+type RiwayatFilter = 'semua' | RiwayatInventoryEvent['type'];
 
-const RIWAYAT_FILTER_LABEL: Record<RiwayatAsetEvent['type'], string> = {
+const RIWAYAT_FILTER_LABEL: Record<RiwayatInventoryEvent['type'], string> = {
   pinjam: 'Menerima',
   kembali: 'Mengembalikan',
   lapor_rusak: 'Lapor Kerusakan',
@@ -28,15 +28,15 @@ const RIWAYAT_FILTER_LABEL: Record<RiwayatAsetEvent['type'], string> = {
   dijual: 'Dijual',
 };
 
-// dipisah jadi halaman/tab sendiri (dulu nempel di bawah tabel tab "Aset") biar
-// sejajar sama child-class lain di Inventaris (Aset, Penanganan Aset, Foto Aset,
-// Kelengkapan Aset) -- pola yang sama kayak tab di MasterData.tsx.
-export default function TabRiwayatAset() {
+// dipisah jadi halaman/tab sendiri (dulu nempel di bawah tabel tab "Inventory") biar
+// sejajar sama child-class lain di Inventaris (Inventory, Penanganan Inventory, Foto Inventory,
+// Kelengkapan Inventory) -- pola yang sama kayak tab di MasterData.tsx.
+export default function TabRiwayatInventory() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
-  const [riwayatAset, setRiwayatAset] = useState<RiwayatAsetEvent[]>([]);
-  const [riwayatAsetLoading, setRiwayatAsetLoading] = useState(true);
+  const [riwayatInventory, setRiwayatInventory] = useState<RiwayatInventoryEvent[]>([]);
+  const [riwayatInventoryLoading, setRiwayatInventoryLoading] = useState(true);
   const [riwayatFilter, setRiwayatFilter] = useState<RiwayatFilter>('semua');
   const [riwayatSearch, setRiwayatSearch] = useState('');
   const [riwayatPage, setRiwayatPage] = useState(1);
@@ -45,35 +45,35 @@ export default function TabRiwayatAset() {
   const RIWAYAT_PER_PAGE = 10; // minimal 10 data per halaman (dipaksa juga di backend)
   const riwayatSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const refreshRiwayatAset = useCallback((targetPage = 1, targetFilter: RiwayatFilter = 'semua', targetSearch = '') => {
+  const refreshRiwayatInventory = useCallback((targetPage = 1, targetFilter: RiwayatFilter = 'semua', targetSearch = '') => {
     // CATATAN: dulu di sini ada pengecualian khusus role 'cabang' (skip fetch,
-    // dianggap bakal 403). Itu KELIRU — route /aset-pemakai/riwayat pakai
+    // dianggap bakal 403). Itu KELIRU — route /inventory-pemakai/riwayat pakai
     // middleware 'role:karyawan,manajer,hr,admin' yang jalan berdasarkan LEVEL
     // (lihat User::$roleLevels & hasRoleAtLeast di backend), dan level 'cabang'
     // (2) lebih tinggi dari 'karyawan' (1) — jadi cabang tetap lolos middleware,
     // dan controller riwayat() sudah otomatis batasin datanya ke milik akun
     // cabang itu sendiri (lewat user_id). Jadi cabang HARUS bisa lihat riwayat
     // aktivitasnya sendiri juga, sama kayak karyawan.
-    setRiwayatAsetLoading(true);
-    getRiwayatAset(targetPage, RIWAYAT_PER_PAGE, targetFilter === 'semua' ? undefined : targetFilter, targetSearch || undefined)
+    setRiwayatInventoryLoading(true);
+    getRiwayatInventory(targetPage, RIWAYAT_PER_PAGE, targetFilter === 'semua' ? undefined : targetFilter, targetSearch || undefined)
       .then((res) => {
-        setRiwayatAset(res.data);
+        setRiwayatInventory(res.data);
         setRiwayatPage(res.current_page);
         setRiwayatLastPage(res.last_page);
         setRiwayatTotal(res.total);
       })
       .catch(console.error)
-      .finally(() => setRiwayatAsetLoading(false));
+      .finally(() => setRiwayatInventoryLoading(false));
   }, [user?.role]);
 
   // versi diam-diam buat polling -- gak nyalain loading spinner tiap 5 detik,
   // biar panel gak kedip-kedip pas auto-refresh (sama pola kayak polling di
-  // TabPenangananAset). Tetap di halaman, filter, & kata kunci search yang
+  // TabPenangananInventory). Tetap di halaman, filter, & kata kunci search yang
   // lagi dibuka user, bukan balik ke halaman 1 / kosongin search.
-  const refreshRiwayatAsetSilent = useCallback(() => {
-    getRiwayatAset(riwayatPage, RIWAYAT_PER_PAGE, riwayatFilter === 'semua' ? undefined : riwayatFilter, riwayatSearch || undefined)
+  const refreshRiwayatInventorySilent = useCallback(() => {
+    getRiwayatInventory(riwayatPage, RIWAYAT_PER_PAGE, riwayatFilter === 'semua' ? undefined : riwayatFilter, riwayatSearch || undefined)
       .then((res) => {
-        setRiwayatAset(res.data);
+        setRiwayatInventory(res.data);
         setRiwayatPage(res.current_page);
         setRiwayatLastPage(res.last_page);
         setRiwayatTotal(res.total);
@@ -83,18 +83,18 @@ export default function TabRiwayatAset() {
 
   const gantiRiwayatFilter = (filter: RiwayatFilter) => {
     setRiwayatFilter(filter);
-    refreshRiwayatAset(1, filter, riwayatSearch);
+    refreshRiwayatInventory(1, filter, riwayatSearch);
   };
 
   const gantiRiwayatHalaman = (target: number) => {
     if (target < 1 || target > riwayatLastPage || target === riwayatPage) return;
-    refreshRiwayatAset(target, riwayatFilter, riwayatSearch);
+    refreshRiwayatInventory(target, riwayatFilter, riwayatSearch);
   };
 
   useEffect(() => {
-    // backend /aset-pemakai/riwayat: admin lihat semua, role lain otomatis
-    // difilter cuma riwayat aktivitas milik sendiri (lihat AsetPemakaiController::riwayat)
-    refreshRiwayatAset(1, 'semua', '');
+    // backend /inventory-pemakai/riwayat: admin lihat semua, role lain otomatis
+    // difilter cuma riwayat aktivitas milik sendiri (lihat InventoryPemakaiController::riwayat)
+    refreshRiwayatInventory(1, 'semua', '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.role]);
 
@@ -103,7 +103,7 @@ export default function TabRiwayatAset() {
   useEffect(() => {
     if (riwayatSearchDebounceRef.current) clearTimeout(riwayatSearchDebounceRef.current);
     riwayatSearchDebounceRef.current = setTimeout(() => {
-      refreshRiwayatAset(1, riwayatFilter, riwayatSearch);
+      refreshRiwayatInventory(1, riwayatFilter, riwayatSearch);
     }, 400);
     return () => {
       if (riwayatSearchDebounceRef.current) clearTimeout(riwayatSearchDebounceRef.current);
@@ -112,16 +112,16 @@ export default function TabRiwayatAset() {
   }, [riwayatSearch]);
 
   // auto-refresh tiap 5 detik biar riwayat langsung update tanpa perlu F5
-  // (sama pola kayak polling di TabPenangananAset).
+  // (sama pola kayak polling di TabPenangananInventory).
   useEffect(() => {
-    const interval = setInterval(refreshRiwayatAsetSilent, 5000);
+    const interval = setInterval(refreshRiwayatInventorySilent, 5000);
     return () => clearInterval(interval);
-  }, [refreshRiwayatAsetSilent]);
+  }, [refreshRiwayatInventorySilent]);
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
       <h3 className="text-base font-semibold text-slate-900 mb-1">
-        {isAdmin ? 'Riwayat Aset' : 'Riwayat Aktivitas Saya'}
+        {isAdmin ? 'Riwayat Inventory' : 'Riwayat Aktivitas Saya'}
       </h3>
 
       <div className="relative mb-3 mt-2">
@@ -130,7 +130,7 @@ export default function TabRiwayatAset() {
           type="text"
           value={riwayatSearch}
           onChange={(e) => setRiwayatSearch(e.target.value)}
-          placeholder="Cari kode aset, merek/tipe, atau nama peminjam..."
+          placeholder="Cari kode inventory, merek/tipe, atau nama peminjam..."
           className="w-full text-sm border border-slate-200 rounded-lg pl-9 pr-9 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
         />
         {riwayatSearch && (
@@ -169,14 +169,14 @@ export default function TabRiwayatAset() {
         ))}
       </ul>
 
-      {riwayatAsetLoading ? (
+      {riwayatInventoryLoading ? (
         <p className="text-sm text-slate-400 text-center py-6">Memuat riwayat...</p>
       ) : (() => {
         return (
         <ul className="flex flex-col gap-4">
-          {riwayatAset
+          {riwayatInventory
             .map((ev, idx) => {
-            const style: Record<RiwayatAsetEvent['type'], { bg: string; icon: JSX.Element; label: string }> = {
+            const style: Record<RiwayatInventoryEvent['type'], { bg: string; icon: JSX.Element; label: string }> = {
               pinjam: { bg: 'bg-amber-50 text-amber-600', icon: <HandCoins size={16} />, label: 'menerima' },
               kembali: { bg: 'bg-emerald-50 text-emerald-600', icon: <Undo2 size={16} />, label: 'mengembalikan' },
               lapor_rusak: { bg: 'bg-red-50 text-red-600', icon: <AlertTriangle size={16} />, label: 'melaporkan kerusakan' },
@@ -185,7 +185,7 @@ export default function TabRiwayatAset() {
               dijual: { bg: 'bg-purple-50 text-purple-600', icon: <Banknote size={16} />, label: 'menjual' },
             };
             const s = style[ev.type];
-            const kode = ev.aset?.kode_aset || '-';
+            const kode = ev.inventory?.kode_inventory || '-';
             return (
               <li key={`${ev.type}-${idx}`} className="flex items-start gap-3">
                 <span className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${s.bg}`}>
@@ -205,13 +205,13 @@ export default function TabRiwayatAset() {
               </li>
             );
           })}
-          {riwayatAset.length === 0 && (
+          {riwayatInventory.length === 0 && (
             <p className="text-sm text-slate-400 text-center py-6">
               {riwayatSearch
                 ? `Tidak ada hasil untuk "${riwayatSearch}".`
                 : riwayatFilter !== 'semua'
                 ? `Belum ada riwayat "${RIWAYAT_FILTER_LABEL[riwayatFilter]}".`
-                : isAdmin ? 'Belum ada aktivitas aset.' : 'Belum ada aktivitas aset atas namamu.'}
+                : isAdmin ? 'Belum ada aktivitas inventory.' : 'Belum ada aktivitas inventory atas namamu.'}
             </p>
           )}
         </ul>
@@ -219,7 +219,7 @@ export default function TabRiwayatAset() {
       })()}
 
       {/* Pagination — minimal 10 data riwayat per halaman */}
-      {!riwayatAsetLoading && riwayatAset.length > 0 && riwayatLastPage > 1 && (
+      {!riwayatInventoryLoading && riwayatInventory.length > 0 && riwayatLastPage > 1 && (
         <Pagination
           currentPage={riwayatPage}
           totalPages={riwayatLastPage}

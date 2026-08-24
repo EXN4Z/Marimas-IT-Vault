@@ -11,7 +11,7 @@ interface TooltipProps {
 /**
  * Tooltip custom pengganti native `title=""` attribute bawaan browser.
  * Dipakai buat nampilin teks lengkap dari sel tabel yang di-truncate
- * (mis. kolom Jenis/Merek, Aset Induk/Lokasi) dengan tampilan yang bisa
+ * (mis. kolom Jenis/Merek, Inventory Induk/Lokasi) dengan tampilan yang bisa
  * di-styling -- rounded, arrow, transisi fade -- bukan kotak hitam polos
  * bawaan OS.
  *

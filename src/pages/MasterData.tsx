@@ -1,14 +1,16 @@
 import '../index.css';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2, Package, ClipboardList } from 'lucide-react';
+import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2, Package, ClipboardList, Layers, Tags } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
-import TabAset from '../components/inventaris/TabAset';
-import TabKelengkapanAset from '../components/inventaris/TabKelengkapanAset';
+import TabInventory from '../components/masterData/TabInventory';
+import TabKelengkapanInventory from '../components/masterData/TabKelengkapanInventory';
+import TabMasterKategori from '../components/masterData/TabMasterKategori';
+import TabKategori from '../components/masterData/TabKategori';
 import { useAuth } from '../context/AuthContext';
-import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen, importDepartemen } from '../api/departemen';
-import { getSupplier, createSupplier, updateSupplier, deleteSupplier, importSupplier } from '../api/supplier';
+import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen, importDepartemen } from '../api/masterData/departemen';
+import { getSupplier, createSupplier, updateSupplier, deleteSupplier, importSupplier } from '../api/masterData/supplier';
 import { downloadStyledExcel } from '../utils/excelReport';
 
 // Aset & Kelengkapan Aset pindahan dari Inventaris -- beda pola dari
@@ -16,8 +18,11 @@ import { downloadStyledExcel } from '../utils/excelReport';
 // dirender lewat komponen dedicated-nya sendiri (TabAset / TabKelengkapanAset),
 // bukan lewat tabConfig generik di bawah. tabConfig cuma buat tab yang
 // bentuknya sama (nama + alamat/telepon opsional).
+// Master Kategori & Kategori juga dirender lewat komponen dedicated-nya
+// sendiri -- Master Kategori CRUD penuh tapi field-nya beda (kategori_id
+// dropdown, bukan alamat/telepon), Kategori murni read-only.
 type GenericTabKey = 'departemen' | 'supplier';
-type CustomTabKey = 'aset' | 'kelengkapan_aset';
+type CustomTabKey = 'inventory' | 'kelengkapan_inventory' | 'master_kategori' | 'kategori';
 type TabKey = CustomTabKey | GenericTabKey;
 
 // alamat & telepon cuma dipakai tab 'supplier'
@@ -27,8 +32,9 @@ type FormPayload = { nama: string; alamat?: string; telepon?: string };
 // urutan di sini nentuin urutan tab & jadi acuan "child pertama" buat
 // AppLayout nentuin dropdown Master Data mana yang default aktif kalau
 // URL belum punya "?tab=" -- harus samain urutannya sama children di
-// AppLayout.tsx (Aset, Kelengkapan Aset, Departemen, Supplier).
-const TAB_KEYS: TabKey[] = ['aset', 'kelengkapan_aset', 'departemen', 'supplier'];
+// AppLayout.tsx (Aset, Kelengkapan Aset, Master Kategori, Kategori,
+// Departemen, Supplier).
+const TAB_KEYS: TabKey[] = ['inventory', 'kelengkapan_inventory', 'master_kategori', 'kategori', 'departemen', 'supplier'];
 
 function isTabKey(value: string | null): value is TabKey {
   return !!value && (TAB_KEYS as string[]).includes(value);
@@ -39,8 +45,10 @@ function isGenericTab(tab: TabKey): tab is GenericTabKey {
 }
 
 const CUSTOM_TABS: { key: CustomTabKey; label: string; icon: typeof Package }[] = [
-  { key: 'aset', label: 'Aset', icon: Package },
-  { key: 'kelengkapan_aset', label: 'Kelengkapan Aset', icon: ClipboardList },
+  { key: 'inventory', label: 'Inventory', icon: Package },
+  { key: 'kelengkapan_inventory', label: 'Kelengkapan Inventory', icon: ClipboardList },
+  { key: 'master_kategori', label: 'Master Kategori', icon: Layers },
+  { key: 'kategori', label: 'Kategori', icon: Tags },
 ];
 
 const STAFF_ROLES = ['admin', 'hr'];
@@ -94,7 +102,7 @@ export default function MasterData() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTabState] = useState<TabKey>(() => {
     const fromUrl = searchParams.get('tab');
-    return isTabKey(fromUrl) ? fromUrl : 'aset';
+    return isTabKey(fromUrl) ? fromUrl : 'inventory';
   });
 
   // ganti tab sekaligus sinkronin ke query param "?tab=" biar link dari sidebar
@@ -353,10 +361,14 @@ export default function MasterData() {
         ]}
       />
 
-      {activeTab === 'aset' ? (
-        <TabAset onCount={() => {}} />
-      ) : activeTab === 'kelengkapan_aset' ? (
-        <TabKelengkapanAset />
+      {activeTab === 'inventory' ? (
+        <TabInventory onCount={() => {}} />
+      ) : activeTab === 'kelengkapan_inventory' ? (
+        <TabKelengkapanInventory />
+      ) : activeTab === 'master_kategori' ? (
+        <TabMasterKategori />
+      ) : activeTab === 'kategori' ? (
+        <TabKategori />
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {loading && <p className="text-sm text-slate-400 text-center py-8">Memuat data...</p>}

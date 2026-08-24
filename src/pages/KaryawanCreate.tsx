@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
 import RouteModal from '../components/shared/RouteModal';
-import { getDepartemen, type Departemen } from '../api/departemen';
+import { getDepartemen, type Departemen } from '../api/masterData/departemen';
 import { getCabang, type Cabang } from '../api/cabang';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest' | 'cabang';

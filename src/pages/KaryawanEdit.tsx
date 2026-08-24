@@ -3,10 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
 import RouteModal from '../components/shared/RouteModal';
-import { getDepartemen } from '../api/departemen';
+import { getDepartemen } from '../api/masterData/departemen';
 import { getCabang, type Cabang } from '../api/cabang';
 import { setKaryawanPassword } from '../api/auth';
-import type { Departemen } from '../api/departemen';
+import type { Departemen } from '../api/masterData/departemen';
 import { createPortal } from 'react-dom';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest' | 'cabang';

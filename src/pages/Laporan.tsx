@@ -2,25 +2,25 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Boxes, Users, Loader2, Download, FileSpreadsheet, Images, History } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getAset, type Aset } from '../api/aset';
+import { getInventory, type Inventory } from '../api/masterData/inventory';
 import { karyawanApi, type Karyawan } from '../api/karyawan';
-import AsetExportModal from '../components/inventaris/AsetExportModal';
+import InventoryExportModal from '../components/masterData/InventoryExportModal';
 import KaryawanExportModal from '../components/laporan/KaryawanExportModal';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
-import TabFotoAset from '../components/inventaris/TabFotoAset';
-import TabRiwayatAset from '../components/inventaris/TabRiwayatAset';
+import TabFotoInventory from '../components/transaksi/TabFotoInventory';
+import TabRiwayatInventory from '../components/transaksi/TabRiwayatInventory';
 
 const STAFF_ROLES = ['admin', 'hr', 'manajer', 'manager', 'cabang'];
 
-// dulu halaman ini cuma 2 kartu export (Aset & Karyawan) -- sekarang jadi
-// tab-based karena Foto Aset & Riwayat Aset (pindahan dari Inventaris.tsx,
+// dulu halaman ini cuma 2 kartu export (Inventory & Karyawan) -- sekarang jadi
+// tab-based karena Foto Inventory & Riwayat Inventory (pindahan dari Inventaris.tsx,
 // yang bakal dihapus) ikut digabung ke sini. Tab "export" (kartu-kartu di
 // bawah) sengaja gak dikasih query "?tab=" biar cocok sama child "Export
 // Data" di dropdown sidebar Laporan (AppLayout.tsx) yang path-nya polos
 // "/laporan" tanpa query.
-type TabKey = 'export' | 'foto_aset' | 'riwayat_aset';
+type TabKey = 'export' | 'foto_inventory' | 'riwayat_inventory';
 
-const TAB_KEYS: TabKey[] = ['export', 'foto_aset', 'riwayat_aset'];
+const TAB_KEYS: TabKey[] = ['export', 'foto_inventory', 'riwayat_inventory'];
 
 function isTabKey(value: string | null): value is TabKey {
   return !!value && (TAB_KEYS as string[]).includes(value);
@@ -61,9 +61,9 @@ export default function Laporan() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  const [asetList, setAsetList] = useState<Aset[]>([]);
-  const [asetLoading, setAsetLoading] = useState(true);
-  const [exportAsetOpen, setExportAsetOpen] = useState(false);
+  const [inventoryList, setInventoryList] = useState<Inventory[]>([]);
+  const [inventoryLoading, setInventoryLoading] = useState(true);
+  const [exportInventoryOpen, setExportInventoryOpen] = useState(false);
 
   const [karyawanList, setKaryawanList] = useState<Karyawan[]>([]);
   const [karyawanLoading, setKaryawanLoading] = useState(true);
@@ -71,10 +71,10 @@ export default function Laporan() {
 
   useEffect(() => {
     if (!isStaff) return;
-    getAset()
-      .then(setAsetList)
+    getInventory({ kategori: 'barang_utama' })
+      .then(setInventoryList)
       .catch(console.error)
-      .finally(() => setAsetLoading(false));
+      .finally(() => setInventoryLoading(false));
 
     karyawanApi
       .getAll()
@@ -94,8 +94,8 @@ export default function Laporan() {
   const tabs: { key: TabKey; label: string; icon: typeof FileSpreadsheet; adminOnly?: boolean }[] = [
     { key: 'export', label: 'Export Data', icon: FileSpreadsheet },
     // pindahan dari Inventaris.tsx
-    { key: 'foto_aset', label: 'Foto Aset', icon: Images, adminOnly: true },
-    { key: 'riwayat_aset', label: 'Riwayat Aset', icon: History },
+    { key: 'foto_inventory', label: 'Foto Inventory', icon: Images, adminOnly: true },
+    { key: 'riwayat_inventory', label: 'Riwayat Inventory', icon: History },
   ];
 
   return (
@@ -115,19 +115,19 @@ export default function Laporan() {
             <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
               <Boxes size={18} />
             </div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Aset</h3>
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Inventory</h3>
             <p className="text-xs text-slate-500 leading-relaxed flex-1">
-              Export seluruh data aset IT (kode, jenis, status, kelengkapan, dsb) sebagai Excel atau PDF — kolom bisa dipilih sendiri.
+              Export seluruh data inventory IT (kode, jenis, status, kelengkapan, dsb) sebagai Excel atau PDF — kolom bisa dipilih sendiri.
             </p>
 
             <div className="mt-4">
               <button
-                onClick={() => setExportAsetOpen(true)}
-                disabled={asetLoading}
+                onClick={() => setExportInventoryOpen(true)}
+                disabled={inventoryLoading}
                 className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
               >
-                {asetLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-                {asetLoading ? 'Memuat data...' : 'Export'}
+                {inventoryLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+                {inventoryLoading ? 'Memuat data...' : 'Export'}
               </button>
             </div>
           </div>
@@ -153,13 +153,13 @@ export default function Laporan() {
             </div>
           </div>
         </div>
-      ) : activeTab === 'foto_aset' ? (
-        <TabFotoAset />
+      ) : activeTab === 'foto_inventory' ? (
+        <TabFotoInventory />
       ) : (
-        <TabRiwayatAset />
+        <TabRiwayatInventory />
       )}
 
-      <AsetExportModal open={exportAsetOpen} onClose={() => setExportAsetOpen(false)} data={asetList} />
+      <InventoryExportModal open={exportInventoryOpen} onClose={() => setExportInventoryOpen(false)} data={inventoryList} />
       <KaryawanExportModal open={exportKaryawanOpen} onClose={() => setExportKaryawanOpen(false)} data={karyawanList} />
     </>
   );

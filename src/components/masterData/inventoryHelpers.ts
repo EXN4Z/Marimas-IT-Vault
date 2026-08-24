@@ -1,6 +1,6 @@
 /**
- * Helper bersama buat tab-tab aset (dipisah dari AsetDetailModal lama yang
- * sudah dihapus karena detail view-nya sudah digabung inline ke TabAset).
+ * Helper bersama buat tab-tab inventory (dipisah dari InventoryDetailModal lama yang
+ * sudah dihapus karena detail view-nya sudah digabung inline ke TabInventory).
  */
 
 export function formatTanggalId(iso: string | null): string {
@@ -25,11 +25,11 @@ export function formatTanggalWaktuId(waktuAkurat: string | null, tanggalFallback
 }
 
 // Bentuk minimal yang dibutuhkan namaPemakai/userIdPemakai/isCabangPemakai.
-// SENGAJA gak pakai `AsetPemakai` penuh sebagai tipe parameter:
-// AsetPenanganan.pemakai punya bentuk yang lebih ringkas ({ id, user? }) dan
-// gak punya field wajib AsetPemakai lain (created_at, aset_id, dst), jadi
-// kalau helper ini strict ke AsetPemakai, TS bakal nolak dipanggil dengan
-// p.pemakai. AsetPemakai tetap otomatis cocok di sini karena dia superset
+// SENGAJA gak pakai `InventoryPemakai` penuh sebagai tipe parameter:
+// InventoryPenanganan.pemakai punya bentuk yang lebih ringkas ({ id, user? }) dan
+// gak punya field wajib InventoryPemakai lain (created_at, inventory_id, dst), jadi
+// kalau helper ini strict ke InventoryPemakai, TS bakal nolak dipanggil dengan
+// p.pemakai. InventoryPemakai tetap otomatis cocok di sini karena dia superset
 // dari bentuk minimal ini.
 interface PemakaiLike {
   user?: { id: number; name: string; role?: string } | null;
@@ -42,16 +42,16 @@ export function isCabangPemakai(pemakai?: PemakaiLike | null): boolean {
   return pemakai?.user?.role === 'cabang';
 }
 /**
- * Ambil nama penerima aset -- karyawan maupun akun cabang, dua-duanya
+ * Ambil nama penerima inventory -- karyawan maupun akun cabang, dua-duanya
  * lewat relasi `user` yang sama (tidak ada lagi objek `pekerja` terpisah).
- * Terima AsetPemakai penuh ATAU bentuk ringkas AsetPenanganan.pemakai.
+ * Terima InventoryPemakai penuh ATAU bentuk ringkas InventoryPenanganan.pemakai.
  */
 export function namaPemakai(pemakai?: PemakaiLike | null): string {
   return pemakai?.user?.name || '-';
 }
 
 /**
- * Ambil user id penerima aset, dipakai buat cek "apakah aku peminjamnya".
+ * Ambil user id penerima inventory, dipakai buat cek "apakah aku peminjamnya".
  */
 export function userIdPemakai(pemakai?: PemakaiLike | null): number | undefined {
   return pemakai?.user?.id ?? undefined;

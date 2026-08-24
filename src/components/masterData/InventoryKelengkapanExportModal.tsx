@@ -1,34 +1,38 @@
 import { useState } from 'react';
 import { FileSpreadsheet, FileText, X, CheckSquare, Square } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { type AsetKelengkapan, type AsetKelengkapanStatus } from '../../api/asetKelengkapan';
-import { formatTanggalId, namaPemakai } from './asetHelpers';
+import { type Inventory } from '../../api/masterData/inventory';
+import { formatTanggalId, namaPemakai } from './inventoryHelpers';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
 
-const STATUS_LABEL: Record<AsetKelengkapanStatus, string> = {
+const STATUS_LABEL: Record<Inventory['status'], string> = {
   tersedia: 'Tersedia',
   dipakai: 'Dipakai',
+  menunggu_perbaikan: 'Menunggu Perbaikan',
+  diperbaiki: 'Sedang Diperbaiki',
+  rusak_berat: 'Rusak Berat',
   rusak: 'Rusak',
+  dijual: 'Dijual',
 };
 
 // Daftar kolom yang bisa diexport, urutannya = urutan kolom di file export &
-// urutan checkbox di modal. Ngikutin pola AsetExportModal.tsx /
-// AsetPenangananExportModal.tsx biar konsisten across halaman Inventaris.
+// urutan checkbox di modal. Ngikutin pola InventoryExportModal.tsx /
+// InventoryPenangananExportModal.tsx biar konsisten across halaman Inventaris.
 interface ExportColumn {
   key: string;
   label: string;
   defaultChecked: boolean;
-  get: (k: AsetKelengkapan) => string;
+  get: (k: Inventory) => string;
 }
 
 const EXPORT_COLUMNS: ExportColumn[] = [
-  { key: 'kode_kelengkapan', label: 'Kode Kelengkapan', defaultChecked: true, get: (k) => k.kode_kelengkapan },
+  { key: 'kode_kelengkapan', label: 'Kode Kelengkapan', defaultChecked: true, get: (k) => k.kode_inventory },
   { key: 'nama', label: 'Nama', defaultChecked: true, get: (k) => k.nama || '-' },
   { key: 'merek_tipe', label: 'Merek/Tipe', defaultChecked: true, get: (k) => [k.merek, k.tipe].filter(Boolean).join(' ') || '-' },
   { key: 'warna', label: 'Warna', defaultChecked: false, get: (k) => k.warna || '-' },
   { key: 'serial_number', label: 'Serial Number', defaultChecked: true, get: (k) => k.serial_number || '-' },
-  { key: 'aset_induk', label: 'Aset Induk', defaultChecked: true, get: (k) => k.aset?.kode_aset || '-' },
+  { key: 'inventory_induk', label: 'Inventory Induk', defaultChecked: true, get: (k) => k.parent?.kode_inventory || '-' },
   { key: 'lokasi_kantor', label: 'Lokasi (Tanpa Induk)', defaultChecked: false, get: (k) => k.lokasiKantor?.nama || '-' },
   { key: 'status', label: 'Status', defaultChecked: true, get: (k) => STATUS_LABEL[k.status] },
   { key: 'pemakai_saat_ini', label: 'Pemakai Saat Ini', defaultChecked: true, get: (k) => namaPemakai(k.pemakai_saat_ini) },
@@ -47,10 +51,10 @@ interface Props {
   open: boolean;
   onClose: () => void;
   /** data yang mau diexport — sudah difilter sesuai tampilan tabel saat ini */
-  data: AsetKelengkapan[];
+  data: Inventory[];
 }
 
-export default function AsetKelengkapanExportModal({ open, onClose, data }: Props) {
+export default function InventoryKelengkapanExportModal({ open, onClose, data }: Props) {
   const [fileType, setFileType] = useState<FileType>('excel');
   const [checkedKeys, setCheckedKeys] = useState<Set<string>>(
     () => new Set(EXPORT_COLUMNS.filter((c) => c.defaultChecked).map((c) => c.key))
@@ -79,7 +83,7 @@ export default function AsetKelengkapanExportModal({ open, onClose, data }: Prop
       return;
     }
     if (data.length === 0) {
-      toast.error('Gak ada data kelengkapan aset buat diexport.');
+      toast.error('Gak ada data kelengkapan inventory buat diexport.');
       return;
     }
 
@@ -98,34 +102,34 @@ export default function AsetKelengkapanExportModal({ open, onClose, data }: Prop
       const rows = data.map((k) => selectedColumns.map((c) => c.get(k)));
       const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       // Kalau kolom "Status" dicentang, index-nya dikirim ke builder Excel
-      // biar sel status itu diwarnai badge otomatis, sama kayak export Data Aset.
+      // biar sel status itu diwarnai badge otomatis, sama kayak export Data Inventory.
       const statusColIdx = selectedColumns.findIndex((c) => c.key === 'status');
 
       if (fileType === 'excel') {
         await downloadStyledExcel(
           {
-            title: 'Data Kelengkapan Aset',
+            title: 'Data Kelengkapan Inventory',
             subtitle: `${data.length} kelengkapan sesuai filter saat ini`,
             headers,
             rows,
-            sheetName: 'Kelengkapan Aset',
+            sheetName: 'Kelengkapan Inventory',
             statusColumnIndexes: statusColIdx >= 0 ? [statusColIdx] : [],
           },
-          `Data Kelengkapan Aset - ${today}.xlsx`
+          `Data Kelengkapan Inventory - ${today}.xlsx`
         );
       } else if (printWindow) {
         printRowsAsReport(
           headers,
           rows,
-          { title: 'Data Kelengkapan Aset', periodLabel: `Diexport ${today} — ${data.length} kelengkapan` },
+          { title: 'Data Kelengkapan Inventory', periodLabel: `Diexport ${today} — ${data.length} kelengkapan` },
           printWindow
         );
       }
-      toast.success(`${data.length} kelengkapan aset berhasil diexport.`);
+      toast.success(`${data.length} kelengkapan inventory berhasil diexport.`);
       onClose();
     } catch (err) {
       console.error(err);
-      toast.error('Gagal export data kelengkapan aset.');
+      toast.error('Gagal export data kelengkapan inventory.');
     } finally {
       setExporting(false);
     }
@@ -136,7 +140,7 @@ export default function AsetKelengkapanExportModal({ open, onClose, data }: Prop
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">Export Kelengkapan Aset</h2>
+            <h2 className="text-base font-semibold text-slate-900">Export Kelengkapan Inventory</h2>
             <p className="text-xs text-slate-400 mt-0.5">{data.length} kelengkapan sesuai filter saat ini akan diexport</p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition">

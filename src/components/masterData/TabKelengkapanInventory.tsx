@@ -1,21 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Pencil, Trash2, Upload, Download, Loader2, MapPin, AlertTriangle, Wrench } from 'lucide-react';
 import toast from 'react-hot-toast';
-import ScrollableTabBar from '../shared/ScrollableTabBar';
+import ScrollableTabBar, { type ScrollableTabItem } from '../shared/ScrollableTabBar';
 import {
-  getAsetKelengkapan,
-  deleteAsetKelengkapan,
-  importAsetKelengkapan,
-  laporRusak,
-  type AsetKelengkapan,
-  type AsetKelengkapanStatus,
-} from '../../api/asetKelengkapan';
+  getInventory,
+  deleteInventory,
+  importInventory,
+  type Inventory,
+  type InventoryStatus,
+} from '../../api/masterData/inventory';
+import { laporRusakKelengkapan } from '../../api/transaksi/inventoryKelengkapan';
 import StatusBadge from '../shared/StatusBadge';
 import Tooltip from '../shared/Tooltip';
 import Pagination from '../shared/Pagination';
-import AsetKelengkapanForm from './AsetKelengkapanForm';
-import AsetKelengkapanExportModal from './AsetKelengkapanExportModal';
-import { formatTanggalId } from './asetHelpers';
+import InventoryFormModal from './InventoryFormModal';
+import InventoryKelengkapanExportModal from './InventoryKelengkapanExportModal';
+import { formatTanggalId } from './inventoryHelpers';
 import { useAuth } from '../../context/AuthContext';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -30,49 +30,49 @@ const STATUS_STYLE: Record<string, string> = {
   rusak: 'bg-red-100 text-red-800',
 };
 
-// Filter status jadi tab nav (ScrollableTabBar), sama pola kayak TabAset.tsx.
+// Filter status jadi tab nav (ScrollableTabBar), sama pola kayak TabInventory.tsx.
 // "Rusak" dulunya halaman/tab terpisah (TabKelengkapanRusak.tsx) -- sekarang
 // digabung ke sini jadi salah satu filter status, biar user gak perlu
 // pindah-pindah halaman buat lihat arsip kelengkapan rusak.
-type StatusFilter = 'semua' | AsetKelengkapanStatus;
+type StatusFilter = 'semua' | InventoryStatus;
 
-export default function TabKelengkapanAset() {
+export default function TabKelengkapanInventory() {
   // Non-admin (karyawan/manajer/hr) cuma boleh liat kelengkapan yang
   // tersedia atau lagi dia pinjam sendiri (backend yang filter datanya --
-  // lihat AsetKelengkapanController::index()). Di sisi FE, tab status
+  // lihat InventoryKelengkapanController::index()). Di sisi FE, tab status
   // "Rusak" & aksi kelola (Tambah/Edit/Hapus/Import/Lapor Rusak) yang emang
   // admin-only di backend disembunyikan biar gak nampilin tombol yang
   // ujung-ujungnya cuma 403.
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
-  const [items, setItems] = useState<AsetKelengkapan[]>([]);
+  const [items, setItems] = useState<Inventory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('semua');
 
   // Pagination — client-side krn API kelengkapan gak dipaging di backend,
-  // style sama kayak pager tabel Aset (10 per halaman).
+  // style sama kayak pager tabel Inventory (10 per halaman).
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
   const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<AsetKelengkapan | null>(null);
+  const [editing, setEditing] = useState<Inventory | null>(null);
 
-  const [deleteTarget, setDeleteTarget] = useState<AsetKelengkapan | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Inventory | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [deleteForceAvailable, setDeleteForceAvailable] = useState(false);
 
   // Lapor Rusak — final, gak bisa dibatalin. Beda dialog dari hapus krn
   // konsekuensinya beda (pindah ke filter Rusak, bukan hilang permanen).
-  const [rusakTarget, setRusakTarget] = useState<AsetKelengkapan | null>(null);
+  const [rusakTarget, setRusakTarget] = useState<Inventory | null>(null);
   const [rusakSubmitting, setRusakSubmitting] = useState(false);
   const [rusakError, setRusakError] = useState('');
 
-  // Import Excel (kelengkapan berdiri sendiri, nempel ke aset induk yang
-  // sudah ada) & export Excel/PDF — pola sama kayak TabAset & MasterData.
+  // Import Excel (kelengkapan berdiri sendiri, nempel ke inventory induk yang
+  // sudah ada) & export Excel/PDF — pola sama kayak TabInventory & MasterData.
   const [importLoading, setImportLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
@@ -81,11 +81,11 @@ export default function TabKelengkapanAset() {
     setLoading(true);
     setError('');
     try {
-      const data = await getAsetKelengkapan();
+      const data = await getInventory({ kategori: 'kelengkapan' });
       setItems(data);
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
-      setError(status === 403 ? 'Anda tidak punya akses ke halaman ini.' : 'Gagal memuat data kelengkapan aset.');
+      setError(status === 403 ? 'Anda tidak punya akses ke halaman ini.' : 'Gagal memuat data kelengkapan inventory.');
     } finally {
       setLoading(false);
     }
@@ -125,15 +125,15 @@ export default function TabKelengkapanAset() {
 
     setImportLoading(true);
     try {
-      const res = await importAsetKelengkapan(file);
-      toast.success(res.message || 'Berhasil import data kelengkapan aset.');
+      const res = await importInventory(file);
+      toast.success(res.message || 'Berhasil import data kelengkapan inventory.');
       loadData();
     } catch (err: any) {
       const apiErrors: string[] | undefined = err.response?.data?.errors;
       const msg =
         (apiErrors && apiErrors[0]) ||
         err.response?.data?.message ||
-        'Gagal import data kelengkapan aset.';
+        'Gagal import data kelengkapan inventory.';
       toast.error(msg);
     } finally {
       setImportLoading(false);
@@ -146,7 +146,7 @@ export default function TabKelengkapanAset() {
     setFormOpen(true);
   };
 
-  const openEdit = (item: AsetKelengkapan) => {
+  const openEdit = (item: Inventory) => {
     setEditing(item);
     setFormOpen(true);
   };
@@ -156,7 +156,7 @@ export default function TabKelengkapanAset() {
     setDeleting(true);
     setDeleteError('');
     try {
-      await deleteAsetKelengkapan(deleteTarget.id, force);
+      await deleteInventory(deleteTarget.id, force);
       setItems((prev) => prev.filter((i) => i.id !== deleteTarget.id));
       setDeleteTarget(null);
       setDeleteForceAvailable(false);
@@ -173,10 +173,10 @@ export default function TabKelengkapanAset() {
     setRusakSubmitting(true);
     setRusakError('');
     try {
-      await laporRusak(rusakTarget.id);
+      await laporRusakKelengkapan(rusakTarget.id);
       setRusakTarget(null);
       loadData(); // refresh — item pindah ke filter Rusak, ilang dari filter lain
-      toast.success(`${rusakTarget.kode_kelengkapan} dilaporkan rusak.`);
+      toast.success(`${rusakTarget.kode_inventory} dilaporkan rusak.`);
     } catch (err: any) {
       setRusakError(err.response?.data?.message || 'Gagal melaporkan kerusakan.');
     } finally {
@@ -188,8 +188,8 @@ export default function TabKelengkapanAset() {
     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
       <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
         <p className="text-sm text-slate-500 flex-1 min-w-[240px]">
-          Kelola kelengkapan aset (charger, tas, mouse, dll) sebagai item tersendiri — serah-terima
-          dan riwayat pemakaiannya dicatat terpisah dari aset utama.
+          Kelola kelengkapan inventory (charger, tas, mouse, dll) sebagai item tersendiri — serah-terima
+          dan riwayat pemakaiannya dicatat terpisah dari inventory utama.
         </p>
         <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
           <button
@@ -234,15 +234,15 @@ export default function TabKelengkapanAset() {
       </div>
 
       {/* Filter status pakai tab nav (ScrollableTabBar), sama pola kayak
-          tab status di halaman Aset -- "Rusak" termasuk di sini juga
+          tab status di halaman Inventory -- "Rusak" termasuk di sini juga
           (arsip, dilepas otomatis dari induk pas dilaporkan). */}
-      <ScrollableTabBar
+      <ScrollableTabBar<StatusFilter>
         className="mb-4"
         activeTab={statusFilter}
-        onChange={setStatusFilter}
+        onChange={(key) => setStatusFilter(key)}
         tabs={[
           {
-            key: 'semua' as const,
+            key: 'semua',
             label: 'Semua Status',
             badge: items.length,
             badgeClassName: statusFilter === 'semua' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
@@ -250,7 +250,7 @@ export default function TabKelengkapanAset() {
           // Tab "Rusak" cuma buat admin -- non-admin gak boleh liat data
           // kelengkapan yang rusak sama sekali (backend juga udah exclude
           // status 'rusak' dari response non-admin, ini cuma nyocokin di FE).
-          ...(Object.keys(STATUS_LABEL) as AsetKelengkapanStatus[])
+          ...(Object.keys(STATUS_LABEL) as Array<'tersedia' | 'dipakai' | 'rusak'>)
             .filter((s) => isAdmin || s !== 'rusak')
             .map((s) => ({
               key: s,
@@ -264,12 +264,12 @@ export default function TabKelengkapanAset() {
                     : 'bg-slate-900 text-white'
                   : 'bg-slate-100 text-slate-500',
             })),
-        ]}
+        ] satisfies ScrollableTabItem<StatusFilter>[]}
       />
 
       {isRusakView && (
         <p className="text-xs text-slate-400 mb-4 -mt-1">
-          Arsip kelengkapan yang sudah dilaporkan rusak — dilepas otomatis dari aset induk, tidak
+          Arsip kelengkapan yang sudah dilaporkan rusak — dilepas otomatis dari inventory induk, tidak
           dihapus, dan tidak bisa dikembalikan ke status semula.
         </p>
       )}
@@ -294,7 +294,7 @@ export default function TabKelengkapanAset() {
                   <th className="px-6 py-3 font-medium">Kode</th>
                   <th className="px-6 py-3 font-medium">Jenis / Merek</th>
                   <th className="px-6 py-3 font-medium">
-                    {isRusakView ? 'Asal Lokasi' : 'Aset Induk / Lokasi'}
+                    {isRusakView ? 'Asal Lokasi' : 'Inventory Induk / Lokasi'}
                   </th>
                   <th className="px-6 py-3 font-medium">{isRusakView ? 'Tanggal Rusak' : 'Serial Number'}</th>
                   <th className="px-6 py-3 font-medium">Status</th>
@@ -306,7 +306,7 @@ export default function TabKelengkapanAset() {
               <tbody>
                 {pageItems.map((item) => (
                   <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                    <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{item.kode_kelengkapan}</td>
+                    <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{item.kode_inventory}</td>
                     <td className="px-6 py-3 text-slate-600 max-w-[220px]">
                       <Tooltip content={`${item.nama || '-'} · ${[item.merek, item.tipe].filter(Boolean).join(' ') || '-'}`}>
                         <p className="truncate">
@@ -315,9 +315,9 @@ export default function TabKelengkapanAset() {
                       </Tooltip>
                     </td>
                     <td className="px-6 py-3 text-slate-600 max-w-[180px]">
-                      {item.aset ? (
-                        <Tooltip content={item.aset.kode_aset}>
-                          <span className="font-mono text-[13px] truncate block">{item.aset.kode_aset}</span>
+                      {item.parent ? (
+                        <Tooltip content={item.parent.kode_inventory}>
+                          <span className="font-mono text-[13px] truncate block">{item.parent.kode_inventory}</span>
                         </Tooltip>
                       ) : item.lokasiKantor ? (
                         <Tooltip content={item.lokasiKantor.nama}>
@@ -397,15 +397,18 @@ export default function TabKelengkapanAset() {
       </div>
 
       {/* FORM TAMBAH / EDIT */}
-      <AsetKelengkapanForm
-        open={formOpen}
-        editing={editing}
-        onClose={() => setFormOpen(false)}
-        onSaved={loadData}
-      />
+      {formOpen && (
+        <InventoryFormModal
+          inventory={editing}
+          kategoriKode="kelengkapan"
+          supplierOptions={[]}
+          onClose={() => setFormOpen(false)}
+          onSaved={loadData}
+        />
+      )}
 
       {/* EXPORT EXCEL/PDF */}
-      <AsetKelengkapanExportModal open={exportOpen} onClose={() => setExportOpen(false)} data={items} />
+      <InventoryKelengkapanExportModal open={exportOpen} onClose={() => setExportOpen(false)} data={items} />
 
       {/* KONFIRMASI HAPUS */}
       {deleteTarget && (
@@ -413,7 +416,7 @@ export default function TabKelengkapanAset() {
           <div className="bg-white rounded-xl w-full max-w-sm p-5">
             <h2 className="text-base font-semibold text-slate-900 mb-1">Hapus kelengkapan?</h2>
             <p className="text-sm text-slate-500 mb-3">
-              <span className="font-medium text-slate-700">{deleteTarget.kode_kelengkapan}</span> akan dihapus
+              <span className="font-medium text-slate-700">{deleteTarget.kode_inventory}</span> akan dihapus
               permanen beserta riwayatnya, dan tidak bisa dikembalikan.
             </p>
             {deleteError && (
@@ -464,7 +467,7 @@ export default function TabKelengkapanAset() {
               <h2 className="text-base font-semibold text-slate-900">Lapor kelengkapan rusak?</h2>
             </div>
             <p className="text-sm text-slate-500 mb-3">
-              <span className="font-medium text-slate-700">{rusakTarget.kode_kelengkapan}</span> — Kelengkapan
+              <span className="font-medium text-slate-700">{rusakTarget.kode_inventory}</span> — Kelengkapan
               ini beneran rusak? Setelah dilaporkan, gak bisa dibatalin.
             </p>
             {rusakError && (

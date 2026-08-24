@@ -6,38 +6,34 @@ import ScrollableTabBar from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
 import StatusBadge from '../shared/StatusBadge';
 import Tooltip from '../shared/Tooltip';
-import AsetFormModal from './AsetFormModal';
-import AsetSerahTerimaModal from './AsetSerahTerimaModal';
-import AsetPengembalianModal from './AsetPengembalianModal';
-import AsetLaporKerusakanModal from './AsetLaporKerusakanModal';
-import AsetPenangananSelesaiModal from './AsetPenangananSelesaiModal';
+import InventoryFormModal from './InventoryFormModal';
+import InventorySerahTerimaModal from './InventorySerahTerimaModal';
+import InventoryPengembalianModal from './InventoryPengembalianModal';
+import InventoryLaporKerusakanModal from './InventoryLaporKerusakanModal';
+import InventoryPenangananSelesaiModal from '../transaksi/InventoryPenangananSelesaiModal';
 import { useAuth } from '../../context/AuthContext';
 import { printStruk } from '../../utils/printStruk';
-import { namaPemakai, userIdPemakai, isCabangPemakai } from './asetHelpers';
-import api from '../../api/axios';
+import { namaPemakai, userIdPemakai, isCabangPemakai } from './inventoryHelpers';
 import {
-  getAset,
-  getAsetById,
-  deleteAset,
-  deletePenangananAset,
-  deletePemakaiAset,
-  terimaPenangananAset,
-  jualAset,
-  type Aset,
-  type AsetStatus,
-  type AsetPemakai,
-  type AsetPenanganan,
-} from '../../api/aset';
-import { getSupplier, type Supplier } from '../../api/supplier';
-import type { AsetKelengkapan, AsetKelengkapanStatus } from '../../api/asetKelengkapan';
+  getInventory,
+  getInventoryById,
+  deleteInventory,
+  jualInventory,
+  importInventory,
+  type Inventory,
+  type InventoryStatus,
+} from '../../api/masterData/inventory';
+import { deletePemakaiInventory, type InventoryPemakai } from '../../api/transaksi/inventoryPemakai';
+import { deletePenangananInventory, terimaPenangananInventory, type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
+import { getSupplier, type Supplier } from '../../api/masterData/supplier';
 
-const KELENGKAPAN_STATUS_LABEL: Record<AsetKelengkapanStatus, string> = {
+const KELENGKAPAN_STATUS_LABEL: Record<string, string> = {
   tersedia: 'Tersedia',
   dipakai: 'Dipakai',
   rusak: 'Rusak',
 };
 
-const KELENGKAPAN_STATUS_STYLE: Record<AsetKelengkapanStatus, string> = {
+const KELENGKAPAN_STATUS_STYLE: Record<string, string> = {
   tersedia: 'bg-emerald-50 text-emerald-700',
   dipakai: 'bg-amber-50 text-amber-700',
   rusak: 'bg-red-100 text-red-800',
@@ -45,35 +41,38 @@ const KELENGKAPAN_STATUS_STYLE: Record<AsetKelengkapanStatus, string> = {
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 
-const STATUS_LABEL: Record<AsetStatus, string> = {
+const STATUS_LABEL: Record<InventoryStatus, string> = {
   tersedia: 'Tersedia',
   dipakai: 'Dipakai',
   menunggu_perbaikan: 'Menunggu Perbaikan',
   diperbaiki: 'Sedang Diperbaiki',
+  rusak: 'Rusak',
   rusak_berat: 'Rusak Berat',
   dijual: 'Dijual',
 };
 
-const STATUS_STYLE: Record<AsetStatus, string> = {
+const STATUS_STYLE: Record<InventoryStatus, string> = {
   tersedia: 'bg-emerald-50 text-emerald-700',
   dipakai: 'bg-amber-50 text-amber-700',
   menunggu_perbaikan: 'bg-yellow-50 text-yellow-700',
   diperbaiki: 'bg-orange-50 text-orange-700',
+  rusak: 'bg-red-100 text-red-800',
   rusak_berat: 'bg-red-100 text-red-800',
   dijual: 'bg-purple-50 text-purple-700',
 };
 
 // urutan tampil di tabel: tersedia paling atas, lalu dipakai, lalu status
 // yang lagi dalam proses penanganan, rusak, rusak_berat, dan dijual paling
-// bawah — dipakai sebagai key sort di filteredAset, BUKAN untuk urutan
+// bawah — dipakai sebagai key sort di filteredInventory, BUKAN untuk urutan
 // dropdown filter (dropdown tetap ikut urutan STATUS_LABEL di atas).
-const STATUS_PRIORITY: Record<AsetStatus, number> = {
+const STATUS_PRIORITY: Record<InventoryStatus, number> = {
   tersedia: 1,
   dipakai: 2,
   menunggu_perbaikan: 3,
   diperbaiki: 4,
-  rusak_berat: 5,
-  dijual: 6,
+  rusak: 5,
+  rusak_berat: 6,
+  dijual: 7,
 };
 
 function formatTanggalId(iso: string | null): string {
@@ -92,61 +91,61 @@ interface Props {
   onCount?: (count: number) => void;
 }
 
-export default function TabAset({ onlyMenipis, onCount }: Props) {
+export default function TabInventory({ onlyMenipis, onCount }: Props) {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
   const [search, setSearch] = useState('');
 
-  const [asetList, setAsetList] = useState<Aset[]>([]);
+  const [inventoryList, setInventoryList] = useState<Inventory[]>([]);
   const [supplierOptions, setSupplierOptions] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const [statusFilter, setStatusFilter] = useState<AsetStatus | ''>('');
+  const [statusFilter, setStatusFilter] = useState<InventoryStatus | ''>('');
 
-  // Pagination tabel aset — style sama kayak pager Riwayat Aset (10 per
-  // halaman, angka + elipsis). Client-side krn /api/aset gak dipaging
+  // Pagination tabel inventory — style sama kayak pager Riwayat Inventory (10 per
+  // halaman, angka + elipsis). Client-side krn /api/inventory gak dipaging
   // di backend, tapi UI-nya ngikut pola yang sama.
-  const [asetPage, setAsetPage] = useState(1);
+  const [inventoryPage, setInventoryPage] = useState(1);
   const ASET_PER_PAGE = 10;
 
   const [formOpen, setFormOpen] = useState(false);
-  const [editingAset, setEditingAset] = useState<Aset | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Aset | null>(null);
+  const [editingInventory, setEditingInventory] = useState<Inventory | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Inventory | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
-  // BARU: kalau delete normal gagal krn aset punya riwayat pemakai/penanganan
+  // BARU: kalau delete normal gagal krn inventory punya riwayat pemakai/penanganan
   // (data lama/test yang "kecantol"), backend balikin force_available: true —
   // munculin opsi hapus paksa di modal yang sama, gak perlu klik ulang.
   const [deleteForceAvailable, setDeleteForceAvailable] = useState(false);
 
   const [detailId, setDetailId] = useState<number | null>(null);
-  const [detail, setDetail] = useState<Aset | null>(null);
+  const [detail, setDetail] = useState<Inventory | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // Serah-terima 1 aset utama (klik tombol "Serahkan" di baris) -- di dalam
-  // modalnya sendiri ada checklist buat nambahin aset kelengkapan (tas,
-  // charger, dst) yang mau ikut dipinjamkan bareng aset utama ini dalam SATU
+  // Serah-terima 1 inventory utama (klik tombol "Serahkan" di baris) -- di dalam
+  // modalnya sendiri ada checklist buat nambahin inventory kelengkapan (tas,
+  // charger, dst) yang mau ikut dipinjamkan bareng inventory utama ini dalam SATU
   // proses (satu penerima, satu tanggal, satu set foto bukti, satu struk).
-  // Tetap ditaruh di sini (bukan di dalam modal) karena aset yang diklik
+  // Tetap ditaruh di sini (bukan di dalam modal) karena inventory yang diklik
   // datang dari tabel/detail panel ini.
-  const [serahTerimaAset, setSerahTerimaAset] = useState<Aset | null>(null);
-  const [pengembalianTarget, setPengembalianTarget] = useState<{ aset: Aset; pemakai: AsetPemakai } | null>(null);
+  const [serahTerimaInventory, setSerahTerimaInventory] = useState<Inventory | null>(null);
+  const [pengembalianTarget, setPengembalianTarget] = useState<{ inventory: Inventory; pemakai: InventoryPemakai } | null>(null);
 
-  const [perbaikanAsetTarget, setPerbaikanAsetTarget] = useState<Aset | null>(null);
-  const [penangananSelesaiTarget, setPenangananSelesaiTarget] = useState<{ aset: Aset; penanganan: AsetPenanganan } | null>(null);
+  const [perbaikanInventoryTarget, setPerbaikanInventoryTarget] = useState<Inventory | null>(null);
+  const [penangananSelesaiTarget, setPenangananSelesaiTarget] = useState<{ inventory: Inventory; penanganan: InventoryPenanganan } | null>(null);
   const [historyActionError, setHistoryActionError] = useState('');
 
-  // BARU: state untuk aksi "Jual Aset" (aset berstatus tersedia atau rusak_berat) —
+  // BARU: state untuk aksi "Jual Inventory" (inventory berstatus tersedia atau rusak_berat) —
   // cuma tanda/konfirmasi, gak ada form harga/catatan
-  const [jualTarget, setJualTarget] = useState<Aset | null>(null);
+  const [jualTarget, setJualTarget] = useState<Inventory | null>(null);
   const [jualLoading, setJualLoading] = useState(false);
   const [jualError, setJualError] = useState('');
 
-  // PINDAHAN dari Inventaris.tsx: Import Excel data aset (bulk import: aset +
+  // PINDAHAN dari Inventaris.tsx: Import Excel data inventory (bulk import: inventory +
   // jenis + supplier + kelengkapan) — sekarang ditaruh di sini biar aksinya
-  // nempel langsung sama tabel/list aset yang dia pengaruhi.
+  // nempel langsung sama tabel/list inventory yang dia pengaruhi.
   const [importLoading, setImportLoading] = useState(false);
   const [importMessage, setImportMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -155,10 +154,10 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     setLoading(true);
     setError('');
     try {
-      const data = await getAset();
-      setAsetList(data);
+      const data = await getInventory();
+      setInventoryList(data);
     } catch (err) {
-      setError('Gagal memuat data aset. Coba refresh halaman.');
+      setError('Gagal memuat data inventory. Coba refresh halaman.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -169,8 +168,8 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   // error state, biar gak ganggu tampilan yang lagi dilihat user.
   const loadListSilent = async () => {
     try {
-      const data = await getAset();
-      setAsetList(data);
+      const data = await getInventory();
+      setInventoryList(data);
     } catch (err) {
       console.error(err);
     }
@@ -180,24 +179,19 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     setImportLoading(true);
     setImportMessage(null);
 
     try {
-      const res = await api.post('/import-aset', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setImportMessage({ type: 'success', text: res.data.message });
-      // refresh list aset setelah import berhasil (badge count ikut update
-      // otomatis lewat efek onCount di bawah begitu asetList berubah)
+      const res = await importInventory(file);
+      setImportMessage({ type: 'success', text: res.message });
+      // refresh list inventory setelah import berhasil (badge count ikut update
+      // otomatis lewat efek onCount di bawah begitu inventoryList berubah)
       loadList();
     } catch (err: any) {
       setImportMessage({
         type: 'error',
-        text: err.response?.data?.message || 'Gagal mengimport file',
+        text: err.response?.data?.errors?.[0] || err.response?.data?.message || 'Gagal mengimport file',
       });
     } finally {
       setImportLoading(false);
@@ -234,11 +228,11 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   const lastCount = useRef<number | null>(null);
   useEffect(() => {
     if (loading) return; // hindari kedip ke 0 sebelum fetch pertama kelar
-    if (lastCount.current !== asetList.length) {
-      lastCount.current = asetList.length;
-      onCount?.(asetList.length);
+    if (lastCount.current !== inventoryList.length) {
+      lastCount.current = inventoryList.length;
+      onCount?.(inventoryList.length);
     }
-  }, [asetList, loading, onCount]);
+  }, [inventoryList, loading, onCount]);
 
   const openDetail = async (id: number) => {
     setDetailId(id);
@@ -247,7 +241,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     setExpandedPemakaiId(null);
     setDetailLoading(true);
     try {
-      const data = await getAsetById(id);
+      const data = await getInventoryById(id);
       setDetail(data);
     } catch (err) {
       console.error(err);
@@ -263,17 +257,17 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
 
   const refreshDetail = async () => {
     if (!detailId) return;
-    const data = await getAsetById(detailId);
+    const data = await getInventoryById(detailId);
     setDetail(data);
-    setAsetList((prev) => prev.map((a) => (a.id === data.id ? { ...a, status: data.status } : a)));
+    setInventoryList((prev) => prev.map((a) => (a.id === data.id ? { ...a, status: data.status } : a)));
   };
 
   // versi silent buat dipanggil dari polling interval (gak ada loading state)
   const refreshDetailSilent = async (id: number) => {
     try {
-      const data = await getAsetById(id);
+      const data = await getInventoryById(id);
       setDetail((prev) => (prev && prev.id === id ? data : prev));
-      setAsetList((prev) => prev.map((a) => (a.id === data.id ? { ...a, status: data.status } : a)));
+      setInventoryList((prev) => prev.map((a) => (a.id === data.id ? { ...a, status: data.status } : a)));
     } catch (err) {
       console.error(err);
     }
@@ -284,13 +278,13 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     setDeleting(true);
     setDeleteError('');
     try {
-      await deleteAset(deleteTarget.id, force);
-      setAsetList((prev) => prev.filter((a) => a.id !== deleteTarget.id));
+      await deleteInventory(deleteTarget.id, force);
+      setInventoryList((prev) => prev.filter((a) => a.id !== deleteTarget.id));
       setDeleteTarget(null);
       setDeleteForceAvailable(false);
       if (detailId === deleteTarget.id) closeDetail();
     } catch (err: any) {
-      setDeleteError(err.response?.data?.message || 'Gagal menghapus aset.');
+      setDeleteError(err.response?.data?.message || 'Gagal menghapus inventory.');
       setDeleteForceAvailable(!!err.response?.data?.force_available);
     } finally {
       setDeleting(false);
@@ -300,7 +294,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   const [terimaLoadingId, setTerimaLoadingId] = useState<number | null>(null);
 
   // Pagination + dropdown detail buat Riwayat Perbaikan — style ringkas kayak
-  // Riwayat Pemakai, limit 5 per halaman (beda dari Pagination tabel aset yg 10).
+  // Riwayat Pemakai, limit 5 per halaman (beda dari Pagination tabel inventory yg 10).
   const RIWAYAT_PERBAIKAN_PER_PAGE = 5;
   const [penangananPage, setPenangananPage] = useState(1);
   const [expandedPenangananId, setExpandedPenangananId] = useState<number | null>(null);
@@ -311,7 +305,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     setHistoryActionError('');
     setTerimaLoadingId(id);
     try {
-      await terimaPenangananAset(id);
+      await terimaPenangananInventory(id);
       await refreshDetail();
       loadList();
     } catch (err: any) {
@@ -325,7 +319,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     if (!confirm('Hapus riwayat penanganan ini?')) return;
     setHistoryActionError('');
     try {
-      await deletePenangananAset(id);
+      await deletePenangananInventory(id);
       await refreshDetail();
     } catch (err: any) {
       setHistoryActionError(err.response?.data?.message || 'Gagal menghapus riwayat penanganan.');
@@ -337,7 +331,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     setHistoryActionError('');
     setDeletingPemakaiId(id);
     try {
-      await deletePemakaiAset(id);
+      await deletePemakaiInventory(id);
       await refreshDetail();
       loadList();
     } catch (err: any) {
@@ -347,13 +341,13 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     }
   };
 
-  const handlePrintPenanganan = (aset: Aset, p: AsetPenanganan) => {
+  const handlePrintPenanganan = (inventory: Inventory, p: InventoryPenanganan) => {
     if (!p.no_struk) return;
     const rusakBerat = p.hasil === 'rusak_berat';
 
     if (rusakBerat) {
       printStruk({
-        judul: 'Bukti Penanganan Aset',
+        judul: 'Bukti Penanganan Inventory',
         noStruk: p.no_struk,
         tanggal: formatTanggalId(p.tanggal_selesai),
         rows: [
@@ -367,11 +361,11 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
 
     const totalBiaya = (Number(p.harga_jasa) || 0) + (Number(p.biaya_komponen) || 0);
     printStruk({
-      judul: 'Bukti Penanganan Aset',
+      judul: 'Bukti Penanganan Inventory',
       noStruk: p.no_struk,
       tanggal: formatTanggalId(p.tanggal_selesai),
       rows: [
-        { label: 'Aset', value: `${aset.kode_aset} — ${[aset.merek, aset.tipe].filter(Boolean).join(' ') || '-'}` },
+        { label: 'Inventory', value: `${inventory.kode_inventory} — ${[inventory.merek, inventory.tipe].filter(Boolean).join(' ') || '-'}` },
         { label: 'Jenis Kerusakan', value: p.jenis_kerusakan === 'hardware' ? 'Hardware' : 'Software' },
         { label: 'Keluhan', value: p.keluhan },
         { label: 'Hasil', value: p.hasil || '-' },
@@ -386,24 +380,24 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     });
   };
 
-  // BARU: sekarang bisa serah-terima lebih dari 1 aset dalam sekali proses
-  // (aset utama + kelengkapan yang ikut dipinjamkan) -- tetap 1 struk gabungan,
-  // pakai no_struk_penerimaan dari aset PERTAMA (aset utama yang diklik) sebagai
-  // nomor struknya, item lain cuma numpang jadi baris "Aset 2", "Aset 3", dst.
-  const handlePrintSerahTerima = (results: { aset: Aset; pemakai: AsetPemakai }[]) => {
+  // BARU: sekarang bisa serah-terima lebih dari 1 inventory dalam sekali proses
+  // (inventory utama + kelengkapan yang ikut dipinjamkan) -- tetap 1 struk gabungan,
+  // pakai no_struk_penerimaan dari inventory PERTAMA (inventory utama yang diklik) sebagai
+  // nomor struknya, item lain cuma numpang jadi baris "Inventory 2", "Inventory 3", dst.
+  const handlePrintSerahTerima = (results: { inventory: Inventory; pemakai: InventoryPemakai }[]) => {
     if (!results.length) return;
     const utama = results[0];
     if (!utama.pemakai.no_struk_penerimaan) return;
-    const asetRows = results.map((r, i) => ({
-      label: results.length > 1 ? `Aset ${i + 1}` : 'Aset',
-      value: `${r.aset.kode_aset} — ${[r.aset.merek, r.aset.tipe].filter(Boolean).join(' ') || '-'}`,
+    const inventoryRows = results.map((r, i) => ({
+      label: results.length > 1 ? `Inventory ${i + 1}` : 'Inventory',
+      value: `${r.inventory.kode_inventory} — ${[r.inventory.merek, r.inventory.tipe].filter(Boolean).join(' ') || '-'}`,
     }));
     printStruk({
-      judul: 'Bukti Serah Terima Aset',
+      judul: 'Bukti Serah Terima Inventory',
       noStruk: utama.pemakai.no_struk_penerimaan,
       tanggal: formatTanggalId(utama.pemakai.tanggal_penerimaan),
       rows: [
-        ...asetRows,
+        ...inventoryRows,
         { label: 'Diserahkan Kepada', value: namaPemakai(utama.pemakai) },
         { label: 'Nomor Penerimaan', value: utama.pemakai.nomor_penerimaan || '-' },
       ],
@@ -411,14 +405,14 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     });
   };
 
-  const handlePrintPengembalian = (aset: Aset, pemakai: AsetPemakai) => {
+  const handlePrintPengembalian = (inventory: Inventory, pemakai: InventoryPemakai) => {
     if (!pemakai.no_struk_pengembalian) return;
     printStruk({
-      judul: 'Bukti Pengembalian Aset',
+      judul: 'Bukti Pengembalian Inventory',
       noStruk: pemakai.no_struk_pengembalian,
       tanggal: formatTanggalId(pemakai.tanggal_pengembalian),
       rows: [
-        { label: 'Aset', value: `${aset.kode_aset} — ${[aset.merek, aset.tipe].filter(Boolean).join(' ') || '-'}` },
+        { label: 'Inventory', value: `${inventory.kode_inventory} — ${[inventory.merek, inventory.tipe].filter(Boolean).join(' ') || '-'}` },
         { label: 'Dikembalikan Oleh', value: namaPemakai(pemakai) },
         { label: 'Struk Penerimaan Asli', value: pemakai.no_struk_penerimaan || '-' },
       ],
@@ -427,67 +421,67 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
   };
 
   // BARU: buka modal konfirmasi jual
-  const openJual = (a: Aset) => {
+  const openJual = (a: Inventory) => {
     setJualTarget(a);
     setJualError('');
   };
 
-  // BARU: submit aksi jual — tandai aset sebagai 'dijual', gak ada input tambahan
+  // BARU: submit aksi jual — tandai inventory sebagai 'dijual', gak ada input tambahan
   const confirmJual = async () => {
     if (!jualTarget) return;
     setJualLoading(true);
     setJualError('');
     try {
-      const updated = await jualAset(jualTarget.id);
-      setAsetList((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+      const updated = await jualInventory(jualTarget.id);
+      setInventoryList((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
       if (detailId === updated.id) setDetail(updated);
-      toast.success('Aset berhasil ditandai sebagai dijual.');
+      toast.success('Inventory berhasil ditandai sebagai dijual.');
       setJualTarget(null);
     } catch (err: any) {
-      setJualError(err.response?.data?.message || 'Gagal menandai aset sebagai terjual.');
+      setJualError(err.response?.data?.message || 'Gagal menandai inventory sebagai terjual.');
     } finally {
       setJualLoading(false);
     }
   };
 
-  // KARYAWAN/CABANG cuma boleh liat aset yang masih tersedia, atau aset yang
+  // KARYAWAN/CABANG cuma boleh liat inventory yang masih tersedia, atau inventory yang
   // LAGI dia pinjam sendiri (bukan yang PERNAH -- begitu pengembalian sudah
-  // terjadi, otomatis maupun manual, aset itu bukan "milik" dia lagi).
+  // terjadi, otomatis maupun manual, inventory itu bukan "milik" dia lagi).
   // FIX: pakai userIdPemakai() (bukan akses langsung .pekerja?.user?.id),
   // biar akun cabang (yang gak punya pekerja, cuma user langsung) juga
-  // kedeteksi bener sebagai pemilik record, bukan malah aset yang lagi dia
+  // kedeteksi bener sebagai pemilik record, bukan malah inventory yang lagi dia
   // pegang sendiri ikut ke-filter hilang dari tabelnya.
   //
   // FIX BUG: dulu filter kepemilikan ini cuma dipasang di rantai
-  // `filteredAset` (buat nentuin baris tabel), sementara `statusCounts` &
-  // badge "Semua Status" masih ngitung dari `asetList` MENTAH (belum kena
-  // filter ini). Akibatnya begitu aset karyawan dikembalikan otomatis
+  // `filteredInventory` (buat nentuin baris tabel), sementara `statusCounts` &
+  // badge "Semua Status" masih ngitung dari `inventoryList` MENTAH (belum kena
+  // filter ini). Akibatnya begitu inventory karyawan dikembalikan otomatis
   // (mis. admin tandai rusak berat), barisnya udah ilang dari tabel, tapi
-  // angka di badge tab tetap ngitung aset itu -- angka "kecantol" padahal
+  // angka di badge tab tetap ngitung inventory itu -- angka "kecantol" padahal
   // tabelnya kosong. Sekarang filter kepemilikan ditarik jadi satu sumber
-  // (`visibleAsetList`) yang dipakai bareng oleh tabel & badge, jadi
+  // (`visibleInventoryList`) yang dipakai bareng oleh tabel & badge, jadi
   // keduanya selalu sinkron.
-  const visibleAsetList = useMemo(() => {
-    if (isAdmin) return asetList;
-    return asetList.filter((a) => {
+  const visibleInventoryList = useMemo(() => {
+    if (isAdmin) return inventoryList;
+    return inventoryList.filter((a) => {
       const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
       return a.status === 'tersedia' || akuPeminjamnya;
     });
-  }, [asetList, isAdmin, user?.id]);
+  }, [inventoryList, isAdmin, user?.id]);
 
-  const filteredAset = visibleAsetList
+  const filteredInventory = visibleInventoryList
     .filter((a) => {
       const matchStatus = !statusFilter || a.status === statusFilter;
       const q = search.toLowerCase();
       const matchSearch =
         !q ||
-        a.kode_aset.toLowerCase().includes(q) ||
+        a.kode_inventory.toLowerCase().includes(q) ||
         (a.serial_number || '').toLowerCase().includes(q) ||
         (a.merek || '').toLowerCase().includes(q) ||
         (a.tipe || '').toLowerCase().includes(q) ||
         // BARU: search juga cocokkan nama di kolom "Dipakai Oleh". Status
         // 'dijual' sengaja dilewati karena kolomnya ditampilkan sebagai "-"
-        // di tabel (namaPemakai lama sudah tidak relevan buat aset yang dijual).
+        // di tabel (namaPemakai lama sudah tidak relevan buat inventory yang dijual).
         (a.status !== 'dijual' && namaPemakai(a.pemakai_saat_ini).toLowerCase().includes(q));
       return matchStatus && matchSearch;
     })
@@ -498,42 +492,43 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     .sort((a, b) => {
       const diffStatus = STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status];
       if (diffStatus !== 0) return diffStatus;
-      return a.kode_aset.localeCompare(b.kode_aset, 'id', { numeric: true });
+      return a.kode_inventory.localeCompare(b.kode_inventory, 'id', { numeric: true });
     });
 
-  // Jumlah aset per status (dari visibleAsetList -- yang udah kena filter
-  // kepemilikan, sama kayak sumber filteredAset -- BUKAN dari asetList
+  // Jumlah inventory per status (dari visibleInventoryList -- yang udah kena filter
+  // kepemilikan, sama kayak sumber filteredInventory -- BUKAN dari inventoryList
   // mentah), dipakai buat badge angka di tiap opsi dropdown status. Ini
   // yang bikin badge tab selalu sinkron sama isi tabelnya.
   const statusCounts = useMemo(() => {
-    const counts: Record<AsetStatus, number> = {
+    const counts: Record<InventoryStatus, number> = {
       tersedia: 0,
       dipakai: 0,
       menunggu_perbaikan: 0,
       diperbaiki: 0,
+      rusak: 0,
       rusak_berat: 0,
       dijual: 0,
     };
-    for (const a of visibleAsetList) counts[a.status] += 1;
+    for (const a of visibleInventoryList) counts[a.status] += 1;
     return counts;
-  }, [visibleAsetList]);
+  }, [visibleInventoryList]);
 
-  const asetLastPage = Math.max(1, Math.ceil(filteredAset.length / ASET_PER_PAGE));
-  const asetPageClamped = Math.min(asetPage, asetLastPage);
-  const pageAset = filteredAset.slice(
-    (asetPageClamped - 1) * ASET_PER_PAGE,
-    asetPageClamped * ASET_PER_PAGE
+  const inventoryLastPage = Math.max(1, Math.ceil(filteredInventory.length / ASET_PER_PAGE));
+  const inventoryPageClamped = Math.min(inventoryPage, inventoryLastPage);
+  const pageInventory = filteredInventory.slice(
+    (inventoryPageClamped - 1) * ASET_PER_PAGE,
+    inventoryPageClamped * ASET_PER_PAGE
   );
 
   // Balik ke halaman 1 tiap kali search/filter/status atau isi data berubah,
   // biar gak nyangkut di halaman kosong (sama pola kayak riwayat search).
   useEffect(() => {
-    setAsetPage(1);
+    setInventoryPage(1);
   }, [search, statusFilter, onlyMenipis]);
 
   // Dipakai bareng oleh tabel (desktop) & card (mobile) biar tombol aksinya
   // gak ke-duplikasi/nyimpang antara 2 tampilan itu.
-  const renderAksiAset = (a: Aset) => {
+  const renderAksiInventory = (a: Inventory) => {
     const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
     const bolehLihatDetail = isAdmin || akuPeminjamnya;
     return (
@@ -552,7 +547,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
           <>
             {a.status === 'tersedia' && (
               <button
-                onClick={() => setSerahTerimaAset(a)}
+                onClick={() => setSerahTerimaInventory(a)}
                 title="Serahkan ke Karyawan"
                 className="flex items-center gap-1.5 text-xs font-semibold text-white bg-slate-900 px-3 py-2 rounded-lg hover:bg-slate-800 transition"
               >
@@ -562,7 +557,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
             )}
             {a.status === 'dipakai' && a.pemakai_saat_ini && (
               <button
-                onClick={() => setPengembalianTarget({ aset: a, pemakai: a.pemakai_saat_ini! })}
+                onClick={() => setPengembalianTarget({ inventory: a, pemakai: a.pemakai_saat_ini! })}
                 title="Terima Kembali"
                 className="flex items-center gap-1.5 text-xs font-semibold text-white bg-emerald-600 px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
               >
@@ -572,7 +567,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
             )}
             <button
               onClick={() => {
-                setEditingAset(a);
+                setEditingInventory(a);
                 setFormOpen(true);
               }}
               title="Edit"
@@ -596,7 +591,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
 
         {!isAdmin && akuPeminjamnya && a.status === 'dipakai' && a.pemakai_saat_ini && (
           <button
-            onClick={() => setPengembalianTarget({ aset: a, pemakai: a.pemakai_saat_ini! })}
+            onClick={() => setPengembalianTarget({ inventory: a, pemakai: a.pemakai_saat_ini! })}
             title="Kembalikan"
             className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg hover:bg-emerald-100 transition"
           >
@@ -607,7 +602,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
 
         {!isAdmin && akuPeminjamnya && a.status === 'dipakai' && (
           <button
-            onClick={() => setPerbaikanAsetTarget(a)}
+            onClick={() => setPerbaikanInventoryTarget(a)}
             title="Lapor Kerusakan"
             className="flex items-center gap-1.5 text-xs font-semibold text-red-700 bg-red-50 px-3 py-2 rounded-lg hover:bg-red-100 transition"
           >
@@ -628,18 +623,18 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
     );
   };
 
-  const [expandedAsetId, setExpandedAsetId] = useState<number | null>(null);
+  const [expandedInventoryId, setExpandedInventoryId] = useState<number | null>(null);
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <p className="text-sm text-slate-500">
-          Kelola aset IT per-unit (laptop, monitor, dsb) — serah-terima ke karyawan dan riwayatnya.
+          Kelola inventory IT per-unit (laptop, monitor, dsb) — serah-terima ke karyawan dan riwayatnya.
         </p>
         <div className="flex items-center gap-2.5 flex-shrink-0">
           {isAdmin && (
             <>
-              {/* PINDAHAN dari Inventaris.tsx: Import Excel data aset */}
+              {/* PINDAHAN dari Inventaris.tsx: Import Excel data inventory */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -662,13 +657,13 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
 
               <button
                 onClick={() => {
-                  setEditingAset(null);
+                  setEditingInventory(null);
                   setFormOpen(true);
                 }}
                 className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition"
               >
                 <Plus size={16} />
-                Tambah Aset
+                Tambah Inventory
               </button>
             </>
           )}
@@ -682,22 +677,22 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
       )}
 
       {/* Filter status sekarang pakai tab nav (ScrollableTabBar) -- sama pola
-          kayak Forum Penanganan Aset, biar konsisten di seluruh halaman
+          kayak Forum Penanganan Inventory, biar konsisten di seluruh halaman
           Inventaris. */}
       <ScrollableTabBar
         className="mb-4"
         activeTab={statusFilter === '' ? 'semua' : statusFilter}
-        onChange={(key) => setStatusFilter(key === 'semua' ? '' : (key as AsetStatus))}
+        onChange={(key) => setStatusFilter(key === 'semua' ? '' : (key as InventoryStatus))}
         tabs={[
           {
             key: 'semua' as const,
             label: 'Semua Status',
-            badge: visibleAsetList.length,
+            badge: visibleInventoryList.length,
             badgeClassName: statusFilter === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
           },
           // Tab "Rusak Berat" & "Dijual" cuma buat admin -- non-admin gak
-          // perlu (dan gak boleh) lihat aset yang udah di-writeoff/dijual.
-          ...(Object.keys(STATUS_LABEL) as AsetStatus[])
+          // perlu (dan gak boleh) lihat inventory yang udah di-writeoff/dijual.
+          ...(Object.keys(STATUS_LABEL) as InventoryStatus[])
             .filter((s) => isAdmin || (s !== 'rusak_berat' && s !== 'dijual'))
             .map((s) => ({
               key: s,
@@ -712,7 +707,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Cari nama, kode, atau merek aset..."
+          placeholder="Cari nama, kode, atau merek inventory..."
           className="flex-1"
         />
       </div>
@@ -720,16 +715,16 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
       <div className="border border-slate-200 rounded-lg overflow-hidden">
         {loading && <p className="text-sm text-slate-400 text-center py-8">Memuat data...</p>}
         {!loading && error && <p className="text-sm text-red-500 text-center py-8">{error}</p>}
-        {!loading && !error && filteredAset.length === 0 && (
-          <p className="text-sm text-slate-400 text-center py-8">Belum ada aset.</p>
+        {!loading && !error && filteredInventory.length === 0 && (
+          <p className="text-sm text-slate-400 text-center py-8">Belum ada inventory.</p>
         )}
 
-        {!loading && !error && filteredAset.length > 0 && (
+        {!loading && !error && filteredInventory.length > 0 && (
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-middle text-xs text-slate-400 uppercase tracking-wide">
-                  <th className="px-6 py-3 font-medium">Kode Aset</th>
+                  <th className="px-6 py-3 font-medium">Kode Inventory</th>
                   <th className="px-6 py-3 font-medium">Merek / Tipe</th>
                   <th className="px-6 py-3 font-medium">Jumlah</th>
                   <th className="px-6 py-3 font-medium">Status</th>
@@ -738,10 +733,10 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {pageAset.map((a) => {
+                {pageInventory.map((a) => {
                   return (
                     <tr key={a.id} className="text-center border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                      <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{a.kode_aset}</td>
+                      <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{a.kode_inventory}</td>
                       <td className="px-6 py-3 text-slate-600 max-w-[160px]">
                         <Tooltip content={[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}>
                           <p className="truncate">
@@ -765,7 +760,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                       </td>
                       <td className="px-6 py-3">
                         <div className="flex items-center justify-end gap-1 flex-nowrap">
-                          {renderAksiAset(a)}
+                          {renderAksiInventory(a)}
                         </div>
                       </td>
                     </tr>
@@ -779,19 +774,19 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
         {/* MOBILE: list card dengan dropdown expand-in-place per baris,
             gantiin tabel yang kepenuhan di layar sempit. Pola sama kayak
             "Dropdown detail" Riwayat Pemakai/Perbaikan di panel detail. */}
-        {!loading && !error && filteredAset.length > 0 && (
+        {!loading && !error && filteredInventory.length > 0 && (
           <div className="sm:hidden flex flex-col divide-y divide-slate-100">
-            {pageAset.map((a) => {
-              const expanded = expandedAsetId === a.id;
+            {pageInventory.map((a) => {
+              const expanded = expandedInventoryId === a.id;
               return (
                 <div key={a.id} className="px-4 py-3">
                   <button
                     type="button"
-                    onClick={() => setExpandedAsetId(expanded ? null : a.id)}
+                    onClick={() => setExpandedInventoryId(expanded ? null : a.id)}
                     className="w-full flex items-start justify-between gap-2 text-left"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-800">{a.kode_aset}</p>
+                      <p className="text-sm font-medium text-slate-800">{a.kode_inventory}</p>
                       <p className="text-xs text-slate-500 truncate">
                         {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'} · Jumlah: {a.jumlah ?? 1}
                       </p>
@@ -815,7 +810,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                         </span>
                       </p>
                       <div className="flex items-center flex-wrap gap-1.5">
-                        {renderAksiAset(a)}
+                        {renderAksiInventory(a)}
                       </div>
                     </div>
                   )}
@@ -826,14 +821,14 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
         )}
 
         {/* Pagination */}
-        {!loading && !error && filteredAset.length > 0 && asetLastPage > 1 && (
+        {!loading && !error && filteredInventory.length > 0 && inventoryLastPage > 1 && (
           <div className="px-6 py-3 border-t border-slate-100">
             <Pagination
-              currentPage={asetPageClamped}
-              totalPages={asetLastPage}
-              onPageChange={setAsetPage}
-              totalItems={filteredAset.length}
-              itemLabel="aset"
+              currentPage={inventoryPageClamped}
+              totalPages={inventoryLastPage}
+              onPageChange={setInventoryPage}
+              totalItems={filteredInventory.length}
+              itemLabel="inventory"
               className="pt-0 mt-0 border-t-0"
             />
           </div>
@@ -842,12 +837,12 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
 
       {/* FORM TAMBAH / EDIT ASET */}
       {formOpen && (
-        <AsetFormModal
-          aset={editingAset}
+        <InventoryFormModal
+          inventory={editingInventory}
           supplierOptions={supplierOptions}
           onClose={() => setFormOpen(false)}
           onSaved={(saved, warning) => {
-            setAsetList((prev) => {
+            setInventoryList((prev) => {
               const exists = prev.some((a) => a.id === saved.id);
               return exists ? prev.map((a) => (a.id === saved.id ? saved : a)) : [saved, ...prev];
             });
@@ -863,15 +858,15 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] px-4">
           <div className="bg-white rounded-xl w-full max-w-sm p-5">
-            <h2 className="text-base font-semibold text-slate-900 mb-1">Hapus aset?</h2>
+            <h2 className="text-base font-semibold text-slate-900 mb-1">Hapus inventory?</h2>
             <p className="text-sm text-slate-500 mb-3">
-              <span className="font-medium text-slate-700">{deleteTarget.kode_aset}</span> akan dihapus permanen
+              <span className="font-medium text-slate-700">{deleteTarget.kode_inventory}</span> akan dihapus permanen
               beserta riwayatnya, dan tidak bisa dikembalikan.
             </p>
             {deleteError && (
               <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
                 {deleteError}
-                {deleteForceAvailable && ' Aset ini punya riwayat, tapi bisa dihapus paksa kalau memang data lama/test.'}
+                {deleteForceAvailable && ' Inventory ini punya riwayat, tapi bisa dihapus paksa kalau memang data lama/test.'}
               </p>
             )}
             <div className="flex justify-end gap-2">
@@ -911,9 +906,9 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
       {jualTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] px-4">
           <div className="bg-white rounded-xl w-full max-w-sm p-5">
-            <h2 className="text-base font-semibold text-slate-900 mb-1">Tandai aset sebagai dijual?</h2>
+            <h2 className="text-base font-semibold text-slate-900 mb-1">Tandai inventory sebagai dijual?</h2>
             <p className="text-sm text-slate-500 mb-1">
-              <span className="font-medium text-slate-700">{jualTarget.kode_aset}</span> akan ditandai dengan status{' '}
+              <span className="font-medium text-slate-700">{jualTarget.kode_inventory}</span> akan ditandai dengan status{' '}
               <span className="font-medium">Dijual</span> dan tidak bisa diserahkan/dipinjamkan lagi.
             </p>
 
@@ -947,9 +942,9 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
           terima kembali, jual, dst) yang kebuka di atasnya, biar gak numpuk 2
           modal + 2 overlay keliatan bareng */}
       {detailId &&
-        !serahTerimaAset &&
+        !serahTerimaInventory &&
         !pengembalianTarget &&
-        !perbaikanAsetTarget &&
+        !perbaikanInventoryTarget &&
         !penangananSelesaiTarget &&
         !jualTarget && (
         <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
@@ -957,7 +952,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
                 <Boxes size={18} className="text-slate-400" />
-                {detail?.kode_aset || 'Memuat...'}
+                {detail?.kode_inventory || 'Memuat...'}
               </h3>
               <button onClick={closeDetail} className="text-slate-400 hover:text-slate-600">
                 <X size={20} />
@@ -971,7 +966,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                 <div className="flex gap-4">
                   <div className="w-24 h-24 rounded-lg bg-slate-100 flex-shrink-0 overflow-hidden flex items-center justify-center">
                     {detail.foto ? (
-                      <img src={STORAGE_BASE_URL + detail.foto} alt={detail.kode_aset} className="w-full h-full object-cover" />
+                      <img src={STORAGE_BASE_URL + detail.foto} alt={detail.kode_inventory} className="w-full h-full object-cover" />
                     ) : (
                       <ImageOff size={22} className="text-slate-300" />
                     )}
@@ -1033,29 +1028,29 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                 )}
 
                 {/* KELENGKAPAN — daftar aksesoris (tas, charger, dst) yang
-                    nempel ke aset ini lewat aset_kelengkapan.aset_id.
-                    Read-only di sini; buat nambah/pasang kelengkapan baru,
-                    dilakuin lewat form Edit Aset (section Kelengkapan). */}
-                {detail.aset_kelengkapan && detail.aset_kelengkapan.length > 0 && (
+                    nempel ke inventory ini lewat children (parent_id). Read-only
+                    di sini; buat nambah/pasang kelengkapan baru, dilakuin
+                    lewat form Edit Inventory (section Kelengkapan). */}
+                {detail.children && detail.children.length > 0 && (
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs text-slate-400">
-                        Kelengkapan ({detail.aset_kelengkapan?.length || 0})
+                        Kelengkapan ({detail.children?.length || 0})
                       </p>
                     </div>
-                    {detail.aset_kelengkapan && detail.aset_kelengkapan.length > 0 ? (
+                    {detail.children && detail.children.length > 0 ? (
                       <div className="flex flex-col gap-2">
-                        {detail.aset_kelengkapan.map((k: AsetKelengkapan) => (
+                        {detail.children.map((k: Inventory) => (
                           <div
                             key={k.id}
                             className="flex items-center justify-between gap-3 bg-slate-50 rounded-lg px-3 py-2 text-sm"
                           >
                             <div className="min-w-0">
                               <p className="text-slate-800 font-medium truncate">
-                                {k.nama || [k.merek, k.tipe].filter(Boolean).join(' ') || k.kode_kelengkapan}
+                                {k.nama || [k.merek, k.tipe].filter(Boolean).join(' ') || k.kode_inventory}
                               </p>
                               <p className="text-xs text-slate-400 truncate">
-                                {k.kode_kelengkapan}
+                                {k.kode_inventory}
                                 {k.serial_number ? ` · S/N: ${k.serial_number}` : ''}
                               </p>
                             </div>
@@ -1079,7 +1074,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                   <div className="flex flex-wrap gap-2">
                     {detail.status === 'tersedia' && (
                       <button
-                        onClick={() => setSerahTerimaAset(detail)}
+                        onClick={() => setSerahTerimaInventory(detail)}
                         className="flex items-center gap-1.5 bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-800 transition"
                       >
                         <HandCoins size={14} />
@@ -1088,14 +1083,14 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                     )}
                     {detail.status === 'dipakai' && detail.pemakai_saat_ini && (
                       <button
-                        onClick={() => setPengembalianTarget({ aset: detail, pemakai: detail.pemakai_saat_ini! })}
+                        onClick={() => setPengembalianTarget({ inventory: detail, pemakai: detail.pemakai_saat_ini! })}
                         className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
                       >
                         <Undo2 size={14} />
                         Terima Kembali
                       </button>
                     )}
-                    {/* Tombol Jual Aset di panel detail (ikon mata) — muncul buat status
+                    {/* Tombol Jual Inventory di panel detail (ikon mata) — muncul buat status
                         tersedia ATAU rusak_berat. Sekarang ini SATU-SATUNYA tempat aksi
                         jual bisa dipicu (nggak ada lagi tombol cepat di baris tabel). */}
                     {(detail.status === 'tersedia' || detail.status === 'rusak_berat') && (
@@ -1104,14 +1099,14 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                         className="flex items-center gap-1.5 bg-purple-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-purple-700 transition"
                       >
                         <Tag size={14} />
-                        Jual Aset
+                        Jual Inventory
                       </button>
                     )}
                   </div>
                 )}
 
                 {/* KARYAWAN/CABANG: lapor kerusakan kalau lagi dia pakai sendiri.
-                    (Ajukan pinjam sendiri sudah dicabut — aset cuma boleh
+                    (Ajukan pinjam sendiri sudah dicabut — inventory cuma boleh
                     diserahkan admin lewat tombol "Serahkan".) */}
                 {!isAdmin && (() => {
                   const akuPemakaiSaatIni = userIdPemakai(detail.pemakai_saat_ini) === user?.id;
@@ -1120,7 +1115,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                     <div className="flex flex-wrap items-center gap-2">
                       {detail.status === 'dipakai' && akuPemakaiSaatIni && (
                         <button
-                          onClick={() => setPengembalianTarget({ aset: detail, pemakai: detail.pemakai_saat_ini! })}
+                          onClick={() => setPengembalianTarget({ inventory: detail, pemakai: detail.pemakai_saat_ini! })}
                           className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
                         >
                           <Undo2 size={14} />
@@ -1129,7 +1124,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                       )}
                       {detail.status === 'dipakai' && akuPemakaiSaatIni && (
                         <button
-                          onClick={() => setPerbaikanAsetTarget(detail)}
+                          onClick={() => setPerbaikanInventoryTarget(detail)}
                           className="flex items-center gap-1.5 bg-red-50 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-red-100 transition"
                         >
                           <Wrench size={14} />
@@ -1160,7 +1155,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                             <div className="flex items-center gap-1 flex-shrink-0">
                               {isAdmin && p.no_struk_penerimaan && (
                                 <button
-                                  onClick={() => handlePrintSerahTerima([{ aset: detail, pemakai: p }])}
+                                  onClick={() => handlePrintSerahTerima([{ inventory: detail, pemakai: p }])}
                                   title="Cetak struk penerimaan"
                                   className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 transition"
                                 >
@@ -1276,7 +1271,7 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
                                     )}
                                     {isAdmin && !selesai && diterima && (
                                       <button
-                                        onClick={() => setPenangananSelesaiTarget({ aset: detail, penanganan: p })}
+                                        onClick={() => setPenangananSelesaiTarget({ inventory: detail, penanganan: p })}
                                         title="Tandai selesai"
                                         className="p-1.5 rounded-md text-emerald-600 hover:bg-emerald-100 transition"
                                       >
@@ -1365,13 +1360,13 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
         </div>
       )}
 
-      {serahTerimaAset && (
-        <AsetSerahTerimaModal
-          aset={serahTerimaAset}
-          onClose={() => setSerahTerimaAset(null)}
+      {serahTerimaInventory && (
+        <InventorySerahTerimaModal
+          inventory={serahTerimaInventory}
+          onClose={() => setSerahTerimaInventory(null)}
           onSuccess={(results) => {
             handlePrintSerahTerima(results);
-            setSerahTerimaAset(null);
+            setSerahTerimaInventory(null);
             loadList();
             if (detailId) refreshDetail();
           }}
@@ -1379,13 +1374,13 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
       )}
 
       {pengembalianTarget && (
-        <AsetPengembalianModal
-          aset={pengembalianTarget.aset}
+        <InventoryPengembalianModal
+          inventory={pengembalianTarget.inventory}
           pemakai={pengembalianTarget.pemakai}
           isAdmin={isAdmin}
           onClose={() => setPengembalianTarget(null)}
           onSuccess={(pemakai) => {
-            handlePrintPengembalian(pengembalianTarget.aset, pemakai);
+            handlePrintPengembalian(pengembalianTarget.inventory, pemakai);
             setPengembalianTarget(null);
             loadList();
             if (detailId) refreshDetail();
@@ -1393,12 +1388,12 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
         />
       )}
 
-      {perbaikanAsetTarget && (
-        <AsetLaporKerusakanModal
-          aset={perbaikanAsetTarget}
-          onClose={() => setPerbaikanAsetTarget(null)}
+      {perbaikanInventoryTarget && (
+        <InventoryLaporKerusakanModal
+          inventory={perbaikanInventoryTarget}
+          onClose={() => setPerbaikanInventoryTarget(null)}
           onSuccess={() => {
-            setPerbaikanAsetTarget(null);
+            setPerbaikanInventoryTarget(null);
             toast.success('Laporan kerusakan berhasil dikirim.');
             loadList();
             if (detailId) refreshDetail();
@@ -1407,8 +1402,8 @@ export default function TabAset({ onlyMenipis, onCount }: Props) {
       )}
 
       {penangananSelesaiTarget && (
-        <AsetPenangananSelesaiModal
-          aset={penangananSelesaiTarget.aset}
+        <InventoryPenangananSelesaiModal
+          inventory={penangananSelesaiTarget.inventory}
           penanganan={penangananSelesaiTarget.penanganan}
           onClose={() => setPenangananSelesaiTarget(null)}
           onSuccess={() => {

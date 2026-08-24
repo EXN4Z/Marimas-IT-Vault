@@ -2,7 +2,7 @@ import ExcelJS from 'exceljs';
 
 // Palet warna diambil dari logo Marimas (public/logo.png): biru navy utama
 // + aksen emas di bingkai logo. Dipakai konsisten di semua file Excel yang
-// digenerate dari app ini (laporan absensi/izin, export data aset, dst)
+// digenerate dari app ini (laporan absensi/izin, export data inventory, dst)
 // supaya semuanya "berasa" satu produk, bukan sheet mentah tanpa identitas.
 const BRAND_NAVY = 'FF0B2A6B';
 const BRAND_NAVY_DARK = 'FF081F4F';
@@ -11,9 +11,9 @@ const ROW_STRIPE = 'FFF1F5F9'; // slate-50, dipakai selang-seling biar baris gam
 const BORDER_COLOR = 'FFD6DEE8';
 const TEXT_MUTED = 'FF64748B';
 
-// Warna badge per status aset. Kalau kolom "status" ada di data yang
-// diexport, sel-nya diwarnai sesuai kondisi asetnya -- niru badge warna
-// yang sudah dipakai di tabel aset pada UI (TabAset.tsx), supaya laporan
+// Warna badge per status inventory. Kalau kolom "status" ada di data yang
+// diexport, sel-nya diwarnai sesuai kondisi inventorynya -- niru badge warna
+// yang sudah dipakai di tabel inventory pada UI (TabInventory.tsx), supaya laporan
 // Excel-nya langsung "kebaca" tanpa perlu buka aplikasi lagi.
 const STATUS_COLORS: Record<string, { fill: string; font: string }> = {
   Tersedia: { fill: 'FFDCFCE7', font: 'FF15803D' },
@@ -22,7 +22,7 @@ const STATUS_COLORS: Record<string, { fill: string; font: string }> = {
   'Sedang Diperbaiki': { fill: 'FFFEF3C7', font: 'FFB45309' },
   'Rusak Berat': { fill: 'FFFEE2E2', font: 'FFB91C1C' },
   Dijual: { fill: 'FFF1F5F9', font: 'FF475569' },
-  // dipakai export Forum Penanganan Aset (tab "Berhasil Diperbaiki")
+  // dipakai export Forum Penanganan Inventory (tab "Berhasil Diperbaiki")
   'Berhasil Diperbaiki': { fill: 'FFDCFCE7', font: 'FF15803D' },
   tersedia: { fill: 'FFDCFCE7', font: 'FF15803D' },
   telat: { fill: 'FFFEE2E2', font: 'FFB91C1C' },
@@ -37,7 +37,7 @@ const STATUS_COLORS: Record<string, { fill: string; font: string }> = {
 };
 
 export interface StyledExcelOptions {
-  /** Judul laporan, ditulis besar di banner atas (mis. "Data Aset") */
+  /** Judul laporan, ditulis besar di banner atas (mis. "Data Inventory") */
   title: string;
   /** Baris kedua di banner, mis. "Periode: Januari 2026" atau ringkasan filter */
   subtitle?: string;

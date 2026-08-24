@@ -3,24 +3,24 @@ import { Boxes, Package, AlertTriangle, ShieldAlert } from 'lucide-react';
 import {
   WelcomeHeader,
   KpiCard,
-  RingkasanAsetCard,
-  HeroTrenPembelianAsetChart,
-  AsetPerhatianCard,
+  RingkasanInventoryCard,
+  HeroTrenPembelianInventoryChart,
+  InventoryPerhatianCard,
   CalendarCard,
   NotifikasiCard,
 } from './Shared';
 
 // Dashboard untuk role admin/hr/manajer — dapet semua section, termasuk
-// hero chart "Tren Pembelian Aset per Bulan" yang gak ditampilin di
+// hero chart "Tren Pembelian Inventory per Bulan" yang gak ditampilin di
 // DashboardUser maupun DashboardCabang.
 export default function DashboardAdmin() {
   const { loading, error, user, notifications, handleMarkAsRead, } = useDashboardCore();
 
-  const { ringkasanAset, trenPembelianAset, asetPerhatian, aktivitasAsetKalender } =
+  const { ringkasanInventory, trenPembelianInventory, inventoryPerhatian, aktivitasInventoryKalender } =
     useDashboardAnalytics(true, {
-      statusAsetDistribusi: false,
-      asetPerMerek: false,
-      aktivitasAsetTerbaru: false,
+      statusInventoryDistribusi: false,
+      inventoryPerMerek: false,
+      aktivitasInventoryTerbaru: false,
     });
 
   if (loading) {
@@ -31,12 +31,12 @@ export default function DashboardAdmin() {
     );
   }
 
-  const asetTotal = ringkasanAset?.total ?? 0;
-  const tersediaPct = asetTotal > 0 ? Math.round(((ringkasanAset?.tersedia ?? 0) / asetTotal) * 100) : 0;
-  const dipakaiPct = asetTotal > 0 ? Math.round(((ringkasanAset?.dipakai ?? 0) / asetTotal) * 100) : 0;
-  const rusakBeratPct = asetTotal > 0 ? Math.round(((ringkasanAset?.rusakBerat ?? 0) / asetTotal) * 100) : 0;
+  const inventoryTotal = ringkasanInventory?.total ?? 0;
+  const tersediaPct = inventoryTotal > 0 ? Math.round(((ringkasanInventory?.tersedia ?? 0) / inventoryTotal) * 100) : 0;
+  const dipakaiPct = inventoryTotal > 0 ? Math.round(((ringkasanInventory?.dipakai ?? 0) / inventoryTotal) * 100) : 0;
+  const rusakBeratPct = inventoryTotal > 0 ? Math.round(((ringkasanInventory?.rusakBerat ?? 0) / inventoryTotal) * 100) : 0;
   const totalPerhatian =
-    (asetPerhatian?.rusak ?? 0) + (asetPerhatian?.dalamPenanganan ?? 0) + (asetPerhatian?.garansiSegeraHabis ?? 0);
+    (inventoryPerhatian?.rusak ?? 0) + (inventoryPerhatian?.dalamPenanganan ?? 0) + (inventoryPerhatian?.garansiSegeraHabis ?? 0);
 
   return (
     <>
@@ -47,19 +47,19 @@ export default function DashboardAdmin() {
       )}
 
       {/* KPI strip -- ringkasan angka paling penting, sekilas tanpa perlu scroll.
-          Semua nilai turunan dari ringkasanAset & asetPerhatian yang memang
+          Semua nilai turunan dari ringkasanInventory & inventoryPerhatian yang memang
           sudah di-fetch buat kartu-kartu di bawah, cuma disorot di atas. */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard icon={Boxes} label="Total Aset" value={asetTotal} tone="default" hint={`${tersediaPct}% siap pakai`} />
-        <KpiCard icon={Package} label="Sedang Dipakai" value={ringkasanAset?.dipakai ?? 0} tone="default" hint={`${dipakaiPct}% dari total aset`} />
+        <KpiCard icon={Boxes} label="Total Inventory" value={inventoryTotal} tone="default" hint={`${tersediaPct}% siap pakai`} />
+        <KpiCard icon={Package} label="Sedang Dipakai" value={ringkasanInventory?.dipakai ?? 0} tone="default" hint={`${dipakaiPct}% dari total inventory`} />
         <KpiCard
           icon={AlertTriangle}
           label="Butuh Perhatian"
           value={totalPerhatian}
           tone="amber"
-          hint={`${asetPerhatian?.garansiSegeraHabis ?? 0} garansi < 30 hari`}
+          hint={`${inventoryPerhatian?.garansiSegeraHabis ?? 0} garansi < 30 hari`}
         />
-        <KpiCard icon={ShieldAlert} label="Rusak Berat" value={ringkasanAset?.rusakBerat ?? 0} tone="rose" hint={`${rusakBeratPct}% dari total aset`} />
+        <KpiCard icon={ShieldAlert} label="Rusak Berat" value={ringkasanInventory?.rusakBerat ?? 0} tone="rose" hint={`${rusakBeratPct}% dari total inventory`} />
       </div>
 
       {/* Hero chart (2/3) + Notifikasi (1/3) -- Notifikasi ngisi slot yang
@@ -68,20 +68,20 @@ export default function DashboardAdmin() {
       {/* items-start -- biar tinggi kartu chart & notifikasi independen
           (default grid nyamain tinggi keduanya ke yang paling tinggi). */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-        <HeroTrenPembelianAsetChart trenPembelianAset={trenPembelianAset} />
+        <HeroTrenPembelianInventoryChart trenPembelianInventory={trenPembelianInventory} />
         <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
       </div>
 
-      {/* Ringkasan Status Aset + Aset Butuh Perhatian -- dua kartu ringkasan
-          kondisi aset berdampingan. */}
+      {/* Ringkasan Status Inventory + Inventory Butuh Perhatian -- dua kartu ringkasan
+          kondisi inventory berdampingan. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        <RingkasanAsetCard ringkasanAset={ringkasanAset} />
-        <AsetPerhatianCard asetPerhatian={asetPerhatian} />
+        <RingkasanInventoryCard ringkasanInventory={ringkasanInventory} />
+        <InventoryPerhatianCard inventoryPerhatian={inventoryPerhatian} />
       </div>
 
-      {/* Kalender aktivitas aset -- div sendiri, full width. */}
+      {/* Kalender aktivitas inventory -- div sendiri, full width. */}
       <div className="mt-6">
-        <CalendarCard aktivitas={aktivitasAsetKalender} />
+        <CalendarCard aktivitas={aktivitasInventoryKalender} />
       </div>
     </>
   );

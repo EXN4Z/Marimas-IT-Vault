@@ -10,7 +10,7 @@ export interface StrukRow {
 }
 
 export interface StrukData {
-  judul: string; // cth. "Bukti Peminjaman Aset"
+  judul: string; // cth. "Bukti Peminjaman Inventory"
   noStruk: string;
   tanggal: string; // sudah diformat, cth. "20 Juli 2026"
   rows: StrukRow[];
@@ -22,7 +22,7 @@ export interface StrukData {
 /**
  * Buka window kecil berisi struk siap-cetak, lalu langsung trigger print
  * dialog dan nutup window-nya setelah selesai. Dipakai buat bukti
- * pinjam/pengembalian/penanganan aset.
+ * pinjam/pengembalian/penanganan inventory.
  */
 export function printStruk(data: StrukData) {
   const printWindow = window.open('', '_blank', 'width=420,height=600');

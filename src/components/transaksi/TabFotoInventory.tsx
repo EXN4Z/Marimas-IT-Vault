@@ -3,9 +3,9 @@ import { Images, X, ChevronLeft, ChevronRight, HandCoins, Undo2, Wrench, Eye } f
 import Pagination from '../shared/Pagination';
 import ScrollableTabBar, { type ScrollableTabItem } from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
-import { getFotoPemakaiAset, type FotoPemakaiEntry } from '../../api/aset';
-import { getFotoKerusakanAset, type AsetPenanganan } from '../../api/asetPenanganan';
-import { namaPemakai, formatTanggalWaktuId } from './asetHelpers';
+import { getFotoPemakaiInventory, type FotoPemakaiEntry } from '../../api/transaksi/inventoryPemakai';
+import { getFotoKerusakanInventory, type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
+import { namaPemakai, formatTanggalWaktuId } from '../masterData/inventoryHelpers';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 const PER_PAGE = 10;
@@ -47,12 +47,12 @@ const initialTabState = <T,>(): TabState<T> => ({
   total: 0,
 });
 
-export default function TabFotoAset({}: Props) {
+export default function TabFotoInventory({}: Props) {
   const [activeTab, setActiveTab] = useState<FotoTab>('peminjaman');
 
   const [peminjaman, setPeminjaman] = useState<TabState<FotoPemakaiEntry>>(initialTabState);
   const [pengembalian, setPengembalian] = useState<TabState<FotoPemakaiEntry>>(initialTabState);
-  const [rusak, setRusak] = useState<TabState<AsetPenanganan>>(initialTabState);
+  const [rusak, setRusak] = useState<TabState<InventoryPenanganan>>(initialTabState);
 
   const [modalPhotos, setModalPhotos] = useState<{ photos: string[]; index: number } | null>(null);
 
@@ -60,7 +60,7 @@ export default function TabFotoAset({}: Props) {
 
   const loadPeminjaman = (targetPage: number, targetSearch: string) => {
     setPeminjaman((s) => ({ ...s, loading: true }));
-    getFotoPemakaiAset(targetPage, PER_PAGE, targetSearch || undefined, 'peminjaman')
+    getFotoPemakaiInventory(targetPage, PER_PAGE, targetSearch || undefined, 'peminjaman')
       .then((res) =>
         setPeminjaman((s) => ({ ...s, entries: res.data, page: res.current_page, lastPage: res.last_page, total: res.total, loading: false, loaded: true }))
       )
@@ -72,7 +72,7 @@ export default function TabFotoAset({}: Props) {
 
   const loadPengembalian = (targetPage: number, targetSearch: string) => {
     setPengembalian((s) => ({ ...s, loading: true }));
-    getFotoPemakaiAset(targetPage, PER_PAGE, targetSearch || undefined, 'pengembalian')
+    getFotoPemakaiInventory(targetPage, PER_PAGE, targetSearch || undefined, 'pengembalian')
       .then((res) =>
         setPengembalian((s) => ({ ...s, entries: res.data, page: res.current_page, lastPage: res.last_page, total: res.total, loading: false, loaded: true }))
       )
@@ -84,7 +84,7 @@ export default function TabFotoAset({}: Props) {
 
   const loadRusak = (targetPage: number, targetSearch: string) => {
     setRusak((s) => ({ ...s, loading: true }));
-    getFotoKerusakanAset(targetPage, PER_PAGE, targetSearch || undefined)
+    getFotoKerusakanInventory(targetPage, PER_PAGE, targetSearch || undefined)
       .then((res) =>
         setRusak((s) => ({ ...s, entries: res.data, page: res.current_page, lastPage: res.last_page, total: res.total, loading: false, loaded: true }))
       )
@@ -139,11 +139,11 @@ export default function TabFotoAset({}: Props) {
   const prevPhoto = () =>
     setModalPhotos((m) => (m ? { ...m, index: (m.index - 1 + m.photos.length) % m.photos.length } : m));
 
-  const asetLabel = (aset?: { kode_aset: string; merek: string | null; tipe: string | null } | null) => (
+  const inventoryLabel = (inventory?: { kode_inventory: string; merek: string | null; tipe: string | null } | null) => (
     <>
-      <p className="font-medium text-slate-800">{aset?.kode_aset || '-'}</p>
+      <p className="font-medium text-slate-800">{inventory?.kode_inventory || '-'}</p>
       <p className="text-xs text-slate-400 truncate max-w-[160px]">
-        {[aset?.merek, aset?.tipe].filter(Boolean).join(' ') || '-'}
+        {[inventory?.merek, inventory?.tipe].filter(Boolean).join(' ') || '-'}
       </p>
     </>
   );
@@ -175,7 +175,7 @@ export default function TabFotoAset({}: Props) {
             <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wide">
-                  <th className="px-4 py-3 font-medium text-left">Aset</th>
+                  <th className="px-4 py-3 font-medium text-left">Inventory</th>
                   <th className="px-4 py-3 font-medium text-left">Pemakai</th>
                   <th className="px-4 py-3 font-medium text-left">{tanggalLabel}</th>
                   <th className="px-4 py-3 font-medium text-left">Jumlah Foto</th>
@@ -189,7 +189,7 @@ export default function TabFotoAset({}: Props) {
                   const waktuAkurat = e[waktuAkuratKey] as string | null;
                   return (
                     <tr key={e.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                      <td className="px-4 py-3 whitespace-nowrap">{asetLabel(e.aset)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">{inventoryLabel(e.inventory)}</td>
                       <td className="px-4 py-3 text-slate-600 max-w-[160px]">
                         <p className="truncate" title={namaPemakai({ user: e.user })}>
                           {namaPemakai({ user: e.user })}
@@ -243,7 +243,7 @@ export default function TabFotoAset({}: Props) {
           <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wide">
-                <th className="px-4 py-3 font-medium text-left">Aset</th>
+                <th className="px-4 py-3 font-medium text-left">Inventory</th>
                 <th className="px-4 py-3 font-medium text-left">Pelapor</th>
                 <th className="px-4 py-3 font-medium text-left">Kerusakan</th>
                 <th className="px-4 py-3 font-medium text-left">Tgl Lapor</th>
@@ -253,7 +253,7 @@ export default function TabFotoAset({}: Props) {
             <tbody>
               {rusak.entries.map((p) => (
                 <tr key={p.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                  <td className="px-4 py-3 whitespace-nowrap">{asetLabel(p.aset)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{inventoryLabel(p.inventory)}</td>
                   <td className="px-4 py-3 text-slate-600 max-w-[160px]">
                     <p className="truncate" title={namaPemakai(p.pemakai)}>{namaPemakai(p.pemakai)}</p>
                   </td>
@@ -303,7 +303,7 @@ export default function TabFotoAset({}: Props) {
       <SearchInput
         value={currentSearch}
         onChange={handleSearchChange}
-        placeholder="Cari kode aset, merek, atau tipe..."
+        placeholder="Cari kode inventory, merek, atau tipe..."
         className="mb-4"
       />
 

@@ -1,23 +1,24 @@
 import { useState } from 'react';
 import { FileSpreadsheet, FileText, X, CheckSquare, Square } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { type Aset } from '../../api/aset';
-import { formatTanggalId, namaPemakai } from './asetHelpers';
+import { type Inventory } from '../../api/masterData/inventory';
+import { formatTanggalId, namaPemakai } from './inventoryHelpers';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
 
-const STATUS_LABEL: Record<Aset['status'], string> = {
+const STATUS_LABEL: Record<Inventory['status'], string> = {
   tersedia: 'Tersedia',
   dipakai: 'Dipakai',
   menunggu_perbaikan: 'Menunggu Perbaikan',
   diperbaiki: 'Sedang Diperbaiki',
   rusak_berat: 'Rusak Berat',
+  rusak: 'Rusak',
   dijual: 'Dijual',
 };
 
 // Daftar kolom yang bisa diekspor — sengaja ngikutin field-field yang ada
-// di form "Tambah Aset" (AsetFormModal), plus beberapa info identitas/status
-// yang gak ada di form tapi tetap berguna buat laporan (kode aset, status,
+// di form "Tambah Inventory" (InventoryFormModal), plus beberapa info identitas/status
+// yang gak ada di form tapi tetap berguna buat laporan (kode inventory, status,
 // pemakai saat ini, kelengkapan). Urutan di sini = urutan kolom di file
 // export & urutan checkbox di modal.
 interface ExportColumn {
@@ -25,11 +26,11 @@ interface ExportColumn {
   label: string;
   /** dicentang otomatis pas modal pertama dibuka */
   defaultChecked: boolean;
-  get: (a: Aset) => string;
+  get: (a: Inventory) => string;
 }
 
 const EXPORT_COLUMNS: ExportColumn[] = [
-  { key: 'kode_aset', label: 'Kode Aset', defaultChecked: true, get: (a) => a.kode_aset },
+  { key: 'kode_inventory', label: 'Kode Inventory', defaultChecked: true, get: (a) => a.kode_inventory },
   { key: 'merek', label: 'Nama/Merek', defaultChecked: true, get: (a) => a.merek || '-' },
   { key: 'tipe', label: 'Tipe', defaultChecked: true, get: (a) => a.tipe || '-' },
   { key: 'warna', label: 'Warna', defaultChecked: false, get: (a) => a.warna || '-' },
@@ -62,10 +63,10 @@ interface Props {
   open: boolean;
   onClose: () => void;
   /** data yang mau diexport — sudah difilter sesuai tampilan tabel saat ini (search/status/dll) */
-  data: Aset[];
+  data: Inventory[];
 }
 
-export default function AsetExportModal({ open, onClose, data }: Props) {
+export default function InventoryExportModal({ open, onClose, data }: Props) {
   const [fileType, setFileType] = useState<FileType>('excel');
   const [checkedKeys, setCheckedKeys] = useState<Set<string>>(
     () => new Set(EXPORT_COLUMNS.filter((c) => c.defaultChecked).map((c) => c.key))
@@ -94,7 +95,7 @@ export default function AsetExportModal({ open, onClose, data }: Props) {
       return;
     }
     if (data.length === 0) {
-      toast.error('Gak ada data aset buat diexport.');
+      toast.error('Gak ada data inventory buat diexport.');
       return;
     }
 
@@ -119,28 +120,28 @@ export default function AsetExportModal({ open, onClose, data }: Props) {
       if (fileType === 'excel') {
         await downloadStyledExcel(
           {
-            title: 'Data Aset',
-            subtitle: `${data.length} aset sesuai filter saat ini`,
+            title: 'Data Inventory',
+            subtitle: `${data.length} inventory sesuai filter saat ini`,
             headers,
             rows,
-            sheetName: 'Data Aset',
+            sheetName: 'Data Inventory',
             statusColumnIndexes: statusColIdx >= 0 ? [statusColIdx] : [],
           },
-          `Data Aset - ${today}.xlsx`
+          `Data Inventory - ${today}.xlsx`
         );
       } else if (printWindow) {
         printRowsAsReport(
           headers,
           rows,
-          { title: 'Data Aset', periodLabel: `Diexport ${today} — ${data.length} aset` },
+          { title: 'Data Inventory', periodLabel: `Diexport ${today} — ${data.length} inventory` },
           printWindow
         );
       }
-      toast.success(`${data.length} aset berhasil diexport.`);
+      toast.success(`${data.length} inventory berhasil diexport.`);
       onClose();
     } catch (err) {
       console.error(err);
-      toast.error('Gagal export data aset.');
+      toast.error('Gagal export data inventory.');
     } finally {
       setExporting(false);
     }
@@ -151,8 +152,8 @@ export default function AsetExportModal({ open, onClose, data }: Props) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">Export Data Aset</h2>
-            <p className="text-xs text-slate-400 mt-0.5">{data.length} aset sesuai filter saat ini akan diexport</p>
+            <h2 className="text-base font-semibold text-slate-900">Export Data Inventory</h2>
+            <p className="text-xs text-slate-400 mt-0.5">{data.length} inventory sesuai filter saat ini akan diexport</p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition">
             <X size={20} />
@@ -236,7 +237,7 @@ export default function AsetExportModal({ open, onClose, data }: Props) {
             disabled={exporting}
             className="px-4 py-2.5 text-sm font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition disabled:opacity-50"
           >
-            {exporting ? 'Mengexport...' : `Export ${data.length} Aset`}
+            {exporting ? 'Mengexport...' : `Export ${data.length} Inventory`}
           </button>
         </div>
       </div>

@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Camera, X } from 'lucide-react';
 
-interface AsetFotoUploadProps {
+interface InventoryFotoUploadProps {
   files: File[];
   onChange: (files: File[]) => void;
   max?: number;
   label?: string;
 }
 
-export default function AsetFotoUpload({ files, onChange, max = 3, label = 'Foto Bukti' }: AsetFotoUploadProps) {
+export default function InventoryFotoUpload({ files, onChange, max = 3, label = 'Foto Bukti' }: InventoryFotoUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   // preview URL dibuat sekali per file (bukan tiap render), dan di-revoke
