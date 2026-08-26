@@ -14,7 +14,6 @@ import {
   Database,
   ChevronDown,
   Building2,
-  ClipboardList,
   Truck,
   Wrench,
   Images,
@@ -88,8 +87,10 @@ const navItems: NavItem[] = [
       // Aset & Kelengkapan Aset kontennya sekarang dirender langsung di
       // MasterData.tsx (bukan lagi di Inventaris.tsx), jadi path-nya juga
       // udah /master-data?tab=..., bukan /inventaris?tab=... lagi.
+      // Tab "Kelengkapan Inventory" sudah digabung ke tab "Inventory" (1
+      // tabel gabungan dengan kolom Kategori), jadi entri dropdown-nya
+      // dihapus dari sini -- lihat TabInventory.tsx.
       { label: 'Inventory', icon: Package, path: '/master-data?tab=inventory' },
-      { label: 'Kelengkapan Inventory', icon: ClipboardList, path: '/master-data?tab=kelengkapan_inventory' },
       { label: 'Kategori', icon: Tags, path: '/master-data?tab=kategori' },
       { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen' },
       { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier' },

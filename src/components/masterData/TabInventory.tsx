@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2 } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Download, AlertTriangle, MapPin, Link2 } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
@@ -11,6 +11,8 @@ import InventorySerahTerimaModal from './InventorySerahTerimaModal';
 import InventoryPengembalianModal from './InventoryPengembalianModal';
 import InventoryLaporKerusakanModal from './InventoryLaporKerusakanModal';
 import InventoryPenangananSelesaiModal from '../transaksi/InventoryPenangananSelesaiModal';
+import InventoryExportModal from './InventoryExportModal';
+import InventoryKelengkapanExportModal from './InventoryKelengkapanExportModal';
 import { useAuth } from '../../context/AuthContext';
 import { printStruk } from '../../utils/printStruk';
 import { namaPemakai, userIdPemakai, isCabangPemakai } from './inventoryHelpers';
@@ -23,21 +25,20 @@ import {
   type Inventory,
   type InventoryStatus,
 } from '../../api/masterData/inventory';
+import { laporRusakKelengkapan } from '../../api/transaksi/inventoryKelengkapan';
 import { deletePemakaiInventory, type InventoryPemakai } from '../../api/transaksi/inventoryPemakai';
 import { deletePenangananInventory, terimaPenangananInventory, type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
 import { getSupplier, type Supplier } from '../../api/masterData/supplier';
 
-const KELENGKAPAN_STATUS_LABEL: Record<string, string> = {
-  tersedia: 'Tersedia',
-  dipakai: 'Dipakai',
-  rusak: 'Rusak',
-};
+// Kategori (dari tabel `kategori`, 2 baris: "Barang Utama" & "Kelengkapan") --
+// filter kategori tabel gabungan pakai a.kategori?.nama langsung (bukan bikin
+// helper isKelengkapan/isBarangUtama baru di inventoryHelpers.ts, karena cuma
+// dipakai di file ini).
+type KategoriFilter = 'semua' | 'barang_utama' | 'kelengkapan';
 
-const KELENGKAPAN_STATUS_STYLE: Record<string, string> = {
-  tersedia: 'bg-emerald-50 text-emerald-700',
-  dipakai: 'bg-amber-50 text-amber-700',
-  rusak: 'bg-red-100 text-red-800',
-};
+// Status yang HANYA relevan buat Kelengkapan (dropdown status disembunyiin
+// ini kalau filter Kategori lagi di-set ke Kelengkapan -- lihat statusTabs di bawah).
+const STATUS_KHUSUS_BARANG_UTAMA: InventoryStatus[] = ['menunggu_perbaikan', 'diperbaiki', 'rusak_berat', 'dijual'];
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 
@@ -103,6 +104,28 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
   const [error, setError] = useState('');
 
   const [statusFilter, setStatusFilter] = useState<InventoryStatus | ''>('');
+  // BARU (gabung Inventory + Kelengkapan): filter kategori di sisi client --
+  // 1 request getInventory() tanpa ?kategori= (biar sekali fetch ambil semua),
+  // filter Barang Utama/Kelengkapan/Semua dilakuin di FE lewat dropdown ini.
+  // Aman buat non-admin juga: pembatasan visibility non-admin di backend
+  // (InventoryController::index()) gak bergantung ke query ?kategori=, jadi
+  // fetch tanpa kategori tetap ke-filter dengan benar oleh backend.
+  const [kategoriFilter, setKategoriFilter] = useState<KategoriFilter>('semua');
+
+  // BARU: Lapor Rusak Kelengkapan -- dipindah dari TabKelengkapanInventory.tsx.
+  // Final, gak bisa dibatalin (kelengkapan dilepas otomatis dari induk & pindah
+  // ke status 'rusak').
+  const [rusakTarget, setRusakTarget] = useState<Inventory | null>(null);
+  const [rusakSubmitting, setRusakSubmitting] = useState(false);
+  const [rusakError, setRusakError] = useState('');
+
+  // BARU: Export -- 1 tombol, modalnya nyesuain isi export sama kategori yang
+  // lagi aktif difilter (InventoryExportModal buat Barang Utama/Semua,
+  // InventoryKelengkapanExportModal buat kolom yang relevan ke Kelengkapan
+  // kayak Inventory Induk/Lokasi). Diputuskan gini (bukan 1 modal universal)
+  // karena kedua modal itu kolomnya beda banget & masing2 udah lengkap/teruji --
+  // gabungin jadi 1 modal generik malah bikin banyak kolom kosong/gak relevan.
+  const [exportOpen, setExportOpen] = useState(false);
 
   // Pagination tabel inventory — style sama kayak pager Riwayat Inventory (10 per
   // halaman, angka + elipsis). Client-side krn /api/inventory gak dipaging
@@ -472,6 +495,12 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
   const filteredInventory = visibleInventoryList
     .filter((a) => {
       const matchStatus = !statusFilter || a.status === statusFilter;
+      // BARU: filter kategori (Semua/Barang Utama/Kelengkapan), dikombinasikan
+      // AND dengan filter status & search yang sudah ada.
+      const matchKategori =
+        kategoriFilter === 'semua' ||
+        (kategoriFilter === 'barang_utama' && a.kategori?.nama === 'Barang Utama') ||
+        (kategoriFilter === 'kelengkapan' && a.kategori?.nama === 'Kelengkapan');
       const q = search.toLowerCase();
       const matchSearch =
         !q ||
@@ -479,11 +508,12 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         (a.serial_number || '').toLowerCase().includes(q) ||
         (a.merek || '').toLowerCase().includes(q) ||
         (a.tipe || '').toLowerCase().includes(q) ||
+        (a.nama || '').toLowerCase().includes(q) ||
         // BARU: search juga cocokkan nama di kolom "Dipakai Oleh". Status
         // 'dijual' sengaja dilewati karena kolomnya ditampilkan sebagai "-"
         // di tabel (namaPemakai lama sudah tidak relevan buat inventory yang dijual).
         (a.status !== 'dijual' && namaPemakai(a.pemakai_saat_ini).toLowerCase().includes(q));
-      return matchStatus && matchSearch;
+      return matchStatus && matchKategori && matchSearch;
     })
     .filter((a) => !onlyMenipis || a.status === 'tersedia')
     // BARU: urutkan berdasarkan prioritas status — tersedia paling atas,
@@ -499,6 +529,10 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
   // kepemilikan, sama kayak sumber filteredInventory -- BUKAN dari inventoryList
   // mentah), dipakai buat badge angka di tiap opsi dropdown status. Ini
   // yang bikin badge tab selalu sinkron sama isi tabelnya.
+  // BARU: statusCounts sekarang ikut filter kategoriFilter juga, biar badge
+  // per-status di tab nav konsisten dengan badge "Semua Status" di sebelahnya
+  // (keduanya harus ngitung dari populasi yang sama -- baris yang lolos
+  // filter Kategori aktif).
   const statusCounts = useMemo(() => {
     const counts: Record<InventoryStatus, number> = {
       tersedia: 0,
@@ -509,9 +543,15 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
       rusak_berat: 0,
       dijual: 0,
     };
-    for (const a of visibleInventoryList) counts[a.status] += 1;
+    for (const a of visibleInventoryList) {
+      const matchKategori =
+        kategoriFilter === 'semua' ||
+        (kategoriFilter === 'barang_utama' && a.kategori?.nama === 'Barang Utama') ||
+        (kategoriFilter === 'kelengkapan' && a.kategori?.nama === 'Kelengkapan');
+      if (matchKategori) counts[a.status] += 1;
+    }
     return counts;
-  }, [visibleInventoryList]);
+  }, [visibleInventoryList, kategoriFilter]);
 
   const inventoryLastPage = Math.max(1, Math.ceil(filteredInventory.length / ASET_PER_PAGE));
   const inventoryPageClamped = Math.min(inventoryPage, inventoryLastPage);
@@ -524,7 +564,89 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
   // biar gak nyangkut di halaman kosong (sama pola kayak riwayat search).
   useEffect(() => {
     setInventoryPage(1);
-  }, [search, statusFilter, onlyMenipis]);
+  }, [search, statusFilter, kategoriFilter, onlyMenipis]);
+
+  // BARU: ganti filter Kategori -- kalau pindah ke "Kelengkapan" dan status
+  // yang lagi aktif itu status yang cuma relevan buat Barang Utama
+  // (menunggu_perbaikan, diperbaiki, rusak_berat, dijual), reset ke "Semua
+  // Status" sekalian, daripada nyangkut di status yang gak ada opsinya lagi
+  // di dropdown/tab. Ditaruh di sini (bukan useEffect terpisah) karena ini
+  // reaksi langsung ke aksi user (ganti dropdown), bukan sinkronisasi state.
+  const handleKategoriFilterChange = (next: KategoriFilter) => {
+    setKategoriFilter(next);
+    if (next === 'kelengkapan' && statusFilter && STATUS_KHUSUS_BARANG_UTAMA.includes(statusFilter)) {
+      setStatusFilter('');
+    }
+  };
+
+  // BARU (dipindah dari TabKelengkapanInventory.tsx): submit Lapor Rusak Kelengkapan.
+  const confirmRusak = async () => {
+    if (!rusakTarget) return;
+    setRusakSubmitting(true);
+    setRusakError('');
+    try {
+      await laporRusakKelengkapan(rusakTarget.id);
+      setRusakTarget(null);
+      loadList(); // refresh -- item pindah ke status 'rusak', lepas dari induk (kalau ada)
+      toast.success(`${rusakTarget.kode_inventory} dilaporkan rusak.`);
+    } catch (err: any) {
+      setRusakError(err.response?.data?.message || 'Gagal melaporkan kerusakan.');
+    } finally {
+      setRusakSubmitting(false);
+    }
+  };
+
+  // BARU: aksi buat baris berkategori Kelengkapan -- Lapor Rusak (admin,
+  // status tersedia/dipakai), Edit, Hapus. TIDAK ada Detail/Serah
+  // Terima/Terima Kembali/Jual (kelengkapan berdiri sendiri gak ikut alur
+  // peminjaman perorangan itu -- kalau lagi nempel ke Barang Utama, dia ikut
+  // serah-terima/kembali BARENG induknya lewat form Barang Utama, bukan
+  // sendiri-sendiri). Non-admin gak dapat aksi apapun di baris Kelengkapan,
+  // sama seperti behaviour TabKelengkapanInventory.tsx yang lama.
+  const renderAksiKelengkapan = (a: Inventory) => {
+    if (!isAdmin) return null;
+    return (
+      <>
+        {(a.status === 'tersedia' || a.status === 'dipakai') && (
+          <button
+            onClick={() => {
+              setRusakError('');
+              setRusakTarget(a);
+            }}
+            title="Lapor Rusak"
+            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+          >
+            <AlertTriangle size={15} />
+          </button>
+        )}
+        <button
+          onClick={() => {
+            setEditingInventory(a);
+            setFormOpen(true);
+          }}
+          title="Edit"
+          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+        >
+          <Pencil size={15} />
+        </button>
+        <button
+          onClick={() => {
+            setDeleteError('');
+            setDeleteForceAvailable(false);
+            setDeleteTarget(a);
+          }}
+          title="Hapus"
+          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+        >
+          <Trash2 size={15} />
+        </button>
+      </>
+    );
+  };
+
+  // Dispatcher aksi tabel gabungan -- baris Kelengkapan dan Barang Utama
+  // punya set aksi yang beda total, dibedain dari a.kategori?.nama.
+  const renderAksi = (a: Inventory) => (a.kategori?.nama === 'Kelengkapan' ? renderAksiKelengkapan(a) : renderAksiInventory(a));
 
   // Dipakai bareng oleh tabel (desktop) & card (mobile) biar tombol aksinya
   // gak ke-duplikasi/nyimpang antara 2 tampilan itu.
@@ -629,9 +751,22 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <p className="text-sm text-slate-500">
-          Kelola inventory IT per-unit (laptop, monitor, dsb) — serah-terima ke karyawan dan riwayatnya.
+          Kelola inventory IT — Barang Utama (laptop, monitor, dsb) dan Kelengkapan (charger, tas, mouse, dsb) dalam satu tabel.
         </p>
         <div className="flex items-center gap-2.5 flex-shrink-0">
+          {/* BARU: Export -- 1 tombol buat semua kategori, isi modalnya
+              nyesuain filter Kategori yang lagi aktif (lihat komentar
+              exportOpen di atas). Sengaja gak dibatasi isAdmin, sama kayak
+              tombol Export lama di TabKelengkapanInventory.tsx (non-admin
+              tetap boleh export data yang KELIATAN buat dia). */}
+          <button
+            onClick={() => setExportOpen(true)}
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 transition"
+          >
+            <Download size={16} />
+            Export
+          </button>
+
           {isAdmin && (
             <>
               {/* PINDAHAN dari Inventaris.tsx: Import Excel data inventory */}
@@ -687,13 +822,17 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
           {
             key: 'semua' as const,
             label: 'Semua Status',
-            badge: visibleInventoryList.length,
+            badge: Object.values(statusCounts).reduce((sum, n) => sum + n, 0),
             badgeClassName: statusFilter === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
           },
           // Tab "Rusak Berat" & "Dijual" cuma buat admin -- non-admin gak
           // perlu (dan gak boleh) lihat inventory yang udah di-writeoff/dijual.
+          // BARU: status yang cuma relevan buat Barang Utama (menunggu_perbaikan,
+          // diperbaiki, rusak_berat, dijual) disembunyikan kalau filter Kategori
+          // lagi di-set ke Kelengkapan -- kelengkapan gak pernah punya status itu.
           ...(Object.keys(STATUS_LABEL) as InventoryStatus[])
             .filter((s) => isAdmin || (s !== 'rusak_berat' && s !== 'dijual'))
+            .filter((s) => kategoriFilter !== 'kelengkapan' || !STATUS_KHUSUS_BARANG_UTAMA.includes(s))
             .map((s) => ({
               key: s,
               label: STATUS_LABEL[s],
@@ -710,6 +849,20 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
           placeholder="Cari nama, kode, atau merek inventory..."
           className="flex-1"
         />
+        {/* BARU: dropdown filter Kategori (Semua/Barang Utama/Kelengkapan) --
+            kolom & aksi tabel di bawah ikut menyesuaikan pilihan ini. */}
+        <div className="relative sm:w-56">
+          <select
+            value={kategoriFilter}
+            onChange={(e) => handleKategoriFilterChange(e.target.value as KategoriFilter)}
+            className="w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 py-2.5 pr-9 text-sm text-slate-700 shadow-sm outline-none transition hover:border-slate-400 focus:border-slate-900 focus:ring-4 focus:ring-slate-900/[0.06]"
+          >
+            <option value="semua">Semua Kategori</option>
+            <option value="barang_utama">Barang Utama</option>
+            <option value="kelengkapan">Kelengkapan</option>
+          </select>
+          <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        </div>
       </div>
 
       <div className="border border-slate-200 rounded-lg overflow-hidden">
@@ -725,42 +878,98 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
               <thead>
                 <tr className="border-b border-slate-100 text-middle text-xs text-slate-400 uppercase tracking-wide">
                   <th className="px-6 py-3 font-medium">Kode Inventory</th>
-                  <th className="px-6 py-3 font-medium">Merek / Tipe</th>
-                  <th className="px-6 py-3 font-medium">Jumlah</th>
+                  <th className="px-6 py-3 font-medium">{kategoriFilter === 'kelengkapan' ? 'Nama / Merek' : 'Merek / Tipe'}</th>
+                  {/* BARU: kolom Kategori cuma tampil di mode "Semua" -- di mode
+                      Barang Utama/Kelengkapan kategorinya udah jelas dari filter,
+                      gak perlu diulang di tiap baris. */}
+                  {kategoriFilter === 'semua' && <th className="px-6 py-3 font-medium">Kategori</th>}
+                  {/* Kolom Jumlah cuma relevan buat Barang Utama (barang serialized
+                      vs bukan) -- Kelengkapan selalu 1 unit per baris. */}
+                  {kategoriFilter !== 'kelengkapan' && <th className="px-6 py-3 font-medium">Jumlah</th>}
+                  {kategoriFilter === 'kelengkapan' && <th className="px-6 py-3 font-medium">Serial Number</th>}
                   <th className="px-6 py-3 font-medium">Status</th>
-                  <th className="px-6 py-3 font-medium">Dipakai Oleh</th>
+                  <th className="px-6 py-3 font-medium">
+                    {kategoriFilter === 'semua' ? 'Dipakai Oleh / Lokasi' : kategoriFilter === 'kelengkapan' ? 'Inventory Induk / Lokasi' : 'Dipakai Oleh'}
+                  </th>
                   <th className="px-6 py-3 font-medium">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {pageInventory.map((a) => {
+                  const isKelengkapan = a.kategori?.nama === 'Kelengkapan';
                   return (
                     <tr key={a.id} className="text-center border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                       <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{a.kode_inventory}</td>
                       <td className="px-6 py-3 text-slate-600 max-w-[160px]">
-                        <Tooltip content={[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}>
+                        <Tooltip
+                          content={
+                            isKelengkapan
+                              ? `${a.nama || '-'} · ${[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}`
+                              : [a.merek, a.tipe].filter(Boolean).join(' ') || '-'
+                          }
+                        >
                           <p className="truncate">
-                            {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}
+                            {isKelengkapan
+                              ? `${a.nama || '-'} · ${[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}`
+                              : [a.merek, a.tipe].filter(Boolean).join(' ') || '-'}
                           </p>
                         </Tooltip>
+                        {/* BARU: indikator "Menempel ke ..." buat baris Kelengkapan
+                            yang parent_id-nya terisi -- data a.parent udah tersedia
+                            dari eager-load backend, gak perlu request tambahan. */}
+                        {isKelengkapan && a.parent && (
+                          <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
+                            <Link2 size={11} className="shrink-0" />
+                            Menempel ke {a.parent.kode_inventory}
+                          </p>
+                        )}
                       </td>
-                      <td className="px-6 py-3 text-slate-600 whitespace-nowrap">{a.jumlah ?? 1}</td>
+                      {kategoriFilter === 'semua' && (
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <StatusBadge colorClass={isKelengkapan ? 'bg-sky-50 text-sky-700' : 'bg-indigo-50 text-indigo-700'}>
+                            {a.kategori?.nama || '-'}
+                          </StatusBadge>
+                        </td>
+                      )}
+                      {kategoriFilter !== 'kelengkapan' && (
+                        <td className="px-6 py-3 text-slate-600 whitespace-nowrap">{a.jumlah ?? 1}</td>
+                      )}
+                      {kategoriFilter === 'kelengkapan' && (
+                        <td className="px-6 py-3 text-slate-600 whitespace-nowrap">{a.serial_number || '-'}</td>
+                      )}
                       <td className="px-6 py-3 whitespace-nowrap">
                         <StatusBadge colorClass={STATUS_STYLE[a.status]}>{STATUS_LABEL[a.status]}</StatusBadge>
                       </td>
                       <td className="px-6 py-3 text-slate-600 max-w-[160px]">
-                        <Tooltip content={a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
-                          <p className="truncate">
-                            {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}
-                            {a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && (
-                              <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
-                            )}
-                          </p>
-                        </Tooltip>
+                        {/* BARU: kolom "Dipakai Oleh / Lokasi" kontekstual -- Barang
+                            Utama & Kelengkapan yang lagi dipakai/nempel nunjukin
+                            pemakai; Kelengkapan berdiri sendiri (tanpa parent, tanpa
+                            pemakai) nunjukin lokasi kantor-nya. */}
+                        {isKelengkapan && !a.pemakai_saat_ini && a.status !== 'dijual' ? (
+                          a.lokasiKantor ? (
+                            <Tooltip content={a.lokasiKantor.nama}>
+                              <span className="inline-flex items-center gap-1.5 min-w-0">
+                                <MapPin size={13} className="text-slate-300 shrink-0" />
+                                <span className="truncate">{a.lokasiKantor.nama}</span>
+                              </span>
+                            </Tooltip>
+                          ) : (
+                            <span className="text-slate-300">-</span>
+                          )
+                        ) : (
+                          <Tooltip content={a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
+                            <p className="truncate">
+                              {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}
+                              {a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && (
+                                <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
+                              )}
+                            </p>
+                          </Tooltip>
+                        )}
                       </td>
                       <td className="px-6 py-3">
                         <div className="flex items-center justify-end gap-1 flex-nowrap">
-                          {renderAksiInventory(a)}
+                          {renderAksi(a)}
                         </div>
                       </td>
                     </tr>
@@ -778,6 +987,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
           <div className="sm:hidden flex flex-col divide-y divide-slate-100">
             {pageInventory.map((a) => {
               const expanded = expandedInventoryId === a.id;
+              const isKelengkapan = a.kategori?.nama === 'Kelengkapan';
               return (
                 <div key={a.id} className="px-4 py-3">
                   <button
@@ -788,11 +998,26 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-slate-800">{a.kode_inventory}</p>
                       <p className="text-xs text-slate-500 truncate">
-                        {[a.merek, a.tipe].filter(Boolean).join(' ') || '-'} · Jumlah: {a.jumlah ?? 1}
+                        {isKelengkapan
+                          ? `${a.nama || '-'} · ${[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}`
+                          : `${[a.merek, a.tipe].filter(Boolean).join(' ') || '-'} · Jumlah: ${a.jumlah ?? 1}`}
                       </p>
-                      <StatusBadge colorClass={STATUS_STYLE[a.status]} size="xs" className="mt-1.5">
-                        {STATUS_LABEL[a.status]}
-                      </StatusBadge>
+                      {isKelengkapan && a.parent && (
+                        <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
+                          <Link2 size={11} className="shrink-0" />
+                          Menempel ke {a.parent.kode_inventory}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                        <StatusBadge colorClass={STATUS_STYLE[a.status]} size="xs">
+                          {STATUS_LABEL[a.status]}
+                        </StatusBadge>
+                        {kategoriFilter === 'semua' && (
+                          <StatusBadge colorClass={isKelengkapan ? 'bg-sky-50 text-sky-700' : 'bg-indigo-50 text-indigo-700'} size="xs">
+                            {a.kategori?.nama || '-'}
+                          </StatusBadge>
+                        )}
+                      </div>
                     </div>
                     <ChevronDown
                       size={16}
@@ -802,15 +1027,22 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
 
                   {expanded && (
                     <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-2">
-                      <p className="text-xs text-slate-500">
-                        Dipakai Oleh:{' '}
-                        <span className="text-slate-700 font-medium">
-                          {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}
-                          {a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && ' (Cabang)'}
-                        </span>
-                      </p>
+                      {isKelengkapan && !a.pemakai_saat_ini && a.status !== 'dijual' ? (
+                        <p className="text-xs text-slate-500">
+                          Lokasi:{' '}
+                          <span className="text-slate-700 font-medium">{a.lokasiKantor?.nama || '-'}</span>
+                        </p>
+                      ) : (
+                        <p className="text-xs text-slate-500">
+                          Dipakai Oleh:{' '}
+                          <span className="text-slate-700 font-medium">
+                            {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}
+                            {a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && ' (Cabang)'}
+                          </span>
+                        </p>
+                      )}
                       <div className="flex items-center flex-wrap gap-1.5">
-                        {renderAksiInventory(a)}
+                        {renderAksi(a)}
                       </div>
                     </div>
                   )}
@@ -938,6 +1170,58 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         </div>
       )}
 
+      {/* BARU: EXPORT -- modalnya nyesuain kategori yang lagi difilter (lihat
+          komentar exportOpen di atas). Kalau lagi filter "Kelengkapan", pakai
+          modal & kolom Kelengkapan; selain itu (Semua/Barang Utama) pakai
+          modal & kolom Barang Utama. Data yang dikirim = filteredInventory
+          (ngikutin filter status/search/kategori yang lagi aktif di tabel). */}
+      {kategoriFilter === 'kelengkapan' ? (
+        <InventoryKelengkapanExportModal open={exportOpen} onClose={() => setExportOpen(false)} data={filteredInventory} />
+      ) : (
+        <InventoryExportModal open={exportOpen} onClose={() => setExportOpen(false)} data={filteredInventory} />
+      )}
+
+      {/* BARU: KONFIRMASI LAPOR RUSAK KELENGKAPAN (dipindah dari
+          TabKelengkapanInventory.tsx) — final, gak bisa dibatalin setelah confirm */}
+      {rusakTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] px-4">
+          <div className="bg-white rounded-xl w-full max-w-sm p-5">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle size={18} className="text-red-600 shrink-0" />
+              <h2 className="text-base font-semibold text-slate-900">Lapor kelengkapan rusak?</h2>
+            </div>
+            <p className="text-sm text-slate-500 mb-3">
+              <span className="font-medium text-slate-700">{rusakTarget.kode_inventory}</span> — Kelengkapan
+              ini beneran rusak? Setelah dilaporkan, gak bisa dibatalin.
+            </p>
+            {rusakError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
+                {rusakError}
+              </p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setRusakTarget(null);
+                  setRusakError('');
+                }}
+                disabled={rusakSubmitting}
+                className="text-sm px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmRusak}
+                disabled={rusakSubmitting}
+                className="text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {rusakSubmitting ? 'Melaporkan...' : 'Ya, Lapor Rusak'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* DETAIL ASET — disembunyiin sementara kalau ada modal aksi (serah-terima,
           terima kembali, jual, dst) yang kebuka di atasnya, biar gak numpuk 2
           modal + 2 overlay keliatan bareng */}
@@ -1055,10 +1339,10 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                               </p>
                             </div>
                             <StatusBadge
-                              colorClass={KELENGKAPAN_STATUS_STYLE[k.status] || 'bg-slate-100 text-slate-600'}
+                              colorClass={STATUS_STYLE[k.status] || 'bg-slate-100 text-slate-600'}
                               className="shrink-0"
                             >
-                              {KELENGKAPAN_STATUS_LABEL[k.status] || k.status}
+                              {STATUS_LABEL[k.status] || k.status}
                             </StatusBadge>
                           </div>
                         ))}

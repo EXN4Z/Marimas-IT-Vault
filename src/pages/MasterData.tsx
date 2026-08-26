@@ -1,11 +1,10 @@
 import '../index.css';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2, Package, ClipboardList, Tags } from 'lucide-react';
+import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2, Package, Tags } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import TabInventory from '../components/masterData/TabInventory';
-import TabKelengkapanInventory from '../components/masterData/TabKelengkapanInventory';
 import TabKategori from '../components/masterData/TabKategori';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen, importDepartemen } from '../api/masterData/departemen';
@@ -21,8 +20,10 @@ import { downloadStyledExcel } from '../utils/excelReport';
 // -- bukan lewat tabConfig generik, karena cuma ada 1 kolom (nama) tanpa
 // alamat/telepon. Master Kategori sudah dihapus total (tabelnya digabung
 // ke `kategori`, lihat dokumen migrasi Master Kategori -> Kategori).
+// Tab "Kelengkapan Inventory" sudah digabung ke tab "Inventory" (1 tabel,
+// dibedain lewat kolom Kategori) -- lihat TabInventory.tsx.
 type GenericTabKey = 'departemen' | 'supplier';
-type CustomTabKey = 'inventory' | 'kelengkapan_inventory' | 'kategori';
+type CustomTabKey = 'inventory' | 'kategori';
 type TabKey = CustomTabKey | GenericTabKey;
 
 // alamat & telepon cuma dipakai tab 'supplier'
@@ -32,8 +33,8 @@ type FormPayload = { nama: string; alamat?: string; telepon?: string };
 // urutan di sini nentuin urutan tab & jadi acuan "child pertama" buat
 // AppLayout nentuin dropdown Master Data mana yang default aktif kalau
 // URL belum punya "?tab=" -- harus samain urutannya sama children di
-// AppLayout.tsx (Aset, Kelengkapan Aset, Kategori, Departemen, Supplier).
-const TAB_KEYS: TabKey[] = ['inventory', 'kelengkapan_inventory', 'kategori', 'departemen', 'supplier'];
+// AppLayout.tsx (Inventory, Kategori, Departemen, Supplier).
+const TAB_KEYS: TabKey[] = ['inventory', 'kategori', 'departemen', 'supplier'];
 
 function isTabKey(value: string | null): value is TabKey {
   return !!value && (TAB_KEYS as string[]).includes(value);
@@ -45,7 +46,6 @@ function isGenericTab(tab: TabKey): tab is GenericTabKey {
 
 const CUSTOM_TABS: { key: CustomTabKey; label: string; icon: typeof Package }[] = [
   { key: 'inventory', label: 'Inventory', icon: Package },
-  { key: 'kelengkapan_inventory', label: 'Kelengkapan Inventory', icon: ClipboardList },
   { key: 'kategori', label: 'Kategori', icon: Tags },
 ];
 
@@ -361,8 +361,6 @@ export default function MasterData() {
 
       {activeTab === 'inventory' ? (
         <TabInventory onCount={() => {}} />
-      ) : activeTab === 'kelengkapan_inventory' ? (
-        <TabKelengkapanInventory />
       ) : activeTab === 'kategori' ? (
         <TabKategori />
       ) : (
