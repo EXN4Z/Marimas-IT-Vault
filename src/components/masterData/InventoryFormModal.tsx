@@ -8,7 +8,7 @@ import {
   type InventoryFormValues,
   type InventoryStatus,
 } from '../../api/masterData/inventory';
-import { getKategori } from '../../api/masterData/kategori';
+import { getKategori, type Kategori } from '../../api/masterData/kategori';
 import { pasangPenggantiKelengkapan } from '../../api/transaksi/inventoryKelengkapan';
 import { getSupplier, type Supplier } from '../../api/masterData/supplier';
 import { getLokasiKantor, type LokasiKantor } from '../../api/lokasiKantor';
@@ -43,11 +43,21 @@ interface InventoryFormModalProps {
   supplierOptions: Supplier[];
   onClose: () => void;
   onSaved: (inventory: Inventory, warning?: string) => void;
-  // 'barang_utama' (default) = form lama InventoryFormModal: field inventory utama +
-  // section Kelengkapan (picker) buat staged. 'kelengkapan' = form lama
-  // InventoryKelengkapanForm: field inventory utama + Nama/Status/Inventory Induk/Lokasi
-  // Kantor, TANPA section Kelengkapan (kelengkapan gak boleh punya
-  // kelengkapan lagi).
+  // Kalau dikirim: kategori TERKUNCI ke nilai ini, dropdown pilih Kategori
+  // TIDAK ditampilkan sama sekali (dipakai satu-satunya oleh
+  // InventoryKelengkapanPicker lewat kategoriKode="kelengkapan" -- user
+  // jelas lagi nambah kelengkapan buat inventory induk tertentu, gak masuk
+  // akal dikasih pilihan ganti kategori di situ).
+  // Kalau TIDAK dikirim (mis. dibuka langsung dari tombol "Tambah Inventory"
+  // di tabel gabungan): form nampilin dropdown Kategori yang WAJIB dipilih
+  // user duluan, lalu sisa field & section menyesuaikan otomatis berdasar
+  // pilihan itu (lihat state `selectedKategoriKode` di bawah).
+  //
+  // 'barang_utama' = field inventory utama + section Kelengkapan (picker)
+  // buat staged, field Parent TIDAK ditampilkan (Barang Utama gak boleh
+  // nempel ke apapun). 'kelengkapan' = field Nama/Status/Inventory
+  // Induk (opsional)/Lokasi Kantor, TANPA section Kelengkapan (kelengkapan
+  // gak boleh punya kelengkapan lagi).
   kategoriKode?: 'barang_utama' | 'kelengkapan';
   // --- Prop di bawah ini cuma dipakai kalau kategoriKode === 'kelengkapan' ---
   // Dipakai dari section "Kelengkapan" di form inventory utama — kalau diisi,
@@ -109,37 +119,85 @@ export default function InventoryFormModal({
   supplierOptions,
   onClose,
   onSaved,
-  kategoriKode = 'barang_utama',
+  // TIDAK dikasih default -- default 'barang_utama' yang lama bikin form ini
+  // GAK PERNAH bisa dibuka dalam mode "kategori belum dipilih" (dropdown),
+  // padahal itu justru mode utama yang mau ditambahkan (tombol "Tambah
+  // Inventory" di tabel gabungan manggil komponen ini TANPA prop ini sama
+  // sekali). Kalau pemanggil memang mau kunci ke barang_utama, kirim
+  // eksplisit kategoriKode="barang_utama".
+  kategoriKode,
   presetInventoryId,
   presetInventoryLabel,
   lockInventoryField,
   onStage,
 }: InventoryFormModalProps) {
-  const isKelengkapan = kategoriKode === 'kelengkapan';
+  // Kategori terkunci = prop dikirim eksplisit (lihat komentar di atas prop
+  // kategoriKode). Kalau prop TIDAK dikirim, form ini yang punya dropdown
+  // buat user pilih sendiri -- daftar kategori (2 baris "Barang Utama" &
+  // "Kelengkapan") di-load sekali dari getKategori() buat isi dropdown DAN
+  // buat resolve nama -> id (dipakai juga di jalur terkunci di bawah).
+  const kategoriLocked = kategoriKode != null;
 
-  // Backend sekarang butuh kategori_id eksplisit (bukan lagi master_kategori_id
-  // lewat perantara). Form ini gak punya dropdown pilih kategori buat user --
-  // golongannya udah fix ditentuin dari prop kategoriKode (dilempar oleh tab
-  // pemanggil: TabInventory -> 'barang_utama', TabKelengkapanInventory /
-  // section Kelengkapan -> 'kelengkapan'). Jadi kategori_id di-resolve otomatis
-  // di sini dengan mencocokkan nama persis "Barang Utama" / "Kelengkapan" dari
-  // daftar getKategori(), bukan diminta dipilih manual dari UI.
-  const [kategoriId, setKategoriId] = useState<number | null>(null);
+  const [daftarKategori, setDaftarKategori] = useState<Kategori[]>([]);
+  const [loadingKategori, setLoadingKategori] = useState(true);
   useEffect(() => {
     let active = true;
+    setLoadingKategori(true);
     getKategori()
       .then((data) => {
-        if (!active) return;
-        const target = isKelengkapan ? 'Kelengkapan' : 'Barang Utama';
-        setKategoriId(data.find((k) => k.nama === target)?.id ?? null);
+        if (active) setDaftarKategori(data);
       })
-      .catch(() => {
-        if (active) setKategoriId(null);
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoadingKategori(false);
       });
     return () => {
       active = false;
     };
-  }, [isKelengkapan]);
+  }, []);
+
+  // Kalau kategoriKode terkunci lewat prop, cari id-nya dari daftarKategori
+  // by nama persis ("Barang Utama" / "Kelengkapan" -- lihat dokumen migrasi
+  // Master Kategori -> Kategori, ini kontrak yang dipegang seluruh sistem).
+  const lockedKategoriId = useMemo(() => {
+    if (!kategoriLocked) return null;
+    const target = kategoriKode === 'kelengkapan' ? 'Kelengkapan' : 'Barang Utama';
+    return daftarKategori.find((k) => k.nama === target)?.id ?? null;
+  }, [kategoriLocked, kategoriKode, daftarKategori]);
+
+  // Mode TIDAK terkunci: user pilih sendiri lewat dropdown. Mode edit (ada
+  // `inventory`) langsung diprefill dari kategori_id inventory yang lagi
+  // diedit -- kategori item existing TIDAK bisa diganti-ganti dari sini
+  // (ganti golongan Barang Utama <-> Kelengkapan itu perubahan struktural
+  // besar -- migrasi datanya, kalau memang dibutuhkan, sebaiknya lewat alur
+  // terpisah/manual, bukan diam-diam lewat form edit biasa).
+  const [selectedKategoriId, setSelectedKategoriId] = useState<number | null>(
+    inventory?.kategori_id ?? null
+  );
+
+  // kategoriId final yang dipakai seluruh form: dari prop terkunci kalau ada,
+  // else dari pilihan dropdown user.
+  const kategoriId = kategoriLocked ? lockedKategoriId : selectedKategoriId;
+
+  // nama kategori yang lagi aktif (dipakai buat nentuin isKelengkapan) --
+  // dicocokkan dari daftarKategori berdasar kategoriId final di atas, BUKAN
+  // di-assume dari kategoriKode secara langsung, supaya tetap benar walau
+  // suatu saat ada >2 baris kategori (lihat catatan di getKategori()).
+  const kategoriNamaAktif = useMemo(
+    () => daftarKategori.find((k) => k.id === kategoriId)?.nama ?? null,
+    [daftarKategori, kategoriId]
+  );
+  const isKelengkapan = kategoriLocked
+    ? kategoriKode === 'kelengkapan'
+    : kategoriNamaAktif === 'Kelengkapan';
+  const isBarangUtama = kategoriLocked
+    ? kategoriKode === 'barang_utama'
+    : kategoriNamaAktif === 'Barang Utama';
+  // Kategori sudah dipilih tapi bukan salah satu dari 2 golongan yang form
+  // ini tau cara render-nya (mis. admin sempat nambah kategori ke-3 lewat
+  // tab Kategori) -- form belum support golongan lain, kasih tau lewat UI
+  // daripada diam-diam nge-render salah satu mode secara asal.
+  const kategoriTidakDikenal = !kategoriLocked && kategoriId != null && !isKelengkapan && !isBarangUtama;
 
   // ================= Mode barang_utama (state & logic asli) =================
   const [form, setForm] = useState<BarangUtamaFormState>({
@@ -449,6 +507,12 @@ export default function InventoryFormModal({
     try {
       const values = {
         kategori_id: kategoriId,
+        // Barang Utama gak boleh nempel ke apapun (field ini gak
+        // ditampilkan sama sekali di form-nya) -- kirim null eksplisit
+        // biar kalau ada sisa parent_id dari data lama (mis. era sebelum
+        // penggabungan skema), keupdate bersih jadi null, bukan cuma
+        // "gak dikirim" yang bisa ambigu.
+        parent_id: null,
         merek: form.merek.trim() || undefined,
         tipe: form.tipe.trim() || undefined,
         warna: form.warna.trim() || undefined,
@@ -501,6 +565,119 @@ export default function InventoryFormModal({
       setSubmitting(false);
     }
   };
+
+  // ================= Render: kategori belum dipilih =================
+  // Cuma kejadian kalau form dibuka TANPA prop kategoriKode (mode "Tambah
+  // Inventory" biasa dari tabel gabungan) DAN user belum pilih apa-apa di
+  // dropdown. Sengaja gak nge-render field lain sama sekali sebelum kategori
+  // kepilih -- field yang relevan beda total antara Barang Utama & Kelengkapan
+  // (lihat 2 mode di bawah), jadi gak ada "default aman" buat ditampilin
+  // duluan. Kasus edit selalu lolos dari sini karena selectedKategoriId
+  // diprefill dari inventory.kategori_id saat modal dibuka (lihat useState
+  // di atas).
+  if (!kategoriLocked && kategoriId == null) {
+    return (
+      <div
+        className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-[fadeIn_150ms_ease-out]"
+        onMouseDown={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="inventory-pilih-kategori-title"
+      >
+        <div className="bg-white rounded-2xl shadow-xl ring-1 ring-slate-900/5 w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_180ms_ease-out]">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Data baru</p>
+              <h3 id="inventory-pilih-kategori-title" className="text-lg font-semibold text-slate-900">
+                Tambah Inventory
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Tutup"
+              className="grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M1 1L15 15M15 1L1 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="px-6 py-5">
+            <Field label="Kategori" required>
+              <SelectField
+                value=""
+                disabled={loadingKategori}
+                onChange={(v) => setSelectedKategoriId(v ? Number(v) : null)}
+              >
+                <option value="">{loadingKategori ? 'Memuat kategori…' : 'Pilih kategori'}</option>
+                {daftarKategori.map((k) => (
+                  <option key={k.id} value={k.id}>
+                    {k.nama}
+                  </option>
+                ))}
+              </SelectField>
+              <p className="mt-1.5 text-xs text-slate-400">
+                Pilih <span className="font-medium text-slate-500">Barang Utama</span> untuk barang inti (laptop, printer,
+                dsb — bisa punya kelengkapan menempel), atau{' '}
+                <span className="font-medium text-slate-500">Kelengkapan</span> untuk aksesoris (charger, tas, mouse, dsb —
+                bisa berdiri sendiri atau menempel ke Barang Utama).
+              </p>
+            </Field>
+          </div>
+        </div>
+
+        <style>{`
+          @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+          @keyframes slideUp { from { opacity: 0; transform: translateY(8px) scale(.98) } to { opacity: 1; transform: translateY(0) scale(1) } }
+        `}</style>
+      </div>
+    );
+  }
+
+  // ================= Render: kategori dipilih tapi bukan Barang Utama/Kelengkapan =================
+  // Form ini belum tau cara render field yang relevan buat golongan lain --
+  // daripada nge-render salah satu mode secara asal (berisiko field/validasi
+  // gak nyambung sama golongan aslinya), kasih pesan jelas & arahkan ganti
+  // pilihan. Lihat juga catatan di kategoriTidakDikenal di atas.
+  if (kategoriTidakDikenal) {
+    return (
+      <div
+        className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-[fadeIn_150ms_ease-out]"
+        onMouseDown={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="bg-white rounded-2xl shadow-xl ring-1 ring-slate-900/5 w-full max-w-md p-6">
+          <h3 className="text-base font-semibold text-slate-900 mb-2">Kategori belum didukung</h3>
+          <p className="text-sm text-slate-500 mb-4">
+            Kategori "{kategoriNamaAktif}" belum punya form khusus di halaman ini. Saat ini form Inventory hanya
+            mendukung kategori <span className="font-medium">Barang Utama</span> dan{' '}
+            <span className="font-medium">Kelengkapan</span>.
+          </p>
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setSelectedKategoriId(null)}
+              className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              Ganti Kategori
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ================= Render: mode kelengkapan =================
   if (isKelengkapan) {
@@ -569,6 +746,24 @@ export default function InventoryFormModal({
                 <path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM8 5v3.5M8 10.8h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
               }
             >
+              {/* Kategori cuma bisa diganti kalau form ini dibuka bebas (bukan
+                  dari picker kelengkapan di dalam form Barang Utama, dan
+                  bukan mode edit -- ganti golongan item yang sudah ada bukan
+                  hal yang aman dilakukan diam-diam lewat sini). */}
+              {!kategoriLocked && !inventory && (
+                <div className="sm:col-span-2">
+                  <Field label="Kategori" required>
+                    <SelectField value={kategoriId ?? ''} onChange={(v) => setSelectedKategoriId(v ? Number(v) : null)}>
+                      {daftarKategori.map((k) => (
+                        <option key={k.id} value={k.id}>
+                          {k.nama}
+                        </option>
+                      ))}
+                    </SelectField>
+                  </Field>
+                </div>
+              )}
+
               <div className="sm:col-span-2" ref={inventoryFieldRef}>
                 <Field label="Inventory Induk" error={kErrors.parent_id}>
                   {presetInventoryId || lockInventoryField ? (
@@ -957,6 +1152,26 @@ export default function InventoryFormModal({
         {/* Body */}
         <div className="px-6 py-5 overflow-y-auto">
         <div className="flex flex-col gap-3 mb-4">
+          {/* Sama seperti mode kelengkapan: kategori cuma bisa diganti kalau
+              form dibuka bebas (bukan lewat prop terkunci) dan bukan mode
+              edit. */}
+          {!kategoriLocked && !inventory && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Kategori</label>
+              <select
+                value={kategoriId ?? ''}
+                onChange={(e) => setSelectedKategoriId(e.target.value ? Number(e.target.value) : null)}
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
+              >
+                {daftarKategori.map((k) => (
+                  <option key={k.id} value={k.id}>
+                    {k.nama}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Nama/Merek</label>
