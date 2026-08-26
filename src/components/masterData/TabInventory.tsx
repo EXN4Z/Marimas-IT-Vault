@@ -36,9 +36,15 @@ import { getSupplier, type Supplier } from '../../api/masterData/supplier';
 // dipakai di file ini).
 type KategoriFilter = 'semua' | 'barang_utama' | 'kelengkapan';
 
-// Status yang HANYA relevan buat Kelengkapan (dropdown status disembunyiin
-// ini kalau filter Kategori lagi di-set ke Kelengkapan -- lihat statusTabs di bawah).
-const STATUS_KHUSUS_BARANG_UTAMA: InventoryStatus[] = ['menunggu_perbaikan', 'diperbaiki', 'rusak_berat', 'dijual'];
+// Status yang HANYA relevan buat Barang Utama -- endpoint jual() (writeoff)
+// masih isBarangUtama()-only, Kelengkapan gak pernah bisa masuk status ini.
+// Status penanganan/perbaikan (menunggu_perbaikan, diperbaiki, rusak_berat)
+// SUDAH TIDAK termasuk di sini -- sejak Kelengkapan berdiri sendiri
+// (parent_id null) ikut alur InventoryPenanganan yang sama kaya Barang
+// Utama (lihat renderAksi), status itu jadi relevan buat keduanya.
+// Dropdown status disembunyiin status di bawah ini kalau filter Kategori
+// lagi di-set ke Kelengkapan -- lihat statusTabs di bawah.
+const STATUS_KHUSUS_BARANG_UTAMA: InventoryStatus[] = ['dijual'];
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 
@@ -567,11 +573,13 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
   }, [search, statusFilter, kategoriFilter, onlyMenipis]);
 
   // BARU: ganti filter Kategori -- kalau pindah ke "Kelengkapan" dan status
-  // yang lagi aktif itu status yang cuma relevan buat Barang Utama
-  // (menunggu_perbaikan, diperbaiki, rusak_berat, dijual), reset ke "Semua
-  // Status" sekalian, daripada nyangkut di status yang gak ada opsinya lagi
-  // di dropdown/tab. Ditaruh di sini (bukan useEffect terpisah) karena ini
-  // reaksi langsung ke aksi user (ganti dropdown), bukan sinkronisasi state.
+  // yang lagi aktif itu status yang cuma relevan buat Barang Utama (dijual),
+  // reset ke "Semua Status" sekalian, daripada nyangkut di status yang gak
+  // ada opsinya lagi di dropdown/tab. Status penanganan (menunggu_perbaikan,
+  // diperbaiki, rusak_berat) TETAP dipertahankan kalau lagi aktif, karena
+  // sekarang relevan juga buat Kelengkapan berdiri sendiri. Ditaruh di sini
+  // (bukan useEffect terpisah) karena ini reaksi langsung ke aksi user
+  // (ganti dropdown), bukan sinkronisasi state.
   const handleKategoriFilterChange = (next: KategoriFilter) => {
     setKategoriFilter(next);
     if (next === 'kelengkapan' && statusFilter && STATUS_KHUSUS_BARANG_UTAMA.includes(statusFilter)) {
@@ -596,13 +604,19 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
     }
   };
 
-  // BARU: aksi buat baris berkategori Kelengkapan -- Lapor Rusak (admin,
-  // status tersedia/dipakai), Edit, Hapus. TIDAK ada Detail/Serah
-  // Terima/Terima Kembali/Jual (kelengkapan berdiri sendiri gak ikut alur
-  // peminjaman perorangan itu -- kalau lagi nempel ke Barang Utama, dia ikut
-  // serah-terima/kembali BARENG induknya lewat form Barang Utama, bukan
-  // sendiri-sendiri). Non-admin gak dapat aksi apapun di baris Kelengkapan,
-  // sama seperti behaviour TabKelengkapanInventory.tsx yang lama.
+  // Aksi buat baris Kelengkapan yang MASIH NEMPEL ke induk (parent_id
+  // terisi) -- Lapor Rusak (admin, status tersedia/dipakai), Edit, Hapus.
+  // TIDAK ada Detail/Serah Terima/Terima Kembali/Jual (kelengkapan yang
+  // nempel gak ikut alur peminjaman perorangan -- dia ikut serah-terima/
+  // kembali BARENG induknya lewat form Barang Utama, bukan sendiri-sendiri).
+  // Non-admin gak dapat aksi apapun di baris ini, sama seperti behaviour
+  // TabKelengkapanInventory.tsx yang lama.
+  //
+  // Kelengkapan yang BERDIRI SENDIRI (parent_id null) sudah TIDAK lewat sini
+  // lagi -- dia dispatch ke renderAksiInventory yang sama kaya Barang Utama
+  // (lihat renderAksi di bawah), termasuk buat Lapor Rusak-nya (sekarang
+  // lewat alur InventoryPenanganan, bukan endpoint instan
+  // lapor-rusak-kelengkapan yang dipakai fungsi ini).
   const renderAksiKelengkapan = (a: Inventory) => {
     if (!isAdmin) return null;
     return (
@@ -644,9 +658,13 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
     );
   };
 
-  // Dispatcher aksi tabel gabungan -- baris Kelengkapan dan Barang Utama
-  // punya set aksi yang beda total, dibedain dari a.kategori?.nama.
-  const renderAksi = (a: Inventory) => (a.kategori?.nama === 'Kelengkapan' ? renderAksiKelengkapan(a) : renderAksiInventory(a));
+  // Dispatcher aksi tabel gabungan -- Kelengkapan yang MASIH NEMPEL ke induk
+  // (parent_id terisi) pakai set aksi terbatas (renderAksiKelengkapan).
+  // Barang Utama DAN Kelengkapan yang berdiri sendiri (parent_id null) pakai
+  // set aksi yang sama persis (renderAksiInventory) -- keduanya boleh
+  // di-Serahkan/di-Terima Kembali/Lapor Rusak langsung tanpa lewat induk.
+  const renderAksi = (a: Inventory) =>
+    a.kategori?.nama === 'Kelengkapan' && a.parent_id ? renderAksiKelengkapan(a) : renderAksiInventory(a);
 
   // Dipakai bareng oleh tabel (desktop) & card (mobile) biar tombol aksinya
   // gak ke-duplikasi/nyimpang antara 2 tampilan itu.
@@ -827,9 +845,11 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
           },
           // Tab "Rusak Berat" & "Dijual" cuma buat admin -- non-admin gak
           // perlu (dan gak boleh) lihat inventory yang udah di-writeoff/dijual.
-          // BARU: status yang cuma relevan buat Barang Utama (menunggu_perbaikan,
-          // diperbaiki, rusak_berat, dijual) disembunyikan kalau filter Kategori
-          // lagi di-set ke Kelengkapan -- kelengkapan gak pernah punya status itu.
+          // BARU: status "Dijual" (khusus Barang Utama, endpoint jual() masih
+          // isBarangUtama()-only) disembunyikan kalau filter Kategori lagi
+          // di-set ke Kelengkapan. Status penanganan (menunggu_perbaikan,
+          // diperbaiki, rusak_berat) TETAP tampil buat kedua kategori, karena
+          // sekarang relevan juga buat Kelengkapan yang berdiri sendiri.
           ...(Object.keys(STATUS_LABEL) as InventoryStatus[])
             .filter((s) => isAdmin || (s !== 'rusak_berat' && s !== 'dijual'))
             .filter((s) => kategoriFilter !== 'kelengkapan' || !STATUS_KHUSUS_BARANG_UTAMA.includes(s))
@@ -889,7 +909,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                   {kategoriFilter === 'kelengkapan' && <th className="px-6 py-3 font-medium">Serial Number</th>}
                   <th className="px-6 py-3 font-medium">Status</th>
                   <th className="px-6 py-3 font-medium">
-                    {kategoriFilter === 'semua' ? 'Dipakai Oleh / Lokasi' : kategoriFilter === 'kelengkapan' ? 'Inventory Induk / Lokasi' : 'Dipakai Oleh'}
+                    {kategoriFilter === 'barang_utama' ? 'Dipakai Oleh' : 'Dipakai Oleh / Lokasi'}
                   </th>
                   <th className="px-6 py-3 font-medium">Aksi</th>
                 </tr>
