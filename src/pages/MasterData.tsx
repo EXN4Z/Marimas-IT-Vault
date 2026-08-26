@@ -1,12 +1,11 @@
 import '../index.css';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2, Package, ClipboardList, Layers, Tags } from 'lucide-react';
+import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2, Package, ClipboardList, Tags } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import TabInventory from '../components/masterData/TabInventory';
 import TabKelengkapanInventory from '../components/masterData/TabKelengkapanInventory';
-import TabMasterKategori from '../components/masterData/TabMasterKategori';
 import TabKategori from '../components/masterData/TabKategori';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen, importDepartemen } from '../api/masterData/departemen';
@@ -18,11 +17,12 @@ import { downloadStyledExcel } from '../utils/excelReport';
 // dirender lewat komponen dedicated-nya sendiri (TabAset / TabKelengkapanAset),
 // bukan lewat tabConfig generik di bawah. tabConfig cuma buat tab yang
 // bentuknya sama (nama + alamat/telepon opsional).
-// Master Kategori & Kategori juga dirender lewat komponen dedicated-nya
-// sendiri -- Master Kategori CRUD penuh tapi field-nya beda (kategori_id
-// dropdown, bukan alamat/telepon), Kategori murni read-only.
+// Kategori juga dirender lewat komponen dedicated-nya sendiri (TabKategori)
+// -- bukan lewat tabConfig generik, karena cuma ada 1 kolom (nama) tanpa
+// alamat/telepon. Master Kategori sudah dihapus total (tabelnya digabung
+// ke `kategori`, lihat dokumen migrasi Master Kategori -> Kategori).
 type GenericTabKey = 'departemen' | 'supplier';
-type CustomTabKey = 'inventory' | 'kelengkapan_inventory' | 'master_kategori' | 'kategori';
+type CustomTabKey = 'inventory' | 'kelengkapan_inventory' | 'kategori';
 type TabKey = CustomTabKey | GenericTabKey;
 
 // alamat & telepon cuma dipakai tab 'supplier'
@@ -32,9 +32,8 @@ type FormPayload = { nama: string; alamat?: string; telepon?: string };
 // urutan di sini nentuin urutan tab & jadi acuan "child pertama" buat
 // AppLayout nentuin dropdown Master Data mana yang default aktif kalau
 // URL belum punya "?tab=" -- harus samain urutannya sama children di
-// AppLayout.tsx (Aset, Kelengkapan Aset, Master Kategori, Kategori,
-// Departemen, Supplier).
-const TAB_KEYS: TabKey[] = ['inventory', 'kelengkapan_inventory', 'master_kategori', 'kategori', 'departemen', 'supplier'];
+// AppLayout.tsx (Aset, Kelengkapan Aset, Kategori, Departemen, Supplier).
+const TAB_KEYS: TabKey[] = ['inventory', 'kelengkapan_inventory', 'kategori', 'departemen', 'supplier'];
 
 function isTabKey(value: string | null): value is TabKey {
   return !!value && (TAB_KEYS as string[]).includes(value);
@@ -47,7 +46,6 @@ function isGenericTab(tab: TabKey): tab is GenericTabKey {
 const CUSTOM_TABS: { key: CustomTabKey; label: string; icon: typeof Package }[] = [
   { key: 'inventory', label: 'Inventory', icon: Package },
   { key: 'kelengkapan_inventory', label: 'Kelengkapan Inventory', icon: ClipboardList },
-  { key: 'master_kategori', label: 'Master Kategori', icon: Layers },
   { key: 'kategori', label: 'Kategori', icon: Tags },
 ];
 
@@ -365,8 +363,6 @@ export default function MasterData() {
         <TabInventory onCount={() => {}} />
       ) : activeTab === 'kelengkapan_inventory' ? (
         <TabKelengkapanInventory />
-      ) : activeTab === 'master_kategori' ? (
-        <TabMasterKategori />
       ) : activeTab === 'kategori' ? (
         <TabKategori />
       ) : (
