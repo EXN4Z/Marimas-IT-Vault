@@ -19,7 +19,6 @@ import {
   Wrench,
   Images,
   History,
-  Layers,
   Tags,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -91,7 +90,6 @@ const navItems: NavItem[] = [
       // udah /master-data?tab=..., bukan /inventaris?tab=... lagi.
       { label: 'Inventory', icon: Package, path: '/master-data?tab=inventory' },
       { label: 'Kelengkapan Inventory', icon: ClipboardList, path: '/master-data?tab=kelengkapan_inventory' },
-      { label: 'Master Kategori', icon: Layers, path: '/master-data?tab=master_kategori' },
       { label: 'Kategori', icon: Tags, path: '/master-data?tab=kategori' },
       { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen' },
       { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier' },

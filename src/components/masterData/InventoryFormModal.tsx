@@ -8,6 +8,7 @@ import {
   type InventoryFormValues,
   type InventoryStatus,
 } from '../../api/masterData/inventory';
+import { getKategori } from '../../api/masterData/kategori';
 import { pasangPenggantiKelengkapan } from '../../api/transaksi/inventoryKelengkapan';
 import { getSupplier, type Supplier } from '../../api/masterData/supplier';
 import { getLokasiKantor, type LokasiKantor } from '../../api/lokasiKantor';
@@ -115,6 +116,30 @@ export default function InventoryFormModal({
   onStage,
 }: InventoryFormModalProps) {
   const isKelengkapan = kategoriKode === 'kelengkapan';
+
+  // Backend sekarang butuh kategori_id eksplisit (bukan lagi master_kategori_id
+  // lewat perantara). Form ini gak punya dropdown pilih kategori buat user --
+  // golongannya udah fix ditentuin dari prop kategoriKode (dilempar oleh tab
+  // pemanggil: TabInventory -> 'barang_utama', TabKelengkapanInventory /
+  // section Kelengkapan -> 'kelengkapan'). Jadi kategori_id di-resolve otomatis
+  // di sini dengan mencocokkan nama persis "Barang Utama" / "Kelengkapan" dari
+  // daftar getKategori(), bukan diminta dipilih manual dari UI.
+  const [kategoriId, setKategoriId] = useState<number | null>(null);
+  useEffect(() => {
+    let active = true;
+    getKategori()
+      .then((data) => {
+        if (!active) return;
+        const target = isKelengkapan ? 'Kelengkapan' : 'Barang Utama';
+        setKategoriId(data.find((k) => k.nama === target)?.id ?? null);
+      })
+      .catch(() => {
+        if (active) setKategoriId(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isKelengkapan]);
 
   // ================= Mode barang_utama (state & logic asli) =================
   const [form, setForm] = useState<BarangUtamaFormState>({
@@ -226,6 +251,16 @@ export default function InventoryFormModal({
     requestAnimationFrame(() => firstFieldRef.current?.focus());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isKelengkapan, inventory, presetInventoryId]);
+
+  // Sinkronin kategori_id yang udah di-resolve ke kForm begitu ke-resolve
+  // atau begitu form kelengkapan direset/dibuka ulang -- termasuk relevan buat
+  // mode staged (onStage) karena kForm-lah yang dibawa ke pemanggil, bukan
+  // di-inject belakangan pas submit.
+  useEffect(() => {
+    if (!isKelengkapan) return;
+    setKForm((f) => ({ ...f, kategori_id: kategoriId }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isKelengkapan, kategoriId, inventory, presetInventoryId]);
 
   // ---- tutup dropdown inventory kalau klik di luar ----
   useEffect(() => {
@@ -413,6 +448,7 @@ export default function InventoryFormModal({
     setError('');
     try {
       const values = {
+        kategori_id: kategoriId,
         merek: form.merek.trim() || undefined,
         tipe: form.tipe.trim() || undefined,
         warna: form.warna.trim() || undefined,

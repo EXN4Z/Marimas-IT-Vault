@@ -8,12 +8,9 @@ export type InventoryStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'd
 // 'kelengkapan' = parent_id boleh diisi (nempel ke barang utama) atau null (berdiri sendiri).
 export type KategoriKode = 'barang_utama' | 'kelengkapan';
 
-export interface MasterKategoriRef {
+export interface KategoriRef {
   id: number;
   nama: string;
-  kode: string | null;
-  kategori_id: number;
-  kategori?: { id: number; nama: string; kode: KategoriKode };
 }
 
 // Tipe & fungsi penanganan kerusakan (InventoryPenanganan) ada di
@@ -24,17 +21,18 @@ import type { InventoryPenanganan } from '../transaksi/inventoryPenanganan';
 import type { InventoryPemakai } from '../transaksi/inventoryPemakai';
 
 // Satu baris `inventory` bisa berupa Barang Utama ATAU Kelengkapan — dibedakan
-// lewat masterKategori.kategori.kode, BUKAN lewat ada/tidaknya parent_id (lihat
-// dokumen migrasi #2.3). `parent`/`children` cuma keisi di endpoint show(),
-// atau lewat query ?parent_id= di index() buat nested/expand view.
+// lewat kategori.nama (persis "Barang Utama" / "Kelengkapan"), BUKAN lewat
+// ada/tidaknya parent_id (lihat dokumen migrasi #2.3). `parent`/`children`
+// cuma keisi di endpoint show(), atau lewat query ?parent_id= di index() buat
+// nested/expand view.
 export interface Inventory {
   id: number;
   kode_inventory: string;
   parent_id: number | null;
   parent?: Inventory | null;
   children?: Inventory[];
-  master_kategori_id: number | null;
-  masterKategori?: MasterKategoriRef | null;
+  kategori_id: number | null;
+  kategori?: KategoriRef | null;
   departemen_id: number | null;
   departemen?: Departemen | null;
   lokasi_kantor_id: number | null;
@@ -73,8 +71,8 @@ export interface Inventory {
 }
 
 export interface InventoryFormValues {
-  master_kategori_id?: number | null;
-  parent_id?: number | null; // cuma valid kalau master_kategori-nya kategori 'kelengkapan', dan harus nunjuk ke barang_utama
+  kategori_id?: number | null;
+  parent_id?: number | null; // cuma valid kalau kategori-nya 'Kelengkapan', dan harus nunjuk ke barang_utama
   departemen_id?: number | null;
   lokasi_kantor_id?: number | null;
   nama?: string;
@@ -103,7 +101,7 @@ export interface PaginatedInventory {
 
 function buildInventoryFormData(values: InventoryFormValues): FormData {
   const fd = new FormData();
-  if (values.master_kategori_id != null) fd.append('master_kategori_id', String(values.master_kategori_id));
+  if (values.kategori_id != null) fd.append('kategori_id', String(values.kategori_id));
   if (values.parent_id != null) fd.append('parent_id', String(values.parent_id));
   if (values.departemen_id != null) fd.append('departemen_id', String(values.departemen_id));
   if (values.lokasi_kantor_id != null) fd.append('lokasi_kantor_id', String(values.lokasi_kantor_id));
@@ -125,7 +123,7 @@ function buildInventoryFormData(values: InventoryFormValues): FormData {
 }
 
 // GET /inventory — ?kategori=barang_utama|kelengkapan filter berdasar
-// masterKategori.kategori.kode. ?parent_id=123 buat nested/expand view
+// kategori.nama (mapped di backend). ?parent_id=123 buat nested/expand view
 // (kelengkapan yang nempel ke barang utama tertentu).
 export async function getInventory(params?: {
   kategori?: KategoriKode;
