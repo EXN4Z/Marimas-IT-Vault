@@ -79,8 +79,9 @@ interface InventoryFormModalProps {
   onStage?: (values: KelengkapanFormValues) => void;
 }
 
-// FormState barang utama (tetap seperti sebelumnya)
+// FormState barang utama (tetap seperti sebelumnya, ditambah `nama`)
 interface BarangUtamaFormState {
+  nama: string;
   merek: string;
   tipe: string;
   warna: string;
@@ -199,8 +200,9 @@ export default function InventoryFormModal({
   // daripada diam-diam nge-render salah satu mode secara asal.
   const kategoriTidakDikenal = !kategoriLocked && kategoriId != null && !isKelengkapan && !isBarangUtama;
 
-  // ================= Mode barang_utama (state & logic asli) =================
+  // ================= Mode barang_utama (state & logic asli, + nama & foto upgrade) =================
   const [form, setForm] = useState<BarangUtamaFormState>({
+    nama: inventory?.nama || '',
     merek: inventory?.merek || '',
     tipe: inventory?.tipe || '',
     warna: inventory?.warna || '',
@@ -215,10 +217,25 @@ export default function InventoryFormModal({
     no_good_receive: inventory?.no_good_receive || '',
   });
   const [foto, setFoto] = useState<File | null>(null);
+  // Preview & drag-drop upload buat foto barang utama -- disamain sama
+  // pengalaman upload foto di mode kelengkapan (lihat applyFoto/handleFotoDrop
+  // dkk di bawah), biar dua mode form ini terasa konsisten.
+  const [fotoPreviewUtama, setFotoPreviewUtama] = useState<string | null>(inventory?.foto || null);
+  const [isDraggingFotoUtama, setIsDraggingFotoUtama] = useState(false);
+  const [fotoErrorUtama, setFotoErrorUtama] = useState('');
+  const fotoObjectUrlUtama = useRef<string | null>(null);
+  const dragCounterUtama = useRef(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [stagedKelengkapan, setStagedKelengkapan] = useState<StagedKelengkapan[]>([]);
   const [existingKelengkapan, setExistingKelengkapan] = useState<Inventory[]>([]);
+
+  // ---- bersihkan object URL foto barang utama biar nggak leak memory ----
+  useEffect(() => {
+    return () => {
+      if (fotoObjectUrlUtama.current) URL.revokeObjectURL(fotoObjectUrlUtama.current);
+    };
+  }, []);
 
   // Mode edit: fetch ulang detail inventory (list row yang dilempar ke form
   // belum tentu bawa relasi children) biar section Kelengkapan
@@ -242,6 +259,55 @@ export default function InventoryFormModal({
 
   const set = (key: keyof BarangUtamaFormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  // ---- upload foto barang utama (drag & drop + preview, sama seperti mode kelengkapan) ----
+  function applyFotoUtama(file: File | null) {
+    if (!file) return;
+    if (!ACCEPTED_FOTO_TYPES.includes(file.type)) {
+      setFotoErrorUtama('Format harus PNG, JPG, atau WEBP.');
+      return;
+    }
+    if (file.size > MAX_FOTO_MB * 1024 * 1024) {
+      setFotoErrorUtama(`Ukuran foto maksimal ${MAX_FOTO_MB}MB.`);
+      return;
+    }
+    setFotoErrorUtama('');
+    if (fotoObjectUrlUtama.current) URL.revokeObjectURL(fotoObjectUrlUtama.current);
+    const url = URL.createObjectURL(file);
+    fotoObjectUrlUtama.current = url;
+    setFoto(file);
+    setFotoPreviewUtama(url);
+  }
+
+  function handleFotoChangeUtama(e: React.ChangeEvent<HTMLInputElement>) {
+    applyFotoUtama(e.target.files?.[0] || null);
+  }
+
+  function handleFotoDropUtama(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    dragCounterUtama.current = 0;
+    setIsDraggingFotoUtama(false);
+    applyFotoUtama(e.dataTransfer.files?.[0] || null);
+  }
+
+  function handleFotoDragEnterUtama(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    dragCounterUtama.current += 1;
+    setIsDraggingFotoUtama(true);
+  }
+
+  function handleFotoDragLeaveUtama(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    dragCounterUtama.current -= 1;
+    if (dragCounterUtama.current <= 0) setIsDraggingFotoUtama(false);
+  }
+
+  function removeFotoUtama() {
+    if (fotoObjectUrlUtama.current) URL.revokeObjectURL(fotoObjectUrlUtama.current);
+    fotoObjectUrlUtama.current = null;
+    setFoto(null);
+    setFotoPreviewUtama(null);
+  }
 
   // ================= Mode kelengkapan (state & logic asli InventoryKelengkapanForm) =================
   const [kForm, setKForm] = useState<KelengkapanFormValues>(EMPTY_KELENGKAPAN_FORM);
@@ -500,7 +566,7 @@ export default function InventoryFormModal({
     }
   }
 
-  // ================= Submit barang_utama (logic asli) =================
+  // ================= Submit barang_utama (logic asli, + nama) =================
   const handleSubmit = async () => {
     setSubmitting(true);
     setError('');
@@ -513,6 +579,7 @@ export default function InventoryFormModal({
         // penggabungan skema), keupdate bersih jadi null, bukan cuma
         // "gak dikirim" yang bisa ambigu.
         parent_id: null,
+        nama: form.nama.trim() || undefined,
         merek: form.merek.trim() || undefined,
         tipe: form.tipe.trim() || undefined,
         warna: form.warna.trim() || undefined,
@@ -1118,22 +1185,25 @@ export default function InventoryFormModal({
     );
   }
 
-  // ================= Render: mode barang_utama (asli, tidak berubah) =================
+  // ================= Render: mode barang_utama (upgraded, + Nama) =================
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-[fadeIn_150ms_ease-out]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="inventory-utama-form-title"
     >
-      <div className="bg-white rounded-2xl shadow-xl ring-1 ring-slate-900/5 w-full max-w-lg max-h-[90vh] flex flex-col animate-[slideUp_180ms_ease-out]">
+      <div className="bg-white rounded-2xl shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5 w-full max-w-2xl max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
               {inventory ? 'Ubah data' : 'Data baru'}
             </p>
-            <h3 className="text-lg font-semibold text-slate-900">
+            <h3 id="inventory-utama-form-title" className="text-lg font-semibold text-slate-900">
               {inventory ? `Edit Inventory ${inventory.kode_inventory}` : 'Tambah Inventory'}
             </h3>
           </div>
@@ -1141,220 +1211,255 @@ export default function InventoryFormModal({
             type="button"
             onClick={onClose}
             aria-label="Tutup"
-            className="grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+            className="group grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform duration-200 group-hover:rotate-90">
               <path d="M1 1L15 15M15 1L1 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
             </svg>
           </button>
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 overflow-y-auto">
-        <div className="flex flex-col gap-3 mb-4">
-          {/* Sama seperti mode kelengkapan: kategori cuma bisa diganti kalau
-              form dibuka bebas (bukan lewat prop terkunci) dan bukan mode
-              edit. */}
-          {!kategoriLocked && !inventory && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Kategori</label>
-              <select
-                value={kategoriId ?? ''}
-                onChange={(e) => setSelectedKategoriId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
-              >
-                {daftarKategori.map((k) => (
-                  <option key={k.id} value={k.id}>
-                    {k.nama}
+        <form
+          id="inventory-utama-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+          className="px-6 py-5 space-y-7 overflow-y-auto"
+        >
+          {error && (
+            <p className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2.5 animate-[fadeIn_150ms_ease-out]" role="alert">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
+                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.4" />
+                <path d="M8 5v3.5M8 11h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
+              {error}
+            </p>
+          )}
+
+          {/* Section: Informasi Umum */}
+          <Section
+            index={0}
+            title="Informasi Umum"
+            subtitle="Nama, merek, dan ciri fisik barang"
+            icon={
+              <path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM8 5v3.5M8 10.8h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            }
+          >
+            {/* Kategori cuma bisa diganti kalau form dibuka bebas (bukan lewat
+                prop terkunci) dan bukan mode edit. */}
+            {!kategoriLocked && !inventory && (
+              <div className="sm:col-span-2">
+                <Field label="Kategori" required>
+                  <SelectField value={kategoriId ?? ''} onChange={(v) => setSelectedKategoriId(v ? Number(v) : null)}>
+                    {daftarKategori.map((k) => (
+                      <option key={k.id} value={k.id}>
+                        {k.nama}
+                      </option>
+                    ))}
+                  </SelectField>
+                </Field>
+              </div>
+            )}
+
+            <div className="sm:col-span-2">
+              <Field label="Nama">
+                <input
+                  className={inputClass}
+                  value={form.nama}
+                  onChange={set('nama')}
+                  placeholder="cth. Laptop Kerja Marketing"
+                />
+                <p className="mt-1 text-xs text-slate-400">Opsional — nama panggilan/label barang, di luar Merek & Tipe.</p>
+              </Field>
+            </div>
+
+            <Field label="Merek">
+              <input className={inputClass} value={form.merek} onChange={set('merek')} placeholder="cth. HP" />
+            </Field>
+
+            <Field label="Tipe">
+              <input className={inputClass} value={form.tipe} onChange={set('tipe')} placeholder="cth. Pavilion 14" />
+            </Field>
+
+            <Field label="Warna">
+              <input className={inputClass} value={form.warna} onChange={set('warna')} />
+            </Field>
+
+            <Field label="Serial Number">
+              <input className={`${inputClass} font-mono text-[13px]`} value={form.serial_number} onChange={set('serial_number')} />
+            </Field>
+
+            <Field label="Jumlah">
+              <input type="number" min={1} className={inputClass} value={form.jumlah} onChange={set('jumlah')} placeholder="1" />
+              <p className="mt-1 text-xs text-slate-400">
+                Default 1. Isi lebih dari 1 kalau barang non-serialized (mis. kabel, adaptor) dicatat dalam 1 baris.
+              </p>
+            </Field>
+
+            <Field label="Tanggal Garansi">
+              <input type="date" className={inputClass} value={form.tanggal_garansi} onChange={set('tanggal_garansi')} />
+            </Field>
+          </Section>
+
+          {/* Section: Pembelian & Garansi */}
+          <Section
+            index={1}
+            title="Pembelian & Garansi"
+            subtitle="Sumber barang dan dokumen terkait"
+            icon={
+              <path d="M3 5h10l-.8 7.2a1.5 1.5 0 01-1.49 1.3H5.29a1.5 1.5 0 01-1.49-1.3L3 5zM5.5 5V3.5a2.5 2.5 0 015 0V5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            }
+          >
+            <Field label="Supplier">
+              <SelectField value={form.supplier_id} onChange={(v) => setForm((f) => ({ ...f, supplier_id: v }))}>
+                <option value="">Tanpa supplier</option>
+                {supplierOptions.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nama}
                   </option>
                 ))}
-              </select>
-            </div>
-          )}
+              </SelectField>
+            </Field>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Nama/Merek</label>
-              <input
-                value={form.merek}
-                onChange={set('merek')}
-                placeholder="cth. HP"
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Tipe</label>
-              <input
-                value={form.tipe}
-                onChange={set('tipe')}
-                placeholder="cth. Pavilion 14"
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-            </div>
-          </div>
+            <Field label="Perusahaan">
+              <input className={inputClass} value={form.perusahaan} onChange={set('perusahaan')} placeholder="cth. mpk, uth" />
+            </Field>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Warna</label>
-              <input
-                value={form.warna}
-                onChange={set('warna')}
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Serial Number</label>
-              <input
-                value={form.serial_number}
-                onChange={set('serial_number')}
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-            </div>
-          </div>
+            <Field label="Tanggal Pembelian">
+              <input type="date" className={inputClass} value={form.tanggal_pembelian} onChange={set('tanggal_pembelian')} />
+            </Field>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Jumlah</label>
-            <input
-              type="number"
-              min={1}
-              value={form.jumlah}
-              onChange={set('jumlah')}
-              placeholder="1"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-            />
-            <p className="text-xs text-slate-400 mt-1">Default 1. Isi lebih dari 1 kalau barang non-serialized (mis. kabel, adaptor) dicatat dalam 1 baris.</p>
-          </div>
+            <Field label="No Surat Jalan">
+              <input className={`${inputClass} font-mono text-[13px]`} value={form.no_surat_jalan} onChange={set('no_surat_jalan')} />
+            </Field>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Tanggal Garansi</label>
-            <input
-              type="date"
-              value={form.tanggal_garansi}
-              onChange={set('tanggal_garansi')}
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-            />
-          </div>
+            <Field label="No Good Receive">
+              <input className={`${inputClass} font-mono text-[13px]`} value={form.no_good_receive} onChange={set('no_good_receive')} />
+            </Field>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Perusahaan</label>
-            <input
-              value={form.perusahaan}
-              onChange={set('perusahaan')}
-              placeholder="cth. mpk, uth"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Keterangan</label>
-            <div className="relative">
-              <textarea
-                value={form.keterangan}
-                onChange={set('keterangan')}
-                rows={2}
-                maxLength={KETERANGAN_MAX}
-                placeholder="cth. keadaan baik"
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-              <span className="pointer-events-none absolute bottom-2 right-2.5 text-[11px] text-slate-300">
-                {(form.keterangan ?? '').length}/{KETERANGAN_MAX}
-              </span>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Foto {inventory?.foto ? '(ganti, opsional)' : '(opsional)'}</label>
-            <input
-              type="file"
-              accept="image/png,image/jpeg,image/jpg"
-              onChange={(e) => setFoto(e.target.files?.[0] || null)}
-              className="w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 file:text-sm file:font-medium hover:file:bg-slate-200"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Supplier</label>
-            <select
-              value={form.supplier_id}
-              onChange={set('supplier_id')}
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
-            >
-              <option value="">Tanpa supplier</option>
-              {supplierOptions.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nama}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">No. Surat Jalan</label>
-              <input
-                value={form.no_surat_jalan}
-                onChange={set('no_surat_jalan')}
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">No. Good Receive</label>
-              <input
-                value={form.no_good_receive}
-                onChange={set('no_good_receive')}
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Tanggal Pembelian</label>
-            <input
-              type="date"
-              value={form.tanggal_pembelian}
-              onChange={set('tanggal_pembelian')}
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-            />
-          </div>
-
-          {!inventory && (
-            <p className="text-xs text-slate-400">Kode inventory (IT-tahun-nomor urut) akan dibuat otomatis oleh sistem.</p>
-          )}
-
-          <div className="pt-2 border-t border-slate-100">
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Kelengkapan</label>
-            {jumlahValid ? (
-              <InventoryKelengkapanPicker
-                staged={stagedKelengkapan}
-                onChange={setStagedKelengkapan}
-                existing={existingKelengkapan}
-                inventoryLabel={[form.merek, form.tipe].filter(Boolean).join(' ') || undefined}
-                presetInventoryId={inventory?.id}
-              />
-            ) : (
-              <p className="text-xs text-slate-400">Kelengkapan cuma bisa dipasang kalau Jumlah = 1 (barang serialized).</p>
+            {!inventory && (
+              <div className="sm:col-span-2">
+                <p className="text-xs text-slate-400">Kode inventory (IT-tahun-nomor urut) akan dibuat otomatis oleh sistem.</p>
+              </div>
             )}
-          </div>
-        </div>
+          </Section>
 
-        {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">{error}</p>
-        )}
-        </div>
+          {/* Section: Detail Tambahan */}
+          <Section
+            index={2}
+            title="Detail Tambahan"
+            subtitle="Catatan dan foto barang"
+            icon={
+              <path d="M2 12.5l3.3-3.3a1.4 1.4 0 012 0L10 11.9M8.7 10.6l1.6-1.6a1.4 1.4 0 012 0L14 10.7M2.5 3h11v10h-11V3z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            }
+          >
+            <div className="sm:col-span-2">
+              <Field label="Keterangan">
+                <div className="relative">
+                  <textarea
+                    className={`${inputClass} min-h-[80px] resize-none`}
+                    value={form.keterangan}
+                    maxLength={KETERANGAN_MAX}
+                    onChange={set('keterangan')}
+                    placeholder="cth. keadaan baik"
+                  />
+                  <span className="pointer-events-none absolute bottom-2 right-2.5 text-[11px] text-slate-300">
+                    {(form.keterangan ?? '').length}/{KETERANGAN_MAX}
+                  </span>
+                </div>
+              </Field>
+            </div>
+
+            <div className="sm:col-span-2">
+              <span className="block mb-1.5 text-sm font-medium text-slate-700">
+                Foto {inventory?.foto ? '(ganti, opsional)' : '(opsional)'}
+              </span>
+              <label
+                onDragOver={(e) => e.preventDefault()}
+                onDragEnter={handleFotoDragEnterUtama}
+                onDragLeave={handleFotoDragLeaveUtama}
+                onDrop={handleFotoDropUtama}
+                className={`flex items-center gap-4 rounded-xl border border-dashed p-3 cursor-pointer transition-all duration-150 ${
+                  isDraggingFotoUtama
+                    ? 'border-slate-900 bg-slate-900/[0.03] scale-[1.01]'
+                    : 'border-slate-300 hover:border-slate-400 bg-slate-50/50'
+                }`}
+              >
+                <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="sr-only" onChange={handleFotoChangeUtama} />
+                {fotoPreviewUtama ? (
+                  <img src={fotoPreviewUtama} alt="Preview foto inventory" className="h-16 w-16 object-cover rounded-lg border border-slate-200 shrink-0 shadow-sm" />
+                ) : (
+                  <div className={`grid h-16 w-16 place-items-center rounded-lg bg-slate-100 text-slate-400 shrink-0 transition-transform duration-150 ${isDraggingFotoUtama ? 'scale-110' : ''}`}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                      <path d="M4 16l4.6-4.6a2 2 0 0 1 2.8 0L16 16M13 13l1.6-1.6a2 2 0 0 1 2.8 0L20 14M4 6h16v14H4V6z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                )}
+                <div className="text-sm flex-1">
+                  <p className="font-medium text-slate-700">
+                    {isDraggingFotoUtama ? 'Lepas untuk unggah' : fotoPreviewUtama ? 'Ganti foto' : 'Unggah foto'}
+                  </p>
+                  <p className="text-slate-400 text-xs mt-0.5">Klik atau seret file ke sini · PNG/JPG/WEBP · maks {MAX_FOTO_MB}MB</p>
+                </div>
+                {fotoPreviewUtama && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      removeFotoUtama();
+                    }}
+                    className="text-xs text-red-600 hover:text-red-700 shrink-0 transition-colors"
+                  >
+                    Hapus
+                  </button>
+                )}
+              </label>
+              {fotoErrorUtama && <span className="block mt-1 text-xs text-red-600 animate-[fadeIn_120ms_ease-out]">{fotoErrorUtama}</span>}
+            </div>
+          </Section>
+
+          {/* Section: Kelengkapan */}
+          <Section
+            index={3}
+            title="Kelengkapan"
+            subtitle="Aksesoris yang menempel ke barang ini"
+            icon={
+              <path d="M3 6.5L8 3l5 3.5v5L8 15l-5-3.5v-5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            }
+          >
+            <div className="sm:col-span-2">
+              {jumlahValid ? (
+                <InventoryKelengkapanPicker
+                  staged={stagedKelengkapan}
+                  onChange={setStagedKelengkapan}
+                  existing={existingKelengkapan}
+                  inventoryLabel={[form.merek, form.tipe].filter(Boolean).join(' ') || undefined}
+                  presetInventoryId={inventory?.id}
+                />
+              ) : (
+                <p className="text-xs text-slate-400">Kelengkapan cuma bisa dipasang kalau Jumlah = 1 (barang serialized).</p>
+              )}
+            </div>
+          </Section>
+        </form>
 
         {/* Footer */}
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+            disabled={submitting}
+            className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
           >
             Batal
           </button>
           <button
-            onClick={handleSubmit}
+            type="submit"
+            form="inventory-utama-form"
             disabled={submitting}
-            className="px-4 py-2 text-sm rounded-lg bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 transition-colors inline-flex items-center gap-2"
+            className="px-4 py-2 text-sm rounded-lg bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 transition-all duration-150 inline-flex items-center gap-2"
           >
             {submitting && (
               <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -1369,7 +1474,8 @@ export default function InventoryFormModal({
 
       <style>{`
         @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(8px) scale(.98) } to { opacity: 1; transform: translateY(0) scale(1) } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px) scale(.98) } to { opacity: 1; transform: translateY(0) scale(1) } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: translateY(0) } }
       `}</style>
     </div>
   );
