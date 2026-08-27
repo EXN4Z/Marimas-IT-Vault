@@ -13,7 +13,10 @@ export interface InventoryPenanganan {
   id: number;
   inventory_id: number;
   inventory_pemakai_id: number | null;
-  jenis_kerusakan: 'software' | 'hardware';
+  // Barang Utama: 'hardware' | 'software'. Kelengkapan: 'tidak_berfungsi' |
+  // 'hancur' | 'terputus_sobek'. Dibiarkan string biasa (bukan union) karena
+  // opsinya tergantung kategori inventory -- lihat inventoryHelpers.ts.
+  jenis_kerusakan: string;
   keluhan: string;
   tanggal_lapor: string;
   // waktu kejadian akurat (jam-menit-detik lengkap) -- kolom tanggal_lapor
@@ -70,7 +73,7 @@ export async function getFotoKerusakanInventory(
 // Kelengkapan). `foto` WAJIB diisi (validasi backend: image, max 1MB).
 export async function laporKerusakanInventory(payload: {
   inventory_id: number;
-  jenis_kerusakan: 'software' | 'hardware';
+  jenis_kerusakan: string;
   keluhan: string;
   foto: File;
 }): Promise<InventoryPenanganan> {

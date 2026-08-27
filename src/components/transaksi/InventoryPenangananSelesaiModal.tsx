@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { selesaikanPenangananInventory } from '../../api/transaksi/inventoryPenanganan';
 import type { InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
 import type { Inventory } from '../../api/masterData/inventory';
+import { formatJenisKerusakan } from '../masterData/inventoryHelpers';
 
 interface Props {
   inventory: Inventory;
@@ -74,7 +75,7 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              {inventory.kode_inventory} · {penanganan.jenis_kerusakan} — {penanganan.keluhan}
+              {inventory.kode_inventory} · {formatJenisKerusakan(penanganan.jenis_kerusakan)} — {penanganan.keluhan}
             </p>
             <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
               <CheckCircle2 size={18} className="text-emerald-600" />

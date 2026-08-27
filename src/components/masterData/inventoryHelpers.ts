@@ -61,3 +61,33 @@ export function formatRupiah(n: number | null): string {
   if (n == null) return '-';
   return 'Rp ' + n.toLocaleString('id-ID');
 }
+
+// Opsi "Jenis Kerusakan" beda per kategori inventory. Barang Utama (laptop,
+// PC, dll) punya sisi software, jadi tetap Hardware/Software seperti dulu.
+// Kelengkapan (charger, tas, kabel, dll) gak punya sisi "software" sama
+// sekali, jadi dikasih opsi sendiri yang lebih masuk akal buat barang fisik.
+// Dipakai bareng-bareng sama InventoryLaporKerusakanModal (buat isi
+// dropdown) dan formatJenisKerusakan (buat nampilin label-nya balik).
+export const JENIS_KERUSAKAN_BARANG_UTAMA = [
+  { value: 'hardware', label: 'Hardware' },
+  { value: 'software', label: 'Software' },
+] as const;
+
+export const JENIS_KERUSAKAN_KELENGKAPAN = [
+  { value: 'tidak_berfungsi', label: 'Tidak Berfungsi' },
+  { value: 'hancur', label: 'Hancur' },
+  { value: 'terputus_sobek', label: 'Terputus/Sobek' },
+] as const;
+
+const JENIS_KERUSAKAN_LABEL_MAP: Record<string, string> = Object.fromEntries(
+  [...JENIS_KERUSAKAN_BARANG_UTAMA, ...JENIS_KERUSAKAN_KELENGKAPAN].map((o) => [o.value, o.label])
+);
+
+// Ubah value mentah (yang disimpan di kolom jenis_kerusakan, misal
+// "terputus_sobek") jadi label yang enak dibaca ("Terputus/Sobek"). Kalau
+// value-nya gak dikenal (data lama/aneh), tampilkan apa adanya biar gak
+// hilang informasinya.
+export function formatJenisKerusakan(value: string | null | undefined): string {
+  if (!value) return '-';
+  return JENIS_KERUSAKAN_LABEL_MAP[value] || value;
+}

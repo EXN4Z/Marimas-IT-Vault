@@ -15,7 +15,7 @@ import InventoryExportModal from './InventoryExportModal';
 import InventoryKelengkapanExportModal from './InventoryKelengkapanExportModal';
 import { useAuth } from '../../context/AuthContext';
 import { printStruk } from '../../utils/printStruk';
-import { namaPemakai, userIdPemakai, isCabangPemakai } from './inventoryHelpers';
+import { namaPemakai, userIdPemakai, isCabangPemakai, formatJenisKerusakan } from './inventoryHelpers';
 import {
   getInventory,
   getInventoryById,
@@ -391,7 +391,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
       tanggal: formatTanggalId(p.tanggal_selesai),
       rows: [
         { label: 'Inventory', value: `${inventory.kode_inventory} — ${inventory.nama || '-'}` },
-        { label: 'Jenis Kerusakan', value: p.jenis_kerusakan === 'hardware' ? 'Hardware' : 'Software' },
+        { label: 'Jenis Kerusakan', value: formatJenisKerusakan(p.jenis_kerusakan) },
         { label: 'Keluhan', value: p.keluhan },
         { label: 'Hasil', value: p.hasil || '-' },
         { label: 'Tanggal Lapor', value: formatTanggalId(p.tanggal_lapor) },
@@ -1551,8 +1551,8 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                                 {/* Dropdown detail — expand di tempat, gak buka modal/halaman baru */}
                                 {expanded && (
                                   <div className="mt-2 pt-2 border-t border-slate-200 flex flex-col gap-0.5">
-                                    <StatusBadge colorClass="bg-slate-200 text-slate-600" size="xs" className="mb-1 capitalize w-fit">
-                                      {p.jenis_kerusakan}
+                                    <StatusBadge colorClass="bg-slate-200 text-slate-600" size="xs" className="mb-1 w-fit">
+                                      {formatJenisKerusakan(p.jenis_kerusakan)}
                                     </StatusBadge>
                                     {p.hasil && <p className="text-slate-500">Hasil: {p.hasil}</p>}
                                     <p className="text-slate-400">

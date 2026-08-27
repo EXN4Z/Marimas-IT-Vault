@@ -4,7 +4,7 @@ import { X, Wrench, Printer, PlayCircle, Eye, ImageOff, Upload, Download, Loader
 import Pagination from '../components/shared/Pagination';
 import api from '../api/axios';
 import { terimaPenangananInventory, selesaikanPenangananInventory, getInventoryPenanganan, type InventoryPenanganan } from '../api/transaksi/inventoryPenanganan';
-import { formatTanggalId, namaPemakai } from '../components/masterData/inventoryHelpers';
+import { formatTanggalId, namaPemakai, formatJenisKerusakan } from '../components/masterData/inventoryHelpers';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import SearchInput from '../components/shared/SearchInput';
 import StatusBadge from '../components/shared/StatusBadge';
@@ -198,7 +198,7 @@ export default function PenangananInventory({ onCount }: Props) {
       tanggal: formatTanggalId(p.tanggal_selesai),
       rows: [
         { label: 'Inventory', value: p.inventory?.kode_inventory || '-' },
-        { label: 'Jenis Kerusakan', value: p.jenis_kerusakan === 'hardware' ? 'Hardware' : 'Software' },
+        { label: 'Jenis Kerusakan', value: formatJenisKerusakan(p.jenis_kerusakan) },
         { label: 'Keluhan', value: p.keluhan },
         { label: 'Hasil', value: p.hasil || '-' },
         { label: 'Tanggal Lapor', value: formatTanggalId(p.tanggal_lapor) },
@@ -373,7 +373,7 @@ export default function PenangananInventory({ onCount }: Props) {
                     <tr key={p.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                       <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{p.inventory?.kode_inventory}</td>
                       <td className="px-4 py-3 text-slate-600 max-w-[220px]">
-                        <p className="font-medium text-slate-800 truncate">{p.jenis_kerusakan}</p>
+                        <p className="font-medium text-slate-800 truncate">{formatJenisKerusakan(p.jenis_kerusakan)}</p>
                       </td>
                       <td className="px-4 py-3 text-slate-600 max-w-[160px]">
                         <p className="truncate" title={namaPemakai(p.pemakai)}>{namaPemakai(p.pemakai)}</p>
@@ -433,7 +433,7 @@ export default function PenangananInventory({ onCount }: Props) {
                   Dilaporkan oleh <span className="font-medium">{namaPemakai(p.pemakai)}</span> · {formatTanggalId(p.tanggal_lapor)}
                 </p>
                 <p className="text-sm text-slate-700 mt-2">
-                  <span className="font-medium">{p.jenis_kerusakan}</span> — {p.keluhan}
+                  <span className="font-medium">{formatJenisKerusakan(p.jenis_kerusakan)}</span> — {p.keluhan}
                 </p>
 
                 {/* Aksi proses (Terima Laporan / Tandai Selesai) admin-only --
@@ -566,7 +566,7 @@ function TerimaLaporanModal({
 
         <div className="text-sm text-slate-600 bg-slate-50 rounded-lg p-4 flex flex-col gap-2 mb-4">
           <p><span className="font-medium text-slate-800">Inventory:</span> {penanganan.inventory?.kode_inventory || '-'}</p>
-          <p><span className="font-medium text-slate-800">Jenis Kerusakan:</span> {penanganan.jenis_kerusakan}</p>
+          <p><span className="font-medium text-slate-800">Jenis Kerusakan:</span> {formatJenisKerusakan(penanganan.jenis_kerusakan)}</p>
           <p><span className="font-medium text-slate-800">Keluhan:</span> {penanganan.keluhan}</p>
           <p><span className="font-medium text-slate-800">Dilaporkan Oleh:</span> {namaPemakai(penanganan.pemakai)}</p>
           <p><span className="font-medium text-slate-800">Tanggal Lapor:</span> {formatTanggalId(penanganan.tanggal_lapor)}</p>
@@ -628,7 +628,7 @@ function DetailPenangananModal({
         )}
 
         <p className="text-xs text-slate-400 mb-4">
-          {penanganan.inventory?.kode_inventory} · {penanganan.jenis_kerusakan} — {penanganan.keluhan}
+          {penanganan.inventory?.kode_inventory} · {formatJenisKerusakan(penanganan.jenis_kerusakan)} — {penanganan.keluhan}
         </p>
 
         <div className="text-sm text-slate-600 bg-slate-50 rounded-lg p-4 flex flex-col gap-2">
@@ -727,7 +727,7 @@ function FormPerbaikanModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              {penanganan.inventory?.kode_inventory} · {penanganan.jenis_kerusakan} — {penanganan.keluhan}
+              {penanganan.inventory?.kode_inventory} · {formatJenisKerusakan(penanganan.jenis_kerusakan)} — {penanganan.keluhan}
             </p>
             <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
               <Wrench size={18} className="text-emerald-600" />

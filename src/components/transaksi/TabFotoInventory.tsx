@@ -5,7 +5,7 @@ import ScrollableTabBar, { type ScrollableTabItem } from '../shared/ScrollableTa
 import SearchInput from '../shared/SearchInput';
 import { getFotoPemakaiInventory, type FotoPemakaiEntry } from '../../api/transaksi/inventoryPemakai';
 import { getFotoKerusakanInventory, type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
-import { namaPemakai, formatTanggalWaktuId } from '../masterData/inventoryHelpers';
+import { namaPemakai, formatTanggalWaktuId, formatJenisKerusakan } from '../masterData/inventoryHelpers';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 const PER_PAGE = 10;
@@ -258,7 +258,7 @@ export default function TabFotoInventory({}: Props) {
                     <p className="truncate" title={namaPemakai(p.pemakai)}>{namaPemakai(p.pemakai)}</p>
                   </td>
                   <td className="px-4 py-3 text-slate-600 max-w-[200px]">
-                    <p className="font-medium text-slate-800 truncate">{p.jenis_kerusakan}</p>
+                    <p className="font-medium text-slate-800 truncate">{formatJenisKerusakan(p.jenis_kerusakan)}</p>
                     <p className="text-xs text-slate-400 truncate">{p.keluhan}</p>
                   </td>
                   <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(p.lapor_at, p.tanggal_lapor)}</td>

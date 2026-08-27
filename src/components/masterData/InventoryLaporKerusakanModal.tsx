@@ -3,6 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import { laporKerusakanInventory } from '../../api/transaksi/inventoryPenanganan';
 import type { Inventory } from '../../api/masterData/inventory';
 import InventoryFotoUpload from './InventoryFotoUpload';
+import { JENIS_KERUSAKAN_BARANG_UTAMA, JENIS_KERUSAKAN_KELENGKAPAN } from './inventoryHelpers';
 
 interface Props {
   inventory: Inventory;
@@ -11,7 +12,12 @@ interface Props {
 }
 
 export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuccess }: Props) {
-  const [jenisKerusakan, setJenisKerusakan] = useState<'' | 'hardware' | 'software'>('');
+  // Kelengkapan (charger, tas, kabel, dll) gak punya sisi "software" sama
+  // sekali, jadi dikasih daftar opsi sendiri -- bukan Hardware/Software.
+  const isKelengkapan = inventory.kategori?.nama === 'Kelengkapan';
+  const opsiJenisKerusakan = isKelengkapan ? JENIS_KERUSAKAN_KELENGKAPAN : JENIS_KERUSAKAN_BARANG_UTAMA;
+
+  const [jenisKerusakan, setJenisKerusakan] = useState('');
   const [keluhan, setKeluhan] = useState('');
   const [fotoKerusakan, setFotoKerusakan] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -31,15 +37,15 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
     try {
       await laporKerusakanInventory({
         inventory_id: inventory.id,
-        // sudah divalidasi non-kosong di atas (!jenisKerusakan.trim()), aman di-assert ke union type
-        jenis_kerusakan: jenisKerusakan as 'hardware' | 'software',
+        jenis_kerusakan: jenisKerusakan,
         keluhan: keluhan.trim(),
         foto: fotoKerusakan[0], // ambil 1 file pertama, sesuai kolom foto di backend
       });
       onSuccess();
     } catch (err: any) {
       setError(
-        err.response?.data?.errors?.foto?.[0] ||
+        err.response?.data?.errors?.jenis_kerusakan?.[0] ||
+          err.response?.data?.errors?.foto?.[0] ||
           err.response?.data?.message ||
           'Gagal mengirim laporan. Coba lagi.'
       );
@@ -86,12 +92,15 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
             <label className="block text-sm font-medium text-slate-700 mb-1">Jenis Kerusakan</label>
             <select
               value={jenisKerusakan}
-              onChange={(e) => setJenisKerusakan(e.target.value as '' | 'hardware' | 'software')}
+              onChange={(e) => setJenisKerusakan(e.target.value)}
               className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
             >
               <option value="">Pilih jenis...</option>
-              <option value="hardware">Hardware</option>
-              <option value="software">Software</option>
+              {opsiJenisKerusakan.map((opsi) => (
+                <option key={opsi.value} value={opsi.value}>
+                  {opsi.label}
+                </option>
+              ))}
             </select>
           </div>
           <div>

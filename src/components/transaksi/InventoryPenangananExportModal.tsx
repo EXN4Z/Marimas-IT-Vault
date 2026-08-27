@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FileSpreadsheet, FileText, X, CheckSquare, Square } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
-import { formatTanggalId, namaPemakai, formatRupiah } from '../masterData/inventoryHelpers';
+import { formatTanggalId, namaPemakai, formatRupiah, formatJenisKerusakan } from '../masterData/inventoryHelpers';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
 
@@ -31,7 +31,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
     key: 'jenis_kerusakan',
     label: 'Jenis Kerusakan',
     defaultChecked: true,
-    get: (p) => (p.jenis_kerusakan === 'hardware' ? 'Hardware' : 'Software'),
+    get: (p) => formatJenisKerusakan(p.jenis_kerusakan),
   },
   { key: 'keluhan', label: 'Keluhan', defaultChecked: true, get: (p) => p.keluhan || '-' },
   { key: 'pelapor', label: 'Pelapor', defaultChecked: true, get: (p) => namaPemakai(p.pemakai) },
