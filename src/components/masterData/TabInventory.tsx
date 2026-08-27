@@ -626,7 +626,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
               setRusakTarget(a);
             }}
             title="Lapor Rusak"
-            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+            className="p-2 text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition"
           >
             <AlertTriangle size={15} />
           </button>
