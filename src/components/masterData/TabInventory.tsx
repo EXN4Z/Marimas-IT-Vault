@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Download, AlertTriangle, MapPin, Link2 } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Download, MapPin, Link2 } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
@@ -25,7 +25,6 @@ import {
   type Inventory,
   type InventoryStatus,
 } from '../../api/masterData/inventory';
-import { laporRusakKelengkapan } from '../../api/transaksi/inventoryKelengkapan';
 import { deletePemakaiInventory, type InventoryPemakai } from '../../api/transaksi/inventoryPemakai';
 import { deletePenangananInventory, terimaPenangananInventory, type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
 import { getSupplier, type Supplier } from '../../api/masterData/supplier';
@@ -121,9 +120,6 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
   // BARU: Lapor Rusak Kelengkapan -- dipindah dari TabKelengkapanInventory.tsx.
   // Final, gak bisa dibatalin (kelengkapan dilepas otomatis dari induk & pindah
   // ke status 'rusak').
-  const [rusakTarget, setRusakTarget] = useState<Inventory | null>(null);
-  const [rusakSubmitting, setRusakSubmitting] = useState(false);
-  const [rusakError, setRusakError] = useState('');
 
   // BARU: Export -- 1 tombol, modalnya nyesuain isi export sama kategori yang
   // lagi aktif difilter (InventoryExportModal buat Barang Utama/Semua,
@@ -585,25 +581,12 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
     }
   };
 
-  // BARU (dipindah dari TabKelengkapanInventory.tsx): submit Lapor Rusak Kelengkapan.
-  const confirmRusak = async () => {
-    if (!rusakTarget) return;
-    setRusakSubmitting(true);
-    setRusakError('');
-    try {
-      await laporRusakKelengkapan(rusakTarget.id);
-      setRusakTarget(null);
-      loadList(); // refresh -- item pindah ke status 'rusak', lepas dari induk (kalau ada)
-      toast.success(`${rusakTarget.kode_inventory} dilaporkan rusak.`);
-    } catch (err: any) {
-      setRusakError(err.response?.data?.message || 'Gagal melaporkan kerusakan.');
-    } finally {
-      setRusakSubmitting(false);
-    }
-  };
-
   // Aksi buat baris Kelengkapan yang MASIH NEMPEL ke induk (parent_id
-  // terisi) -- Lapor Rusak (admin, status tersedia/dipakai), Edit, Hapus.
+  // terisi) -- Lapor Kerusakan (admin, status tersedia/dipakai; lewat modal
+  // InventoryLaporKerusakanModal + alur InventoryPenanganan yang sama kaya
+  // Barang Utama -- kalau hasilnya "diperbaiki" tetap nempel ke induk, kalau
+  // "rusak_berat" backend otomatis copot parent_id + kembaliin pemakaian
+  // aktif, lihat InventoryPenangananController::update()), Edit, Hapus.
   // TIDAK ada Detail/Serah Terima/Terima Kembali/Jual (kelengkapan yang
   // nempel gak ikut alur peminjaman perorangan -- dia ikut serah-terima/
   // kembali BARENG induknya lewat form Barang Utama, bukan sendiri-sendiri).
@@ -612,24 +595,28 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
   //
   // Kelengkapan yang BERDIRI SENDIRI (parent_id null) sudah TIDAK lewat sini
   // lagi -- dia dispatch ke renderAksiInventory yang sama kaya Barang Utama
-  // (lihat renderAksi di bawah), termasuk buat Lapor Rusak-nya (sekarang
-  // lewat alur InventoryPenanganan, bukan endpoint instan
-  // lapor-rusak-kelengkapan yang dipakai fungsi ini).
+  // (lihat renderAksi di bawah).
   const renderAksiKelengkapan = (a: Inventory) => {
     if (!isAdmin) return null;
     return (
       <>
         {(a.status === 'tersedia' || a.status === 'dipakai') && (
           <button
-            onClick={() => {
-              setRusakError('');
-              setRusakTarget(a);
-            }}
-            title="Lapor Rusak"
+            onClick={() => setPerbaikanInventoryTarget(a)}
+            title="Lapor Kerusakan"
             className="p-2 text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition"
           >
-            <AlertTriangle size={15} />
+            <Wrench size={15} />
           </button>
+        )}
+        {(a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak_berat') && (
+          <span
+            title="Laporan kerusakan sudah dikirim, menunggu/sedang ditangani"
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg cursor-default"
+          >
+            <Wrench size={14} />
+            Sudah Lapor
+          </span>
         )}
         <button
           onClick={() => {
@@ -1188,46 +1175,10 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         <InventoryExportModal open={exportOpen} onClose={() => setExportOpen(false)} data={filteredInventory} />
       )}
 
-      {/* BARU: KONFIRMASI LAPOR RUSAK KELENGKAPAN (dipindah dari
-          TabKelengkapanInventory.tsx) — final, gak bisa dibatalin setelah confirm */}
-      {rusakTarget && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] px-4">
-          <div className="bg-white rounded-xl w-full max-w-sm p-5">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle size={18} className="text-red-600 shrink-0" />
-              <h2 className="text-base font-semibold text-slate-900">Lapor kelengkapan rusak?</h2>
-            </div>
-            <p className="text-sm text-slate-500 mb-3">
-              <span className="font-medium text-slate-700">{rusakTarget.kode_inventory}</span> — Kelengkapan
-              ini beneran rusak? Setelah dilaporkan, gak bisa dibatalin.
-            </p>
-            {rusakError && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
-                {rusakError}
-              </p>
-            )}
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setRusakTarget(null);
-                  setRusakError('');
-                }}
-                disabled={rusakSubmitting}
-                className="text-sm px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
-              >
-                Batal
-              </button>
-              <button
-                onClick={confirmRusak}
-                disabled={rusakSubmitting}
-                className="text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                {rusakSubmitting ? 'Melaporkan...' : 'Ya, Lapor Rusak'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Konfirmasi Lapor Rusak Kelengkapan lama (instan/final) sudah
+          dihapus -- kelengkapan yang nempel ke induk sekarang lapor
+          kerusakan lewat InventoryLaporKerusakanModal yang sama kaya Barang
+          Utama, lihat renderAksiKelengkapan di atas. */}
 
       {/* DETAIL ASET — disembunyiin sementara kalau ada modal aksi (serah-terima,
           terima kembali, jual, dst) yang kebuka di atasnya, biar gak numpuk 2
