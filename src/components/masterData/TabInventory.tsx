@@ -687,20 +687,18 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
               <button
                 onClick={() => setSerahTerimaInventory(a)}
                 title="Serahkan ke Karyawan"
-                className="flex items-center gap-1.5 text-xs font-semibold text-white bg-slate-900 px-3 py-2 rounded-lg hover:bg-slate-800 transition"
+                className="p-2 text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition"
               >
-                <HandCoins size={14} />
-                Serahkan
+                <HandCoins size={15} />
               </button>
             )}
             {a.status === 'dipakai' && a.pemakai_saat_ini && (
               <button
                 onClick={() => setPengembalianTarget({ inventory: a, pemakai: a.pemakai_saat_ini! })}
                 title="Terima Kembali"
-                className="flex items-center gap-1.5 text-xs font-semibold text-white bg-emerald-600 px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
+                className="p-2 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition"
               >
-                <Undo2 size={14} />
-                Terima Kembali
+                <Undo2 size={15} />
               </button>
             )}
             <button
@@ -742,10 +740,9 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
           <button
             onClick={() => setPerbaikanInventoryTarget(a)}
             title="Lapor Kerusakan"
-            className="flex items-center gap-1.5 text-xs font-semibold text-red-700 bg-red-50 px-3 py-2 rounded-lg hover:bg-red-100 transition"
+            className="p-2 text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition"
           >
-            <Wrench size={14} />
-            Lapor Rusak
+            <Wrench size={15} />
           </button>
         )}
         {!isAdmin && akuPeminjamnya && (a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak_berat') && (
