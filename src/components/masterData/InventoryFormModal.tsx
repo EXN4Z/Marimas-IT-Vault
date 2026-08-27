@@ -426,30 +426,20 @@ export default function InventoryFormModal({
     );
   }, [inventoryOptions, inventorySearch]);
 
-  // Kelengkapan berstatus "tersedia" gak boleh masih nempel ke inventory induk
-  // (inventory induk cuma relevan kalau kelengkapan lagi dipakai/menempel ke
-  // sesuatu). Dipakai buat nonaktifkan field Inventory Induk di UI.
-  const inventoryIndukDisabled = kForm.status === 'tersedia';
+  // Inventory Induk (parent_id) mewakili hubungan FISIK antar barang ("mouse
+  // ini kepunyaan laptop yang mana") -- ini independen dari status
+  // pinjam-meminjam. Kombinasi paling umum justru: kelengkapan baru dibuat
+  // dalam status "Tersedia" SEKALIGUS langsung ditempelkan ke inventory
+  // induknya (keduanya masih di gudang, belum ada yang pinjam). Begitu induk
+  // dipinjamkan nanti, backend sendiri yang otomatis nurunin status
+  // kelengkapan yang masih 'tersedia' jadi 'dipakai' (lihat
+  // InventoryPemakaiController::store()). Jadi field ini TIDAK pernah
+  // di-disable berdasarkan status.
+  const inventoryIndukDisabled = false;
 
   function setKField<K extends keyof KelengkapanFormValues>(key: K, value: KelengkapanFormValues[K]) {
     setKForm((prev) => ({ ...prev, [key]: value }));
     if (kErrors[key]) setKErrors((prev) => ({ ...prev, [key]: '' }));
-  }
-
-  // Ganti status kelengkapan. Begitu status jadi "tersedia", parent_id ikut
-  // dikosongkan otomatis (lihat inventoryIndukDisabled) — dan dropdown/pencarian
-  // inventory induk yang mungkin lagi kebuka juga ditutup.
-  function pilihStatus(status: InventoryStatus) {
-    setKForm((prev) => ({
-      ...prev,
-      status,
-      parent_id: status === 'tersedia' ? null : prev.parent_id,
-    }));
-    if (kErrors.status) setKErrors((prev) => ({ ...prev, status: '' }));
-    if (status === 'tersedia' && inventoryDropdownOpen) {
-      setInventoryDropdownOpen(false);
-      setInventorySearch('');
-    }
   }
 
   // Inventory induk & lokasi kantor saling meniadakan — kelengkapan yang nempel
@@ -516,7 +506,6 @@ export default function InventoryFormModal({
   function validateKelengkapan(): boolean {
     const next: Record<string, string> = {};
     if (!kForm.nama?.trim()) next.nama = 'Nama wajib diisi';
-    if (!kForm.status) next.status = 'Status wajib dipilih';
     if (kForm.tanggal_pembelian && kForm.tanggal_garansi && kForm.tanggal_garansi < kForm.tanggal_pembelian) {
       next.tanggal_garansi = 'Tanggal garansi tidak boleh sebelum tanggal pembelian';
     }
@@ -916,9 +905,7 @@ export default function InventoryFormModal({
                   <p className="mt-1 text-xs text-slate-400">
                     {presetInventoryId || lockInventoryField
                       ? 'Otomatis terisi dari inventory yang lagi diedit/dibuat — kelengkapan baru ini akan langsung nempel ke inventory tersebut.'
-                      : inventoryIndukDisabled
-                      ? 'Nonaktif — kelengkapan berstatus "Tersedia" tidak bisa terikat ke inventory induk.'
-                      : 'Opsional — pilih kalau kelengkapan ini menempel ke inventory tertentu (mis. mouse ini punya laptop yang mana).'}
+                      : 'Opsional — pilih kalau kelengkapan ini menempel ke inventory tertentu (mis. mouse ini punya laptop yang mana). Boleh diisi walau kelengkapannya masih Tersedia; begitu induknya dipinjamkan, ini bakal ikut otomatis.'}
                   </p>
                 </Field>
               </div>
@@ -951,40 +938,29 @@ export default function InventoryFormModal({
                 />
               </Field>
 
-              <Field label="Status" error={kErrors.status} required>
-                <div className="grid grid-cols-2 gap-2">
-                  {STATUS_OPTIONS.map((s) => {
-                    const active = kForm.status === s.value;
+              {/* Status BUKAN field yang bisa diisi manual di sini -- perubahan
+                  status kelengkapan (tersedia/dipakai/rusak) selalu lewat
+                  transaksi (pinjamkan, kembalikan, lapor rusak), gak pernah
+                  lewat form create/update ini (lihat handleSubmitKelengkapan,
+                  field 'status' dibuang sebelum dikirim). Waktu create, status
+                  awal SELALU 'tersedia' (default kolom di DB) -- jadi gak ada
+                  yang perlu ditampilkan. Waktu edit, tampilin status
+                  saat-ini sebagai info read-only aja, biar gak kesan bisa
+                  diubah dari sini. */}
+              {inventory && (
+                <Field label="Status saat ini">
+                  {(() => {
+                    const s = STATUS_OPTIONS.find((o) => o.value === kForm.status);
                     return (
-                      <label
-                        key={s.value}
-                        className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer transition-all duration-150 active:scale-[0.98] ${
-                          active
-                            ? `${s.ring} ring-4 text-slate-900 font-medium`
-                            : 'border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'
-                        }`}
-                      >
-                        <span className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            name="status"
-                            className="sr-only"
-                            checked={active}
-                            onChange={() => pilihStatus(s.value)}
-                          />
-                          <span className={`h-1.5 w-1.5 rounded-full ${s.dot} transition-transform duration-150 ${active ? 'scale-125' : ''}`} />
-                          {s.label}
-                        </span>
-                        {active && (
-                          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" className="text-slate-900 animate-[fadeIn_120ms_ease-out]">
-                            <path d="M3 8.5l3 3 7-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                      </label>
+                      <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                        <span className={`h-1.5 w-1.5 rounded-full ${s?.dot || 'bg-slate-400'}`} />
+                        <span className="font-medium">{s?.label || kForm.status}</span>
+                        <span className="ml-auto text-xs text-slate-400">Ubah lewat pinjam/kembalikan/lapor rusak</span>
+                      </div>
                     );
-                  })}
-                </div>
-              </Field>
+                  })()}
+                </Field>
+              )}
 
               <Field label="Warna">
                 <input className={inputClass} value={kForm.warna} onChange={(e) => setKField('warna', e.target.value)} placeholder="cth. Hitam" />
