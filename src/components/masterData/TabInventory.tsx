@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Download, MapPin, Link2 } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Download, MapPin, Link2, Unlink } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
@@ -10,6 +10,7 @@ import InventoryFormModal from './InventoryFormModal';
 import InventorySerahTerimaModal from './InventorySerahTerimaModal';
 import InventoryPengembalianModal from './InventoryPengembalianModal';
 import InventoryLaporKerusakanModal from './InventoryLaporKerusakanModal';
+import InventoryLepasDariIndukModal from './InventoryLepasDariIndukModal';
 import InventoryPenangananSelesaiModal from '../transaksi/InventoryPenangananSelesaiModal';
 import InventoryExportModal from './InventoryExportModal';
 import InventoryKelengkapanExportModal from './InventoryKelengkapanExportModal';
@@ -167,6 +168,10 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
   const [jualTarget, setJualTarget] = useState<Inventory | null>(null);
   const [jualLoading, setJualLoading] = useState(false);
   const [jualError, setJualError] = useState('');
+
+  // BARU (3B): state untuk aksi "Lepas dari Induk" — muncul di baris tabel
+  // kelengkapan yang masih nempel (parent_id terisi) & di panel detail children.
+  const [lepasTarget, setLepasTarget] = useState<Inventory | null>(null);
 
   // PINDAHAN dari Inventaris.tsx: Import Excel data inventory (bulk import: inventory +
   // jenis + supplier + kelengkapan) — sekarang ditaruh di sini biar aksinya
@@ -617,6 +622,19 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
             <Wrench size={14} />
             Sudah Lapor
           </span>
+        )}
+        {/* BARU (3B): Lepas dari Induk — muncul kalau kelengkapan masih nempel (parent_id terisi).
+            Kondisi a.parent_id pasti terisi di sini karena renderAksiKelengkapan hanya
+            dipanggil dari renderAksi kalau a.parent_id truthy, tapi tetap dipakai
+            kondisi ini sebagai defensive check. */}
+        {a.parent_id && (
+          <button
+            onClick={() => setLepasTarget(a)}
+            title="Lepas dari Induk"
+            className="p-2 text-amber-600 bg-amber-50 rounded-lg hover:bg-amber-100 transition"
+          >
+            <Unlink size={15} />
+          </button>
         )}
         <button
           onClick={() => {
@@ -1188,7 +1206,8 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         !pengembalianTarget &&
         !perbaikanInventoryTarget &&
         !penangananSelesaiTarget &&
-        !jualTarget && (
+        !jualTarget &&
+        !lepasTarget && (
         <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
@@ -1296,12 +1315,23 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                                 {k.serial_number ? ` · S/N: ${k.serial_number}` : ''}
                               </p>
                             </div>
-                            <StatusBadge
-                              colorClass={STATUS_STYLE[k.status] || 'bg-slate-100 text-slate-600'}
-                              className="shrink-0"
-                            >
-                              {STATUS_LABEL[k.status] || k.status}
-                            </StatusBadge>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <StatusBadge
+                                colorClass={STATUS_STYLE[k.status] || 'bg-slate-100 text-slate-600'}
+                              >
+                                {STATUS_LABEL[k.status] || k.status}
+                              </StatusBadge>
+                              {/* BARU (3B): Tombol Lepas per baris child — admin only */}
+                              {isAdmin && (
+                                <button
+                                  onClick={() => setLepasTarget(k)}
+                                  title="Lepas dari Induk"
+                                  className="p-1.5 rounded-md text-amber-600 hover:bg-amber-100 transition"
+                                >
+                                  <Unlink size={14} />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1335,15 +1365,31 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                     {/* Tombol Jual Inventory di panel detail (ikon mata) — muncul buat status
                         tersedia ATAU rusak_berat. Sekarang ini SATU-SATUNYA tempat aksi
                         jual bisa dipicu (nggak ada lagi tombol cepat di baris tabel). */}
-                    {(detail.status === 'tersedia' || detail.status === 'rusak_berat') && (
-                      <button
-                        onClick={() => openJual(detail)}
-                        className="flex items-center gap-1.5 bg-purple-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-purple-700 transition"
-                      >
-                        <Tag size={14} />
-                        Jual Inventory
-                      </button>
-                    )}
+                    {(detail.status === 'tersedia' || detail.status === 'rusak_berat') && (() => {
+                      // BARU (3B): disable kalau masih ada relasi induk-child —
+                      // backend jual() sudah nolak juga (defensive), ini cuma
+                      // biar admin gak perlu buka modal dulu buat tau alasannya.
+                      const adaChild = (detail.children?.length ?? 0) > 0;
+                      const adaParent = !!detail.parent_id;
+                      const tidakBisaDijual = adaChild || adaParent;
+                      const tooltipJual = adaChild
+                        ? 'Lepas kelengkapan yang menempel dulu sebelum menjual item ini.'
+                        : adaParent
+                        ? 'Item ini masih menempel ke induk.'
+                        : undefined;
+
+                      return (
+                        <button
+                          onClick={() => !tidakBisaDijual && openJual(detail)}
+                          disabled={tidakBisaDijual}
+                          title={tooltipJual}
+                          className="flex items-center gap-1.5 bg-purple-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-purple-700 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-purple-600"
+                        >
+                          <Tag size={14} />
+                          Jual Inventory
+                        </button>
+                      );
+                    })()}
                   </div>
                 )}
 
@@ -1650,6 +1696,23 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
           onClose={() => setPenangananSelesaiTarget(null)}
           onSuccess={() => {
             setPenangananSelesaiTarget(null);
+            loadList();
+            if (detailId) refreshDetail();
+          }}
+        />
+      )}
+
+      {/* BARU (3B): Modal Lepas dari Induk — dipicu dari baris tabel
+          (renderAksiKelengkapan) maupun tombol Lepas di panel detail children.
+          onSuccess: refresh list + detail (parent berubah karena child-nya
+          berkurang), tutup modal, tampilkan toast. */}
+      {lepasTarget && (
+        <InventoryLepasDariIndukModal
+          inventory={lepasTarget}
+          onClose={() => setLepasTarget(null)}
+          onSuccess={(updated) => {
+            setLepasTarget(null);
+            toast.success(`${updated.kode_inventory} berhasil dilepas dari induk.`);
             loadList();
             if (detailId) refreshDetail();
           }}

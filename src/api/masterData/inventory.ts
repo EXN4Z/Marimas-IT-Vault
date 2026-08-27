@@ -162,6 +162,18 @@ export async function jualInventory(id: number): Promise<Inventory> {
   return res.data;
 }
 
+// POST /inventory/{id}/lepas-dari-induk — lepas kelengkapan dari induknya secara manual.
+// Hanya bisa dipanggil oleh admin. `status_baru` wajib diisi, `keterangan` opsional.
+export type StatusLepasDariInduk = 'tersedia' | 'rusak' | 'rusak_berat' | 'menunggu_perbaikan' | 'diperbaiki';
+
+export async function lepasDariIndukInventory(
+  id: number,
+  payload: { status_baru: StatusLepasDariInduk; keterangan?: string }
+): Promise<Inventory> {
+  const res = await api.post<Inventory>(`/inventory/${id}/lepas-dari-induk`, payload);
+  return res.data;
+}
+
 // POST /inventory/import — import massal dari file Excel (.xlsx/.xls),
 // dibatasi backend ke role admin.
 export async function importInventory(file: File): Promise<{ success: boolean; message: string }> {
