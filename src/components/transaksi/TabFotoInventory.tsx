@@ -139,11 +139,11 @@ export default function TabFotoInventory({}: Props) {
   const prevPhoto = () =>
     setModalPhotos((m) => (m ? { ...m, index: (m.index - 1 + m.photos.length) % m.photos.length } : m));
 
-  const inventoryLabel = (inventory?: { kode_inventory: string; merek: string | null; tipe: string | null } | null) => (
+  const inventoryLabel = (inventory?: { kode_inventory: string; nama: string | null } | null) => (
     <>
       <p className="font-medium text-slate-800">{inventory?.kode_inventory || '-'}</p>
       <p className="text-xs text-slate-400 truncate max-w-[160px]">
-        {[inventory?.merek, inventory?.tipe].filter(Boolean).join(' ') || '-'}
+        {inventory?.nama || '-'}
       </p>
     </>
   );
@@ -303,7 +303,7 @@ export default function TabFotoInventory({}: Props) {
       <SearchInput
         value={currentSearch}
         onChange={handleSearchChange}
-        placeholder="Cari kode inventory, merek, atau tipe..."
+        placeholder="Cari kode inventory atau nama..."
         className="mb-4"
       />
 

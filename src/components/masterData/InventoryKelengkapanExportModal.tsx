@@ -29,7 +29,7 @@ interface ExportColumn {
 const EXPORT_COLUMNS: ExportColumn[] = [
   { key: 'kode_kelengkapan', label: 'Kode Kelengkapan', defaultChecked: true, get: (k) => k.kode_inventory },
   { key: 'nama', label: 'Nama', defaultChecked: true, get: (k) => k.nama || '-' },
-  { key: 'merek_tipe', label: 'Merek/Tipe', defaultChecked: true, get: (k) => [k.merek, k.tipe].filter(Boolean).join(' ') || '-' },
+  { key: 'nama', label: 'Nama', defaultChecked: true, get: (k) => k.nama || '-' },
   { key: 'warna', label: 'Warna', defaultChecked: false, get: (k) => k.warna || '-' },
   { key: 'serial_number', label: 'Serial Number', defaultChecked: true, get: (k) => k.serial_number || '-' },
   { key: 'inventory_induk', label: 'Inventory Induk', defaultChecked: true, get: (k) => k.parent?.kode_inventory || '-' },

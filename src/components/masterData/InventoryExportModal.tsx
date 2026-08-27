@@ -31,8 +31,7 @@ interface ExportColumn {
 
 const EXPORT_COLUMNS: ExportColumn[] = [
   { key: 'kode_inventory', label: 'Kode Inventory', defaultChecked: true, get: (a) => a.kode_inventory },
-  { key: 'merek', label: 'Nama/Merek', defaultChecked: true, get: (a) => a.merek || '-' },
-  { key: 'tipe', label: 'Tipe', defaultChecked: true, get: (a) => a.tipe || '-' },
+  { key: 'nama', label: 'Nama', defaultChecked: true, get: (a) => a.nama || '-' },
   { key: 'warna', label: 'Warna', defaultChecked: false, get: (a) => a.warna || '-' },
   { key: 'serial_number', label: 'Serial Number', defaultChecked: true, get: (a) => a.serial_number || '-' },
   { key: 'jumlah', label: 'Jumlah', defaultChecked: true, get: (a) => String(a.jumlah ?? 1) },

@@ -52,7 +52,7 @@ export default function InventoryKelengkapanPicker({ staged, onChange, existing,
     if (stagedStokIds.has(k.id)) return false;
     const q = stokSearch.trim().toLowerCase();
     if (!q) return true;
-    return [k.kode_inventory, k.nama, k.merek].filter(Boolean).join(' ').toLowerCase().includes(q);
+    return [k.kode_inventory, k.nama].filter(Boolean).join(' ').toLowerCase().includes(q);
   });
 
   function tambahDariStok(k: Inventory) {
@@ -73,7 +73,7 @@ export default function InventoryKelengkapanPicker({ staged, onChange, existing,
               <div key={k.id} className="flex items-center justify-between gap-3 bg-slate-50 rounded-lg px-3 py-2 text-sm">
                 <div className="min-w-0">
                   <p className="text-slate-700 font-medium truncate">
-                    {k.nama || [k.merek, k.tipe].filter(Boolean).join(' ') || k.kode_inventory}
+                    {k.nama || k.kode_inventory}
                   </p>
                   <p className="text-xs text-slate-400 truncate">{k.kode_inventory}</p>
                 </div>
@@ -93,8 +93,8 @@ export default function InventoryKelengkapanPicker({ staged, onChange, existing,
                 <div className="min-w-0">
                   <p className="text-slate-800 font-medium truncate">
                     {s.type === 'stok'
-                      ? s.item.nama || [s.item.merek, s.item.tipe].filter(Boolean).join(' ') || s.item.kode_inventory
-                      : s.values.nama || s.values.merek || 'Kelengkapan baru'}
+                      ? s.item.nama || s.item.kode_inventory
+                      : s.values.nama || 'Kelengkapan baru'}
                   </p>
                   <p className="text-xs text-slate-400 truncate">
                     {s.type === 'stok' ? `Dari stok · ${s.item.kode_inventory}` : 'Baru'}
@@ -144,7 +144,7 @@ export default function InventoryKelengkapanPicker({ staged, onChange, existing,
                 type="text"
                 value={stokSearch}
                 onChange={(e) => setStokSearch(e.target.value)}
-                placeholder="Cari kode, nama, atau merek..."
+                placeholder="Cari kode atau nama..."
                 className="w-full pl-8 pr-2 py-1.5 border border-slate-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-slate-900"
               />
             </div>
@@ -168,7 +168,7 @@ export default function InventoryKelengkapanPicker({ staged, onChange, existing,
                 >
                   <div className="min-w-0">
                     <p className="font-medium text-slate-800 truncate">
-                      {k.nama || [k.merek, k.tipe].filter(Boolean).join(' ') || k.kode_inventory}
+                      {k.nama || k.kode_inventory}
                     </p>
                     <p className="text-slate-400 truncate">
                       {k.kode_inventory}

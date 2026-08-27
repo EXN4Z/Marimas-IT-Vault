@@ -60,7 +60,7 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              {inventory.kode_inventory} · {[inventory.merek, inventory.tipe].filter(Boolean).join(' ') || '-'}
+              {inventory.kode_inventory} · {inventory.nama || '-'}
             </p>
             <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
               <AlertTriangle size={18} className="text-red-500" />

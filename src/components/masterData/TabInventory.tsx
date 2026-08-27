@@ -394,7 +394,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
       noStruk: p.no_struk,
       tanggal: formatTanggalId(p.tanggal_selesai),
       rows: [
-        { label: 'Inventory', value: `${inventory.kode_inventory} — ${[inventory.merek, inventory.tipe].filter(Boolean).join(' ') || '-'}` },
+        { label: 'Inventory', value: `${inventory.kode_inventory} — ${inventory.nama || '-'}` },
         { label: 'Jenis Kerusakan', value: p.jenis_kerusakan === 'hardware' ? 'Hardware' : 'Software' },
         { label: 'Keluhan', value: p.keluhan },
         { label: 'Hasil', value: p.hasil || '-' },
@@ -419,7 +419,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
     if (!utama.pemakai.no_struk_penerimaan) return;
     const inventoryRows = results.map((r, i) => ({
       label: results.length > 1 ? `Inventory ${i + 1}` : 'Inventory',
-      value: `${r.inventory.kode_inventory} — ${[r.inventory.merek, r.inventory.tipe].filter(Boolean).join(' ') || '-'}`,
+      value: `${r.inventory.kode_inventory} — ${r.inventory.nama || '-'}`,
     }));
     printStruk({
       judul: 'Bukti Serah Terima Inventory',
@@ -441,7 +441,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
       noStruk: pemakai.no_struk_pengembalian,
       tanggal: formatTanggalId(pemakai.tanggal_pengembalian),
       rows: [
-        { label: 'Inventory', value: `${inventory.kode_inventory} — ${[inventory.merek, inventory.tipe].filter(Boolean).join(' ') || '-'}` },
+        { label: 'Inventory', value: `${inventory.kode_inventory} — ${inventory.nama || '-'}` },
         { label: 'Dikembalikan Oleh', value: namaPemakai(pemakai) },
         { label: 'Struk Penerimaan Asli', value: pemakai.no_struk_penerimaan || '-' },
       ],
@@ -512,8 +512,6 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         !q ||
         a.kode_inventory.toLowerCase().includes(q) ||
         (a.serial_number || '').toLowerCase().includes(q) ||
-        (a.merek || '').toLowerCase().includes(q) ||
-        (a.tipe || '').toLowerCase().includes(q) ||
         (a.nama || '').toLowerCase().includes(q) ||
         // BARU: search juga cocokkan nama di kolom "Dipakai Oleh". Status
         // 'dijual' sengaja dilewati karena kolomnya ditampilkan sebagai "-"
@@ -866,7 +864,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Cari nama, kode, atau merek inventory..."
+          placeholder="Cari nama atau kode inventory..."
           className="flex-1"
         />
         {/* BARU: dropdown filter Kategori (Semua/Barang Utama/Kelengkapan) --
@@ -898,7 +896,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
               <thead>
                 <tr className="border-b border-slate-100 text-middle text-xs text-slate-400 uppercase tracking-wide">
                   <th className="px-6 py-3 font-medium">Kode Inventory</th>
-                  <th className="px-6 py-3 font-medium">{kategoriFilter === 'kelengkapan' ? 'Nama / Merek' : 'Merek / Tipe'}</th>
+                  <th className="px-6 py-3 font-medium">Nama</th>
                   {/* BARU: kolom Kategori cuma tampil di mode "Semua" -- di mode
                       Barang Utama/Kelengkapan kategorinya udah jelas dari filter,
                       gak perlu diulang di tiap baris. */}
@@ -921,18 +919,8 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                     <tr key={a.id} className="text-center border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                       <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{a.kode_inventory}</td>
                       <td className="px-6 py-3 text-slate-600 max-w-[160px]">
-                        <Tooltip
-                          content={
-                            isKelengkapan
-                              ? `${a.nama || '-'} · ${[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}`
-                              : [a.merek, a.tipe].filter(Boolean).join(' ') || '-'
-                          }
-                        >
-                          <p className="truncate">
-                            {isKelengkapan
-                              ? `${a.nama || '-'} · ${[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}`
-                              : [a.merek, a.tipe].filter(Boolean).join(' ') || '-'}
-                          </p>
+                        <Tooltip content={a.nama || '-'}>
+                          <p className="truncate">{a.nama || '-'}</p>
                         </Tooltip>
                         {/* BARU: indikator "Menempel ke ..." buat baris Kelengkapan
                             yang parent_id-nya terisi -- data a.parent udah tersedia
@@ -1019,8 +1007,8 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                       <p className="text-sm font-medium text-slate-800">{a.kode_inventory}</p>
                       <p className="text-xs text-slate-500 truncate">
                         {isKelengkapan
-                          ? `${a.nama || '-'} · ${[a.merek, a.tipe].filter(Boolean).join(' ') || '-'}`
-                          : `${[a.merek, a.tipe].filter(Boolean).join(' ') || '-'} · Jumlah: ${a.jumlah ?? 1}`}
+                          ? a.nama || '-'
+                          : `${a.nama || '-'} · Jumlah: ${a.jumlah ?? 1}`}
                       </p>
                       {isKelengkapan && a.parent && (
                         <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
@@ -1279,7 +1267,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                     <StatusBadge colorClass={STATUS_STYLE[detail.status]} className="mb-2">
                       {STATUS_LABEL[detail.status]}
                     </StatusBadge>
-                    <p className="text-sm text-slate-800 font-medium">{[detail.merek, detail.tipe].filter(Boolean).join(' ') || '-'}</p>
+                    <p className="text-sm text-slate-800 font-medium">{detail.nama || '-'}</p>
                     <p className="text-xs text-slate-400">{detail.warna || '-'}</p>
                     <p className="text-xs text-slate-400">S/N: {detail.serial_number || '-'}</p>
                     <p className="text-xs text-slate-400">Jumlah: {detail.jumlah ?? 1}</p>
@@ -1351,7 +1339,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                           >
                             <div className="min-w-0">
                               <p className="text-slate-800 font-medium truncate">
-                                {k.nama || [k.merek, k.tipe].filter(Boolean).join(' ') || k.kode_inventory}
+                                {k.nama || k.kode_inventory}
                               </p>
                               <p className="text-xs text-slate-400 truncate">
                                 {k.kode_inventory}

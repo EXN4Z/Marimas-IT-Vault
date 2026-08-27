@@ -344,8 +344,6 @@ export default function InventoryFormModal({
         parent_id: inventory.parent_id ?? null,
         lokasi_kantor_id: inventory.lokasi_kantor_id ?? null,
         nama: inventory.nama || '',
-        merek: inventory.merek || '',
-        tipe: inventory.tipe || '',
         warna: inventory.warna || '',
         serial_number: inventory.serial_number || '',
         tanggal_garansi: inventory.tanggal_garansi || '',
@@ -424,7 +422,7 @@ export default function InventoryFormModal({
     const q = inventorySearch.trim().toLowerCase();
     if (!q) return inventoryOptions;
     return inventoryOptions.filter((a) =>
-      [a.kode_inventory, a.merek, a.tipe].filter(Boolean).join(' ').toLowerCase().includes(q)
+      [a.kode_inventory, a.nama].filter(Boolean).join(' ').toLowerCase().includes(q)
     );
   }, [inventoryOptions, inventorySearch]);
 
@@ -517,7 +515,7 @@ export default function InventoryFormModal({
 
   function validateKelengkapan(): boolean {
     const next: Record<string, string> = {};
-    if (!kForm.merek?.trim()) next.merek = 'Merek wajib diisi';
+    if (!kForm.nama?.trim()) next.nama = 'Nama wajib diisi';
     if (!kForm.status) next.status = 'Status wajib dipilih';
     if (kForm.tanggal_pembelian && kForm.tanggal_garansi && kForm.tanggal_garansi < kForm.tanggal_pembelian) {
       next.tanggal_garansi = 'Tanggal garansi tidak boleh sebelum tanggal pembelian';
@@ -574,8 +572,6 @@ export default function InventoryFormModal({
         // "gak dikirim" yang bisa ambigu.
         parent_id: null,
         nama: form.nama.trim() || undefined,
-        merek: form.merek.trim() || undefined,
-        tipe: form.tipe.trim() || undefined,
         warna: form.warna.trim() || undefined,
         serial_number: form.serial_number.trim() || undefined,
         jumlah: form.jumlah ? Number(form.jumlah) : undefined,
@@ -845,7 +841,7 @@ export default function InventoryFormModal({
                         </svg>
                         <input
                           className={`${inputClass} pl-8 ${inventoryIndukDisabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}`}
-                          placeholder="Cari kode inventory, merek, atau tipe…"
+                          placeholder="Cari kode inventory atau nama…"
                           value={inventorySearch}
                           disabled={inventoryIndukDisabled}
                           onChange={(e) => {
@@ -861,8 +857,8 @@ export default function InventoryFormModal({
                         <div className="mt-1.5 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm animate-[fadeIn_120ms_ease-out]">
                           <span className="text-slate-700">
                             <span className="font-mono text-[13px]">{inventoryTerpilih.kode_inventory}</span>
-                            {(inventoryTerpilih.merek || inventoryTerpilih.tipe) && (
-                              <span className="text-slate-400"> — {[inventoryTerpilih.merek, inventoryTerpilih.tipe].filter(Boolean).join(' ')}</span>
+                            {inventoryTerpilih.nama && (
+                              <span className="text-slate-400"> — {inventoryTerpilih.nama}</span>
                             )}
                           </span>
                           <button
@@ -908,8 +904,8 @@ export default function InventoryFormModal({
                               }`}
                             >
                               <span className="font-mono text-[13px]">{a.kode_inventory}</span>
-                              {(a.merek || a.tipe) && (
-                                <span className="text-slate-400"> — {[a.merek, a.tipe].filter(Boolean).join(' ')}</span>
+                              {a.nama && (
+                                <span className="text-slate-400"> — {a.nama}</span>
                               )}
                             </button>
                           ))}
@@ -945,13 +941,13 @@ export default function InventoryFormModal({
                 </Field>
               </div>
 
-              <Field label="Nama" error={kErrors.nama}>
+              <Field label="Nama" error={kErrors.nama} required>
                 <input
                   ref={firstFieldRef}
-                  className={inputClass}
+                  className={`${inputClass} ${kErrors.nama ? inputErrorClass : ''}`}
                   value={kForm.nama}
                   onChange={(e) => setKField('nama', e.target.value)}
-                  placeholder="cth. Charger Laptop"
+                  placeholder="cth. Charger Laptop Dell 65W"
                 />
               </Field>
 
@@ -988,19 +984,6 @@ export default function InventoryFormModal({
                     );
                   })}
                 </div>
-              </Field>
-
-              <Field label="Merek" error={kErrors.merek} required>
-                <input
-                  className={`${inputClass} ${kErrors.merek ? inputErrorClass : ''}`}
-                  value={kForm.merek}
-                  onChange={(e) => setKField('merek', e.target.value)}
-                  placeholder="cth. Dell, HP, Logitech"
-                />
-              </Field>
-
-              <Field label="Tipe">
-                <input className={inputClass} value={kForm.tipe} onChange={(e) => setKField('tipe', e.target.value)} placeholder="cth. 65W USB-C" />
               </Field>
 
               <Field label="Warna">
@@ -1236,7 +1219,7 @@ export default function InventoryFormModal({
           <Section
             index={0}
             title="Informasi Umum"
-            subtitle="Nama, merek, dan ciri fisik barang"
+            subtitle="Nama dan ciri fisik barang"
             icon={
               <path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM8 5v3.5M8 10.8h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
             }
@@ -1263,19 +1246,11 @@ export default function InventoryFormModal({
                   className={inputClass}
                   value={form.nama}
                   onChange={set('nama')}
-                  placeholder="cth. Laptop Kerja Marketing"
+                  placeholder="cth. Laptop Lenovo ThinkPad E14"
                 />
-                <p className="mt-1 text-xs text-slate-400">Opsional — nama panggilan/label barang, di luar Merek & Tipe.</p>
+                <p className="mt-1 text-xs text-slate-400">Sertakan merek/tipe di dalam nama, mis. "Laptop Lenovo".</p>
               </Field>
             </div>
-
-            <Field label="Merek">
-              <input className={inputClass} value={form.merek} onChange={set('merek')} placeholder="cth. HP" />
-            </Field>
-
-            <Field label="Tipe">
-              <input className={inputClass} value={form.tipe} onChange={set('tipe')} placeholder="cth. Pavilion 14" />
-            </Field>
 
             <Field label="Warna">
               <input className={inputClass} value={form.warna} onChange={set('warna')} />
@@ -1429,7 +1404,7 @@ export default function InventoryFormModal({
                   staged={stagedKelengkapan}
                   onChange={setStagedKelengkapan}
                   existing={existingKelengkapan}
-                  inventoryLabel={[form.merek, form.tipe].filter(Boolean).join(' ') || undefined}
+                  inventoryLabel={form.nama || undefined}
                   presetInventoryId={inventory?.id}
                 />
               ) : (

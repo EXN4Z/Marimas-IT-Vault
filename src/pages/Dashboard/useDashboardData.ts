@@ -32,12 +32,15 @@ export interface RingkasanInventory {
   dijual: number;
 }
 
-// Distribusi jumlah inventory per merek (Asus, HP, Logitech, dst) — dipakai
-// kartu "Distribusi Inventory per Merek" di dashboard admin. Sebelumnya per
-// jenis_id, tapi kolom itu udah dihapus dari tabel inventory jadi sumbernya
-// sekarang kolom `merek` langsung biar fiturnya tetap jalan.
+// Distribusi jumlah inventory per nama (Laptop Lenovo, Mouse Logitech, dst)
+// — dulu per `merek`+`jenis_id`, tapi kedua kolom itu udah dihapus dari
+// tabel inventory (merek/tipe sekarang digabung jadi satu kolom `nama`),
+// jadi sumbernya sekarang kolom `nama` langsung.
+// NB: widget "Distribusi Inventory per Merek" ini disabled di semua
+// dashboard yang ada saat ini (lihat inventoryPerMerek: false di
+// DashboardAdmin.tsx) — gak ada card yang benar-benar render datanya.
 export interface InventoryPerMerek {
-  merek: string;
+  nama: string;
   jumlah: number;
 }
 
@@ -165,12 +168,12 @@ export async function fetchInventoryPerMerek(): Promise<InventoryPerMerek[]> {
   const counts = new Map<string, number>();
 
   for (const a of list) {
-    const nama = a.merek?.trim() || 'Tanpa Merek';
+    const nama = a.nama?.trim() || 'Tanpa Nama';
     counts.set(nama, (counts.get(nama) ?? 0) + 1);
   }
 
   return Array.from(counts.entries())
-    .map(([merek, jumlah]) => ({ merek, jumlah }))
+    .map(([nama, jumlah]) => ({ nama, jumlah }))
     .sort((a, b) => b.jumlah - a.jumlah);
 }
 
