@@ -82,8 +82,6 @@ interface InventoryFormModalProps {
 // FormState barang utama (tetap seperti sebelumnya, ditambah `nama`)
 interface BarangUtamaFormState {
   nama: string;
-  merek: string;
-  tipe: string;
   warna: string;
   serial_number: string;
   jumlah: string;
@@ -100,8 +98,6 @@ const EMPTY_KELENGKAPAN_FORM: KelengkapanFormValues = {
   parent_id: null,
   lokasi_kantor_id: null,
   nama: '',
-  merek: '',
-  tipe: '',
   warna: '',
   serial_number: '',
   tanggal_garansi: '',
@@ -203,8 +199,6 @@ export default function InventoryFormModal({
   // ================= Mode barang_utama (state & logic asli, + nama & foto upgrade) =================
   const [form, setForm] = useState<BarangUtamaFormState>({
     nama: inventory?.nama || '',
-    merek: inventory?.merek || '',
-    tipe: inventory?.tipe || '',
     warna: inventory?.warna || '',
     serial_number: inventory?.serial_number || '',
     jumlah: inventory?.jumlah ? String(inventory.jumlah) : '1',

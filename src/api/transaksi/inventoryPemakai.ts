@@ -34,7 +34,7 @@ export interface InventoryPemakai {
 export interface FotoPemakaiEntry {
   id: number;
   inventory_id: number;
-  inventory?: { id: number; kode_inventory: string; merek: string | null; tipe: string | null } | null;
+  inventory?: { id: number; kode_inventory: string; nama: string | null } | null;
   user_id: number | null;
   user?: { id: number; name: string } | null;
   tanggal_penerimaan: string | null;
@@ -60,7 +60,7 @@ export interface RiwayatInventoryEvent {
   type: 'pinjam' | 'kembali' | 'lapor_rusak' | 'mulai_perbaikan' | 'selesai_perbaikan' | 'dijual';
   waktu: string;
   nama: string | null;
-  inventory: { id: number; kode_inventory?: string; merek: string | null; tipe: string | null } | null;
+  inventory: { id: number; kode_inventory?: string; nama: string | null } | null;
   tipe_item: 'barang_utama' | 'kelengkapan';
   keluhan?: string | null; // dipakai lapor_rusak (keluhan) & dijual (alasan)
   hasil?: string | null;

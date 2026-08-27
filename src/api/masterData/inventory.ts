@@ -38,8 +38,6 @@ export interface Inventory {
   lokasi_kantor_id: number | null;
   lokasiKantor?: LokasiKantor | null; // lokasi kelengkapan kalau berdiri sendiri (tanpa parent)
   nama: string | null;
-  merek: string | null;
-  tipe: string | null;
   warna: string | null;
   serial_number: string | null;
   jumlah: number;
@@ -76,8 +74,6 @@ export interface InventoryFormValues {
   departemen_id?: number | null;
   lokasi_kantor_id?: number | null;
   nama?: string;
-  merek?: string;
-  tipe?: string;
   warna?: string;
   serial_number?: string;
   jumlah?: number;
@@ -106,8 +102,6 @@ function buildInventoryFormData(values: InventoryFormValues): FormData {
   if (values.departemen_id != null) fd.append('departemen_id', String(values.departemen_id));
   if (values.lokasi_kantor_id != null) fd.append('lokasi_kantor_id', String(values.lokasi_kantor_id));
   if (values.nama) fd.append('nama', values.nama);
-  if (values.merek) fd.append('merek', values.merek);
-  if (values.tipe) fd.append('tipe', values.tipe);
   if (values.warna) fd.append('warna', values.warna);
   if (values.serial_number) fd.append('serial_number', values.serial_number);
   if (values.jumlah != null) fd.append('jumlah', String(values.jumlah));
