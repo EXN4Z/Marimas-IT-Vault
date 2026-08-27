@@ -10,6 +10,7 @@ import SearchInput from '../components/shared/SearchInput';
 import StatusBadge from '../components/shared/StatusBadge';
 import { printStruk } from '../utils/printStruk';
 import InventoryPenangananExportModal from '../components/transaksi/InventoryPenangananExportModal';
+import { useAuth } from '../context/AuthContext';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 
@@ -31,6 +32,15 @@ type TabStatus = 'menunggu' | 'diperbaiki' | 'diperbaiki_selesai' | 'rusak_berat
 const ITEMS_PER_PAGE = 10;
 
 export default function PenangananInventory({ onCount }: Props) {
+  // BARU: halaman ini sekarang bisa diakses karyawan/manajer juga (dulu
+  // admin+hr only), tapi datanya sudah discoping ke laporan milik sendiri
+  // dari backend (lihat InventoryPenangananController::index()). Aksi
+  // admin-only (Terima Laporan, Tandai Selesai, Import/Export) tetap
+  // disembunyikan dari non-admin di sini karena endpoint-nya juga tetap
+  // admin-only di backend -- non-admin cuma boleh lihat, gak bisa proses.
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
   const [penangananList, setPenangananList] = useState<InventoryPenanganan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -62,7 +72,7 @@ export default function PenangananInventory({ onCount }: Props) {
   const [importMessage, setImportMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const canImportExport = activeTab === 'diperbaiki_selesai' || activeTab === 'rusak_berat';
+  const canImportExport = isAdmin && (activeTab === 'diperbaiki_selesai' || activeTab === 'rusak_berat');
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -259,7 +269,11 @@ export default function PenangananInventory({ onCount }: Props) {
       <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
         <div>
           <h3 className="text-base font-semibold text-slate-900 mb-1">Forum Penanganan Inventory</h3>
-          <p className="text-sm text-slate-500">Laporan kerusakan dari peminjam yang belum/sudah ditangani.</p>
+          <p className="text-sm text-slate-500">
+            {isAdmin
+              ? 'Laporan kerusakan dari peminjam yang belum/sudah ditangani.'
+              : 'Status laporan kerusakan inventory yang pernah/sedang kamu pakai.'}
+          </p>
         </div>
 
         {/* Import & Export -- cuma tampil di tab "Berhasil Diperbaiki" &
@@ -422,7 +436,10 @@ export default function PenangananInventory({ onCount }: Props) {
                   <span className="font-medium">{p.jenis_kerusakan}</span> — {p.keluhan}
                 </p>
 
-                {!diterima ? (
+                {/* Aksi proses (Terima Laporan / Tandai Selesai) admin-only --
+                    endpoint terima()/update() di backend juga admin-only, jadi
+                    non-admin cuma bisa pantau statusnya di sini. */}
+                {isAdmin && (!diterima ? (
                   // BARU: gak langsung terima -- buka modal detail (+ foto) dulu,
                   // aksi terima yang sebenarnya dipicu dari dalam modal itu.
                   <button
@@ -440,7 +457,7 @@ export default function PenangananInventory({ onCount }: Props) {
                     <Wrench size={14} />
                     Tandai Selesai
                   </button>
-                )}
+                ))}
               </div>
             );
           })}

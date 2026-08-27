@@ -838,15 +838,18 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
             badge: Object.values(statusCounts).reduce((sum, n) => sum + n, 0),
             badgeClassName: statusFilter === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
           },
-          // Tab "Rusak Berat" & "Dijual" cuma buat admin -- non-admin gak
-          // perlu (dan gak boleh) lihat inventory yang udah di-writeoff/dijual.
+          // Tab "Rusak", "Rusak Berat" & "Dijual" cuma buat admin -- non-admin
+          // gak perlu (dan gak boleh) lihat inventory yang rusak/rusak
+          // berat/udah di-writeoff/dijual. Sinkron sama pembatasan yang sudah
+          // ditegakkan di backend (InventoryController::index()/show()), yang
+          // meng-exclude total ketiga status ini dari response non-admin.
           // BARU: status "Dijual" (khusus Barang Utama, endpoint jual() masih
           // isBarangUtama()-only) disembunyikan kalau filter Kategori lagi
           // di-set ke Kelengkapan. Status penanganan (menunggu_perbaikan,
           // diperbaiki, rusak_berat) TETAP tampil buat kedua kategori, karena
           // sekarang relevan juga buat Kelengkapan yang berdiri sendiri.
           ...(Object.keys(STATUS_LABEL) as InventoryStatus[])
-            .filter((s) => isAdmin || (s !== 'rusak_berat' && s !== 'dijual'))
+            .filter((s) => isAdmin || !['rusak', 'rusak_berat', 'dijual'].includes(s))
             .filter((s) => kategoriFilter !== 'kelengkapan' || !STATUS_KHUSUS_BARANG_UTAMA.includes(s))
             .map((s) => ({
               key: s,
