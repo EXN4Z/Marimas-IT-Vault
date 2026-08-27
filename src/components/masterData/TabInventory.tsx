@@ -729,10 +729,9 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
           <button
             onClick={() => setPengembalianTarget({ inventory: a, pemakai: a.pemakai_saat_ini! })}
             title="Kembalikan"
-            className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg hover:bg-emerald-100 transition"
+            className="p-2 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition"
           >
-            <Undo2 size={14} />
-            Kembalikan
+            <Undo2 size={15} />
           </button>
         )}
 
