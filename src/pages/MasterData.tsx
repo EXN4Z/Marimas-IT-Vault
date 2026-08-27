@@ -100,7 +100,11 @@ export default function MasterData() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTabState] = useState<TabKey>(() => {
     const fromUrl = searchParams.get('tab');
-    return isTabKey(fromUrl) ? fromUrl : 'inventory';
+    // BARU: non-staff (karyawan/manajer) cuma boleh liat tab Inventory --
+    // kalau URL nunjuk ke tab staff-only (kategori/departemen/supplier),
+    // paksa balik ke 'inventory' daripada nolak seluruh halaman.
+    if (isTabKey(fromUrl) && (isStaff || fromUrl === 'inventory')) return fromUrl;
+    return 'inventory';
   });
 
   // ganti tab sekaligus sinkronin ke query param "?tab=" biar link dari sidebar
@@ -115,7 +119,7 @@ export default function MasterData() {
   // effect ini yang nangkep perubahan query dan update activeTab-nya.
   useEffect(() => {
     const fromUrl = searchParams.get('tab');
-    if (isTabKey(fromUrl) && fromUrl !== activeTab) {
+    if (isTabKey(fromUrl) && fromUrl !== activeTab && (isStaff || fromUrl === 'inventory')) {
       setActiveTabState(fromUrl);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -287,19 +291,13 @@ export default function MasterData() {
     }
   };
 
-  if (!isStaff) {
-    return (
-        <div className="bg-white rounded-xl p-8 shadow-sm border border-slate-200 text-center">
-          <p className="text-sm text-slate-500">Anda tidak punya akses ke halaman ini.</p>
-        </div>
-    );
-  }
-
   return (
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <p className="text-sm text-slate-500">
-          Kelola data referensi aset, kelengkapan aset, departemen, dan supplier yang dipakai di seluruh sistem.
+          {isStaff
+            ? 'Kelola data referensi aset, kelengkapan aset, departemen, dan supplier yang dipakai di seluruh sistem.'
+            : 'Lihat inventory yang tersedia atau lagi kamu pinjam.'}
         </p>
         {cfg && (
           <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
@@ -350,8 +348,12 @@ export default function MasterData() {
         activeTab={activeTab}
         onChange={setActiveTab}
         tabs={[
-          ...CUSTOM_TABS.map((t) => ({ key: t.key, label: t.label, icon: t.icon })),
-          ...(Object.keys(tabConfig) as GenericTabKey[]).map((key) => ({
+          // BARU: non-staff cuma liat tab "Inventory" -- Kategori dan tab
+          // generik (Departemen/Supplier) tetap staff-only, sinkron sama
+          // pembatasan `roles` di child sidebar (AppLayout.tsx) dan sama
+          // backend (kategori/departemen/supplier endpoint-nya admin/hr-only).
+          ...CUSTOM_TABS.filter((t) => isStaff || t.key === 'inventory').map((t) => ({ key: t.key, label: t.label, icon: t.icon })),
+          ...(isStaff ? (Object.keys(tabConfig) as GenericTabKey[]) : []).map((key) => ({
             key,
             label: tabConfig[key].label,
             icon: tabConfig[key].icon,

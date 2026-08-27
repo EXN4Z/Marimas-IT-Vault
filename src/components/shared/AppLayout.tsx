@@ -56,7 +56,12 @@ const navItems: NavItem[] = [
     path: null,
     matchPrefix: '/penanganan-inventory',
     children: [
-      { label: 'Penanganan Inventory', icon: Wrench, path: '/penanganan-inventory', roles: ['admin'] },
+      // BARU: dibuka buat karyawan/manajer/hr juga (dulu admin-only) --
+      // sinkron sama role yang diizinin backend (routes/api.php,
+      // GET /inventory-penanganan sekarang role:karyawan,manajer,hr,admin).
+      // Data yang tampil sudah discoping ke laporan milik sendiri buat
+      // non-admin/hr di InventoryPenangananController::index().
+      { label: 'Penanganan Inventory', icon: Wrench, path: '/penanganan-inventory', roles: ['karyawan', 'manajer', 'hr', 'admin'] },
     ],
   },
   { label: 'Cabang', icon: Building2, path: '/cabang', matchPrefix: '/cabang' },
@@ -90,10 +95,17 @@ const navItems: NavItem[] = [
       // Tab "Kelengkapan Inventory" sudah digabung ke tab "Inventory" (1
       // tabel gabungan dengan kolom Kategori), jadi entri dropdown-nya
       // dihapus dari sini -- lihat TabInventory.tsx.
+      // BARU: "Inventory" sengaja gak dikasih `roles` -- kebuka buat
+      // karyawan/manajer juga (bukan cuma staff), sinkron sama backend
+      // (GET /inventory sudah role:karyawan,manajer,hr,admin) dan sama
+      // "Master Data" parent yang sekarang gak diblokir total lagi buat
+      // non-staff (lihat roleFilter di bawah). Kategori/Departemen/Supplier
+      // TETAP staff-only, murni data referensi yang gak relevan buat
+      // karyawan biasa.
       { label: 'Inventory', icon: Package, path: '/master-data?tab=inventory' },
-      { label: 'Kategori', icon: Tags, path: '/master-data?tab=kategori' },
-      { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen' },
-      { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier' },
+      { label: 'Kategori', icon: Tags, path: '/master-data?tab=kategori', roles: ['admin', 'hr'] },
+      { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen', roles: ['admin', 'hr'] },
+      { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier', roles: ['admin', 'hr'] },
     ],
   },
   { label: 'Audit Log', icon: ScrollText, path: '/audit-log', restricted: true },
@@ -163,13 +175,25 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
 
   const STAFF_ROLES = ['admin', 'hr'];
 
+  // roles yang backend izinin buka GET /inventory (routes/api.php) --
+  // dipakai buat nentuin siapa yang masih boleh liat menu "Master Data"
+  // sama sekali (isi tab Inventory-nya), meski cuma admin/hr yang boleh
+  // liat tab Kategori/Departemen/Supplier di dalamnya (dibatasi lewat
+  // `roles` di masing-masing child di atas).
+  const INVENTORY_ROLES = ['karyawan', 'manajer', 'hr', 'admin'];
+
   const roleFilter = (item: NavItem) => {
     // Fitur yang masih belum lengkap -- sembunyikan dari sidebar dulu (lihat flag `hidden` di navItems).
     if (item.hidden) {
       return false;
     }
-    // Master Data hanya untuk admin/hr
-    if (item.label === 'Master Data' && !STAFF_ROLES.includes(user?.role ?? '')) {
+    // BARU: "Master Data" dulu staff-only total -- sekarang tetap tampil
+    // buat karyawan/manajer juga, karena tab Inventory di dalamnya sudah
+    // dibuka buat mereka (backend GET /inventory: role:karyawan,manajer,hr,admin).
+    // Tab lain di dalamnya (Kategori/Departemen/Supplier) tetap staff-only,
+    // dibatasi lewat `roles` per-child, bukan di sini. Role yang SAMA
+    // SEKALI gak punya akses Inventory (mis. cabang) tetap gak lihat menu ini.
+    if (item.label === 'Master Data' && !INVENTORY_ROLES.includes(user?.role ?? '')) {
       return false;
     }
     // Data User & Cabang hanya untuk admin
