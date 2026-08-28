@@ -1,26 +1,6 @@
 import { useState } from 'react';
 import { Unlink } from 'lucide-react';
-import {
-  lepasDariIndukInventory,
-  type Inventory,
-  type StatusLepasDariInduk,
-} from '../../api/masterData/inventory';
-
-// Status yang bisa dipilih admin saat melepas kelengkapan dari induknya.
-// 'dipakai' dan 'dijual' sengaja tidak ada — masing-masing punya alur sendiri.
-const STATUS_OPTIONS: { value: StatusLepasDariInduk; label: string }[] = [
-  { value: 'tersedia', label: 'Tersedia' },
-  { value: 'rusak', label: 'Rusak' },
-  { value: 'rusak_berat', label: 'Rusak Berat' },
-  { value: 'menunggu_perbaikan', label: 'Menunggu Perbaikan' },
-  { value: 'diperbaiki', label: 'Sedang Diperbaiki' },
-];
-
-// Cek apakah status item saat ini valid sebagai nilai default dropdown.
-// Kalau tidak ada di daftar (mis. 'dipakai' atau 'dijual'), fallback ke 'tersedia'.
-function toValidStatus(status: string): StatusLepasDariInduk {
-  return (STATUS_OPTIONS.find((o) => o.value === status)?.value) ?? 'tersedia';
-}
+import { lepasDariIndukInventory, type Inventory } from '../../api/masterData/inventory';
 
 interface Props {
   inventory: Inventory;
@@ -29,9 +9,6 @@ interface Props {
 }
 
 export default function InventoryLepasDariIndukModal({ inventory, onClose, onSuccess }: Props) {
-  const [statusBaru, setStatusBaru] = useState<StatusLepasDariInduk>(
-    toValidStatus(inventory.status)
-  );
   const [keterangan, setKeterangan] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -45,14 +22,12 @@ export default function InventoryLepasDariIndukModal({ inventory, onClose, onSuc
     setError('');
     try {
       const updated = await lepasDariIndukInventory(inventory.id, {
-        status_baru: statusBaru,
         keterangan: keterangan.trim() || undefined,
       });
       onSuccess(updated);
     } catch (err: any) {
       setError(
-        err.response?.data?.errors?.status_baru?.[0] ||
-          err.response?.data?.message ||
+        err.response?.data?.message ||
           'Gagal melepas kelengkapan dari induk. Coba lagi.'
       );
     } finally {
@@ -99,25 +74,16 @@ export default function InventoryLepasDariIndukModal({ inventory, onClose, onSuc
             <span className="font-semibold">{indukLabel}</span>. Aksi ini tidak bisa dibatalkan.
           </div>
 
-          {/* Dropdown status baru */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Status Setelah Dilepas
-            </label>
-            <select
-              value={statusBaru}
-              onChange={(e) => setStatusBaru(e.target.value as StatusLepasDariInduk)}
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
-            >
-              {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-slate-400">
-              Default: status item saat ini. Ubah kalau perlu.
-            </p>
+          {/* Info status saat ini -- tidak berubah, cuma informasi */}
+          <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-600">
+            Status item saat ini <span className="font-semibold">tidak berubah</span> oleh aksi ini
+            {inventory.status ? (
+              <>
+                {' '}
+                (<span className="font-semibold">{inventory.status}</span>)
+              </>
+            ) : null}
+            .
           </div>
 
           {/* Textarea keterangan */}

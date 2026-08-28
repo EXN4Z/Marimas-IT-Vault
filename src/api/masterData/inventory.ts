@@ -163,12 +163,12 @@ export async function jualInventory(id: number): Promise<Inventory> {
 }
 
 // POST /inventory/{id}/lepas-dari-induk — lepas kelengkapan dari induknya secara manual.
-// Hanya bisa dipanggil oleh admin. `status_baru` wajib diisi, `keterangan` opsional.
-export type StatusLepasDariInduk = 'tersedia' | 'rusak' | 'rusak_berat' | 'menunggu_perbaikan' | 'diperbaiki';
-
+// Hanya bisa dipanggil oleh admin. Cuma memutus parent_id -- status TIDAK
+// diubah lewat endpoint ini (sudah dipegang InventoryPemakai/InventoryPenanganan/jual).
+// `keterangan` opsional.
 export async function lepasDariIndukInventory(
   id: number,
-  payload: { status_baru: StatusLepasDariInduk; keterangan?: string }
+  payload: { keterangan?: string }
 ): Promise<Inventory> {
   const res = await api.post<Inventory>(`/inventory/${id}/lepas-dari-induk`, payload);
   return res.data;
