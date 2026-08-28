@@ -2,7 +2,6 @@ import { useDashboardCore, useDashboardAnalytics } from './useDashboardData';
 import { Boxes, Package, AlertTriangle, ShieldAlert } from 'lucide-react';
 import {
   WelcomeHeader,
-  QuickActionBar,
   KpiCard,
   RingkasanInventoryCard,
   HeroTrenPembelianInventoryChart,
@@ -61,7 +60,6 @@ export default function DashboardAdmin() {
     <div className="space-y-3">
       {/* Header & Quick Action Hub */}
       <WelcomeHeader user={user} />
-      <QuickActionBar role={user?.role} />
 
       {error && (
         <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl px-3 py-2">

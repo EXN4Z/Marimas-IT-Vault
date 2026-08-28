@@ -27,7 +27,6 @@ import {
   Package,
   Layers,
   Activity,
-  Zap,
   Building2,
   Users,
   CheckCircle2,
@@ -150,44 +149,6 @@ export function WelcomeHeader({ user }: { user?: UserType | null }) {
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           Sistem Online
         </span>
-      </div>
-    </div>
-  );
-}
-
-// ==== Quick Actions Bar ====
-export function QuickActionBar({ role }: { role?: string }) {
-  const navigate = useNavigate();
-  const isStaff = ['admin', 'hr', 'manajer'].includes(role ?? '');
-
-  const actions = [
-    { label: 'Master Inventory', icon: Package, path: '/master-data?tab=inventory', tone: 'text-indigo-600 bg-indigo-50 border-indigo-100 hover:bg-indigo-100/70', show: true },
-    { label: 'Penanganan Inventory', icon: Wrench, path: '/penanganan-inventory', tone: 'text-amber-600 bg-amber-50 border-amber-100 hover:bg-amber-100/70', show: true },
-    { label: 'Riwayat & Mutasi', icon: Activity, path: '/laporan?tab=riwayat_inventory', tone: 'text-emerald-600 bg-emerald-50 border-emerald-100 hover:bg-emerald-100/70', show: isStaff },
-    { label: 'Data Karyawan', icon: Users, path: '/karyawan', tone: 'text-sky-600 bg-sky-50 border-sky-100 hover:bg-sky-100/70', show: role === 'admin' },
-    { label: 'Export Laporan', icon: Layers, path: '/laporan', tone: 'text-slate-700 bg-slate-100/80 border-slate-200 hover:bg-slate-200/70', show: isStaff },
-  ].filter((a) => a.show);
-
-  return (
-    <div className="bg-white border border-slate-200/80 rounded-xl p-2.5 shadow-sm flex items-center gap-2 overflow-x-auto mb-3">
-      <div className="flex items-center gap-1 text-slate-400 pl-1 pr-2 border-r border-slate-200 text-xs font-bold uppercase tracking-wider flex-shrink-0">
-        <Zap size={14} className="text-amber-500 fill-amber-500" />
-        <span className="hidden md:inline">Aksi Cepat:</span>
-      </div>
-      <div className="flex items-center gap-2 flex-1 min-w-0">
-        {actions.map((act) => {
-          const Icon = act.icon;
-          return (
-            <button
-              key={act.label}
-              onClick={() => navigate(act.path)}
-              className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-all flex-shrink-0 ${act.tone}`}
-            >
-              <Icon size={14} />
-              <span className="whitespace-nowrap">{act.label}</span>
-            </button>
-          );
-        })}
       </div>
     </div>
   );
