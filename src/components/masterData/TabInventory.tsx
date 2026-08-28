@@ -11,6 +11,7 @@ import InventorySerahTerimaModal from './InventorySerahTerimaModal';
 import InventoryPengembalianModal from './InventoryPengembalianModal';
 import InventoryLaporKerusakanModal from './InventoryLaporKerusakanModal';
 import InventoryLepasDariIndukModal from './InventoryLepasDariIndukModal';
+import InventoryPasangIndukModal from './InventoryPasangParentModal';
 import InventoryPenangananSelesaiModal from '../transaksi/InventoryPenangananSelesaiModal';
 import InventoryExportModal from './InventoryExportModal';
 import InventoryKelengkapanExportModal from './InventoryKelengkapanExportModal';
@@ -172,6 +173,11 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
   // BARU (3B): state untuk aksi "Lepas dari Induk" — muncul di baris tabel
   // kelengkapan yang masih nempel (parent_id terisi) & di panel detail children.
   const [lepasTarget, setLepasTarget] = useState<Inventory | null>(null);
+
+  // BARU: state untuk aksi "Pasang ke Induk" — kelengkapan berdiri sendiri
+  // (parent_id null) yang statusnya tersedia bisa dipasang ke Barang Utama
+  // tertentu lewat modal ini (kebalikan dari Lepas dari Induk).
+  const [pasangIndukTarget, setPasangIndukTarget] = useState<Inventory | null>(null);
 
   // PINDAHAN dari Inventaris.tsx: Import Excel data inventory (bulk import: inventory +
   // jenis + supplier + kelengkapan) — sekarang ditaruh di sini biar aksinya
@@ -499,6 +505,13 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
     });
   }, [inventoryList, isAdmin, user?.id]);
 
+  // BARU: daftar Barang Utama buat pilihan induk di modal Pasang ke Induk —
+  // diambil dari inventoryList yang sudah ada di state, gak perlu fetch ulang.
+  const barangUtamaOptions = useMemo(
+    () => inventoryList.filter((a) => a.kategori?.nama === 'Barang Utama'),
+    [inventoryList]
+  );
+
   const filteredInventory = visibleInventoryList
     .filter((a) => {
       const matchStatus = !statusFilter || a.status === statusFilter;
@@ -688,6 +701,17 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
 
         {isAdmin && (
           <>
+            {/* BARU: kelengkapan berdiri sendiri (belum nempel induk) & status
+                tersedia bisa dipasang ke Barang Utama lewat modal ini. */}
+            {a.kategori?.nama === 'Kelengkapan' && !a.parent_id && a.status === 'tersedia' && (
+              <button
+                onClick={() => setPasangIndukTarget(a)}
+                title="Pasang ke Induk"
+                className="p-2 text-sky-600 bg-sky-50 rounded-lg hover:bg-sky-100 transition"
+              >
+                <Link2 size={15} />
+              </button>
+            )}
             {a.status === 'tersedia' && (
               <button
                 onClick={() => setSerahTerimaInventory(a)}
@@ -1207,7 +1231,8 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         !perbaikanInventoryTarget &&
         !penangananSelesaiTarget &&
         !jualTarget &&
-        !lepasTarget && (
+        !lepasTarget &&
+        !pasangIndukTarget && (
         <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
@@ -1360,6 +1385,18 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                       >
                         <Undo2 size={14} />
                         Terima Kembali
+                      </button>
+                    )}
+                    {/* BARU: kelengkapan berdiri sendiri (belum nempel induk) &
+                        status tersedia bisa dipasang ke Barang Utama juga dari
+                        panel detail, bukan cuma dari baris tabel. */}
+                    {detail.kategori?.nama === 'Kelengkapan' && !detail.parent_id && detail.status === 'tersedia' && (
+                      <button
+                        onClick={() => setPasangIndukTarget(detail)}
+                        className="flex items-center gap-1.5 bg-sky-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-sky-700 transition"
+                      >
+                        <Link2 size={14} />
+                        Pasang ke Induk
                       </button>
                     )}
                     {/* Tombol Jual Inventory di panel detail (ikon mata) — muncul buat status
@@ -1713,6 +1750,24 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
           onSuccess={(updated) => {
             setLepasTarget(null);
             toast.success(`${updated.kode_inventory} berhasil dilepas dari induk.`);
+            loadList();
+            if (detailId) refreshDetail();
+          }}
+        />
+      )}
+
+      {/* BARU: Modal Pasang ke Induk — kebalikan dari Lepas dari Induk. Dipicu
+          dari baris tabel/card (kelengkapan berdiri sendiri, status tersedia)
+          maupun tombol di panel detail. onSuccess: refresh list + detail
+          (kalau lagi kebuka), tutup modal, tampilkan toast. */}
+      {pasangIndukTarget && (
+        <InventoryPasangIndukModal
+          inventory={pasangIndukTarget}
+          barangUtamaOptions={barangUtamaOptions}
+          onClose={() => setPasangIndukTarget(null)}
+          onSuccess={(updated) => {
+            setPasangIndukTarget(null);
+            toast.success(`${updated.kode_inventory} berhasil dipasang ke induk.`);
             loadList();
             if (detailId) refreshDetail();
           }}

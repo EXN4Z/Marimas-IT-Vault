@@ -162,6 +162,11 @@ export async function jualInventory(id: number): Promise<Inventory> {
   return res.data;
 }
 
+export async function pasangPenggantiKelengkapanInventory(id: number, parent_id: number): Promise<Inventory> {
+  const res = await api.post<Inventory>(`/inventory/${id}/pasang-pengganti-kelengkapan`, { parent_id });
+  return res.data;
+}
+
 // POST /inventory/{id}/lepas-dari-induk — lepas kelengkapan dari induknya secara manual.
 // Hanya bisa dipanggil oleh admin. Cuma memutus parent_id -- status TIDAK
 // diubah lewat endpoint ini (sudah dipegang InventoryPemakai/InventoryPenanganan/jual).
