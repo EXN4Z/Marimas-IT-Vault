@@ -28,7 +28,6 @@ import {
   Layers,
   Activity,
   Building2,
-  Users,
   CheckCircle2,
   Sparkles,
   type LucideIcon,
