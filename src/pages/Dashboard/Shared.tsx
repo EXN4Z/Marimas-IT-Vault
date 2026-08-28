@@ -29,7 +29,6 @@ import {
   Activity,
   Building2,
   CheckCircle2,
-  Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -124,9 +123,6 @@ export function WelcomeHeader({ user }: { user?: UserType | null }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-2.5 border-b border-slate-200/60 mb-3">
       <div className="flex items-center gap-2.5">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-900 text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
-          <Sparkles size={18} className="text-amber-300" />
-        </div>
         <div>
           <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 leading-tight">
             {greetingWord()}, {firstName}!
