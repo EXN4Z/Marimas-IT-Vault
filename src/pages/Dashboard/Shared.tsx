@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   PieChart,
   Pie,
   Cell,
@@ -330,19 +330,34 @@ export function HeroTrenPembelianInventoryChart({
   const prevVal = lastIdx >= 1 ? trenPembelianInventory[lastIdx - 1].jumlah : null;
   const delta = prevVal !== null ? lastVal - prevVal : null;
 
-  const renderPeakLabel = (props: any) => {
-    const { x, y, width, index } = props;
-    if (index !== peakIndex || maxJumlah <= 0) return null;
-    const cx = x + width / 2;
-    const boxW = 38;
-    return (
-      <g>
-        <rect x={cx - boxW / 2} y={y - 24} width={boxW} height={18} rx={4} fill={THEME.orange} />
-        <text x={cx} y={y - 11} textAnchor="middle" fontSize={10} fontWeight={800} fill="#fff">
-          MAX
-        </text>
-      </g>
-    );
+  const renderDot = (props: any) => {
+    const { cx, cy, index, value } = props;
+    if (value <= 0) return null;
+    const isPeak = index === peakIndex && maxJumlah > 0;
+    const isLast = index === lastIdx;
+
+    if (isPeak) {
+      return (
+        <g key={`dot-${index}`}>
+          <circle cx={cx} cy={cy} r={9} fill={THEME.orange} fillOpacity={0.15} />
+          <circle cx={cx} cy={cy} r={4.5} fill="#fff" stroke={THEME.orange} strokeWidth={2.5} />
+          <rect x={cx - 19} y={cy - 28} width={38} height={18} rx={5} fill={THEME.orange} />
+          <text x={cx} y={cy - 15} textAnchor="middle" fontSize={10} fontWeight={800} fill="#fff">
+            MAX
+          </text>
+        </g>
+      );
+    }
+
+    if (isLast) {
+      return (
+        <g key={`dot-${index}`}>
+          <circle cx={cx} cy={cy} r={5} fill="#fff" stroke={THEME.orange} strokeWidth={2.5} />
+        </g>
+      );
+    }
+
+    return <circle key={`dot-${index}`} cx={cx} cy={cy} r={4.5} fill="#fff" stroke={THEME.orange} strokeWidth={2.5} />;
   };
 
   return (
@@ -376,25 +391,40 @@ export function HeroTrenPembelianInventoryChart({
 
       <div className="h-44 sm:h-52 w-full mt-2">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={trenPembelianInventory} margin={{ top: 25, right: 6, left: -24, bottom: 0 }}>
+          <AreaChart data={trenPembelianInventory} margin={{ top: 25, right: 6, left: -18, bottom: 0 }}>
+            <defs>
+              <linearGradient id="trenPembelianGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={THEME.orange} stopOpacity={0.28} />
+                <stop offset="100%" stopColor={THEME.orange} stopOpacity={0} />
+              </linearGradient>
+            </defs>
             <CartesianGrid vertical={false} strokeDasharray="2 2" stroke={THEME.grid} />
-            <XAxis dataKey="bulan" tick={{ fontSize: 11, fill: THEME.axis }} axisLine={false} tickLine={false} />
+            <XAxis
+              dataKey="bulan"
+              tick={{ fontSize: 11, fill: THEME.axis }}
+              axisLine={false}
+              tickLine={false}
+              padding={{ left: 32, right: 16 }}
+            />
             <YAxis hide domain={[0, (dataMax: number) => Math.max(dataMax * 1.35, 4)]} />
             {maxJumlah > 0 && (
               <ReferenceLine y={avgJumlah} stroke={THEME.orange} strokeDasharray="3 3" strokeOpacity={0.4} />
             )}
             <Tooltip
+              cursor={{ stroke: THEME.orange, strokeWidth: 1, strokeDasharray: '3 3' }}
               contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 11, padding: '4px 8px' }}
             />
-            <Bar
+            <Area
+              type="linear"
               dataKey="jumlah"
               name="Pengadaan Unit"
-              fill={THEME.orange}
-              radius={[6, 6, 0, 0]}
-              barSize={24}
-              label={renderPeakLabel}
+              stroke={THEME.orange}
+              strokeWidth={2.5}
+              fill="url(#trenPembelianGradient)"
+              dot={renderDot}
+              activeDot={{ r: 6.5, fill: '#fff', stroke: THEME.orange, strokeWidth: 3 }}
             />
-          </BarChart>
+          </AreaChart>
         </ResponsiveContainer>
       </div>
 
@@ -613,7 +643,7 @@ export function TopInventoryCard({
       {topItems.length === 0 ? (
         <p className="text-xs text-slate-400 py-6 text-center">Belum ada item inventory</p>
       ) : (
-        <div className="flex flex-col gap-2 my-auto">
+        <div className="flex flex-col gap-3 my-auto">
           {topItems.map((item, idx) => {
             const pct = Math.round((item.jumlah / maxCount) * 100);
             return (
@@ -678,7 +708,7 @@ export function DepartemenDistribusiCard({
       {sorted.length === 0 ? (
         <p className="text-xs text-slate-400 py-6 text-center">Belum ada data departemen</p>
       ) : (
-        <div className="flex flex-col gap-2 my-auto">
+        <div className="flex flex-col gap-3 my-auto">
           {sorted.map((dept) => {
             const pct = totalKaryawan > 0 ? Math.round((dept.jumlah / totalKaryawan) * 100) : 0;
             return (
