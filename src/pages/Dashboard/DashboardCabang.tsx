@@ -1,16 +1,24 @@
 import { useDashboardCore } from './useDashboardData';
-import { Users, Building2, Bell } from 'lucide-react';
-import { WelcomeHeader, KpiCard, NotifikasiCard } from './Shared';
+import { Users, Building2, Bell, CheckCircle2 } from 'lucide-react';
+import {
+  WelcomeHeader,
+  QuickActionBar,
+  KpiCard,
+  DepartemenDistribusiCard,
+  CalendarCard,
+  NotifikasiCard,
+} from './Shared';
 
-// Dashboard untuk role cabang — TIDAK dapet section Inventaris (itu murni
-// buat admin/hr/manajer).
 export default function DashboardCabang() {
   const { loading, error, user, notifications, handleMarkAsRead, departemen } = useDashboardCore();
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <p className="text-slate-500 text-sm">Memuat dashboard...</p>
+      <div className="min-h-[400px] flex items-center justify-center">
+        <div className="flex items-center gap-2 text-slate-500 text-sm font-medium">
+          <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          Memuat dashboard cabang...
+        </div>
       </div>
     );
   }
@@ -19,29 +27,63 @@ export default function DashboardCabang() {
   const belumDibaca = notifications.filter((n) => !n.read_at).length;
 
   return (
-    <>
+    <div className="space-y-3">
       <WelcomeHeader user={user} />
+      <QuickActionBar role={user?.role} />
 
       {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">{error}</div>
+        <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl px-3 py-2">
+          {error}
+        </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-        <KpiCard icon={Users} label="Total Karyawan" value={totalKaryawan} tone="emerald" hint={`${departemen.length} departemen`} />
-        <KpiCard icon={Building2} label="Jumlah Departemen" value={departemen.length} tone="default" hint={`${totalKaryawan} karyawan total`} />
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+        <KpiCard
+          icon={Users}
+          label="Total Karyawan"
+          value={totalKaryawan}
+          tone="emerald"
+          badge="Aktif"
+          progress={100}
+          hint={`${departemen.length} departemen`}
+        />
+        <KpiCard
+          icon={Building2}
+          label="Departemen"
+          value={departemen.length}
+          tone="default"
+          badge="Divisi"
+          hint={`${totalKaryawan} total staf`}
+        />
         <KpiCard
           icon={Bell}
           label="Notifikasi Baru"
           value={belumDibaca}
           tone={belumDibaca > 0 ? 'rose' : 'default'}
+          badge={belumDibaca > 0 ? 'Baru' : 'Nol'}
           hint={`dari ${notifications.length} notifikasi`}
-          className="col-span-2 sm:col-span-1"
+        />
+        <KpiCard
+          icon={CheckCircle2}
+          label="Status Operasi"
+          value="Normal"
+          tone="emerald"
+          badge="Online"
+          hint="Koneksi cabang tersinkron"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Main Grid: Departemen + Notifikasi */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 items-stretch">
+        <DepartemenDistribusiCard departemen={departemen} />
         <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
       </div>
-    </>
+
+      {/* Kalender Operasional */}
+      <div>
+        <CalendarCard />
+      </div>
+    </div>
   );
 }

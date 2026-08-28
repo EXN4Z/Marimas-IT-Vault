@@ -1,9 +1,14 @@
 import { useDashboardCore } from './useDashboardData';
-import { Bell, Users } from 'lucide-react';
-import { WelcomeHeader, KpiCard, NotifikasiCard } from './Shared';
+import { Bell, Users, Building2, CheckCircle2 } from 'lucide-react';
+import {
+  WelcomeHeader,
+  QuickActionBar,
+  KpiCard,
+  DepartemenDistribusiCard,
+  CalendarCard,
+  NotifikasiCard,
+} from './Shared';
 
-// Dashboard untuk role karyawan/user biasa — cuma section umum,
-// tanpa analytics (inventaris) yang khusus buat admin/hr/manajer/cabang.
 export default function DashboardUser() {
   const {
     loading,
@@ -16,8 +21,11 @@ export default function DashboardUser() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <p className="text-slate-500 text-sm">Memuat dashboard...</p>
+      <div className="min-h-[400px] flex items-center justify-center">
+        <div className="flex items-center gap-2 text-slate-500 text-sm font-medium">
+          <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          Memuat dashboard...
+        </div>
       </div>
     );
   }
@@ -27,39 +35,63 @@ export default function DashboardUser() {
   const totalKaryawan = departemen.reduce((sum, d) => sum + d.jumlah, 0);
 
   return (
-    <>
+    <div className="space-y-3">
       <WelcomeHeader user={user} />
+      <QuickActionBar role={user?.role} />
 
       {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">{error}</div>
+        <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl px-3 py-2">
+          {error}
+        </div>
       )}
 
-      {/* Ringkasan angka singkat -- semuanya turunan dari data yang sudah
-          di-fetch useDashboardCore (notifikasi & distribusi departemen),
-          gak ada fetch tambahan. */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-        <KpiCard icon={Bell} label="Total Notifikasi" value={totalNotifikasi} tone="default" hint={`${belumDibaca} belum dibaca`} />
-        <KpiCard
-          icon={Bell}
-          label="Belum Dibaca"
-          value={belumDibaca}
-          tone={belumDibaca > 0 ? 'rose' : 'default'}
-          hint={`dari ${totalNotifikasi} notifikasi`}
-        />
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
         <KpiCard
           icon={Users}
           label="Total Karyawan"
           value={totalKaryawan}
           tone="emerald"
+          badge="Aktif"
+          progress={100}
           hint={`${departemen.length} departemen`}
-          className="col-span-2 sm:col-span-1"
+        />
+        <KpiCard
+          icon={Building2}
+          label="Departemen"
+          value={departemen.length}
+          tone="default"
+          badge="Divisi"
+          hint={`${totalKaryawan} staf terhubung`}
+        />
+        <KpiCard
+          icon={Bell}
+          label="Notifikasi Baru"
+          value={belumDibaca}
+          tone={belumDibaca > 0 ? 'rose' : 'default'}
+          badge={belumDibaca > 0 ? 'Baru' : 'Nol'}
+          hint={`dari ${totalNotifikasi} notifikasi`}
+        />
+        <KpiCard
+          icon={CheckCircle2}
+          label="Status Akun"
+          value="Aktif"
+          tone="emerald"
+          badge="Verified"
+          hint="Akses inventaris dibuka"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* <DepartemenDistribusiCard departemen={departemen} /> */}
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 items-stretch">
+        <DepartemenDistribusiCard departemen={departemen} />
         <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
       </div>
-    </>
+
+      {/* Calendar */}
+      <div>
+        <CalendarCard />
+      </div>
+    </div>
   );
 }

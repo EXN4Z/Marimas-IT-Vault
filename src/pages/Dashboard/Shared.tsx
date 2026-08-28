@@ -17,7 +17,6 @@ import {
   AlertTriangle,
   Wrench,
   ShieldAlert,
-  HandCoins,
   ArrowRight,
   Bell,
   TrendingUp,
@@ -25,6 +24,14 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarDays,
+  Package,
+  Layers,
+  Activity,
+  Zap,
+  Building2,
+  Users,
+  CheckCircle2,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -36,6 +43,8 @@ import type {
   TrenPembelianInventory,
   StatusInventoryDistribusi,
   AktivitasInventoryTerbaru,
+  InventoryPerMerek,
+  DepartemenDistribusi,
 } from './useDashboardData';
 
 export const THEME = {
@@ -45,58 +54,60 @@ export const THEME = {
   amber: '#F59E0B',
   rose: '#F04438',
   orange: '#FF7A50',
-  sky: '#38BDF8',
+  sky: '#0284C7',
   purple: '#A855F7',
+  indigo: '#4F46E5',
+  teal: '#0D9488',
+  slate: '#64748B',
   grid: '#F1F5F9',
   axis: '#94A3B8',
 };
 
-// Palet warna dipakai bar chart per-item (departemen, dst) biar tiap
-// batang punya warna beda -- kesannya lebih hidup dibanding satu warna flat.
-
 export const cardClass =
-  'bg-white rounded-3xl p-5 sm:p-6 shadow-[0_2px_20px_rgba(15,23,42,0.06)] border border-slate-100';
+  'bg-white rounded-xl sm:rounded-2xl p-3.5 sm:p-4 shadow-sm border border-slate-200/80 hover:border-slate-300 transition-all flex flex-col justify-between';
 
-export const NOTIF_VISIBLE_COUNT = 2;
+export const NOTIF_VISIBLE_COUNT = 3;
 
-export function LegendDot({ color, label, value }: { color: string; label: string; value: number | string }) {
+export function LegendDot({ color, label, value, subvalue }: { color: string; label: string; value: number | string; subvalue?: string }) {
   return (
-    <div className="flex items-center justify-between text-sm">
-      <div className="flex items-center gap-2 text-slate-600">
-        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
-        {label}
+    <div className="flex items-center justify-between text-xs py-0.5">
+      <div className="flex items-center gap-1.5 text-slate-600 truncate min-w-0 pr-1">
+        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
+        <span className="truncate">{label}</span>
       </div>
-      <span className="font-semibold text-slate-800">{value}</span>
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <span className="font-bold text-slate-800 text-xs">{value}</span>
+        {subvalue && <span className="text-[10px] text-slate-400">({subvalue})</span>}
+      </div>
     </div>
   );
 }
 
-// Header ikon kecil dipakai berulang di banyak card -- dibikin helper biar
-// konsisten (ukuran, radius, warna) tanpa copy-paste className panjang.
-export function CardIcon({ icon: Icon, tone = 'violet' }: { icon: LucideIcon; tone?: 'violet' | 'orange' | 'emerald' }) {
-  const toneClass =
-    tone === 'orange'
-      ? 'bg-orange-50 text-[#FF7A50]'
-      : tone === 'emerald'
-        ? 'bg-emerald-50 text-emerald-600'
-        : 'bg-[#EEECFF] text-[#6D5DFC]';
+export function CardIcon({ icon: Icon, tone = 'violet' }: { icon: LucideIcon; tone?: 'violet' | 'orange' | 'emerald' | 'amber' | 'rose' | 'sky' | 'indigo' | 'slate' }) {
+  const toneMap: Record<string, string> = {
+    orange: 'bg-orange-50 text-orange-600',
+    emerald: 'bg-emerald-50 text-emerald-600',
+    amber: 'bg-amber-50 text-amber-600',
+    rose: 'bg-rose-50 text-rose-600',
+    sky: 'bg-sky-50 text-sky-600',
+    indigo: 'bg-indigo-50 text-indigo-600',
+    slate: 'bg-slate-100 text-slate-600',
+    violet: 'bg-[#EEECFF] text-[#6D5DFC]',
+  };
+  const toneClass = toneMap[tone] || toneMap.violet;
   return (
-    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${toneClass}`}>
-      <Icon size={18} />
+    <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${toneClass}`}>
+      <Icon size={16} />
     </div>
   );
 }
 
-// ==== Welcome header — semua role ====
-// Sapaan personal + tanggal hari ini + badge role/departemen. Semua field
-// (name, role, departemen) sudah ada di object user (AuthContext), jadi
-// gak nambah fetch baru sama sekali.
 const GREETING_ROLE_LABEL: Record<string, string> = {
-  admin: 'Admin',
-  hr: 'HR',
-  manajer: 'Manajer',
-  karyawan: 'Karyawan',
-  cabang: 'Cabang',
+  admin: 'Administrator',
+  hr: 'HR & Kepegawaian',
+  manajer: 'Manajer Operasional',
+  karyawan: 'Staff / Karyawan',
+  cabang: 'Staff Cabang',
 };
 
 function greetingWord(): string {
@@ -113,38 +124,84 @@ export function WelcomeHeader({ user }: { user?: UserType | null }) {
   const firstName = user.name?.split(' ')[0] ?? user.name;
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-      <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
-          {greetingWord()}, {firstName}
-        </h2>
-        <p className="text-sm text-slate-500 mt-0.5 capitalize">{today}</p>
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-2.5 border-b border-slate-200/60 mb-3">
+      <div className="flex items-center gap-2.5">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-900 text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
+          <Sparkles size={18} className="text-amber-300" />
+        </div>
+        <div>
+          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 leading-tight">
+            {greetingWord()}, {firstName}!
+          </h2>
+          <p className="text-xs text-slate-500 font-medium capitalize mt-0.5">{today}</p>
+        </div>
       </div>
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs font-semibold text-[#6D5DFC] bg-[#EEECFF] px-3 py-1.5 rounded-full whitespace-nowrap">
+
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="text-[11px] font-semibold text-[#6D5DFC] bg-[#EEECFF] border border-[#DDD8FF] px-2.5 py-1 rounded-md whitespace-nowrap">
           {GREETING_ROLE_LABEL[user.role] ?? user.role}
         </span>
         {user.departemen?.nama && (
-          <span className="text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full whitespace-nowrap">
+          <span className="text-[11px] font-medium text-slate-600 bg-white border border-slate-200 px-2.5 py-1 rounded-md whitespace-nowrap">
             {user.departemen.nama}
           </span>
         )}
+        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          Sistem Online
+        </span>
       </div>
     </div>
   );
 }
 
-// ==== KPI mini card — dipakai buat strip ringkasan angka di atas dashboard ====
-// Redesign: aksen warna di tepi kiri (bar tipis, bukan lingkaran ikon solid)
-// + ikon polos berwarna di pojok kanan atas (gak ada bg tint/circle lagi).
-// Bar aksen pakai overflow-hidden + absolute bar (bukan border-left CSS),
-// biar tetep nyatu mulus sama rounded-2xl card, gak ada sudut kotak.
-const KPI_ACCENT = {
-  default: '#6D5DFC',
-  amber: '#F59E0B',
-  rose: '#F04438',
-  emerald: '#12B76A',
-} as const;
+// ==== Quick Actions Bar ====
+export function QuickActionBar({ role }: { role?: string }) {
+  const navigate = useNavigate();
+  const isStaff = ['admin', 'hr', 'manajer'].includes(role ?? '');
+
+  const actions = [
+    { label: 'Master Inventory', icon: Package, path: '/master-data?tab=inventory', tone: 'text-indigo-600 bg-indigo-50 border-indigo-100 hover:bg-indigo-100/70', show: true },
+    { label: 'Penanganan Inventory', icon: Wrench, path: '/penanganan-inventory', tone: 'text-amber-600 bg-amber-50 border-amber-100 hover:bg-amber-100/70', show: true },
+    { label: 'Riwayat & Mutasi', icon: Activity, path: '/laporan?tab=riwayat_inventory', tone: 'text-emerald-600 bg-emerald-50 border-emerald-100 hover:bg-emerald-100/70', show: isStaff },
+    { label: 'Data Karyawan', icon: Users, path: '/karyawan', tone: 'text-sky-600 bg-sky-50 border-sky-100 hover:bg-sky-100/70', show: role === 'admin' },
+    { label: 'Export Laporan', icon: Layers, path: '/laporan', tone: 'text-slate-700 bg-slate-100/80 border-slate-200 hover:bg-slate-200/70', show: isStaff },
+  ].filter((a) => a.show);
+
+  return (
+    <div className="bg-white border border-slate-200/80 rounded-xl p-2.5 shadow-sm flex items-center gap-2 overflow-x-auto mb-3">
+      <div className="flex items-center gap-1 text-slate-400 pl-1 pr-2 border-r border-slate-200 text-xs font-bold uppercase tracking-wider flex-shrink-0">
+        <Zap size={14} className="text-amber-500 fill-amber-500" />
+        <span className="hidden md:inline">Aksi Cepat:</span>
+      </div>
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        {actions.map((act) => {
+          const Icon = act.icon;
+          return (
+            <button
+              key={act.label}
+              onClick={() => navigate(act.path)}
+              className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-all flex-shrink-0 ${act.tone}`}
+            >
+              <Icon size={14} />
+              <span className="whitespace-nowrap">{act.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ==== KPI mini card (Bento style, high density) ====
+const KPI_CONFIG = {
+  default: { accent: '#6D5DFC', bg: 'bg-indigo-50/50', border: 'border-indigo-100', text: 'text-[#6D5DFC]' },
+  emerald: { accent: '#12B76A', bg: 'bg-emerald-50/50', border: 'border-emerald-100', text: 'text-emerald-600' },
+  amber: { accent: '#F59E0B', bg: 'bg-amber-50/50', border: 'border-amber-100', text: 'text-amber-600' },
+  rose: { accent: '#F04438', bg: 'bg-rose-50/50', border: 'border-rose-100', text: 'text-rose-600' },
+  sky: { accent: '#0284C7', bg: 'bg-sky-50/50', border: 'border-sky-100', text: 'text-sky-600' },
+  orange: { accent: '#FF7A50', bg: 'bg-orange-50/50', border: 'border-orange-100', text: 'text-orange-600' },
+};
 
 export function KpiCard({
   icon: Icon,
@@ -152,46 +209,85 @@ export function KpiCard({
   value,
   tone = 'default',
   hint,
+  badge,
+  progress,
+  onClick,
   className = '',
 }: {
   icon: LucideIcon;
   label: string;
   value: number | string;
-  tone?: keyof typeof KPI_ACCENT;
-  /** Info tambahan di bawah -- diturunkan dari data yang sama, bukan angka baru,
-      dipakai buat ngisi ruang bawah kartu (mis. "12% dari total inventory"). */
+  tone?: keyof typeof KPI_CONFIG;
   hint?: string;
+  badge?: string;
+  progress?: number; // 0 - 100
+  onClick?: () => void;
   className?: string;
 }) {
-  const accent = KPI_ACCENT[tone];
+  const cfg = KPI_CONFIG[tone] || KPI_CONFIG.default;
   return (
     <div
-      className={`relative overflow-hidden bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 pl-5 sm:pl-6 shadow-[0_2px_16px_rgba(15,23,42,0.04)] hover:shadow-[0_4px_24px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[128px] ${className}`}
+      onClick={onClick}
+      className={`group relative overflow-hidden bg-white border border-slate-200/80 rounded-xl px-3.5 py-2.5 shadow-sm hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between ${
+        onClick ? 'cursor-pointer' : ''
+      } ${className}`}
     >
-      <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: accent }} />
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 truncate">{label}</p>
-          <p className="text-2xl font-extrabold text-slate-900 tracking-tight mt-1.5">{value}</p>
+      {/* Subtle left border indicator */}
+      <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: cfg.accent }} />
+
+      <div className="flex items-center justify-between gap-2.5 pl-1">
+        {/* Left: Icon box */}
+        <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${cfg.bg} ${cfg.text} group-hover:scale-105 transition-transform`}>
+          <Icon size={18} strokeWidth={2.2} />
         </div>
-        <Icon size={20} style={{ color: accent }} className="flex-shrink-0" />
+
+        {/* Right: Value & Label */}
+        <div className="text-right min-w-0 flex-1">
+          <div className="flex items-baseline justify-end gap-1.5">
+            <span className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-none">
+              {value}
+            </span>
+            {badge && (
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${cfg.bg} ${cfg.border} ${cfg.text} leading-none`}>
+                {badge}
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] font-semibold text-slate-500 tracking-wide truncate mt-0.5" title={label}>
+            {label}
+          </p>
+        </div>
       </div>
-      {hint && <p className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-50">{hint}</p>}
+
+      {/* Sleek bottom progress bar (as shown in reference) */}
+      {progress !== undefined && (
+        <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden mt-2 ml-1 pr-1">
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${Math.min(100, Math.max(0, progress))}%`, background: cfg.accent }}
+          />
+        </div>
+      )}
+
+      {/* Optional micro hint */}
+      {progress === undefined && hint && (
+        <div className="mt-1 text-[10px] text-slate-400 font-medium truncate text-right pl-1">
+          {hint}
+        </div>
+      )}
     </div>
   );
 }
 
-// ==== Ringkasan Status Inventory — dipakai Admin ====
-// Mencatat semua status barang di Inventaris: Tersedia, Dipakai, Rusak Berat,
-// Dijual. Persentase badge dihitung dari proporsi inventory yang "Tersedia".
+// ==== Ringkasan Status Inventory Card ====
 export function RingkasanInventoryCard({
   ringkasanInventory,
   compact,
 }: {
   ringkasanInventory?: RingkasanInventory;
-  /** true kalau tampil sendirian (tanpa hero chart di sebelahnya), misal dashboard cabang */
   compact?: boolean;
 }) {
+  const navigate = useNavigate();
   const inventoryTotal = ringkasanInventory?.total ?? 0;
   const inventoryTersedia = ringkasanInventory?.tersedia ?? 0;
   const inventoryDipakai = ringkasanInventory?.dipakai ?? 0;
@@ -201,220 +297,215 @@ export function RingkasanInventoryCard({
   const dipakaiPct = inventoryTotal > 0 ? (inventoryDipakai / inventoryTotal) * 100 : 0;
   const rusakBeratPct = inventoryTotal > 0 ? (inventoryRusakBerat / inventoryTotal) * 100 : 0;
   const dijualPct = inventoryTotal > 0 ? (inventoryDijual / inventoryTotal) * 100 : 0;
-  const tersediaRatePct = inventoryTotal > 0 ? Math.round((inventoryTersedia / inventoryTotal) * 100) : null;
+  const tersediaRatePct = inventoryTotal > 0 ? Math.round((inventoryTersedia / inventoryTotal) * 100) : 0;
 
   return (
     <div className={`${cardClass} ${compact ? 'lg:max-w-md' : ''}`}>
-      <div className="flex items-center gap-2.5 mb-4">
-        <CardIcon icon={Boxes} />
-        <h3 className="text-sm font-semibold text-slate-900">Ringkasan Status Inventory</h3>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <p className="text-3xl font-extrabold text-slate-900">{inventoryTotal}</p>
-        {tersediaRatePct !== null && (
-          <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-            {tersediaRatePct}% tersedia
-          </span>
-        )}
-      </div>
-      <p className="text-xs text-slate-400 mt-1">Total inventory tercatat</p>
-
-      <div className="flex w-full h-2.5 rounded-full overflow-hidden mt-5 bg-slate-100">
-        {inventoryTotal > 0 ? (
-          <>
-            <div style={{ width: `${tersediaPct}%`, background: THEME.violet }} />
-            <div style={{ width: `${dipakaiPct}%`, background: THEME.amber }} />
-            <div style={{ width: `${rusakBeratPct}%`, background: THEME.rose }} />
-            <div style={{ width: `${dijualPct}%`, background: '#E2E8F0' }} />
-          </>
-        ) : (
-          <div className="w-full h-full bg-slate-100" />
-        )}
-      </div>
-
-      <div className="flex flex-col gap-3 mt-5">
-        <LegendDot color={THEME.violet} label="Tersedia" value={inventoryTersedia} />
-        <LegendDot color={THEME.amber} label="Dipakai" value={inventoryDipakai} />
-        <LegendDot color={THEME.rose} label="Rusak Berat" value={inventoryRusakBerat} />
-        <LegendDot color="#CBD5E1" label="Dijual" value={inventoryDijual} />
-      </div>
-    </div>
-  );
-}
-
-// ==== Notifikasi — semua role ====
-export function NotifikasiCard({
-  notifications,
-  onMarkAsRead,
-}: {
-  notifications: NotificationItem[];
-  onMarkAsRead: (id: string) => void;
-}) {
-  const navigate = useNavigate();
-  const unreadCount = notifications.filter((n) => !n.read_at).length;
-
-  const handleClick = (n: NotificationItem) => {
-    if (!n.read_at) onMarkAsRead(n.id);
-    // Klik notif langsung arahkan ke halaman terkait (dikirim backend lewat data.url).
-    // Kalau notif lama belum punya field url, diam aja -- gak ngapa-ngapain.
-    if (n.data?.url) navigate(n.data.url);
-  };
-
-  return (
-    <div className={cardClass}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2.5">
-          <CardIcon icon={Bell} />
-          <h3 className="text-base font-semibold text-slate-900">Notifikasi</h3>
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <CardIcon icon={Boxes} tone="violet" />
+            <div>
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Status Inventory</h3>
+              <p className="text-[11px] text-slate-500">Komposisi ketersediaan barang</p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/master-data?tab=inventory')}
+            className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5"
+          >
+            Buka <ArrowRight size={11} />
+          </button>
         </div>
-        {unreadCount > 0 && (
-          <span className="text-xs font-semibold text-white bg-[#6D5DFC] px-2.5 py-1 rounded-full">{unreadCount} baru</span>
-        )}
+
+        <div className="flex items-center justify-between bg-slate-50 border border-slate-200/60 rounded-lg p-2.5 my-2">
+          <div>
+            <span className="text-[10px] uppercase font-bold text-slate-400">Total Terdaftar</span>
+            <p className="text-2xl font-black text-slate-900 leading-none mt-0.5">{inventoryTotal}</p>
+          </div>
+          <div className="text-right">
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+              <CheckCircle2 size={12} />
+              {tersediaRatePct}% Siap Pakai
+            </span>
+          </div>
+        </div>
+
+        {/* Multi-segment Progress Bar */}
+        <div className="flex w-full h-2 rounded-full overflow-hidden bg-slate-100 my-2">
+          {inventoryTotal > 0 ? (
+            <>
+              <div style={{ width: `${tersediaPct}%`, background: THEME.emerald }} title={`Tersedia: ${inventoryTersedia}`} />
+              <div style={{ width: `${dipakaiPct}%`, background: THEME.violet }} title={`Dipakai: ${inventoryDipakai}`} />
+              <div style={{ width: `${rusakBeratPct}%`, background: THEME.rose }} title={`Rusak Berat: ${inventoryRusakBerat}`} />
+              <div style={{ width: `${dijualPct}%`, background: '#94A3B8' }} title={`Dijual: ${inventoryDijual}`} />
+            </>
+          ) : (
+            <div className="w-full h-full bg-slate-100" />
+          )}
+        </div>
       </div>
-      {notifications.length === 0 ? (
-        <p className="text-sm text-slate-400">Belum ada notifikasi</p>
-      ) : (
-        <ul className="flex flex-col gap-1.5 overflow-y-auto pr-1" style={{ maxHeight: `${NOTIF_VISIBLE_COUNT * 76}px` }}>
-          {notifications.map((n) => {
-            const unread = !n.read_at;
-            return (
-              <li
-                key={n.id}
-                className={`flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer transition-colors ${
-                  unread ? 'bg-[#F7F6FF] hover:bg-[#EEECFF]' : 'hover:bg-slate-50'
-                }`}
-                onClick={() => handleClick(n)}
-              >
-                <span className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${unread ? 'bg-[#6D5DFC]' : 'bg-slate-200'}`} />
-                <div className="min-w-0">
-                  <p className={`text-sm ${unread ? 'text-slate-800 font-medium' : 'text-slate-500'}`}>{n.data.message}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{new Date(n.created_at).toLocaleString('id-ID')}</p>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+
+      <div className="grid grid-cols-2 gap-x-2 gap-y-1 pt-2 border-t border-slate-100 mt-1">
+        <LegendDot color={THEME.emerald} label="Tersedia" value={inventoryTersedia} subvalue={`${Math.round(tersediaPct)}%`} />
+        <LegendDot color={THEME.violet} label="Dipakai" value={inventoryDipakai} subvalue={`${Math.round(dipakaiPct)}%`} />
+        <LegendDot color={THEME.rose} label="Rusak Berat" value={inventoryRusakBerat} subvalue={`${Math.round(rusakBeratPct)}%`} />
+        <LegendDot color="#94A3B8" label="Dijual" value={inventoryDijual} subvalue={`${Math.round(dijualPct)}%`} />
+      </div>
     </div>
   );
 }
 
-// ==== Hero chart "Tren Pembelian Inventory per Bulan" — khusus admin (inventaris) ====
-export function HeroTrenPembelianInventoryChart({ trenPembelianInventory }: { trenPembelianInventory: TrenPembelianInventory[] }) {
+// ==== Hero Chart: Tren Pembelian Inventory ====
+export function HeroTrenPembelianInventoryChart({
+  trenPembelianInventory,
+  className = '',
+}: {
+  trenPembelianInventory: TrenPembelianInventory[];
+  className?: string;
+}) {
   const totalTahunIni = trenPembelianInventory.reduce((sum, d) => sum + d.jumlah, 0);
   const maxJumlah = trenPembelianInventory.length ? Math.max(...trenPembelianInventory.map((d) => d.jumlah)) : 0;
   const avgJumlah = trenPembelianInventory.length ? totalTahunIni / trenPembelianInventory.length : 0;
   const peakIndex = maxJumlah > 0 ? trenPembelianInventory.findIndex((d) => d.jumlah === maxJumlah) : -1;
 
-  // Delta bulan terakhir vs bulan sebelumnya -- murni turunan dari data yang
-  // sudah ada (trenPembelianInventory), bukan fetch baru. Dipakai buat badge tren
-  // kecil di header biar kartu ini kerasa lebih "hidup".
   const lastIdx = trenPembelianInventory.length - 1;
   const lastVal = lastIdx >= 0 ? trenPembelianInventory[lastIdx].jumlah : 0;
   const prevVal = lastIdx >= 1 ? trenPembelianInventory[lastIdx - 1].jumlah : null;
   const delta = prevVal !== null ? lastVal - prevVal : null;
 
   const renderPeakLabel = (props: any) => {
-    const { x, y, width, value, index } = props;
+    const { x, y, width, index } = props;
     if (index !== peakIndex || maxJumlah <= 0) return null;
     const cx = x + width / 2;
-    const boxW = 52;
+    const boxW = 38;
     return (
       <g>
-        <rect x={cx - boxW / 2} y={y - 32} width={boxW} height={24} rx={7} fill={THEME.orange} />
-        <text x={cx} y={y - 15} textAnchor="middle" fontSize={12} fontWeight={700} fill="#fff">
-          {value}
+        <rect x={cx - boxW / 2} y={y - 24} width={boxW} height={18} rx={4} fill={THEME.orange} />
+        <text x={cx} y={y - 11} textAnchor="middle" fontSize={10} fontWeight={800} fill="#fff">
+          MAX
         </text>
       </g>
     );
   };
 
   return (
-    <div className={`${cardClass} xl:col-span-2`}>
-      <div className="flex items-start justify-between flex-wrap gap-2">
-        <div>
-          <h3 className="text-sm text-slate-500 font-medium">Tren Pembelian Inventory per Bulan</h3>
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <p className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
-              {totalTahunIni}
-              <span className="text-base font-semibold text-slate-400 ml-2">inventory dibeli</span>
-            </p>
-            {delta !== null && delta !== 0 && (
-              <span
-                className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
-                  delta > 0 ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'
-                }`}
-              >
-                {delta > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                {delta > 0 ? `+${delta}` : delta} bulan ini
-              </span>
-            )}
+    <div className={`${cardClass} ${className}`}>
+      <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-100">
+        <div className="flex items-center gap-2">
+          <CardIcon icon={TrendingUp} tone="orange" />
+          <div>
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Tren Pembelian Barang</h3>
+            <p className="text-[11px] text-slate-500">Aktivitas pengadaan 6 bulan terakhir</p>
           </div>
         </div>
-        <span className="text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full whitespace-nowrap">
-          6 bulan terakhir
-        </span>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-baseline gap-1">
+            <span className="text-xl font-black text-slate-900">{totalTahunIni}</span>
+            <span className="text-[11px] font-semibold text-slate-500">unit</span>
+          </div>
+          {delta !== null && delta !== 0 && (
+            <span
+              className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                delta > 0 ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' : 'text-rose-700 bg-rose-50 border border-rose-200'
+              }`}
+            >
+              {delta > 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+              {delta > 0 ? `+${delta}` : delta} bln ini
+            </span>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-4 mt-4 mb-2">
-        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-          <span className="w-2 h-2 rounded-full" style={{ background: THEME.orange }} />
-          Inventory Dibeli
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-          <span className="w-2.5 h-0 border-t-2 border-dashed" style={{ borderColor: THEME.orange }} />
-          Rata-rata
-        </div>
-      </div>
-
-      <div className="h-72 mt-2">
+      <div className="h-44 sm:h-52 w-full mt-2">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={trenPembelianInventory} margin={{ top: 36, right: 8, left: -20, bottom: 0 }}>
-            <CartesianGrid vertical={false} strokeDasharray="3 3" stroke={THEME.grid} />
-            <XAxis dataKey="bulan" tick={{ fontSize: 12, fill: THEME.axis }} axisLine={false} tickLine={false} />
+          <BarChart data={trenPembelianInventory} margin={{ top: 25, right: 6, left: -24, bottom: 0 }}>
+            <CartesianGrid vertical={false} strokeDasharray="2 2" stroke={THEME.grid} />
+            <XAxis dataKey="bulan" tick={{ fontSize: 11, fill: THEME.axis }} axisLine={false} tickLine={false} />
             <YAxis hide domain={[0, (dataMax: number) => Math.max(dataMax * 1.35, 4)]} />
             {maxJumlah > 0 && (
-              <ReferenceLine y={avgJumlah} stroke={THEME.orange} strokeDasharray="5 5" strokeOpacity={0.5} />
+              <ReferenceLine y={avgJumlah} stroke={THEME.orange} strokeDasharray="3 3" strokeOpacity={0.4} />
             )}
-            <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
-            <Bar dataKey="jumlah" name="Inventory Dibeli" fill={THEME.orange} radius={[8, 8, 0, 0]} barSize={28} label={renderPeakLabel} />
+            <Tooltip
+              contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 11, padding: '4px 8px' }}
+            />
+            <Bar
+              dataKey="jumlah"
+              name="Pengadaan Unit"
+              fill={THEME.orange}
+              radius={[6, 6, 0, 0]}
+              barSize={24}
+              label={renderPeakLabel}
+            />
           </BarChart>
         </ResponsiveContainer>
+      </div>
+
+      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100 mt-1">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full" style={{ background: THEME.orange }} />
+            Jumlah Unit
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2.5 h-0 border-t border-dashed" style={{ borderColor: THEME.orange }} />
+            Rata-rata: {Math.round(avgJumlah * 10) / 10} / bln
+          </span>
+        </div>
+        <span className="text-[10px] text-slate-400">Periode Berjalan</span>
       </div>
     </div>
   );
 }
 
-// ==== Distribusi status inventory (donut) — khusus admin (inventaris) ====
+// ==== Status Inventory Donut Card ====
 const STATUS_ASET_COLOR: Record<string, string> = {
   Tersedia: THEME.emerald,
   Dipakai: THEME.violet,
   'Menunggu Perbaikan': THEME.amber,
-  Diperbaiki: '#38BDF8',
+  Diperbaiki: THEME.sky,
   'Rusak Berat': THEME.rose,
   Dijual: THEME.axis,
 };
 
-export function StatusInventoryDonutCard({ statusInventoryDistribusi }: { statusInventoryDistribusi: StatusInventoryDistribusi[] }) {
+export function StatusInventoryDonutCard({
+  statusInventoryDistribusi,
+  className = '',
+}: {
+  statusInventoryDistribusi: StatusInventoryDistribusi[];
+  className?: string;
+}) {
   const total = statusInventoryDistribusi.reduce((sum, d) => sum + d.jumlah, 0);
 
   return (
-    <div className={cardClass}>
-      <h3 className="text-base font-semibold text-slate-900 mb-4">Distribusi Status Inventory</h3>
+    <div className={`${cardClass} ${className}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <CardIcon icon={Layers} tone="sky" />
+          <div>
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Distribusi Status</h3>
+            <p className="text-[11px] text-slate-500">Detail kondisi seluruh item</p>
+          </div>
+        </div>
+        <span className="text-xs font-extrabold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md">
+          {total} Total
+        </span>
+      </div>
+
       {total === 0 ? (
-        <p className="text-sm text-slate-400">Belum ada data inventory</p>
+        <p className="text-xs text-slate-400 py-6 text-center">Belum ada data inventory</p>
       ) : (
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="h-56 w-full sm:w-1/2 relative">
+        <div className="grid grid-cols-1 sm:grid-cols-12 items-center gap-2 my-auto">
+          <div className="sm:col-span-5 h-36 relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={statusInventoryDistribusi}
                   dataKey="jumlah"
                   nameKey="status"
-                  innerRadius={55}
-                  outerRadius={80}
+                  innerRadius={38}
+                  outerRadius={56}
                   paddingAngle={2}
                   strokeWidth={0}
                 >
@@ -422,36 +513,417 @@ export function StatusInventoryDonutCard({ statusInventoryDistribusi }: { status
                     <Cell key={entry.status} fill={STATUS_ASET_COLOR[entry.status] ?? THEME.axis} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
+                <Tooltip contentStyle={{ borderRadius: 6, border: '1px solid #e2e8f0', fontSize: 11, padding: '4px 8px' }} />
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-2xl font-extrabold text-slate-900">{total}</span>
-              <span className="text-xs text-slate-400">total inventory</span>
+              <span className="text-lg font-black text-slate-900 leading-none">{total}</span>
+              <span className="text-[9px] uppercase font-bold text-slate-400">Unit</span>
             </div>
           </div>
-          <div className="flex flex-col gap-2.5 w-full sm:w-1/2">
-            {statusInventoryDistribusi.map((d) => (
-              <LegendDot
-                key={d.status}
-                color={STATUS_ASET_COLOR[d.status] ?? THEME.axis}
-                label={d.status}
-                value={d.jumlah}
-              />
-            ))}
+
+          <div className="sm:col-span-7 flex flex-col gap-1 pr-1">
+            {statusInventoryDistribusi.map((d) => {
+              const pct = total > 0 ? Math.round((d.jumlah / total) * 100) : 0;
+              return (
+                <LegendDot
+                  key={d.status}
+                  color={STATUS_ASET_COLOR[d.status] ?? THEME.axis}
+                  label={d.status}
+                  value={d.jumlah}
+                  subvalue={`${pct}%`}
+                />
+              );
+            })}
           </div>
         </div>
       )}
+
+      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+        <span>6 kategori status sistem</span>
+        <span>Realtime sync</span>
+      </div>
     </div>
   );
 }
 
-// ==== Kalender — semua role ====
-// Kalender bulanan interaktif (murni UI, gak nge-fetch apa-apa) buat
-// gantiin "Distribusi Inventory per Merek" di layout dashboard. Hari ini
-// otomatis ke-highlight, user bisa klik tanggal lain buat nandain, dan
-// panah kiri/kanan buat pindah bulan. Minggu dimulai dari Minggu biar
-// konsisten sama pola kalender Indonesia pada umumnya.
+// ==== Inventory Butuh Perhatian Card ====
+export function InventoryPerhatianCard({
+  inventoryPerhatian,
+  className = '',
+}: {
+  inventoryPerhatian?: InventoryPerhatian;
+  className?: string;
+}) {
+  const navigate = useNavigate();
+  const rusak = inventoryPerhatian?.rusak ?? 0;
+  const dalamPenanganan = inventoryPerhatian?.dalamPenanganan ?? 0;
+  const garansiSegeraHabis = inventoryPerhatian?.garansiSegeraHabis ?? 0;
+  const totalPerhatian = rusak + dalamPenanganan + garansiSegeraHabis;
+
+  const rows = [
+    { label: 'Rusak Berat', value: rusak, icon: AlertTriangle, color: 'text-rose-600 bg-rose-50 border-rose-100', path: '/master-data?tab=inventory&status=rusak_berat' },
+    { label: 'Proses Perbaikan', value: dalamPenanganan, icon: Wrench, color: 'text-amber-600 bg-amber-50 border-amber-100', path: '/penanganan-inventory' },
+    { label: 'Garansi < 30 Hari', value: garansiSegeraHabis, icon: ShieldAlert, color: 'text-orange-600 bg-orange-50 border-orange-100', path: '/master-data?tab=inventory' },
+  ];
+
+  return (
+    <div className={`${cardClass} ${className}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <CardIcon icon={ShieldAlert} tone={totalPerhatian > 0 ? 'rose' : 'emerald'} />
+          <div>
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Perhatian Khusus</h3>
+            <p className="text-[11px] text-slate-500">Barang kendala & garansi</p>
+          </div>
+        </div>
+        {totalPerhatian > 0 ? (
+          <span className="text-[11px] font-bold text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-full animate-pulse">
+            {totalPerhatian} Item
+          </span>
+        ) : (
+          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+            Aman
+          </span>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-1.5 my-auto">
+        {rows.map((r) => (
+          <div
+            key={r.label}
+            onClick={() => navigate(r.path)}
+            className="flex items-center justify-between p-2 rounded-lg bg-slate-50/80 hover:bg-slate-100 border border-slate-200/50 cursor-pointer transition-all"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <div className={`w-6 h-6 rounded-md flex items-center justify-center border flex-shrink-0 ${r.color}`}>
+                <r.icon size={13} />
+              </div>
+              <span className="text-xs font-semibold text-slate-700 truncate">{r.label}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className={`text-xs font-extrabold ${r.value > 0 ? 'text-slate-900 font-black' : 'text-slate-400'}`}>
+                {r.value}
+              </span>
+              <ArrowRight size={12} className="text-slate-400" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+        <span className="text-slate-400 text-[10px]">Tindak lanjuti segera</span>
+        <button
+          onClick={() => navigate('/penanganan-inventory')}
+          className="text-xs font-bold text-indigo-600 hover:text-indigo-800"
+        >
+          Ke Penanganan &rarr;
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ==== Top Inventory Items / Distribusi per Nama ====
+export function TopInventoryCard({
+  inventoryPerMerek,
+  className = '',
+}: {
+  inventoryPerMerek: InventoryPerMerek[];
+  className?: string;
+}) {
+  const navigate = useNavigate();
+  const topItems = useMemo(() => inventoryPerMerek.slice(0, 5), [inventoryPerMerek]);
+  const maxCount = topItems.length > 0 ? Math.max(...topItems.map((i) => i.jumlah), 1) : 1;
+
+  return (
+    <div className={`${cardClass} ${className}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <CardIcon icon={Package} tone="indigo" />
+          <div>
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Top Item Inventory</h3>
+            <p className="text-[11px] text-slate-500">Barang terbanyak terdaftar</p>
+          </div>
+        </div>
+        <button
+          onClick={() => navigate('/master-data?tab=inventory')}
+          className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800"
+        >
+          Lihat Semua
+        </button>
+      </div>
+
+      {topItems.length === 0 ? (
+        <p className="text-xs text-slate-400 py-6 text-center">Belum ada item inventory</p>
+      ) : (
+        <div className="flex flex-col gap-2 my-auto">
+          {topItems.map((item, idx) => {
+            const pct = Math.round((item.jumlah / maxCount) * 100);
+            return (
+              <div key={item.nama} className="group">
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <div className="flex items-center gap-1.5 truncate max-w-[80%]">
+                    <span className="w-4 h-4 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 flex items-center justify-center flex-shrink-0">
+                      {idx + 1}
+                    </span>
+                    <span className="font-semibold text-slate-800 truncate" title={item.nama}>
+                      {item.nama}
+                    </span>
+                  </div>
+                  <span className="font-extrabold text-slate-900 text-xs">{item.jumlah} <span className="text-[10px] font-normal text-slate-400">unit</span></span>
+                </div>
+                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full transition-all"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+        <span>Berdasarkan nama & model</span>
+        <span>{inventoryPerMerek.length} varian total</span>
+      </div>
+    </div>
+  );
+}
+
+// ==== Distribusi Departemen Card ====
+export function DepartemenDistribusiCard({
+  departemen,
+  className = '',
+}: {
+  departemen: DepartemenDistribusi[];
+  className?: string;
+}) {
+  const totalKaryawan = useMemo(() => departemen.reduce((s, d) => s + d.jumlah, 0), [departemen]);
+  const sorted = useMemo(() => [...departemen].sort((a, b) => b.jumlah - a.jumlah).slice(0, 5), [departemen]);
+
+  return (
+    <div className={`${cardClass} ${className}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <CardIcon icon={Building2} tone="emerald" />
+          <div>
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Distribusi Departemen</h3>
+            <p className="text-[11px] text-slate-500">{departemen.length} Departemen / {totalKaryawan} Karyawan</p>
+          </div>
+        </div>
+        <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+          {totalKaryawan} Staff
+        </span>
+      </div>
+
+      {sorted.length === 0 ? (
+        <p className="text-xs text-slate-400 py-6 text-center">Belum ada data departemen</p>
+      ) : (
+        <div className="flex flex-col gap-2 my-auto">
+          {sorted.map((dept) => {
+            const pct = totalKaryawan > 0 ? Math.round((dept.jumlah / totalKaryawan) * 100) : 0;
+            return (
+              <div key={dept.departemen} className="space-y-0.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-800 truncate">{dept.departemen}</span>
+                  <span className="font-bold text-slate-900 text-xs">
+                    {dept.jumlah} <span className="text-[10px] text-slate-400">({pct}%)</span>
+                  </span>
+                </div>
+                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+        <span>Struktur Organisasi</span>
+        <span>Top 5 departemen</span>
+      </div>
+    </div>
+  );
+}
+
+// ==== Notifikasi Card ====
+export function NotifikasiCard({
+  notifications,
+  onMarkAsRead,
+  className = '',
+}: {
+  notifications: NotificationItem[];
+  onMarkAsRead: (id: string) => void;
+  className?: string;
+}) {
+  const navigate = useNavigate();
+  const unreadCount = notifications.filter((n) => !n.read_at).length;
+
+  const handleClick = (n: NotificationItem) => {
+    if (!n.read_at) onMarkAsRead(n.id);
+    if (n.data?.url) navigate(n.data.url);
+  };
+
+  return (
+    <div className={`${cardClass} ${className}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <CardIcon icon={Bell} tone="violet" />
+          <div>
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Notifikasi Sistem</h3>
+            <p className="text-[11px] text-slate-500">Pemberitahuan & pengingat</p>
+          </div>
+        </div>
+        {unreadCount > 0 ? (
+          <span className="text-[10px] font-bold text-white bg-indigo-600 px-2 py-0.5 rounded-full">
+            {unreadCount} Baru
+          </span>
+        ) : (
+          <span className="text-[10px] font-medium text-slate-400">Semua dibaca</span>
+        )}
+      </div>
+
+      {notifications.length === 0 ? (
+        <div className="py-6 text-center">
+          <p className="text-xs text-slate-400">Belum ada notifikasi</p>
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-1 overflow-y-auto pr-0.5 my-auto max-h-[190px]">
+          {notifications.slice(0, 5).map((n) => {
+            const unread = !n.read_at;
+            return (
+              <li
+                key={n.id}
+                className={`flex items-start gap-2 p-2 rounded-lg cursor-pointer transition-colors border ${
+                  unread ? 'bg-indigo-50/50 border-indigo-100 hover:bg-indigo-100/60' : 'bg-slate-50/60 border-slate-100 hover:bg-slate-100'
+                }`}
+                onClick={() => handleClick(n)}
+              >
+                <span className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${unread ? 'bg-indigo-600' : 'bg-slate-300'}`} />
+                <div className="min-w-0 flex-1">
+                  <p className={`text-xs leading-snug ${unread ? 'text-slate-900 font-semibold' : 'text-slate-600'}`}>{n.data.message}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">{new Date(n.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+        <span>{notifications.length} notifikasi tersimpan</span>
+        <span>Auto-sync Pusher</span>
+      </div>
+    </div>
+  );
+}
+
+// ==== Timeline Aktivitas ====
+const AKTIVITAS_ASET_STYLE: Record<AktivitasInventoryTerbaru['type'], { color: string; label: string }> = {
+  pinjam: { color: THEME.amber, label: 'menerima' },
+  kembali: { color: THEME.emerald, label: 'mengembalikan' },
+  lapor_rusak: { color: THEME.rose, label: 'melaporkan kerusakan' },
+  mulai_perbaikan: { color: THEME.orange, label: 'mulai perbaikan' },
+  selesai_perbaikan: { color: THEME.sky, label: 'selesai perbaikan' },
+  dijual: { color: THEME.purple, label: 'menjual' },
+};
+
+function formatWaktuSingkat(iso: string): string {
+  const date = new Date(iso);
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'Baru saja';
+  if (diffMin < 60) return `${diffMin}m lalu`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}j lalu`;
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay === 1) return 'Kemarin';
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+}
+
+function AktivitasTimelineList({
+  events,
+  timeFormatter,
+}: {
+  events: AktivitasInventoryTerbaru[];
+  timeFormatter: (waktu: string) => string;
+}) {
+  return (
+    <ul className="flex flex-col">
+      {events.map((ev, idx) => {
+        const s = AKTIVITAS_ASET_STYLE[ev.type] || { color: THEME.slate, label: 'mengubah status' };
+        const kode = ev.inventory?.kode_inventory || '-';
+        const pelaku =
+          ev.nama ?? (ev.type === 'mulai_perbaikan' || ev.type === 'selesai_perbaikan' ? 'Admin' : null);
+        const isLast = idx === events.length - 1;
+        return (
+          <li key={`${ev.type}-${idx}`} className="flex gap-2.5">
+            <div className="flex flex-col items-center">
+              <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1" style={{ background: s.color }} />
+              {!isLast && <span className="w-px flex-1 bg-slate-200 mt-1" />}
+            </div>
+            <div className={`min-w-0 ${isLast ? 'pb-0' : 'pb-2.5'}`}>
+              <p className="text-xs text-slate-700 leading-snug">
+                {pelaku && <span className="font-bold text-slate-900">{pelaku} </span>}
+                {s.label} <span className="font-semibold text-indigo-600">{kode}</span>
+              </p>
+              <p className="text-[10px] text-slate-400 mt-0.5">{timeFormatter(ev.waktu)}</p>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+export function AktivitasInventoryCard({
+  aktivitasInventoryTerbaru,
+  className = '',
+}: {
+  aktivitasInventoryTerbaru: AktivitasInventoryTerbaru[];
+  className?: string;
+}) {
+  const navigate = useNavigate();
+
+  return (
+    <div className={`${cardClass} ${className}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <CardIcon icon={Activity} tone="emerald" />
+          <div>
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Aktivitas Terkini</h3>
+            <p className="text-[11px] text-slate-500">Mutasi & transaksi terkini</p>
+          </div>
+        </div>
+        <button
+          onClick={() => navigate('/laporan?tab=riwayat_inventory')}
+          className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5"
+        >
+          Lihat Semua <ArrowRight size={11} />
+        </button>
+      </div>
+
+      {aktivitasInventoryTerbaru.length === 0 ? (
+        <p className="text-xs text-slate-400 py-6 text-center">Belum ada aktivitas inventory.</p>
+      ) : (
+        <div className="overflow-y-auto pr-0.5 my-auto max-h-[190px]">
+          <AktivitasTimelineList events={aktivitasInventoryTerbaru} timeFormatter={formatWaktuSingkat} />
+        </div>
+      )}
+
+      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+        <span>Log mutasi otomatis</span>
+        <span>Terakhir sinkron: Saat ini</span>
+      </div>
+    </div>
+  );
+}
+
+// ==== Kalender Card ====
 const HARI_LABEL = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 const BULAN_LABEL = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -481,14 +953,17 @@ function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-// Kunci tanggal LOKAL (bukan ISO/UTC lewat toISOString) -- biar aktivitas
-// yang kejadian malam hari WIB gak "geser" ke tanggal berikutnya kalau
-// dikonversi ke UTC dulu.
 function dateKeyLocal(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export function CalendarCard({ aktivitas = [] }: { aktivitas?: AktivitasInventoryTerbaru[] }) {
+export function CalendarCard({
+  aktivitas = [],
+  className = '',
+}: {
+  aktivitas?: AktivitasInventoryTerbaru[];
+  className?: string;
+}) {
   const today = useMemo(() => new Date(), []);
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState<Date>(today);
@@ -500,9 +975,6 @@ export function CalendarCard({ aktivitas = [] }: { aktivitas?: AktivitasInventor
   const weeks: { date: Date; inMonth: boolean }[][] = [];
   for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
 
-  // Kelompokkan aktivitas per tanggal sekali aja lewat useMemo, dipakai
-  // buat (1) nandain titik di tanggal yang punya aktivitas dan (2) daftar
-  // aktivitas tanggal yang lagi dipilih di bawah grid.
   const aktivitasPerTanggal = useMemo(() => {
     const map = new Map<string, AktivitasInventoryTerbaru[]>();
     for (const ev of aktivitas) {
@@ -532,98 +1004,96 @@ export function CalendarCard({ aktivitas = [] }: { aktivitas?: AktivitasInventor
   const isCurrentMonthView = viewDate.getFullYear() === today.getFullYear() && viewDate.getMonth() === today.getMonth();
 
   return (
-    <div className={cardClass}>
-      <div className="flex items-center justify-between mb-4 gap-2">
-        <div className="flex items-center gap-2.5">
-          <CardIcon icon={CalendarDays} />
-          <h3 className="text-base font-semibold text-slate-900">Kalender</h3>
-        </div>
-        {!isCurrentMonthView && (
-          <button
-            onClick={goToToday}
-            className="text-xs font-semibold text-[#6D5DFC] hover:text-[#4C3FE0] bg-[#EEECFF] px-2.5 py-1 rounded-full whitespace-nowrap"
-          >
-            Hari ini
-          </button>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between mb-4">
-        <button
-          onClick={() => goToMonth(-1)}
-          aria-label="Bulan sebelumnya"
-          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <p className="text-sm font-semibold text-slate-900">
-          {BULAN_LABEL[viewDate.getMonth()]} {viewDate.getFullYear()}
-        </p>
-        <button
-          onClick={() => goToMonth(1)}
-          aria-label="Bulan berikutnya"
-          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
-
-      <div className="grid grid-cols-7 gap-y-1.5 text-center">
-        {HARI_LABEL.map((h) => (
-          <span key={h} className="text-[11px] font-semibold text-slate-400 pb-1">
-            {h}
-          </span>
-        ))}
-        {weeks.flat().map((cell, idx) => {
-          const isToday = isSameDay(cell.date, today);
-          const isSelected = !isToday && isSameDay(cell.date, selected);
-          const hasAktivitas = aktivitasPerTanggal.has(dateKeyLocal(cell.date));
-          return (
+    <div className={`${cardClass} ${className}`}>
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <CardIcon icon={CalendarDays} tone="violet" />
+            <div>
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Kalender Operasional</h3>
+              <p className="text-[11px] text-slate-500">Jadwal & log harian</p>
+            </div>
+          </div>
+          {!isCurrentMonthView && (
             <button
-              key={idx}
-              onClick={() => setSelected(cell.date)}
-              className={`relative mx-auto w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-sm transition-colors ${
-                isToday
-                  ? 'bg-[#12B76A] text-white font-bold shadow-sm'
-                  : isSelected
-                    ? 'bg-[#6D5DFC] text-white font-semibold'
-                    : cell.inMonth
-                      ? 'text-slate-700 hover:bg-slate-100 font-medium'
-                      : 'text-slate-300 hover:bg-slate-50'
-              }`}
+              onClick={goToToday}
+              className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md"
             >
-              {cell.date.getDate()}
-              {/* Titik penanda -- nunjukin tanggal ini punya aktivitas inventory
-                  (tambah/pinjam/kembali/lapor rusak/dst) tanpa harus diklik
-                  dulu satu-satu. */}
-              {hasAktivitas && (
-                <span
-                  className={`absolute left-1/2 -translate-x-1/2 bottom-0.5 sm:bottom-1 w-1 h-1 rounded-full ${
-                    isToday || isSelected ? 'bg-white' : 'bg-[#6D5DFC]'
-                  }`}
-                />
-              )}
+              Hari Ini
             </button>
-          );
-        })}
+          )}
+        </div>
+
+        <div className="flex items-center justify-between bg-slate-50 border border-slate-200/60 rounded-lg p-1.5 mb-2">
+          <button
+            onClick={() => goToMonth(-1)}
+            aria-label="Bulan sebelumnya"
+            className="w-6 h-6 rounded flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <p className="text-xs font-bold text-slate-800">
+            {BULAN_LABEL[viewDate.getMonth()]} {viewDate.getFullYear()}
+          </p>
+          <button
+            onClick={() => goToMonth(1)}
+            aria-label="Bulan berikutnya"
+            className="w-6 h-6 rounded flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-7 gap-y-1 text-center">
+          {HARI_LABEL.map((h) => (
+            <span key={h} className="text-[10px] font-bold text-slate-400 pb-0.5">
+              {h}
+            </span>
+          ))}
+          {weeks.flat().map((cell, idx) => {
+            const isToday = isSameDay(cell.date, today);
+            const isSelected = !isToday && isSameDay(cell.date, selected);
+            const hasAktivitas = aktivitasPerTanggal.has(dateKeyLocal(cell.date));
+            return (
+              <button
+                key={idx}
+                onClick={() => setSelected(cell.date)}
+                className={`relative mx-auto w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs transition-all ${
+                  isToday
+                    ? 'bg-emerald-600 text-white font-black shadow-sm'
+                    : isSelected
+                    ? 'bg-indigo-600 text-white font-bold'
+                    : cell.inMonth
+                    ? 'text-slate-700 hover:bg-slate-100 font-medium'
+                    : 'text-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                {cell.date.getDate()}
+                {hasAktivitas && (
+                  <span
+                    className={`absolute left-1/2 -translate-x-1/2 bottom-0.5 w-1 h-1 rounded-full ${
+                      isToday || isSelected ? 'bg-white' : 'bg-indigo-600'
+                    }`}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Aktivitas di tanggal terpilih -- muncul begitu tanggal manapun
-          dipencet (termasuk hari ini secara default). Sumbernya sama
-          persis dengan AktivitasInventoryCard & tab Riwayat di Inventaris,
-          cuma difilter ke satu tanggal ini aja. */}
-      <div className="mt-4 pt-4 border-t border-slate-100">
-        <p className="text-xs font-semibold text-slate-500 mb-2.5">
-          Aktivitas{' '}
-          {isSameDay(selected, today)
-            ? 'hari ini'
-            : selected.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
+      <div className="mt-2 pt-2 border-t border-slate-100">
+        <div className="flex items-center justify-between text-[11px] mb-1.5">
+          <span className="font-bold text-slate-700">
+            Log: {isSameDay(selected, today) ? 'Hari Ini' : selected.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+          </span>
+          <span className="text-[10px] text-slate-400">{aktivitasHariIni.length} mutasi</span>
+        </div>
 
         {aktivitasHariIni.length === 0 ? (
-          <p className="text-sm text-slate-400">Tidak ada aktivitas inventory pada tanggal ini.</p>
+          <p className="text-[11px] text-slate-400 py-1">Tidak ada mutasi pada tanggal ini.</p>
         ) : (
-          <div className="max-h-56 overflow-y-auto pr-1">
+          <div className="max-h-28 overflow-y-auto pr-0.5">
             <AktivitasTimelineList
               events={aktivitasHariIni}
               timeFormatter={(waktu) =>
@@ -633,192 +1103,6 @@ export function CalendarCard({ aktivitas = [] }: { aktivitas?: AktivitasInventor
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-// ==== Inventory butuh perhatian — khusus admin (inventaris) ====
-// Donut chart (bukan cuma daftar) biar area kartu ini gak keliatan kosong
-// sebelah kanan seperti sebelumnya -- pola visualnya disamain dengan
-// StatusInventoryDonutCard di atas. Daftar angka tetap ditampilkan di bawah
-// donut, karena tiap baris bisa jadi actionable checklist buat admin.
-const ASET_PERHATIAN_COLOR: Record<string, string> = {
-  'Rusak Berat': THEME.rose,
-  'Dalam Penanganan': THEME.amber,
-  'Garansi < 30 Hari': THEME.orange,
-};
-
-export function InventoryPerhatianCard({ inventoryPerhatian }: { inventoryPerhatian?: InventoryPerhatian }) {
-  const rusak = inventoryPerhatian?.rusak ?? 0;
-  const dalamPenanganan = inventoryPerhatian?.dalamPenanganan ?? 0;
-  const garansiSegeraHabis = inventoryPerhatian?.garansiSegeraHabis ?? 0;
-  const totalPerhatian = rusak + dalamPenanganan + garansiSegeraHabis;
-
-  const rows = [
-    { label: 'Rusak Berat', value: rusak, icon: AlertTriangle, color: 'text-rose-500 bg-rose-50' },
-    { label: 'Dalam Penanganan', value: dalamPenanganan, icon: Wrench, color: 'text-amber-500 bg-amber-50' },
-    { label: 'Garansi < 30 Hari', value: garansiSegeraHabis, icon: ShieldAlert, color: 'text-orange-500 bg-orange-50' },
-  ];
-
-  // Data buat donut -- cuma masukin baris yang jumlahnya > 0, sama kayak
-  // pola StatusInventoryDistribusi (biar slice kosong gak nongol di chart).
-  const donutData = rows.filter((r) => r.value > 0).map((r) => ({ label: r.label, jumlah: r.value }));
-
-  return (
-    <div className={cardClass}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2.5">
-          <CardIcon icon={ShieldAlert} />
-          <h3 className="text-base font-semibold text-slate-900">Inventory Butuh Perhatian</h3>
-        </div>
-        {totalPerhatian > 0 && (
-          <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">
-            {totalPerhatian} inventory
-          </span>
-        )}
-      </div>
-
-      {totalPerhatian === 0 ? (
-        <p className="text-sm text-slate-400">Semua inventory dalam kondisi aman.</p>
-      ) : (
-        <>
-          <div className="h-48 relative mb-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={donutData}
-                  dataKey="jumlah"
-                  nameKey="label"
-                  innerRadius={50}
-                  outerRadius={72}
-                  paddingAngle={2}
-                  strokeWidth={0}
-                >
-                  {donutData.map((entry) => (
-                    <Cell key={entry.label} fill={ASET_PERHATIAN_COLOR[entry.label] ?? THEME.axis} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-2xl font-extrabold text-slate-900">{totalPerhatian}</span>
-              <span className="text-xs text-slate-400">butuh perhatian</span>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3 pt-3 border-t border-slate-100">
-            {rows.map((r) => (
-              <div key={r.label} className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${r.color}`}>
-                    <r.icon size={16} />
-                  </div>
-                  <span className="text-sm text-slate-700 font-medium">{r.label}</span>
-                </div>
-                <span className="text-lg font-bold text-slate-900">{r.value}</span>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-// Waktu relatif singkat, sama persis logikanya dengan formatWaktu() di
-// pages/Inventaris.tsx (tab Riwayat) -- disamain biar "3 jam lalu" di
-// widget dashboard dan di tab Riwayat konsisten, gak beda kalkulasi.
-function formatWaktuSingkat(iso: string): string {
-  const date = new Date(iso);
-  const diffMs = Date.now() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'Baru saja';
-  if (diffMin < 60) return `${diffMin} menit lalu`;
-  const diffHour = Math.floor(diffMin / 60);
-  if (diffHour < 24) return `${diffHour} jam lalu`;
-  const diffDay = Math.floor(diffHour / 24);
-  if (diffDay === 1) return 'Kemarin';
-  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-}
-
-// Opsi D — gaya timeline garis (titik + garis vertikal) buat daftar
-// aktivitas inventory, gantiin kotak ikon lama. Dipakai bareng oleh
-// AktivitasInventoryCard (widget "Riwayat") dan daftar aktivitas per-tanggal
-// di CalendarCard, biar konsisten satu gaya visual di kedua tempat.
-const AKTIVITAS_ASET_STYLE: Record<AktivitasInventoryTerbaru['type'], { color: string; label: string }> = {
-  pinjam: { color: THEME.amber, label: 'menerima' },
-  kembali: { color: THEME.emerald, label: 'mengembalikan' },
-  lapor_rusak: { color: THEME.rose, label: 'melaporkan kerusakan' },
-  mulai_perbaikan: { color: THEME.orange, label: 'mulai memperbaiki' },
-  selesai_perbaikan: { color: THEME.sky, label: 'selesai memperbaiki' },
-  dijual: { color: THEME.purple, label: 'menjual' },
-};
-
-function AktivitasTimelineList({
-  events,
-  timeFormatter,
-}: {
-  events: AktivitasInventoryTerbaru[];
-  timeFormatter: (waktu: string) => string;
-}) {
-  return (
-    <ul className="flex flex-col">
-      {events.map((ev, idx) => {
-        const s = AKTIVITAS_ASET_STYLE[ev.type];
-        const kode = ev.inventory?.kode_inventory || '-';
-        const pelaku =
-          ev.nama ?? (ev.type === 'mulai_perbaikan' || ev.type === 'selesai_perbaikan' ? 'Admin' : null);
-        const isLast = idx === events.length - 1;
-        return (
-          <li key={`${ev.type}-${idx}`} className="flex gap-3">
-            <div className="flex flex-col items-center">
-              <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: s.color }} />
-              {!isLast && <span className="w-px flex-1 bg-slate-100 mt-1" />}
-            </div>
-            <div className={`min-w-0 ${isLast ? 'pb-1' : 'pb-4'}`}>
-              <p className="text-sm text-slate-700 leading-snug">
-                {pelaku && <span className="font-medium text-slate-800">{pelaku} </span>}
-                {s.label} <span className="font-medium text-slate-800">{kode}</span>
-              </p>
-              <p className="text-xs text-slate-400 mt-0.5">{timeFormatter(ev.waktu)}</p>
-            </div>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-// ==== Aktivitas inventory terbaru — khusus admin (inventaris) ====
-// Ringkasan 5 event teraktual dari feed yang sama dengan tab "Riwayat Inventory"
-// di halaman Inventaris. Ditaruh di dashboard (halaman pertama yang dibuka
-// user) supaya histori inventory kelihatan tanpa harus sadar dulu ada tab
-// Riwayat yang harus diklik manual. Klik "Lihat semua" -> lempar ke tab
-// Riwayat di Inventaris buat detail lengkap + filter/search/pagination.
-export function AktivitasInventoryCard({ aktivitasInventoryTerbaru }: { aktivitasInventoryTerbaru: AktivitasInventoryTerbaru[] }) {
-  const navigate = useNavigate();
-
-  return (
-    <div className={cardClass}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2.5">
-          <CardIcon icon={HandCoins} tone="emerald" />
-          <h3 className="text-base font-semibold text-slate-900">Aktivitas Inventory Terbaru</h3>
-        </div>
-        <button
-          onClick={() => navigate('/laporan?tab=riwayat_inventory')}
-          className="flex items-center gap-1 text-xs font-semibold text-[#6D5DFC] hover:text-[#4C3FE0] whitespace-nowrap"
-        >
-          Lihat semua <ArrowRight size={13} />
-        </button>
-      </div>
-
-      {aktivitasInventoryTerbaru.length === 0 ? (
-        <p className="text-sm text-slate-400">Belum ada aktivitas inventory.</p>
-      ) : (
-        <AktivitasTimelineList events={aktivitasInventoryTerbaru} timeFormatter={formatWaktuSingkat} />
-      )}
     </div>
   );
 }
