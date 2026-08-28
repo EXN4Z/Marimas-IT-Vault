@@ -61,7 +61,7 @@ const navItems: NavItem[] = [
       // GET /inventory-penanganan sekarang role:karyawan,manajer,hr,admin).
       // Data yang tampil sudah discoping ke laporan milik sendiri buat
       // non-admin/hr di InventoryPenangananController::index().
-      { label: 'Penanganan Inventory', icon: Wrench, path: '/penanganan-inventory', roles: ['karyawan', 'manajer', 'hr', 'admin'] },
+      { label: 'Penanganan Inventory', icon: Wrench, path: '/penanganan-inventory', roles: ['karyawan', 'cabang', 'manajer', 'hr', 'admin'] },
     ],
   },
   { label: 'Cabang', icon: Building2, path: '/cabang', matchPrefix: '/cabang' },
@@ -180,7 +180,7 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
   // sama sekali (isi tab Inventory-nya), meski cuma admin/hr yang boleh
   // liat tab Kategori/Departemen/Supplier di dalamnya (dibatasi lewat
   // `roles` di masing-masing child di atas).
-  const INVENTORY_ROLES = ['karyawan', 'manajer', 'hr', 'admin'];
+  const INVENTORY_ROLES = ['karyawan', 'cabang', 'manajer', 'hr', 'admin'];
 
   const roleFilter = (item: NavItem) => {
     // Fitur yang masih belum lengkap -- sembunyikan dari sidebar dulu (lihat flag `hidden` di navItems).
@@ -191,8 +191,11 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
     // buat karyawan/manajer juga, karena tab Inventory di dalamnya sudah
     // dibuka buat mereka (backend GET /inventory: role:karyawan,manajer,hr,admin).
     // Tab lain di dalamnya (Kategori/Departemen/Supplier) tetap staff-only,
-    // dibatasi lewat `roles` per-child, bukan di sini. Role yang SAMA
-    // SEKALI gak punya akses Inventory (mis. cabang) tetap gak lihat menu ini.
+    // dibatasi lewat `roles` per-child, bukan di sini. 'cabang' DIIKUTKAN
+    // di INVENTORY_ROLES karena backend (level-based role middleware,
+    // lihat User::$roleLevels) & controller (kembalikan/lapor kerusakan
+    // discoping by user_id, bukan role) memang udah support cabang sebagai
+    // pemakai barang -- lihat tombol "Kembalikan" di TabInventory.tsx.
     if (item.label === 'Master Data' && !INVENTORY_ROLES.includes(user?.role ?? '')) {
       return false;
     }
@@ -210,7 +213,17 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
     return true;
   };
 
-  const visibleInterleaved = interleavedNavItems.filter(roleFilter);
+  // Item dropdown (mis. "Transaksi") tetap lolos roleFilter di atas walau
+  // SEMUA child-nya kefilter abis buat role tertentu (mis. 'cabang' gak ada
+  // di roles-nya "Penanganan Inventory") -- hasilnya tombol dropdown nongol
+  // tapi pas dibuka isinya kosong. Dibuang di sini biar sidebar cabang (atau
+  // role lain ke depannya) gak nampilin menu mati kayak gitu.
+  const hasVisibleContent = (item: NavItem) => {
+    if (!item.children) return true;
+    return item.children.some((child) => !child.roles || child.roles.includes(user?.role ?? ''));
+  };
+
+  const visibleInterleaved = interleavedNavItems.filter(roleFilter).filter(hasVisibleContent);
   const showAuditLog = auditLogNavItem && user?.role === 'admin'; // Audit Log hanya untuk admin
 
   const visibleNavItems = [
