@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   PieChart,
   Pie,
   Cell,
@@ -27,11 +27,10 @@ import {
   Package,
   Layers,
   Activity,
-  Zap,
   Building2,
-  Users,
   CheckCircle2,
-  Sparkles,
+  Search,
+  ChevronDown,
   type LucideIcon,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -47,57 +46,102 @@ import type {
   DepartemenDistribusi,
 } from './useDashboardData';
 
+// ==== DEGO-style theme ====
 export const THEME = {
-  violet: '#6D5DFC',
+  violet: '#5A32FA',
   violetDark: '#4C3FE0',
-  emerald: '#12B76A',
-  amber: '#F59E0B',
-  rose: '#F04438',
-  orange: '#FF7A50',
-  sky: '#0284C7',
-  purple: '#A855F7',
-  indigo: '#4F46E5',
+  emerald: '#34A853',
+  amber: '#F5A623',
+  rose: '#F2453D',
+  orange: '#F2994A',
+  sky: '#2F80ED',
+  purple: '#9B51E0',
+  indigo: '#5A32FA',
   teal: '#0D9488',
   slate: '#64748B',
-  grid: '#F1F5F9',
-  axis: '#94A3B8',
+  grid: '#EEF0F7',
+  axis: '#A9A9C6',
+  bg: '#F7F8FC',
+  ink: '#171633',
 };
 
+// DEGO card: white, big radius, soft shadow, no border
 export const cardClass =
-  'bg-white rounded-xl sm:rounded-2xl p-3.5 sm:p-4 shadow-sm border border-slate-200/80 hover:border-slate-300 transition-all flex flex-col justify-between';
+  'bg-white rounded-2xl p-4 sm:p-5 shadow-[0_4px_24px_rgba(23,22,51,0.06)] hover:shadow-[0_8px_32px_rgba(23,22,51,0.10)] transition-shadow flex flex-col justify-between';
 
 export const NOTIF_VISIBLE_COUNT = 3;
 
 export function LegendDot({ color, label, value, subvalue }: { color: string; label: string; value: number | string; subvalue?: string }) {
   return (
-    <div className="flex items-center justify-between text-xs py-0.5">
-      <div className="flex items-center gap-1.5 text-slate-600 truncate min-w-0 pr-1">
+    <div className="flex items-center justify-between text-xs py-1">
+      <div className="flex items-center gap-2 text-[#666687] truncate min-w-0 pr-1">
         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
-        <span className="truncate">{label}</span>
+        <span className="truncate font-medium">{label}</span>
       </div>
       <div className="flex items-center gap-1 flex-shrink-0">
-        <span className="font-bold text-slate-800 text-xs">{value}</span>
-        {subvalue && <span className="text-[10px] text-slate-400">({subvalue})</span>}
+        <span className="font-bold text-[#171633] text-xs">{value}</span>
+        {subvalue && <span className="text-[10px] text-[#A9A9C6]">({subvalue})</span>}
       </div>
     </div>
   );
 }
 
+// ==== DEGO-style icon: bigger, soft color square, bigger radius ====
 export function CardIcon({ icon: Icon, tone = 'violet' }: { icon: LucideIcon; tone?: 'violet' | 'orange' | 'emerald' | 'amber' | 'rose' | 'sky' | 'indigo' | 'slate' }) {
   const toneMap: Record<string, string> = {
-    orange: 'bg-orange-50 text-orange-600',
-    emerald: 'bg-emerald-50 text-emerald-600',
-    amber: 'bg-amber-50 text-amber-600',
-    rose: 'bg-rose-50 text-rose-600',
-    sky: 'bg-sky-50 text-sky-600',
-    indigo: 'bg-indigo-50 text-indigo-600',
-    slate: 'bg-slate-100 text-slate-600',
-    violet: 'bg-[#EEECFF] text-[#6D5DFC]',
+    orange: 'bg-[#FEF1E7] text-[#F2994A]',
+    emerald: 'bg-[#E7F6EC] text-[#34A853]',
+    amber: 'bg-[#FEF5E1] text-[#F5A623]',
+    rose: 'bg-[#FDECEB] text-[#F2453D]',
+    sky: 'bg-[#E8F1FD] text-[#2F80ED]',
+    indigo: 'bg-[#EFEAFF] text-[#5A32FA]',
+    slate: 'bg-[#F0F1F7] text-[#666687]',
+    violet: 'bg-[#EFEAFF] text-[#5A32FA]',
   };
   const toneClass = toneMap[tone] || toneMap.violet;
   return (
-    <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${toneClass}`}>
-      <Icon size={16} />
+    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${toneClass}`}>
+      <Icon size={18} strokeWidth={2} />
+    </div>
+  );
+}
+
+// Badge tone -> bg/text classes, shared by KPI delta chips & table status pills
+const BADGE_TONE: Record<string, string> = {
+  violet: 'bg-[#EFEAFF] text-[#5A32FA]',
+  orange: 'bg-[#FEF1E7] text-[#F2994A]',
+  emerald: 'bg-[#E7F6EC] text-[#34A853]',
+  amber: 'bg-[#FEF5E1] text-[#F5A623]',
+  rose: 'bg-[#FDECEB] text-[#F2453D]',
+  sky: 'bg-[#E8F1FD] text-[#2F80ED]',
+  indigo: 'bg-[#EFEAFF] text-[#5A32FA]',
+  slate: 'bg-[#F0F1F7] text-[#666687]',
+};
+
+// Reusable DEGO-style card header block
+function SectionHeader({
+  icon,
+  tone,
+  title,
+  subtitle,
+  right,
+}: {
+  icon: LucideIcon;
+  tone?: 'violet' | 'orange' | 'emerald' | 'amber' | 'rose' | 'sky' | 'indigo' | 'slate';
+  title: string;
+  subtitle?: string;
+  right?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-3">
+        <CardIcon icon={icon} tone={tone} />
+        <div>
+          <h3 className="text-sm font-bold text-[#171633] leading-tight">{title}</h3>
+          {subtitle && <p className="text-xs text-[#A9A9C6] mt-0.5">{subtitle}</p>}
+        </div>
+      </div>
+      {right}
     </div>
   );
 }
@@ -118,89 +162,70 @@ function greetingWord(): string {
   return 'Selamat malam';
 }
 
-export function WelcomeHeader({ user }: { user?: UserType | null }) {
+// ==== Primary CTA button (DEGO-style "+ Add Product" pill) ====
+export function PrimaryActionButton({
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  icon?: LucideIcon;
+  label: string;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-[#5A32FA] hover:bg-[#4C3FE0] px-4 py-2.5 rounded-xl shadow-[0_4px_14px_rgba(90,50,250,0.28)] transition-colors whitespace-nowrap"
+    >
+      {Icon && <Icon size={15} strokeWidth={2.4} />}
+      {label}
+    </button>
+  );
+}
+
+export function WelcomeHeader({ user, action }: { user?: UserType | null; action?: React.ReactNode }) {
   if (!user) return null;
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const firstName = user.name?.split(' ')[0] ?? user.name;
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-2.5 border-b border-slate-200/60 mb-3">
-      <div className="flex items-center gap-2.5">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-900 text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
-          <Sparkles size={18} className="text-amber-300" />
-        </div>
+    <div className="flex flex-col gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 leading-tight">
-            {greetingWord()}, {firstName}!
+          <h2 className="text-xl sm:text-2xl font-extrabold text-[#171633] leading-tight">
+            {greetingWord()}, {firstName}! <span className="inline-block">👋</span>
           </h2>
-          <p className="text-xs text-slate-500 font-medium capitalize mt-0.5">{today}</p>
+          <p className="text-xs text-[#A9A9C6] font-medium capitalize mt-1">{today}</p>
         </div>
+        {action && <div className="flex-shrink-0">{action}</div>}
       </div>
 
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <span className="text-[11px] font-semibold text-[#6D5DFC] bg-[#EEECFF] border border-[#DDD8FF] px-2.5 py-1 rounded-md whitespace-nowrap">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-[11px] font-semibold text-white bg-[#171633] px-3 py-1.5 rounded-lg whitespace-nowrap">
           {GREETING_ROLE_LABEL[user.role] ?? user.role}
         </span>
         {user.departemen?.nama && (
-          <span className="text-[11px] font-medium text-slate-600 bg-white border border-slate-200 px-2.5 py-1 rounded-md whitespace-nowrap">
+          <span className="text-[11px] font-medium text-[#666687] bg-white px-3 py-1.5 rounded-lg whitespace-nowrap shadow-[0_2px_8px_rgba(23,22,51,0.06)]">
             {user.departemen.nama}
           </span>
         )}
-        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Sistem Online
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#34A853] bg-[#E7F6EC] px-3 py-1.5 rounded-lg">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#34A853] animate-pulse" />
+          Online
         </span>
       </div>
     </div>
   );
 }
 
-// ==== Quick Actions Bar ====
-export function QuickActionBar({ role }: { role?: string }) {
-  const navigate = useNavigate();
-  const isStaff = ['admin', 'hr', 'manajer'].includes(role ?? '');
-
-  const actions = [
-    { label: 'Master Inventory', icon: Package, path: '/master-data?tab=inventory', tone: 'text-indigo-600 bg-indigo-50 border-indigo-100 hover:bg-indigo-100/70', show: true },
-    { label: 'Penanganan Inventory', icon: Wrench, path: '/penanganan-inventory', tone: 'text-amber-600 bg-amber-50 border-amber-100 hover:bg-amber-100/70', show: true },
-    { label: 'Riwayat & Mutasi', icon: Activity, path: '/laporan?tab=riwayat_inventory', tone: 'text-emerald-600 bg-emerald-50 border-emerald-100 hover:bg-emerald-100/70', show: isStaff },
-    { label: 'Data Karyawan', icon: Users, path: '/karyawan', tone: 'text-sky-600 bg-sky-50 border-sky-100 hover:bg-sky-100/70', show: role === 'admin' },
-    { label: 'Export Laporan', icon: Layers, path: '/laporan', tone: 'text-slate-700 bg-slate-100/80 border-slate-200 hover:bg-slate-200/70', show: isStaff },
-  ].filter((a) => a.show);
-
-  return (
-    <div className="bg-white border border-slate-200/80 rounded-xl p-2.5 shadow-sm flex items-center gap-2 overflow-x-auto mb-3">
-      <div className="flex items-center gap-1 text-slate-400 pl-1 pr-2 border-r border-slate-200 text-xs font-bold uppercase tracking-wider flex-shrink-0">
-        <Zap size={14} className="text-amber-500 fill-amber-500" />
-        <span className="hidden md:inline">Aksi Cepat:</span>
-      </div>
-      <div className="flex items-center gap-2 flex-1 min-w-0">
-        {actions.map((act) => {
-          const Icon = act.icon;
-          return (
-            <button
-              key={act.label}
-              onClick={() => navigate(act.path)}
-              className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-all flex-shrink-0 ${act.tone}`}
-            >
-              <Icon size={14} />
-              <span className="whitespace-nowrap">{act.label}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ==== KPI mini card (Bento style, high density) ====
+// ==== DEGO KPI card: icon left, small uppercase label, BIG value, trend badge, footer link ====
 const KPI_CONFIG = {
-  default: { accent: '#6D5DFC', bg: 'bg-indigo-50/50', border: 'border-indigo-100', text: 'text-[#6D5DFC]' },
-  emerald: { accent: '#12B76A', bg: 'bg-emerald-50/50', border: 'border-emerald-100', text: 'text-emerald-600' },
-  amber: { accent: '#F59E0B', bg: 'bg-amber-50/50', border: 'border-amber-100', text: 'text-amber-600' },
-  rose: { accent: '#F04438', bg: 'bg-rose-50/50', border: 'border-rose-100', text: 'text-rose-600' },
-  sky: { accent: '#0284C7', bg: 'bg-sky-50/50', border: 'border-sky-100', text: 'text-sky-600' },
-  orange: { accent: '#FF7A50', bg: 'bg-orange-50/50', border: 'border-orange-100', text: 'text-orange-600' },
+  default: { accent: '#5A32FA', bg: 'bg-[#EFEAFF]', text: 'text-[#5A32FA]' },
+  emerald: { accent: '#34A853', bg: 'bg-[#E7F6EC]', text: 'text-[#34A853]' },
+  amber: { accent: '#F5A623', bg: 'bg-[#FEF5E1]', text: 'text-[#F5A623]' },
+  rose: { accent: '#F2453D', bg: 'bg-[#FDECEB]', text: 'text-[#F2453D]' },
+  sky: { accent: '#2F80ED', bg: 'bg-[#E8F1FD]', text: 'text-[#2F80ED]' },
+  orange: { accent: '#F2994A', bg: 'bg-[#FEF1E7]', text: 'text-[#F2994A]' },
 };
 
 export function KpiCard({
@@ -212,6 +237,7 @@ export function KpiCard({
   badge,
   progress,
   onClick,
+  detailLabel,
   className = '',
 }: {
   icon: LucideIcon;
@@ -220,48 +246,39 @@ export function KpiCard({
   tone?: keyof typeof KPI_CONFIG;
   hint?: string;
   badge?: string;
-  progress?: number; // 0 - 100
+  progress?: number;
   onClick?: () => void;
+  detailLabel?: string;
   className?: string;
 }) {
   const cfg = KPI_CONFIG[tone] || KPI_CONFIG.default;
   return (
     <div
-      onClick={onClick}
-      className={`group relative overflow-hidden bg-white border border-slate-200/80 rounded-xl px-3.5 py-2.5 shadow-sm hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between ${
-        onClick ? 'cursor-pointer' : ''
-      } ${className}`}
+      className={`bg-white rounded-2xl p-4 shadow-[0_4px_24px_rgba(23,22,51,0.06)] hover:shadow-[0_8px_32px_rgba(23,22,51,0.10)] transition-all flex flex-col gap-3 ${className}`}
     >
-      {/* Subtle left border indicator */}
-      <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: cfg.accent }} />
-
-      <div className="flex items-center justify-between gap-2.5 pl-1">
-        {/* Left: Icon box */}
-        <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${cfg.bg} ${cfg.text} group-hover:scale-105 transition-transform`}>
-          <Icon size={18} strokeWidth={2.2} />
+      <div className="flex items-center gap-3">
+        {/* DEGO-style icon square */}
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.bg} ${cfg.text}`}>
+          <Icon size={20} strokeWidth={2.2} />
         </div>
-
-        {/* Right: Value & Label */}
-        <div className="text-right min-w-0 flex-1">
-          <div className="flex items-baseline justify-end gap-1.5">
-            <span className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-none">
-              {value}
-            </span>
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold text-[#A9A9C6] uppercase tracking-wider truncate" title={label}>
+            {label}
+          </p>
+          <div className="flex items-baseline gap-2 mt-0.5">
+            <span className="text-2xl font-extrabold text-[#171633] tracking-tight leading-none">{value}</span>
             {badge && (
-              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${cfg.bg} ${cfg.border} ${cfg.text} leading-none`}>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${cfg.bg} ${cfg.text} leading-none`}>
                 {badge}
               </span>
             )}
           </div>
-          <p className="text-[11px] font-semibold text-slate-500 tracking-wide truncate mt-0.5" title={label}>
-            {label}
-          </p>
         </div>
       </div>
 
-      {/* Sleek bottom progress bar (as shown in reference) */}
+      {/* DEGO-style slim progress */}
       {progress !== undefined && (
-        <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden mt-2 ml-1 pr-1">
+        <div className="w-full bg-[#F0F1F7] h-1.5 rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{ width: `${Math.min(100, Math.max(0, progress))}%`, background: cfg.accent }}
@@ -269,11 +286,20 @@ export function KpiCard({
         </div>
       )}
 
-      {/* Optional micro hint */}
-      {progress === undefined && hint && (
-        <div className="mt-1 text-[10px] text-slate-400 font-medium truncate text-right pl-1">
-          {hint}
-        </div>
+      {/* Footer: clickable "Lihat detail" link (DEGO "View net income >" pattern) when onClick given,
+          otherwise a plain hint line. */}
+      {onClick ? (
+        <button
+          onClick={onClick}
+          className={`flex items-center gap-1 text-[11px] font-bold ${cfg.text} hover:underline w-fit`}
+        >
+          {detailLabel ?? hint ?? 'Lihat detail'}
+          <ArrowRight size={11} />
+        </button>
+      ) : (
+        progress === undefined && hint && (
+          <p className="text-[11px] text-[#A9A9C6] font-medium truncate">{hint}</p>
+        )
       )}
     </div>
   );
@@ -302,55 +328,53 @@ export function RingkasanInventoryCard({
   return (
     <div className={`${cardClass} ${compact ? 'lg:max-w-md' : ''}`}>
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <CardIcon icon={Boxes} tone="violet" />
-            <div>
-              <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Status Inventory</h3>
-              <p className="text-[11px] text-slate-500">Komposisi ketersediaan barang</p>
-            </div>
-          </div>
-          <button
-            onClick={() => navigate('/master-data?tab=inventory')}
-            className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5"
-          >
-            Buka <ArrowRight size={11} />
-          </button>
-        </div>
+        <SectionHeader
+          icon={Boxes}
+          tone="violet"
+          title="Status Inventory"
+          subtitle="Komposisi ketersediaan barang"
+          right={
+            <button
+              onClick={() => navigate('/master-data?tab=inventory')}
+              className="text-[11px] font-semibold text-[#5A32FA] hover:text-[#4C3FE0] flex items-center gap-1 bg-[#EFEAFF] px-2.5 py-1 rounded-lg"
+            >
+              Buka <ArrowRight size={12} />
+            </button>
+          }
+        />
 
-        <div className="flex items-center justify-between bg-slate-50 border border-slate-200/60 rounded-lg p-2.5 my-2">
+        {/* DEGO-style highlight: big number + green badge */}
+        <div className="flex items-center justify-between bg-[#F7F8FC] rounded-xl p-3.5 my-3">
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400">Total Terdaftar</span>
-            <p className="text-2xl font-black text-slate-900 leading-none mt-0.5">{inventoryTotal}</p>
+            <span className="text-[10px] uppercase font-bold text-[#A9A9C6] tracking-wider">Total Terdaftar</span>
+            <p className="text-3xl font-extrabold text-[#171633] leading-none mt-1">{inventoryTotal}</p>
           </div>
-          <div className="text-right">
-            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
-              <CheckCircle2 size={12} />
-              {tersediaRatePct}% Siap Pakai
-            </span>
-          </div>
+          <span className="inline-flex items-center gap-1 text-xs font-bold text-[#34A853] bg-white px-3 py-1.5 rounded-lg shadow-[0_2px_8px_rgba(23,22,51,0.06)]">
+            <CheckCircle2 size={13} />
+            {tersediaRatePct}%
+          </span>
         </div>
 
-        {/* Multi-segment Progress Bar */}
-        <div className="flex w-full h-2 rounded-full overflow-hidden bg-slate-100 my-2">
+        {/* Multi-segment progress */}
+        <div className="flex w-full h-2 rounded-full overflow-hidden bg-[#F0F1F7] my-2">
           {inventoryTotal > 0 ? (
             <>
               <div style={{ width: `${tersediaPct}%`, background: THEME.emerald }} title={`Tersedia: ${inventoryTersedia}`} />
               <div style={{ width: `${dipakaiPct}%`, background: THEME.violet }} title={`Dipakai: ${inventoryDipakai}`} />
               <div style={{ width: `${rusakBeratPct}%`, background: THEME.rose }} title={`Rusak Berat: ${inventoryRusakBerat}`} />
-              <div style={{ width: `${dijualPct}%`, background: '#94A3B8' }} title={`Dijual: ${inventoryDijual}`} />
+              <div style={{ width: `${dijualPct}%`, background: '#A9A9C6' }} title={`Dijual: ${inventoryDijual}`} />
             </>
           ) : (
-            <div className="w-full h-full bg-slate-100" />
+            <div className="w-full h-full bg-[#F0F1F7]" />
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-x-2 gap-y-1 pt-2 border-t border-slate-100 mt-1">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1 pt-3 border-t border-[#F0F1F7] mt-2">
         <LegendDot color={THEME.emerald} label="Tersedia" value={inventoryTersedia} subvalue={`${Math.round(tersediaPct)}%`} />
         <LegendDot color={THEME.violet} label="Dipakai" value={inventoryDipakai} subvalue={`${Math.round(dipakaiPct)}%`} />
         <LegendDot color={THEME.rose} label="Rusak Berat" value={inventoryRusakBerat} subvalue={`${Math.round(rusakBeratPct)}%`} />
-        <LegendDot color="#94A3B8" label="Dijual" value={inventoryDijual} subvalue={`${Math.round(dijualPct)}%`} />
+        <LegendDot color="#A9A9C6" label="Dijual" value={inventoryDijual} subvalue={`${Math.round(dijualPct)}%`} />
       </div>
     </div>
   );
@@ -374,86 +398,115 @@ export function HeroTrenPembelianInventoryChart({
   const prevVal = lastIdx >= 1 ? trenPembelianInventory[lastIdx - 1].jumlah : null;
   const delta = prevVal !== null ? lastVal - prevVal : null;
 
-  const renderPeakLabel = (props: any) => {
-    const { x, y, width, index } = props;
-    if (index !== peakIndex || maxJumlah <= 0) return null;
-    const cx = x + width / 2;
-    const boxW = 38;
-    return (
-      <g>
-        <rect x={cx - boxW / 2} y={y - 24} width={boxW} height={18} rx={4} fill={THEME.orange} />
-        <text x={cx} y={y - 11} textAnchor="middle" fontSize={10} fontWeight={800} fill="#fff">
-          MAX
-        </text>
-      </g>
-    );
+  const renderDot = (props: any) => {
+    const { cx, cy, index, value } = props;
+    if (value <= 0) return null;
+    const isPeak = index === peakIndex && maxJumlah > 0;
+    const isLast = index === lastIdx;
+
+    if (isPeak) {
+      return (
+        <g key={`dot-${index}`}>
+          <circle cx={cx} cy={cy} r={9} fill={THEME.violet} fillOpacity={0.15} />
+          <circle cx={cx} cy={cy} r={4.5} fill="#fff" stroke={THEME.violet} strokeWidth={2.5} />
+          <rect x={cx - 19} y={cy - 28} width={38} height={18} rx={5} fill={THEME.violet} />
+          <text x={cx} y={cy - 15} textAnchor="middle" fontSize={10} fontWeight={800} fill="#fff">
+            MAX
+          </text>
+        </g>
+      );
+    }
+
+    if (isLast) {
+      return (
+        <g key={`dot-${index}`}>
+          <circle cx={cx} cy={cy} r={5} fill="#fff" stroke={THEME.violet} strokeWidth={2.5} />
+        </g>
+      );
+    }
+
+    return <circle key={`dot-${index}`} cx={cx} cy={cy} r={4.5} fill="#fff" stroke={THEME.violet} strokeWidth={2.5} />;
   };
 
   return (
     <div className={`${cardClass} ${className}`}>
-      <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-100">
-        <div className="flex items-center gap-2">
-          <CardIcon icon={TrendingUp} tone="orange" />
-          <div>
-            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Tren Pembelian Barang</h3>
-            <p className="text-[11px] text-slate-500">Aktivitas pengadaan 6 bulan terakhir</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="flex items-baseline gap-1">
-            <span className="text-xl font-black text-slate-900">{totalTahunIni}</span>
-            <span className="text-[11px] font-semibold text-slate-500">unit</span>
-          </div>
-          {delta !== null && delta !== 0 && (
-            <span
-              className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                delta > 0 ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' : 'text-rose-700 bg-rose-50 border border-rose-200'
-              }`}
-            >
-              {delta > 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-              {delta > 0 ? `+${delta}` : delta} bln ini
-            </span>
-          )}
-        </div>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <SectionHeader
+          icon={TrendingUp}
+          tone="orange"
+          title="Tren Pembelian Barang"
+          subtitle="Aktivitas pengadaan 6 bulan terakhir"
+        />
       </div>
 
-      <div className="h-44 sm:h-52 w-full mt-2">
+      <div className="flex items-center justify-between bg-[#F7F8FC] rounded-xl px-3.5 py-2.5 mb-2">
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-2xl font-extrabold text-[#171633]">{totalTahunIni}</span>
+          <span className="text-xs font-semibold text-[#A9A9C6]">unit total</span>
+        </div>
+        {delta !== null && delta !== 0 && (
+          <span
+            className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg ${
+              delta > 0 ? 'text-[#34A853] bg-[#E7F6EC]' : 'text-[#F2453D] bg-[#FDECEB]'
+            }`}
+          >
+            {delta > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+            {delta > 0 ? `+${delta}` : delta}
+          </span>
+        )}
+      </div>
+
+      <div className="h-48 sm:h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={trenPembelianInventory} margin={{ top: 25, right: 6, left: -24, bottom: 0 }}>
-            <CartesianGrid vertical={false} strokeDasharray="2 2" stroke={THEME.grid} />
-            <XAxis dataKey="bulan" tick={{ fontSize: 11, fill: THEME.axis }} axisLine={false} tickLine={false} />
+          <AreaChart data={trenPembelianInventory} margin={{ top: 25, right: 6, left: -18, bottom: 0 }}>
+            <defs>
+              <linearGradient id="trenPembelianGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={THEME.violet} stopOpacity={0.25} />
+                <stop offset="100%" stopColor={THEME.violet} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} strokeDasharray="4 4" stroke={THEME.grid} />
+            <XAxis
+              dataKey="bulan"
+              tick={{ fontSize: 11, fill: THEME.axis }}
+              axisLine={false}
+              tickLine={false}
+              padding={{ left: 32, right: 16 }}
+            />
             <YAxis hide domain={[0, (dataMax: number) => Math.max(dataMax * 1.35, 4)]} />
             {maxJumlah > 0 && (
-              <ReferenceLine y={avgJumlah} stroke={THEME.orange} strokeDasharray="3 3" strokeOpacity={0.4} />
+              <ReferenceLine y={avgJumlah} stroke={THEME.violet} strokeDasharray="3 3" strokeOpacity={0.35} />
             )}
             <Tooltip
-              contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 11, padding: '4px 8px' }}
+              cursor={{ stroke: THEME.violet, strokeWidth: 1, strokeDasharray: '3 3' }}
+              contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 24px rgba(23,22,51,0.12)', fontSize: 11, padding: '8px 12px' }}
             />
-            <Bar
+            <Area
+              type="linear"
               dataKey="jumlah"
               name="Pengadaan Unit"
-              fill={THEME.orange}
-              radius={[6, 6, 0, 0]}
-              barSize={24}
-              label={renderPeakLabel}
+              stroke={THEME.violet}
+              strokeWidth={3}
+              fill="url(#trenPembelianGradient)"
+              dot={renderDot}
+              activeDot={{ r: 7, fill: '#fff', stroke: THEME.violet, strokeWidth: 3 }}
             />
-          </BarChart>
+          </AreaChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100 mt-1">
+      <div className="flex items-center justify-between text-[11px] text-[#A9A9C6] pt-3 border-t border-[#F0F1F7] mt-2">
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full" style={{ background: THEME.orange }} />
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full" style={{ background: THEME.violet }} />
             Jumlah Unit
           </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2.5 h-0 border-t border-dashed" style={{ borderColor: THEME.orange }} />
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-0 border-t border-dashed" style={{ borderColor: THEME.violet }} />
             Rata-rata: {Math.round(avgJumlah * 10) / 10} / bln
           </span>
         </div>
-        <span className="text-[10px] text-slate-400">Periode Berjalan</span>
+        <span className="text-[10px]">Periode Berjalan</span>
       </div>
     </div>
   );
@@ -480,45 +533,44 @@ export function StatusInventoryDonutCard({
 
   return (
     <div className={`${cardClass} ${className}`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <CardIcon icon={Layers} tone="sky" />
-          <div>
-            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Distribusi Status</h3>
-            <p className="text-[11px] text-slate-500">Detail kondisi seluruh item</p>
-          </div>
-        </div>
-        <span className="text-xs font-extrabold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md">
-          {total} Total
-        </span>
-      </div>
+      <SectionHeader
+        icon={Layers}
+        tone="sky"
+        title="Distribusi Status"
+        subtitle="Detail kondisi seluruh item"
+        right={
+          <span className="text-xs font-bold text-[#171633] bg-[#F7F8FC] px-3 py-1.5 rounded-lg">
+            {total} Total
+          </span>
+        }
+      />
 
       {total === 0 ? (
-        <p className="text-xs text-slate-400 py-6 text-center">Belum ada data inventory</p>
+        <p className="text-xs text-[#A9A9C6] py-6 text-center">Belum ada data inventory</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-12 items-center gap-2 my-auto">
-          <div className="sm:col-span-5 h-36 relative">
+        <div className="grid grid-cols-1 sm:grid-cols-12 items-center gap-3 my-auto">
+          <div className="sm:col-span-5 h-40 relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={statusInventoryDistribusi}
                   dataKey="jumlah"
                   nameKey="status"
-                  innerRadius={38}
-                  outerRadius={56}
-                  paddingAngle={2}
+                  innerRadius={42}
+                  outerRadius={60}
+                  paddingAngle={3}
                   strokeWidth={0}
                 >
                   {statusInventoryDistribusi.map((entry) => (
                     <Cell key={entry.status} fill={STATUS_ASET_COLOR[entry.status] ?? THEME.axis} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ borderRadius: 6, border: '1px solid #e2e8f0', fontSize: 11, padding: '4px 8px' }} />
+                <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 24px rgba(23,22,51,0.12)', fontSize: 11, padding: '8px 12px' }} />
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-lg font-black text-slate-900 leading-none">{total}</span>
-              <span className="text-[9px] uppercase font-bold text-slate-400">Unit</span>
+              <span className="text-2xl font-extrabold text-[#171633] leading-none">{total}</span>
+              <span className="text-[9px] uppercase font-bold text-[#A9A9C6] mt-1">Unit</span>
             </div>
           </div>
 
@@ -539,7 +591,7 @@ export function StatusInventoryDonutCard({
         </div>
       )}
 
-      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+      <div className="pt-3 border-t border-[#F0F1F7] flex items-center justify-between text-[10px] text-[#A9A9C6]">
         <span>6 kategori status sistem</span>
         <span>Realtime sync</span>
       </div>
@@ -562,60 +614,57 @@ export function InventoryPerhatianCard({
   const totalPerhatian = rusak + dalamPenanganan + garansiSegeraHabis;
 
   const rows = [
-    { label: 'Rusak Berat', value: rusak, icon: AlertTriangle, color: 'text-rose-600 bg-rose-50 border-rose-100', path: '/master-data?tab=inventory&status=rusak_berat' },
-    { label: 'Proses Perbaikan', value: dalamPenanganan, icon: Wrench, color: 'text-amber-600 bg-amber-50 border-amber-100', path: '/penanganan-inventory' },
-    { label: 'Garansi < 30 Hari', value: garansiSegeraHabis, icon: ShieldAlert, color: 'text-orange-600 bg-orange-50 border-orange-100', path: '/master-data?tab=inventory' },
+    { label: 'Rusak Berat', value: rusak, icon: AlertTriangle, tone: 'rose' as const, path: '/master-data?tab=inventory&status=rusak_berat' },
+    { label: 'Proses Perbaikan', value: dalamPenanganan, icon: Wrench, tone: 'amber' as const, path: '/penanganan-inventory' },
+    { label: 'Garansi < 30 Hari', value: garansiSegeraHabis, icon: ShieldAlert, tone: 'orange' as const, path: '/master-data?tab=inventory' },
   ];
 
   return (
     <div className={`${cardClass} ${className}`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <CardIcon icon={ShieldAlert} tone={totalPerhatian > 0 ? 'rose' : 'emerald'} />
-          <div>
-            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Perhatian Khusus</h3>
-            <p className="text-[11px] text-slate-500">Barang kendala & garansi</p>
-          </div>
-        </div>
-        {totalPerhatian > 0 ? (
-          <span className="text-[11px] font-bold text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-full animate-pulse">
-            {totalPerhatian} Item
-          </span>
-        ) : (
-          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
-            Aman
-          </span>
-        )}
-      </div>
+      <SectionHeader
+        icon={ShieldAlert}
+        tone={totalPerhatian > 0 ? 'rose' : 'emerald'}
+        title="Perhatian Khusus"
+        subtitle="Barang kendala & garansi"
+        right={
+          totalPerhatian > 0 ? (
+            <span className="text-[11px] font-bold text-[#F2453D] bg-[#FDECEB] px-3 py-1 rounded-lg">
+              {totalPerhatian} Item
+            </span>
+          ) : (
+            <span className="text-[11px] font-bold text-[#34A853] bg-[#E7F6EC] px-3 py-1 rounded-lg">
+              Aman
+            </span>
+          )
+        }
+      />
 
-      <div className="flex flex-col gap-1.5 my-auto">
+      <div className="flex flex-col gap-2 my-auto">
         {rows.map((r) => (
           <div
             key={r.label}
             onClick={() => navigate(r.path)}
-            className="flex items-center justify-between p-2 rounded-lg bg-slate-50/80 hover:bg-slate-100 border border-slate-200/50 cursor-pointer transition-all"
+            className="flex items-center justify-between p-3 rounded-xl bg-[#F7F8FC] hover:bg-[#F0F1F7] cursor-pointer transition-colors"
           >
-            <div className="flex items-center gap-2 min-w-0">
-              <div className={`w-6 h-6 rounded-md flex items-center justify-center border flex-shrink-0 ${r.color}`}>
-                <r.icon size={13} />
-              </div>
-              <span className="text-xs font-semibold text-slate-700 truncate">{r.label}</span>
+            <div className="flex items-center gap-3 min-w-0">
+              <CardIcon icon={r.icon} tone={r.tone} />
+              <span className="text-xs font-semibold text-[#171633] truncate">{r.label}</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className={`text-xs font-extrabold ${r.value > 0 ? 'text-slate-900 font-black' : 'text-slate-400'}`}>
+            <div className="flex items-center gap-2">
+              <span className={`text-sm font-extrabold ${r.value > 0 ? 'text-[#171633]' : 'text-[#A9A9C6]'}`}>
                 {r.value}
               </span>
-              <ArrowRight size={12} className="text-slate-400" />
+              <ArrowRight size={13} className="text-[#A9A9C6]" />
             </div>
           </div>
         ))}
       </div>
 
-      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-        <span className="text-slate-400 text-[10px]">Tindak lanjuti segera</span>
+      <div className="pt-3 border-t border-[#F0F1F7] flex items-center justify-between text-[11px]">
+        <span className="text-[#A9A9C6] text-[10px]">Tindak lanjuti segera</span>
         <button
           onClick={() => navigate('/penanganan-inventory')}
-          className="text-xs font-bold text-indigo-600 hover:text-indigo-800"
+          className="text-xs font-bold text-[#5A32FA] hover:text-[#4C3FE0]"
         >
           Ke Penanganan &rarr;
         </button>
@@ -624,7 +673,7 @@ export function InventoryPerhatianCard({
   );
 }
 
-// ==== Top Inventory Items / Distribusi per Nama ====
+// ==== Top Inventory Items ====
 export function TopInventoryCard({
   inventoryPerMerek,
   className = '',
@@ -638,44 +687,43 @@ export function TopInventoryCard({
 
   return (
     <div className={`${cardClass} ${className}`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <CardIcon icon={Package} tone="indigo" />
-          <div>
-            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Top Item Inventory</h3>
-            <p className="text-[11px] text-slate-500">Barang terbanyak terdaftar</p>
-          </div>
-        </div>
-        <button
-          onClick={() => navigate('/master-data?tab=inventory')}
-          className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800"
-        >
-          Lihat Semua
-        </button>
-      </div>
+      <SectionHeader
+        icon={Package}
+        tone="indigo"
+        title="Top Item Inventory"
+        subtitle="Barang terbanyak terdaftar"
+        right={
+          <button
+            onClick={() => navigate('/master-data?tab=inventory')}
+            className="text-[11px] font-semibold text-[#5A32FA] bg-[#EFEAFF] px-2.5 py-1 rounded-lg hover:bg-[#E0D9FF]"
+          >
+            Lihat Semua
+          </button>
+        }
+      />
 
       {topItems.length === 0 ? (
-        <p className="text-xs text-slate-400 py-6 text-center">Belum ada item inventory</p>
+        <p className="text-xs text-[#A9A9C6] py-6 text-center">Belum ada item inventory</p>
       ) : (
-        <div className="flex flex-col gap-2 my-auto">
+        <div className="flex flex-col gap-3.5 my-auto">
           {topItems.map((item, idx) => {
             const pct = Math.round((item.jumlah / maxCount) * 100);
             return (
-              <div key={item.nama} className="group">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <div className="flex items-center gap-1.5 truncate max-w-[80%]">
-                    <span className="w-4 h-4 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 flex items-center justify-center flex-shrink-0">
+              <div key={item.nama}>
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <div className="flex items-center gap-2 truncate max-w-[80%]">
+                    <span className="w-5 h-5 rounded-full bg-[#EFEAFF] text-[10px] font-bold text-[#5A32FA] flex items-center justify-center flex-shrink-0">
                       {idx + 1}
                     </span>
-                    <span className="font-semibold text-slate-800 truncate" title={item.nama}>
+                    <span className="font-semibold text-[#171633] truncate" title={item.nama}>
                       {item.nama}
                     </span>
                   </div>
-                  <span className="font-extrabold text-slate-900 text-xs">{item.jumlah} <span className="text-[10px] font-normal text-slate-400">unit</span></span>
+                  <span className="font-extrabold text-[#171633] text-xs">{item.jumlah} <span className="text-[10px] font-normal text-[#A9A9C6]">unit</span></span>
                 </div>
-                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-[#F0F1F7] h-2 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full transition-all"
+                    className="h-full bg-[#5A32FA] rounded-full transition-all"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -685,7 +733,7 @@ export function TopInventoryCard({
         </div>
       )}
 
-      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+      <div className="pt-3 border-t border-[#F0F1F7] flex items-center justify-between text-[10px] text-[#A9A9C6]">
         <span>Berdasarkan nama & model</span>
         <span>{inventoryPerMerek.length} varian total</span>
       </div>
@@ -706,35 +754,34 @@ export function DepartemenDistribusiCard({
 
   return (
     <div className={`${cardClass} ${className}`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <CardIcon icon={Building2} tone="emerald" />
-          <div>
-            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Distribusi Departemen</h3>
-            <p className="text-[11px] text-slate-500">{departemen.length} Departemen / {totalKaryawan} Karyawan</p>
-          </div>
-        </div>
-        <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
-          {totalKaryawan} Staff
-        </span>
-      </div>
+      <SectionHeader
+        icon={Building2}
+        tone="emerald"
+        title="Distribusi Departemen"
+        subtitle={`${departemen.length} Departemen / ${totalKaryawan} Karyawan`}
+        right={
+          <span className="text-xs font-bold text-[#34A853] bg-[#E7F6EC] px-3 py-1.5 rounded-lg">
+            {totalKaryawan} Staff
+          </span>
+        }
+      />
 
       {sorted.length === 0 ? (
-        <p className="text-xs text-slate-400 py-6 text-center">Belum ada data departemen</p>
+        <p className="text-xs text-[#A9A9C6] py-6 text-center">Belum ada data departemen</p>
       ) : (
-        <div className="flex flex-col gap-2 my-auto">
+        <div className="flex flex-col gap-3.5 my-auto">
           {sorted.map((dept) => {
             const pct = totalKaryawan > 0 ? Math.round((dept.jumlah / totalKaryawan) * 100) : 0;
             return (
-              <div key={dept.departemen} className="space-y-0.5">
+              <div key={dept.departemen} className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-800 truncate">{dept.departemen}</span>
-                  <span className="font-bold text-slate-900 text-xs">
-                    {dept.jumlah} <span className="text-[10px] text-slate-400">({pct}%)</span>
+                  <span className="font-semibold text-[#171633] truncate">{dept.departemen}</span>
+                  <span className="font-bold text-[#171633] text-xs">
+                    {dept.jumlah} <span className="text-[10px] text-[#A9A9C6]">({pct}%)</span>
                   </span>
                 </div>
-                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${pct}%` }} />
+                <div className="w-full bg-[#F0F1F7] h-2 rounded-full overflow-hidden">
+                  <div className="h-full bg-[#34A853] rounded-full" style={{ width: `${pct}%` }} />
                 </div>
               </div>
             );
@@ -742,7 +789,7 @@ export function DepartemenDistribusiCard({
         </div>
       )}
 
-      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+      <div className="pt-3 border-t border-[#F0F1F7] flex items-center justify-between text-[10px] text-[#A9A9C6]">
         <span>Struktur Organisasi</span>
         <span>Top 5 departemen</span>
       </div>
@@ -770,43 +817,42 @@ export function NotifikasiCard({
 
   return (
     <div className={`${cardClass} ${className}`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <CardIcon icon={Bell} tone="violet" />
-          <div>
-            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Notifikasi Sistem</h3>
-            <p className="text-[11px] text-slate-500">Pemberitahuan & pengingat</p>
-          </div>
-        </div>
-        {unreadCount > 0 ? (
-          <span className="text-[10px] font-bold text-white bg-indigo-600 px-2 py-0.5 rounded-full">
-            {unreadCount} Baru
-          </span>
-        ) : (
-          <span className="text-[10px] font-medium text-slate-400">Semua dibaca</span>
-        )}
-      </div>
+      <SectionHeader
+        icon={Bell}
+        tone="violet"
+        title="Notifikasi Sistem"
+        subtitle="Pemberitahuan & pengingat"
+        right={
+          unreadCount > 0 ? (
+            <span className="text-[10px] font-bold text-white bg-[#F2453D] px-2.5 py-1 rounded-lg">
+              {unreadCount} Baru
+            </span>
+          ) : (
+            <span className="text-[10px] font-medium text-[#A9A9C6]">Semua dibaca</span>
+          )
+        }
+      />
 
       {notifications.length === 0 ? (
         <div className="py-6 text-center">
-          <p className="text-xs text-slate-400">Belum ada notifikasi</p>
+          <p className="text-xs text-[#A9A9C6]">Belum ada notifikasi</p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-1 overflow-y-auto pr-0.5 my-auto max-h-[190px]">
+        <ul className="flex flex-col gap-2 overflow-y-auto pr-0.5 my-auto max-h-[190px]">
           {notifications.slice(0, 5).map((n) => {
             const unread = !n.read_at;
             return (
               <li
                 key={n.id}
-                className={`flex items-start gap-2 p-2 rounded-lg cursor-pointer transition-colors border ${
-                  unread ? 'bg-indigo-50/50 border-indigo-100 hover:bg-indigo-100/60' : 'bg-slate-50/60 border-slate-100 hover:bg-slate-100'
+                className={`flex items-start gap-2.5 p-3 rounded-xl cursor-pointer transition-colors ${
+                  unread ? 'bg-[#EFEAFF]/60 hover:bg-[#EFEAFF]' : 'bg-[#F7F8FC] hover:bg-[#F0F1F7]'
                 }`}
                 onClick={() => handleClick(n)}
               >
-                <span className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${unread ? 'bg-indigo-600' : 'bg-slate-300'}`} />
+                <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${unread ? 'bg-[#5A32FA]' : 'bg-[#D5D5E8]'}`} />
                 <div className="min-w-0 flex-1">
-                  <p className={`text-xs leading-snug ${unread ? 'text-slate-900 font-semibold' : 'text-slate-600'}`}>{n.data.message}</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">{new Date(n.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</p>
+                  <p className={`text-xs leading-snug ${unread ? 'text-[#171633] font-semibold' : 'text-[#666687]'}`}>{n.data.message}</p>
+                  <p className="text-[10px] text-[#A9A9C6] mt-1">{new Date(n.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</p>
                 </div>
               </li>
             );
@@ -814,7 +860,7 @@ export function NotifikasiCard({
         </ul>
       )}
 
-      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+      <div className="pt-3 border-t border-[#F0F1F7] flex items-center justify-between text-[10px] text-[#A9A9C6]">
         <span>{notifications.length} notifikasi tersimpan</span>
         <span>Auto-sync Pusher</span>
       </div>
@@ -823,13 +869,22 @@ export function NotifikasiCard({
 }
 
 // ==== Timeline Aktivitas ====
-const AKTIVITAS_ASET_STYLE: Record<AktivitasInventoryTerbaru['type'], { color: string; label: string }> = {
-  pinjam: { color: THEME.amber, label: 'menerima' },
-  kembali: { color: THEME.emerald, label: 'mengembalikan' },
-  lapor_rusak: { color: THEME.rose, label: 'melaporkan kerusakan' },
-  mulai_perbaikan: { color: THEME.orange, label: 'mulai perbaikan' },
-  selesai_perbaikan: { color: THEME.sky, label: 'selesai perbaikan' },
-  dijual: { color: THEME.purple, label: 'menjual' },
+const AKTIVITAS_ASET_STYLE: Record<AktivitasInventoryTerbaru['type'], { color: string; label: string; tone: 'amber' | 'emerald' | 'rose' | 'orange' | 'sky' | 'indigo' }> = {
+  pinjam: { color: THEME.amber, label: 'menerima', tone: 'amber' },
+  kembali: { color: THEME.emerald, label: 'mengembalikan', tone: 'emerald' },
+  lapor_rusak: { color: THEME.rose, label: 'melaporkan kerusakan', tone: 'rose' },
+  mulai_perbaikan: { color: THEME.orange, label: 'mulai perbaikan', tone: 'orange' },
+  selesai_perbaikan: { color: THEME.sky, label: 'selesai perbaikan', tone: 'sky' },
+  dijual: { color: THEME.purple, label: 'menjual', tone: 'indigo' },
+};
+
+const AKTIVITAS_STATUS_LABEL: Record<AktivitasInventoryTerbaru['type'], string> = {
+  pinjam: 'Diterima',
+  kembali: 'Dikembalikan',
+  lapor_rusak: 'Rusak Dilaporkan',
+  mulai_perbaikan: 'Diperbaiki',
+  selesai_perbaikan: 'Selesai Perbaikan',
+  dijual: 'Terjual',
 };
 
 function formatWaktuSingkat(iso: string): string {
@@ -855,23 +910,23 @@ function AktivitasTimelineList({
   return (
     <ul className="flex flex-col">
       {events.map((ev, idx) => {
-        const s = AKTIVITAS_ASET_STYLE[ev.type] || { color: THEME.slate, label: 'mengubah status' };
+        const s = AKTIVITAS_ASET_STYLE[ev.type] || { color: THEME.slate, label: 'mengubah status', tone: 'slate' as const };
         const kode = ev.inventory?.kode_inventory || '-';
         const pelaku =
           ev.nama ?? (ev.type === 'mulai_perbaikan' || ev.type === 'selesai_perbaikan' ? 'Admin' : null);
         const isLast = idx === events.length - 1;
         return (
-          <li key={`${ev.type}-${idx}`} className="flex gap-2.5">
+          <li key={`${ev.type}-${idx}`} className="flex gap-3">
             <div className="flex flex-col items-center">
-              <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1" style={{ background: s.color }} />
-              {!isLast && <span className="w-px flex-1 bg-slate-200 mt-1" />}
+              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1" style={{ background: s.color }} />
+              {!isLast && <span className="w-px flex-1 bg-[#F0F1F7] mt-1" />}
             </div>
-            <div className={`min-w-0 ${isLast ? 'pb-0' : 'pb-2.5'}`}>
-              <p className="text-xs text-slate-700 leading-snug">
-                {pelaku && <span className="font-bold text-slate-900">{pelaku} </span>}
-                {s.label} <span className="font-semibold text-indigo-600">{kode}</span>
+            <div className={`min-w-0 ${isLast ? 'pb-0' : 'pb-3'}`}>
+              <p className="text-xs text-[#666687] leading-snug">
+                {pelaku && <span className="font-bold text-[#171633]">{pelaku} </span>}
+                {s.label} <span className="font-semibold text-[#5A32FA]">{kode}</span>
               </p>
-              <p className="text-[10px] text-slate-400 mt-0.5">{timeFormatter(ev.waktu)}</p>
+              <p className="text-[10px] text-[#A9A9C6] mt-0.5">{timeFormatter(ev.waktu)}</p>
             </div>
           </li>
         );
@@ -891,33 +946,190 @@ export function AktivitasInventoryCard({
 
   return (
     <div className={`${cardClass} ${className}`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <CardIcon icon={Activity} tone="emerald" />
-          <div>
-            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Aktivitas Terkini</h3>
-            <p className="text-[11px] text-slate-500">Mutasi & transaksi terkini</p>
-          </div>
-        </div>
-        <button
-          onClick={() => navigate('/laporan?tab=riwayat_inventory')}
-          className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5"
-        >
-          Lihat Semua <ArrowRight size={11} />
-        </button>
-      </div>
+      <SectionHeader
+        icon={Activity}
+        tone="emerald"
+        title="Aktivitas Terkini"
+        subtitle="Mutasi & transaksi terkini"
+        right={
+          <button
+            onClick={() => navigate('/laporan?tab=riwayat_inventory')}
+            className="text-[11px] font-semibold text-[#5A32FA] bg-[#EFEAFF] px-2.5 py-1 rounded-lg hover:bg-[#E0D9FF] flex items-center gap-1"
+          >
+            Lihat Semua <ArrowRight size={12} />
+          </button>
+        }
+      />
 
       {aktivitasInventoryTerbaru.length === 0 ? (
-        <p className="text-xs text-slate-400 py-6 text-center">Belum ada aktivitas inventory.</p>
+        <p className="text-xs text-[#A9A9C6] py-6 text-center">Belum ada aktivitas inventory.</p>
       ) : (
         <div className="overflow-y-auto pr-0.5 my-auto max-h-[190px]">
           <AktivitasTimelineList events={aktivitasInventoryTerbaru} timeFormatter={formatWaktuSingkat} />
         </div>
       )}
 
-      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+      <div className="pt-3 border-t border-[#F0F1F7] flex items-center justify-between text-[10px] text-[#A9A9C6]">
         <span>Log mutasi otomatis</span>
         <span>Terakhir sinkron: Saat ini</span>
+      </div>
+    </div>
+  );
+}
+
+// ==== Riwayat Aktivitas Table (DEGO "Information by stores" pattern) ====
+// Reuses the same aktivitas data already fetched for the calendar widget —
+// no new API call, just a denser table presentation with sort/search/pagination.
+type SortDir = 'terbaru' | 'terlama';
+const TABLE_PAGE_SIZE = 8;
+
+export function RiwayatAktivitasTableCard({
+  aktivitas,
+  className = '',
+}: {
+  aktivitas: AktivitasInventoryTerbaru[];
+  className?: string;
+}) {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState('');
+  const [sortDir, setSortDir] = useState<SortDir>('terbaru');
+  const [page, setPage] = useState(1);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    let list = aktivitas;
+    if (q) {
+      list = list.filter((ev) => {
+        const kode = ev.inventory?.kode_inventory?.toLowerCase() ?? '';
+        const nama = ev.inventory?.nama?.toLowerCase() ?? '';
+        const pelaku = ev.nama?.toLowerCase() ?? '';
+        return kode.includes(q) || nama.includes(q) || pelaku.includes(q);
+      });
+    }
+    const sorted = [...list].sort((a, b) => {
+      const ta = new Date(a.waktu).getTime();
+      const tb = new Date(b.waktu).getTime();
+      return sortDir === 'terbaru' ? tb - ta : ta - tb;
+    });
+    return sorted;
+  }, [aktivitas, search, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / TABLE_PAGE_SIZE));
+  const clampedPage = Math.min(page, totalPages);
+  const startIdx = (clampedPage - 1) * TABLE_PAGE_SIZE;
+  const pageRows = filtered.slice(startIdx, startIdx + TABLE_PAGE_SIZE);
+
+  const handleSearch = (v: string) => {
+    setSearch(v);
+    setPage(1);
+  };
+  const handleSort = (v: SortDir) => {
+    setSortDir(v);
+    setPage(1);
+  };
+
+  return (
+    <div className={`${cardClass} ${className}`}>
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+        <div className="flex items-center gap-3">
+          <CardIcon icon={Activity} tone="emerald" />
+          <div>
+            <h3 className="text-sm font-bold text-[#171633] leading-tight">Riwayat Aktivitas Inventory</h3>
+            <p className="text-xs text-[#A9A9C6] mt-0.5">Log mutasi & transaksi ({aktivitas.length})</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative">
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#A9A9C6]" />
+            <input
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="Cari kode / nama..."
+              className="text-xs bg-[#F7F8FC] rounded-lg pl-7 pr-3 py-2 w-40 sm:w-48 focus:outline-none focus:ring-2 focus:ring-[#EFEAFF] placeholder:text-[#A9A9C6]"
+            />
+          </div>
+          <div className="relative">
+            <select
+              value={sortDir}
+              onChange={(e) => handleSort(e.target.value as SortDir)}
+              className="appearance-none text-xs font-semibold text-[#171633] bg-[#F7F8FC] rounded-lg pl-3 pr-7 py-2 focus:outline-none cursor-pointer"
+            >
+              <option value="terbaru">Terbaru</option>
+              <option value="terlama">Terlama</option>
+            </select>
+            <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#A9A9C6] pointer-events-none" />
+          </div>
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <p className="text-xs text-[#A9A9C6] py-10 text-center">Tidak ada aktivitas yang cocok.</p>
+      ) : (
+        <div className="overflow-x-auto -mx-1">
+          <table className="w-full text-xs min-w-[560px]">
+            <thead>
+              <tr className="text-left text-[10px] uppercase font-bold text-[#A9A9C6] tracking-wider">
+                <th className="px-3 py-2">Kode Inventory</th>
+                <th className="px-3 py-2">Barang</th>
+                <th className="px-3 py-2">Pelaku</th>
+                <th className="px-3 py-2">Waktu</th>
+                <th className="px-3 py-2 text-right">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pageRows.map((ev, idx) => {
+                const s = AKTIVITAS_ASET_STYLE[ev.type] || { tone: 'slate' as const };
+                const badgeClass = BADGE_TONE[s.tone] ?? BADGE_TONE.slate;
+                const kode = ev.inventory?.kode_inventory || '-';
+                const nama = ev.inventory?.nama || '-';
+                const pelaku = ev.nama ?? '-';
+                return (
+                  <tr
+                    key={`${ev.type}-${startIdx + idx}`}
+                    onClick={() => navigate('/laporan?tab=riwayat_inventory')}
+                    className="cursor-pointer hover:bg-[#F7F8FC] transition-colors border-t border-[#F0F1F7]"
+                  >
+                    <td className="px-3 py-2.5 font-bold text-[#5A32FA] whitespace-nowrap">{kode}</td>
+                    <td className="px-3 py-2.5 text-[#171633] font-medium truncate max-w-[160px]" title={nama}>{nama}</td>
+                    <td className="px-3 py-2.5 text-[#666687]">{pelaku}</td>
+                    <td className="px-3 py-2.5 text-[#A9A9C6] whitespace-nowrap">
+                      {new Date(ev.waktu).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}
+                    </td>
+                    <td className="px-3 py-2.5 text-right">
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md whitespace-nowrap ${badgeClass}`}>
+                        {AKTIVITAS_STATUS_LABEL[ev.type] ?? 'Update'}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="pt-3 mt-2 border-t border-[#F0F1F7] flex items-center justify-between text-[11px] text-[#A9A9C6]">
+        <span>
+          Menampilkan {filtered.length === 0 ? 0 : startIdx + 1}-{Math.min(startIdx + TABLE_PAGE_SIZE, filtered.length)} dari {filtered.length}
+        </span>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={clampedPage <= 1}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#666687] bg-[#F7F8FC] hover:bg-[#F0F1F7] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft size={13} />
+          </button>
+          <span className="font-semibold text-[#171633] px-1">{clampedPage} / {totalPages}</span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={clampedPage >= totalPages}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#666687] bg-[#F7F8FC] hover:bg-[#F0F1F7] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight size={13} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1006,47 +1218,46 @@ export function CalendarCard({
   return (
     <div className={`${cardClass} ${className}`}>
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <CardIcon icon={CalendarDays} tone="violet" />
-            <div>
-              <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Kalender Operasional</h3>
-              <p className="text-[11px] text-slate-500">Jadwal & log harian</p>
-            </div>
-          </div>
-          {!isCurrentMonthView && (
-            <button
-              onClick={goToToday}
-              className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md"
-            >
-              Hari Ini
-            </button>
-          )}
-        </div>
+        <SectionHeader
+          icon={CalendarDays}
+          tone="violet"
+          title="Kalender Operasional"
+          subtitle="Jadwal & log harian"
+          right={
+            !isCurrentMonthView ? (
+              <button
+                onClick={goToToday}
+                className="text-[10px] font-bold text-[#5A32FA] bg-[#EFEAFF] px-2.5 py-1 rounded-lg"
+              >
+                Hari Ini
+              </button>
+            ) : undefined
+          }
+        />
 
-        <div className="flex items-center justify-between bg-slate-50 border border-slate-200/60 rounded-lg p-1.5 mb-2">
+        <div className="flex items-center justify-between bg-[#F7F8FC] rounded-xl p-2 mb-3">
           <button
             onClick={() => goToMonth(-1)}
             aria-label="Bulan sebelumnya"
-            className="w-6 h-6 rounded flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#666687] hover:bg-white hover:shadow-sm transition-all"
           >
-            <ChevronLeft size={14} />
+            <ChevronLeft size={15} />
           </button>
-          <p className="text-xs font-bold text-slate-800">
+          <p className="text-xs font-bold text-[#171633]">
             {BULAN_LABEL[viewDate.getMonth()]} {viewDate.getFullYear()}
           </p>
           <button
             onClick={() => goToMonth(1)}
             aria-label="Bulan berikutnya"
-            className="w-6 h-6 rounded flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#666687] hover:bg-white hover:shadow-sm transition-all"
           >
-            <ChevronRight size={14} />
+            <ChevronRight size={15} />
           </button>
         </div>
 
         <div className="grid grid-cols-7 gap-y-1 text-center">
           {HARI_LABEL.map((h) => (
-            <span key={h} className="text-[10px] font-bold text-slate-400 pb-0.5">
+            <span key={h} className="text-[10px] font-bold text-[#A9A9C6] pb-1">
               {h}
             </span>
           ))}
@@ -1058,21 +1269,21 @@ export function CalendarCard({
               <button
                 key={idx}
                 onClick={() => setSelected(cell.date)}
-                className={`relative mx-auto w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs transition-all ${
+                className={`relative mx-auto w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs transition-all ${
                   isToday
-                    ? 'bg-emerald-600 text-white font-black shadow-sm'
+                    ? 'bg-[#171633] text-white font-black shadow-md'
                     : isSelected
-                    ? 'bg-indigo-600 text-white font-bold'
+                    ? 'bg-[#5A32FA] text-white font-bold'
                     : cell.inMonth
-                    ? 'text-slate-700 hover:bg-slate-100 font-medium'
-                    : 'text-slate-300 hover:bg-slate-50'
+                    ? 'text-[#666687] hover:bg-[#F0F1F7] font-medium'
+                    : 'text-[#D5D5E8] hover:bg-[#F7F8FC]'
                 }`}
               >
                 {cell.date.getDate()}
                 {hasAktivitas && (
                   <span
                     className={`absolute left-1/2 -translate-x-1/2 bottom-0.5 w-1 h-1 rounded-full ${
-                      isToday || isSelected ? 'bg-white' : 'bg-indigo-600'
+                      isToday || isSelected ? 'bg-white' : 'bg-[#5A32FA]'
                     }`}
                   />
                 )}
@@ -1082,16 +1293,16 @@ export function CalendarCard({
         </div>
       </div>
 
-      <div className="mt-2 pt-2 border-t border-slate-100">
-        <div className="flex items-center justify-between text-[11px] mb-1.5">
-          <span className="font-bold text-slate-700">
+      <div className="mt-3 pt-3 border-t border-[#F0F1F7]">
+        <div className="flex items-center justify-between text-[11px] mb-2">
+          <span className="font-bold text-[#171633]">
             Log: {isSameDay(selected, today) ? 'Hari Ini' : selected.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
           </span>
-          <span className="text-[10px] text-slate-400">{aktivitasHariIni.length} mutasi</span>
+          <span className="text-[10px] text-[#A9A9C6]">{aktivitasHariIni.length} mutasi</span>
         </div>
 
         {aktivitasHariIni.length === 0 ? (
-          <p className="text-[11px] text-slate-400 py-1">Tidak ada mutasi pada tanggal ini.</p>
+          <p className="text-[11px] text-[#A9A9C6] py-1">Tidak ada mutasi pada tanggal ini.</p>
         ) : (
           <div className="max-h-28 overflow-y-auto pr-0.5">
             <AktivitasTimelineList

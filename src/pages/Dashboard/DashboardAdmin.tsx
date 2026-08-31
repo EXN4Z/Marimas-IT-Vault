@@ -1,8 +1,9 @@
+import { useNavigate } from 'react-router-dom';
 import { useDashboardCore, useDashboardAnalytics } from './useDashboardData';
-import { Boxes, Package, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { Boxes, Package, AlertTriangle, ShieldAlert, PlusCircle } from 'lucide-react';
 import {
   WelcomeHeader,
-  QuickActionBar,
+  PrimaryActionButton,
   KpiCard,
   RingkasanInventoryCard,
   HeroTrenPembelianInventoryChart,
@@ -10,12 +11,13 @@ import {
   TopInventoryCard,
   InventoryPerhatianCard,
   DepartemenDistribusiCard,
-  AktivitasInventoryCard,
+  RiwayatAktivitasTableCard,
   CalendarCard,
   NotifikasiCard,
 } from './Shared';
 
 export default function DashboardAdmin() {
+  const navigate = useNavigate();
   const { loading, error, user, notifications, handleMarkAsRead, departemen } = useDashboardCore();
 
   const {
@@ -24,12 +26,11 @@ export default function DashboardAdmin() {
     inventoryPerhatian,
     statusInventoryDistribusi,
     inventoryPerMerek,
-    aktivitasInventoryTerbaru,
     aktivitasInventoryKalender,
   } = useDashboardAnalytics(true, {
     statusInventoryDistribusi: true,
     inventoryPerMerek: true,
-    aktivitasInventoryTerbaru: true,
+    aktivitasInventoryTerbaru: false,
   });
 
   if (loading) {
@@ -59,9 +60,17 @@ export default function DashboardAdmin() {
 
   return (
     <div className="space-y-3">
-      {/* Header & Quick Action Hub */}
-      <WelcomeHeader user={user} />
-      <QuickActionBar role={user?.role} />
+      {/* Header + primary action (DEGO "+ Add Product" pattern) */}
+      <WelcomeHeader
+        user={user}
+        action={
+          <PrimaryActionButton
+            icon={PlusCircle}
+            label="Tambah Inventory"
+            onClick={() => navigate('/master-data?tab=inventory')}
+          />
+        }
+      />
 
       {error && (
         <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl px-3 py-2">
@@ -69,7 +78,7 @@ export default function DashboardAdmin() {
         </div>
       )}
 
-      {/* Row 1: High-Density Bento KPIs */}
+      {/* Row 1: High-Density Bento KPIs, each with a "Lihat detail" footer link */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         <KpiCard
           icon={Boxes}
@@ -77,8 +86,8 @@ export default function DashboardAdmin() {
           value={inventoryTotal}
           tone="default"
           badge={`${tersediaPct}% Ready`}
-          progress={tersediaPct}
-          hint={`${tersediaCount} unit siap pakai`}
+          detailLabel={`${tersediaCount} unit siap pakai`}
+          onClick={() => navigate('/master-data?tab=inventory')}
         />
         <KpiCard
           icon={Package}
@@ -86,8 +95,8 @@ export default function DashboardAdmin() {
           value={dipakaiCount}
           tone="sky"
           badge={`${dipakaiPct}% Use`}
-          progress={dipakaiPct}
-          hint={`${dipakaiPct}% dari total aset`}
+          detailLabel={`${dipakaiPct}% dari total aset`}
+          onClick={() => navigate('/master-data?tab=inventory&status=dipakai')}
         />
         <KpiCard
           icon={AlertTriangle}
@@ -95,8 +104,8 @@ export default function DashboardAdmin() {
           value={totalPerhatian}
           tone={totalPerhatian > 0 ? 'amber' : 'emerald'}
           badge={totalPerhatian > 0 ? 'Urgent' : 'Aman'}
-          progress={inventoryTotal > 0 ? Math.round((totalPerhatian / inventoryTotal) * 100) : 0}
-          hint={`${inventoryPerhatian?.garansiSegeraHabis ?? 0} garansi < 30 hr`}
+          detailLabel={`${inventoryPerhatian?.garansiSegeraHabis ?? 0} garansi < 30 hr`}
+          onClick={() => navigate('/penanganan-inventory')}
         />
         <KpiCard
           icon={ShieldAlert}
@@ -104,12 +113,12 @@ export default function DashboardAdmin() {
           value={rusakBeratCount}
           tone="rose"
           badge={`${rusakBeratPct}%`}
-          progress={rusakBeratPct}
-          hint={`${rusakBeratPct}% aset tidak aktif`}
+          detailLabel={`${rusakBeratPct}% aset tidak aktif`}
+          onClick={() => navigate('/master-data?tab=inventory&status=rusak_berat')}
         />
       </div>
 
-      {/* Row 2: Hero Trends & Status Breakdown */}
+      {/* Row 2: Hero Trends & Status Breakdown (Sales Analytics + Top Cities pattern) */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-2.5 sm:gap-3 items-stretch">
         <div className="xl:col-span-7 flex flex-col">
           <HeroTrenPembelianInventoryChart trenPembelianInventory={trenPembelianInventory} className="h-full" />
@@ -119,21 +128,25 @@ export default function DashboardAdmin() {
         </div>
       </div>
 
-      {/* Row 3: 3-Column Asset Operations Matrix */}
+      {/* Row 3: Full-width searchable/sortable/paginated table (DEGO "Information by stores" pattern) */}
+      <div>
+        <RiwayatAktivitasTableCard aktivitas={aktivitasInventoryKalender} />
+      </div>
+
+      {/* Row 4: 3-Column Asset Operations Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3 items-stretch">
         <RingkasanInventoryCard ringkasanInventory={ringkasanInventory} />
         <TopInventoryCard inventoryPerMerek={inventoryPerMerek} />
         <InventoryPerhatianCard inventoryPerhatian={inventoryPerhatian} />
       </div>
 
-      {/* Row 4: Organization, Activity Stream & Notifications */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3 items-stretch">
+      {/* Row 5: Organization & Notifications */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 items-stretch">
         <DepartemenDistribusiCard departemen={departemen} />
-        <AktivitasInventoryCard aktivitasInventoryTerbaru={aktivitasInventoryTerbaru} />
         <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
       </div>
 
-      {/* Row 5: Operational Calendar */}
+      {/* Row 6: Operational Calendar */}
       <div>
         <CalendarCard aktivitas={aktivitasInventoryKalender} />
       </div>

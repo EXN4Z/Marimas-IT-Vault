@@ -2,7 +2,6 @@ import { useDashboardCore } from './useDashboardData';
 import { Bell, Users, Building2, CheckCircle2 } from 'lucide-react';
 import {
   WelcomeHeader,
-  QuickActionBar,
   KpiCard,
   DepartemenDistribusiCard,
   CalendarCard,
@@ -37,7 +36,6 @@ export default function DashboardUser() {
   return (
     <div className="space-y-3">
       <WelcomeHeader user={user} />
-      <QuickActionBar role={user?.role} />
 
       {error && (
         <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl px-3 py-2">
