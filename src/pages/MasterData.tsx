@@ -89,8 +89,6 @@ const tabConfig: Record<
     update: (id, payload) => updateDepartemen(id, payload.nama),
     remove: deleteDepartemen,
     import: importDepartemen,
-    exportHeaders: ['Nama'],
-    exportRow: (item) => [item.nama],
   },
   supplier: {
     label: 'Supplier',
