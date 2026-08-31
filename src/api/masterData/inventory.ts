@@ -4,9 +4,11 @@ import type { Departemen } from './departemen';
 import type { LokasiKantor } from '../lokasiKantor';
 
 export type InventoryStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'rusak' | 'dijual';
-// 'barang_utama' = boleh punya children (kelengkapan), gak boleh punya parent_id.
-// 'kelengkapan' = parent_id boleh diisi (nempel ke barang utama) atau null (berdiri sendiri).
-export type KategoriKode = 'barang_utama' | 'kelengkapan';
+// Struktur (induk/menempel) sekarang murni soal parent_id, independen dari
+// kategori -- lihat backend InventoryController::index(). 'induk' =
+// parent_id === null (boleh punya children, boleh juga berdiri sendiri
+// tanpa children). 'menempel' = parent_id !== null.
+export type InventoryPosisi = 'induk' | 'menempel';
 
 export interface KategoriRef {
   id: number;
@@ -20,10 +22,10 @@ import type { InventoryPenanganan } from '../transaksi/inventoryPenanganan';
 // import dari sana, jangan didefinisikan ulang di sini.
 import type { InventoryPemakai } from '../transaksi/inventoryPemakai';
 
-// Satu baris `inventory` bisa berupa Barang Utama ATAU Kelengkapan — dibedakan
-// lewat kategori.nama (persis "Barang Utama" / "Kelengkapan"), BUKAN lewat
-// ada/tidaknya parent_id (lihat dokumen migrasi #2.3). `parent`/`children`
-// cuma keisi di endpoint show(), atau lewat query ?parent_id= di index() buat
+// Satu baris `inventory` bisa jadi kategori APA SAJA (bebas, gak lagi cuma 2
+// golongan "Barang Utama"/"Kelengkapan") -- struktur induk/menempel murni
+// ditentukan `parent_id`, independen dari kategori. `parent`/`children` cuma
+// keisi di endpoint show(), atau lewat query ?parent_id= di index() buat
 // nested/expand view.
 export interface Inventory {
   id: number;
@@ -116,11 +118,13 @@ function buildInventoryFormData(values: InventoryFormValues): FormData {
   return fd;
 }
 
-// GET /inventory — ?kategori=barang_utama|kelengkapan filter berdasar
-// kategori.nama (mapped di backend). ?parent_id=123 buat nested/expand view
-// (kelengkapan yang nempel ke barang utama tertentu).
+// GET /inventory — ?kategori_id=123 filter berdasar kategori beneran.
+// ?posisi=induk|menempel filter berdasar parent_id (independen dari
+// kategori_id, bisa dipakai bareng). ?parent_id=123 buat nested/expand view
+// (item yang nempel ke inventory induk tertentu).
 export async function getInventory(params?: {
-  kategori?: KategoriKode;
+  kategori_id?: number;
+  posisi?: InventoryPosisi;
   parent_id?: number;
   search?: string;
 }): Promise<Inventory[]> {

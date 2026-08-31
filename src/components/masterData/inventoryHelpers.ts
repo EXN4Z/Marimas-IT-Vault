@@ -62,25 +62,25 @@ export function formatRupiah(n: number | null): string {
   return 'Rp ' + n.toLocaleString('id-ID');
 }
 
-// Opsi "Jenis Kerusakan" beda per kategori inventory. Barang Utama (laptop,
-// PC, dll) punya sisi software, jadi tetap Hardware/Software seperti dulu.
-// Kelengkapan (charger, tas, kabel, dll) gak punya sisi "software" sama
-// sekali, jadi dikasih opsi sendiri yang lebih masuk akal buat barang fisik.
-// Dipakai bareng-bareng sama InventoryLaporKerusakanModal (buat isi
-// dropdown) dan formatJenisKerusakan (buat nampilin label-nya balik).
-export const JENIS_KERUSAKAN_BARANG_UTAMA = [
+// Opsi "Jenis Kerusakan" -- SATU daftar buat semua item, apapun
+// kategori/posisinya (induk maupun menempel). Dulu bercabang 2 (Barang
+// Utama vs Kelengkapan), tapi sejak refactor kategori-bebas itu gak lagi
+// relevan -- backend (Transaksi/InventoryPenangananController@store) juga
+// sudah gabung ke 1 daftar flat ini, dan constraint DB sudah diperluas
+// buat nampung gabungan ke-5 opsi. Urutan & value HARUS sinkron sama
+// $opsiJenisKerusakan di backend. Dipakai bareng-bareng sama
+// InventoryLaporKerusakanModal (buat isi dropdown) dan formatJenisKerusakan
+// (buat nampilin label-nya balik).
+export const JENIS_KERUSAKAN_OPTIONS = [
   { value: 'hardware', label: 'Hardware' },
   { value: 'software', label: 'Software' },
-] as const;
-
-export const JENIS_KERUSAKAN_KELENGKAPAN = [
   { value: 'tidak_berfungsi', label: 'Tidak Berfungsi' },
   { value: 'hancur', label: 'Hancur' },
   { value: 'terputus_sobek', label: 'Terputus/Sobek' },
 ] as const;
 
 const JENIS_KERUSAKAN_LABEL_MAP: Record<string, string> = Object.fromEntries(
-  [...JENIS_KERUSAKAN_BARANG_UTAMA, ...JENIS_KERUSAKAN_KELENGKAPAN].map((o) => [o.value, o.label])
+  JENIS_KERUSAKAN_OPTIONS.map((o) => [o.value, o.label])
 );
 
 // Ubah value mentah (yang disimpan di kolom jenis_kerusakan, misal

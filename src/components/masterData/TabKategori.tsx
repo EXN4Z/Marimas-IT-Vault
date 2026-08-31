@@ -12,10 +12,12 @@ import {
 } from '../../api/masterData/kategori';
 
 // Sekarang full CRUD -- beda dari sebelumnya (read-only 2 baris fix).
-// Perhatian: baris "Barang Utama" / "Kelengkapan" dipakai logic sistem
-// (cek persis lewat nama), jadi rename/hapus baris itu di sini bisa bikin
-// fitur lain (validasi parent_id, filter golongan, dsb) salah baca. Ini
-// risiko yang sudah disepakati -- tidak ada proteksi khusus di UI ini.
+// (REFACTOR KATEGORI BEBAS Fase 4: peringatan lama di sini -- yang bilang
+// baris "Barang Utama"/"Kelengkapan" dipakai logic sistem lewat nama --
+// sudah gak berlaku. Sejak Fase 1-2, semua logic (validasi parent_id,
+// filter struktur induk/menempel, dst) murni berbasis kolom parent_id,
+// gak baca nama kategori sama sekali. Kategori sekarang cuma label bebas,
+// aman di-rename/hapus/tambah tanpa mempengaruhi fitur lain.)
 export default function TabKategori() {
   const [items, setItems] = useState<Kategori[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,8 +129,8 @@ export default function TabKategori() {
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="flex items-center justify-between gap-3 px-6 pt-5 pb-1 flex-wrap">
         <p className="text-xs text-slate-400 max-w-md">
-          Kategori adalah pembagian dasar barang (mis. Barang Utama / Kelengkapan), dipakai buat
-          nentuin field mana yang berlaku waktu bikin Inventory.
+          Kategori adalah label jenis barang (mis. Laptop, Charger, Speaker) buat mengelompokkan
+          data Inventory. Nama bebas apa saja -- gak menentukan field atau alur mana pun.
         </p>
         <button
           onClick={openCreateModal}
@@ -223,7 +225,7 @@ export default function TabKategori() {
                 <input
                   value={formNama}
                   onChange={(e) => setFormNama(e.target.value)}
-                  placeholder="cth. Barang Utama"
+                  placeholder="cth. Laptop"
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>

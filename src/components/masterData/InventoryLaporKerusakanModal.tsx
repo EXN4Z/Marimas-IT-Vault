@@ -3,7 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import { laporKerusakanInventory } from '../../api/transaksi/inventoryPenanganan';
 import type { Inventory } from '../../api/masterData/inventory';
 import InventoryFotoUpload from './InventoryFotoUpload';
-import { JENIS_KERUSAKAN_BARANG_UTAMA, JENIS_KERUSAKAN_KELENGKAPAN } from './inventoryHelpers';
+import { JENIS_KERUSAKAN_OPTIONS } from './inventoryHelpers';
 import { ButtonCancel, ButtonSubmit, Field, SelectField, Textarea } from '../shared/FormControls';
 
 interface Props {
@@ -13,11 +13,6 @@ interface Props {
 }
 
 export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuccess }: Props) {
-  // Kelengkapan (charger, tas, kabel, dll) gak punya sisi "software" sama
-  // sekali, jadi dikasih daftar opsi sendiri -- bukan Hardware/Software.
-  const isKelengkapan = inventory.kategori?.nama === 'Kelengkapan';
-  const opsiJenisKerusakan = isKelengkapan ? JENIS_KERUSAKAN_KELENGKAPAN : JENIS_KERUSAKAN_BARANG_UTAMA;
-
   const [jenisKerusakan, setJenisKerusakan] = useState('');
   const [keluhan, setKeluhan] = useState('');
   const [fotoKerusakan, setFotoKerusakan] = useState<File[]>([]);
@@ -92,7 +87,7 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
           <Field label="Jenis Kerusakan">
             <SelectField value={jenisKerusakan} onChange={setJenisKerusakan}>
               <option value="">Pilih jenis...</option>
-              {opsiJenisKerusakan.map((opsi) => (
+              {JENIS_KERUSAKAN_OPTIONS.map((opsi) => (
                 <option key={opsi.value} value={opsi.value}>
                   {opsi.label}
                 </option>

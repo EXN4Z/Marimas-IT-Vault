@@ -91,7 +91,7 @@ export default function Laporan() {
 
   useEffect(() => {
     if (!isStaff) return;
-    getInventory({ kategori: 'barang_utama' })
+    getInventory({ posisi: 'induk' })
       .then(setInventoryList)
       .catch(console.error)
       .finally(() => setInventoryLoading(false));

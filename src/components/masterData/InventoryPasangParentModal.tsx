@@ -8,16 +8,16 @@ interface Props {
   // TabInventory.tsx), tapi tetap divalidasi juga di backend
   // (pasangPenggantiKelengkapan() nolak kalau status bukan 'tersedia').
   inventory: Inventory;
-  // Daftar Barang Utama yang bisa dipilih jadi induk -- dikirim dari parent
+  // Daftar item yang bisa dipilih jadi induk -- dikirim dari parent
   // (TabInventory.tsx) hasil filter inventoryList yang udah ada di state,
   // biar gak perlu fetch ulang.
-  barangUtamaOptions: Inventory[];
+  indukOptions: Inventory[];
   onClose: () => void;
   onSuccess: (updated: Inventory) => void;
 }
 
-export default function InventoryPasangIndukModal({ inventory, barangUtamaOptions, onClose, onSuccess }: Props) {
-  // null merepresentasikan "belum ada Barang Utama yang dipilih". Sengaja
+export default function InventoryPasangIndukModal({ inventory, indukOptions, onClose, onSuccess }: Props) {
+  // null merepresentasikan "belum ada induk yang dipilih". Sengaja
   // TIDAK di-submit selama masih null -- endpoint pasang-pengganti-kelengkapan
   // di backend mensyaratkan parent_id wajib terisi, jadi tombol Pasang
   // di-disable selama belum ada yang dipilih.
@@ -26,19 +26,19 @@ export default function InventoryPasangIndukModal({ inventory, barangUtamaOption
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // BARU: filter list Barang Utama pakai search box -- dibanding <select>
+  // BARU: filter list induk pakai search box -- dibanding <select>
   // polos, ini lebih gampang dicari di antara data yang bisa banyak banget
   // (cocokkan kode_inventory ATAU nama, biar bisa dicari dari kode atau
   // nama barangnya).
   const filteredOptions = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return barangUtamaOptions;
-    return barangUtamaOptions.filter(
+    if (!q) return indukOptions;
+    return indukOptions.filter(
       (p) => p.kode_inventory.toLowerCase().includes(q) || (p.nama || '').toLowerCase().includes(q)
     );
-  }, [barangUtamaOptions, search]);
+  }, [indukOptions, search]);
 
-  const selected = barangUtamaOptions.find((p) => p.id === parentId) || null;
+  const selected = indukOptions.find((p) => p.id === parentId) || null;
 
   const handleSubmit = async () => {
     if (!parentId) return;
@@ -67,24 +67,24 @@ export default function InventoryPasangIndukModal({ inventory, barangUtamaOption
           </button>
         </div>
         <p className="text-sm text-slate-500 mb-4">
-          Pilih Barang Utama tempat{' '}
+          Pilih induk tempat{' '}
           <span className="font-medium text-slate-700">
             {inventory.kode_inventory} — {inventory.nama || '-'}
           </span>{' '}
           akan dipasang.
         </p>
 
-        <label className="block text-xs font-medium text-slate-500 mb-1.5">Barang Utama</label>
+        <label className="block text-xs font-medium text-slate-500 mb-1.5">Induk</label>
 
         {/* BARU: search box + list, ganti <select> polos -- biar gampang
-            dicari di antara data Barang Utama yang bisa banyak banget. */}
+            dicari di antara data item yang bisa banyak banget. */}
         <div className="relative mb-2">
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari kode atau nama Barang Utama..."
+            placeholder="Cari kode atau nama item..."
             className="w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 py-2.5 text-sm text-slate-700 outline-none transition hover:border-slate-400 focus:border-slate-900 focus:ring-4 focus:ring-slate-900/[0.06]"
           />
         </div>
@@ -107,9 +107,9 @@ export default function InventoryPasangIndukModal({ inventory, barangUtamaOption
         <div className="border border-slate-200 rounded-lg max-h-52 overflow-y-auto mb-4 divide-y divide-slate-100">
           {filteredOptions.length === 0 && (
             <p className="text-xs text-slate-400 text-center py-4">
-              {barangUtamaOptions.length === 0
-                ? 'Belum ada Barang Utama yang bisa dipilih.'
-                : 'Tidak ada Barang Utama yang cocok dengan pencarian.'}
+              {indukOptions.length === 0
+                ? 'Belum ada item yang bisa dipilih jadi induk.'
+                : 'Tidak ada item yang cocok dengan pencarian.'}
             </p>
           )}
           {filteredOptions.map((p) => {
