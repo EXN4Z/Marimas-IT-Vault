@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ScrollText, Trash2, ArrowDownCircle, ArrowUpCircle, RefreshCw, Search, X } from 'lucide-react';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import Pagination from '../components/shared/Pagination';
+import { Skeleton } from '../components/shared/skeleton';
 import { getAuditLog, getAuditLogTrash, type AuditLog } from '../api/auditLog';
 
 type TabKey = 'aktif' | 'trash';
@@ -134,7 +135,22 @@ export default function AuditLogPage() {
       </div>
 
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-        {loading && <p className="text-sm text-slate-400 text-center py-8">Memuat data...</p>}
+        {loading && (
+          <div className="flex flex-col gap-1">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <Skeleton className="h-5 w-14 rounded-full shrink-0" />
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <Skeleton className="h-3.5 w-2/3 rounded" />
+                    <Skeleton className="h-3 w-1/2 rounded" />
+                  </div>
+                </div>
+                <Skeleton className="h-3 w-16 rounded shrink-0 ml-3" />
+              </div>
+            ))}
+          </div>
+        )}
 
         {!loading && error && <p className="text-sm text-red-500 text-center py-8">{error}</p>}
 

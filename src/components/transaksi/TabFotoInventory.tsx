@@ -6,6 +6,7 @@ import SearchInput from '../shared/SearchInput';
 import { getFotoPemakaiInventory, type FotoPemakaiEntry } from '../../api/transaksi/inventoryPemakai';
 import { getFotoKerusakanInventory, type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
 import { namaPemakai, formatTanggalWaktuId, formatJenisKerusakan } from '../masterData/inventoryHelpers';
+import { SkeletonTable } from '../shared/skeleton';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 const PER_PAGE = 10;
@@ -156,7 +157,19 @@ export default function TabFotoInventory({}: Props) {
       const fotoKey = activeTab === 'peminjaman' ? 'foto_penerimaan' : 'foto_pengembalian';
       const tanggalLabel = activeTab === 'peminjaman' ? 'Tgl Serah Terima' : 'Tgl Pengembalian';
 
-      if (state.loading) return <p className="text-sm text-slate-400 text-center py-10">Memuat foto...</p>;
+      if (state.loading) {
+        return (
+          <div className="border border-slate-200 bg-white rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[640px]">
+                <tbody>
+                  <SkeletonTable columns={5} rows={5} />
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      }
 
       if (state.entries.length === 0) {
         return (
@@ -224,7 +237,19 @@ export default function TabFotoInventory({}: Props) {
     }
 
     // ==== Tab Rusak ====
-    if (rusak.loading) return <p className="text-sm text-slate-400 text-center py-10">Memuat foto...</p>;
+    if (rusak.loading) {
+      return (
+        <div className="border border-slate-200 bg-white rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[640px]">
+              <tbody>
+                <SkeletonTable columns={5} rows={5} />
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
 
     if (rusak.entries.length === 0) {
       return (

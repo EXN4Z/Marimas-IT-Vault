@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { PackageSearch, PlusCircle, Search, X } from 'lucide-react';
 import { getInventory, type Inventory } from '../../api/masterData/inventory';
 import InventoryFormModal, { type KelengkapanFormValues } from './InventoryFormModal';
+import { Skeleton } from '../shared/skeleton';
 
 // Dipakai di dalam InventoryFormModal (create & edit). Beda sama modal "Pasang
 // Pengganti" yang lama: di sini user bisa milih BEBERAPA kelengkapan
@@ -150,7 +151,16 @@ export default function InventoryKelengkapanPicker({ staged, onChange, existing,
             </div>
           </div>
           <div className="max-h-40 overflow-y-auto p-1.5">
-            {stokLoading && <p className="text-xs text-slate-400 text-center py-4">Memuat stok...</p>}
+            {stokLoading && (
+              <div className="space-y-1">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="px-2.5 py-2 space-y-1.5">
+                    <Skeleton className="h-3 w-1/2 rounded" />
+                    <Skeleton className="h-2.5 w-1/3 rounded" />
+                  </div>
+                ))}
+              </div>
+            )}
             {!stokLoading && stokError && <p className="text-xs text-red-500 text-center py-4">{stokError}</p>}
             {!stokLoading && !stokError && filteredStok.length === 0 && (
               <p className="text-xs text-slate-300 text-center py-4">

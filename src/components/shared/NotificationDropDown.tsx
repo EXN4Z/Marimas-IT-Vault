@@ -11,6 +11,7 @@ import {
   type AppNotification,
   type NotificationResponse,
 } from '../../api/notifications';
+import { Skeleton } from './skeleton';
 
 function formatWaktu(iso: string): string {
   const date = new Date(iso);
@@ -181,7 +182,17 @@ export default function NotificationDropdown() {
 
           <div className="overflow-y-auto max-h-[60vh] sm:max-h-80">
             {isLoading && items.length === 0 && (
-              <p className="text-sm text-slate-400 text-center py-8">Memuat...</p>
+              <div className="flex flex-col">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-start gap-2 px-4 py-3 border-b border-slate-50 last:border-0">
+                    <Skeleton className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" />
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <Skeleton className="h-3.5 w-full rounded" />
+                      <Skeleton className="h-3 w-1/3 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
 
             {!isLoading && items.length === 0 && (

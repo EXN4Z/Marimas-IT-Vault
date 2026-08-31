@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { Search, HandCoins, Undo2, AlertTriangle, PlayCircle, Wrench, Banknote, X } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import { useAuth } from '../../context/AuthContext';
+import { Skeleton } from '../shared/skeleton';
 import { getRiwayatInventory, type RiwayatInventoryEvent } from '../../api/transaksi/inventoryPemakai';
 
 function formatWaktu(iso: string): string {
@@ -170,7 +171,17 @@ export default function TabRiwayatInventory() {
       </ul>
 
       {riwayatInventoryLoading ? (
-        <p className="text-sm text-slate-400 text-center py-6">Memuat riwayat...</p>
+        <ul className="flex flex-col gap-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <Skeleton className="h-3.5 w-3/4 rounded" />
+                <Skeleton className="h-3 w-1/4 rounded" />
+              </div>
+            </li>
+          ))}
+        </ul>
       ) : (() => {
         return (
         <ul className="flex flex-col gap-4">

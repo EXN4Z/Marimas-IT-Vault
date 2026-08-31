@@ -11,6 +11,7 @@ import StatusBadge from '../components/shared/StatusBadge';
 import { printStruk } from '../utils/printStruk';
 import InventoryPenangananExportModal from '../components/transaksi/InventoryPenangananExportModal';
 import { useAuth } from '../context/AuthContext';
+import { Skeleton, SkeletonListCard } from '../components/shared/skeleton';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 
@@ -213,7 +214,23 @@ export default function PenangananInventory({ onCount }: Props) {
   };
 
   if (loading) {
-    return <p className="text-sm text-slate-500">Memuat laporan penanganan aset...</p>;
+    return (
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+        <div className="mb-4 space-y-2">
+          <Skeleton className="h-4 w-56 rounded" />
+          <Skeleton className="h-3 w-80 rounded" />
+        </div>
+        {/* Fake tab bar, niru ScrollableTabBar biar layout gak "loncat" */}
+        <div className="flex items-center gap-2 mb-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-8 w-28 rounded-lg shrink-0" />
+          ))}
+        </div>
+        <div className="border border-slate-200 rounded-lg overflow-hidden">
+          <SkeletonListCard rows={5} />
+        </div>
+      </div>
+    );
   }
 
   // pisah per status: belum diterima admin, lagi diperbaiki, dan yang udah

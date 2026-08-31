@@ -3,6 +3,7 @@ import { Building2, MapPin, Phone, Users, Map, Plus, Pencil, Trash2 } from 'luci
 import { useAuth } from '../../context/AuthContext';
 import { getCabang, createCabang, updateCabang, deleteCabang, type Cabang } from '../../api/cabang';
 import RouteModal from '../shared/RouteModal';
+import { Skeleton } from '../shared/skeleton';
 
 const STAFF_ROLES = ['admin', 'hr'];
 
@@ -149,7 +150,25 @@ export default function TabCabang() {
         </button>
       </div>
 
-      {loading && <p className="text-sm text-slate-400 text-center py-12">Memuat data cabang...</p>}
+      {loading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col gap-3">
+              <div className="flex items-center gap-2.5">
+                <Skeleton className="w-9 h-9 rounded-lg shrink-0" />
+                <Skeleton className="h-4 w-2/3 rounded" />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-3 w-full rounded" />
+                <Skeleton className="h-3 w-1/2 rounded" />
+              </div>
+              <div className="pt-3 border-t border-slate-100">
+                <Skeleton className="h-5 w-24 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {!loading && error && <p className="text-sm text-red-500 text-center py-12">{error}</p>}
 

@@ -8,6 +8,7 @@ import { getCabang, type Cabang } from '../api/cabang';
 import { setKaryawanPassword } from '../api/auth';
 import type { Departemen } from '../api/masterData/departemen';
 import { createPortal } from 'react-dom';
+import { Skeleton } from '../components/shared/skeleton';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest' | 'cabang';
 
@@ -183,7 +184,14 @@ export default function EditKaryawanPage() {
     if (loading) {
         return (
             <RouteModal title="Edit User" fallbackPath="/karyawan" onClose={closeModal}>
-                <p className="text-center text-sm text-gray-400 py-16">Memuat data...</p>
+                <div className="space-y-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="space-y-1.5">
+                            <Skeleton className="h-3 w-24 rounded" />
+                            <Skeleton className="h-9 w-full rounded-lg" />
+                        </div>
+                    ))}
+                </div>
             </RouteModal>
         );
     }
