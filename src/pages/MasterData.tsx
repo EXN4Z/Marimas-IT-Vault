@@ -1,11 +1,13 @@
 import '../index.css';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2, Package, Tags } from 'lucide-react';
+import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2, Package, Tags, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import TabInventory from '../components/masterData/TabInventory';
 import TabKategori from '../components/masterData/TabKategori';
+import TabKaryawan from '../components/masterData/TabKaryawan';
+import TabCabang from '../components/masterData/TabCabang';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen, importDepartemen } from '../api/masterData/departemen';
 import { getSupplier, createSupplier, updateSupplier, deleteSupplier, importSupplier } from '../api/masterData/supplier';
@@ -23,7 +25,11 @@ import { downloadStyledExcel } from '../utils/excelReport';
 // Tab "Kelengkapan Inventory" sudah digabung ke tab "Inventory" (1 tabel,
 // dibedain lewat kolom Kategori) -- lihat TabInventory.tsx.
 type GenericTabKey = 'departemen' | 'supplier';
-type CustomTabKey = 'inventory' | 'kategori';
+// BARU: 'karyawan' (Data User) & 'cabang' pindahan dari halaman /karyawan &
+// /cabang -- sekarang jadi tab di Master Data juga, sepola sama Aset/Kategori
+// (dirender lewat komponen dedicated-nya sendiri, bukan lewat tabConfig
+// generik, karena bentuknya beda dari CRUD nama/alamat/telepon).
+type CustomTabKey = 'inventory' | 'kategori' | 'karyawan' | 'cabang';
 type TabKey = CustomTabKey | GenericTabKey;
 
 // alamat & telepon cuma dipakai tab 'supplier'
@@ -34,7 +40,7 @@ type FormPayload = { nama: string; alamat?: string; telepon?: string };
 // AppLayout nentuin dropdown Master Data mana yang default aktif kalau
 // URL belum punya "?tab=" -- harus samain urutannya sama children di
 // AppLayout.tsx (Inventory, Kategori, Departemen, Supplier).
-const TAB_KEYS: TabKey[] = ['inventory', 'kategori', 'departemen', 'supplier'];
+const TAB_KEYS: TabKey[] = ['inventory', 'kategori', 'karyawan', 'cabang', 'departemen', 'supplier'];
 
 function isTabKey(value: string | null): value is TabKey {
   return !!value && (TAB_KEYS as string[]).includes(value);
@@ -44,12 +50,18 @@ function isGenericTab(tab: TabKey): tab is GenericTabKey {
   return tab === 'departemen' || tab === 'supplier';
 }
 
-const CUSTOM_TABS: { key: CustomTabKey; label: string; icon: typeof Package }[] = [
-  { key: 'inventory', label: 'Inventory', icon: Package },
-  { key: 'kategori', label: 'Kategori', icon: Tags },
-];
-
 const STAFF_ROLES = ['admin', 'hr'];
+
+// `roles` opsional -- kalau diisi, tab ini cuma muncul buat role yang
+// disebut (dicek di bagian render ScrollableTabBar di bawah). Data User &
+// Cabang admin-only, sinkron sama RoleRoute yang dulu dipasang di App.tsx
+// waktu keduanya masih halaman sendiri (/karyawan, /cabang).
+const CUSTOM_TABS: { key: CustomTabKey; label: string; icon: typeof Package; roles?: string[] }[] = [
+  { key: 'inventory', label: 'Inventory', icon: Package },
+  { key: 'kategori', label: 'Kategori', icon: Tags, roles: STAFF_ROLES },
+  { key: 'karyawan', label: 'Data User', icon: Users, roles: ['admin'] },
+  { key: 'cabang', label: 'Cabang', icon: Building2, roles: ['admin'] },
+];
 
 const tabConfig: Record<
   GenericTabKey,
@@ -96,14 +108,25 @@ const tabConfig: Record<
 export default function MasterData() {
   const { user } = useAuth();
   const isStaff = !!user && STAFF_ROLES.includes(user.role);
+  const isAdmin = !!user && user.role === 'admin';
+
+  // BARU: helper terpusat buat nentuin siapa boleh liat tab apa -- Inventory
+  // kebuka buat semua yang bisa akses Master Data, Kategori/Departemen/Supplier
+  // staff-only (admin/hr), Data User & Cabang admin-only (sinkron sama
+  // RoleRoute yang dulu dipasang di App.tsx waktu keduanya masih halaman
+  // sendiri, /karyawan & /cabang).
+  const canViewTab = (tab: TabKey): boolean => {
+    if (tab === 'inventory') return true;
+    if (tab === 'karyawan' || tab === 'cabang') return isAdmin;
+    return isStaff;
+  };
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTabState] = useState<TabKey>(() => {
     const fromUrl = searchParams.get('tab');
-    // BARU: non-staff (karyawan/manajer) cuma boleh liat tab Inventory --
-    // kalau URL nunjuk ke tab staff-only (kategori/departemen/supplier),
-    // paksa balik ke 'inventory' daripada nolak seluruh halaman.
-    if (isTabKey(fromUrl) && (isStaff || fromUrl === 'inventory')) return fromUrl;
+    // kalau URL nunjuk ke tab yang gak boleh diakses role ini, paksa balik
+    // ke 'inventory' daripada nolak seluruh halaman.
+    if (isTabKey(fromUrl) && canViewTab(fromUrl)) return fromUrl;
     return 'inventory';
   });
 
@@ -119,7 +142,7 @@ export default function MasterData() {
   // effect ini yang nangkep perubahan query dan update activeTab-nya.
   useEffect(() => {
     const fromUrl = searchParams.get('tab');
-    if (isTabKey(fromUrl) && fromUrl !== activeTab && (isStaff || fromUrl === 'inventory')) {
+    if (isTabKey(fromUrl) && fromUrl !== activeTab && canViewTab(fromUrl)) {
       setActiveTabState(fromUrl);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -296,7 +319,9 @@ export default function MasterData() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <p className="text-sm text-slate-500">
           {isStaff
-            ? 'Kelola data referensi aset, kelengkapan aset, departemen, dan supplier yang dipakai di seluruh sistem.'
+            ? isAdmin
+              ? 'Kelola data inventory, kategori, departemen, supplier, data user, dan cabang yang dipakai di seluruh sistem.'
+              : 'Kelola data referensi aset, kelengkapan aset, departemen, dan supplier yang dipakai di seluruh sistem.'
             : 'Lihat inventory yang tersedia atau lagi kamu pinjam.'}
         </p>
         {cfg && (
@@ -348,11 +373,11 @@ export default function MasterData() {
         activeTab={activeTab}
         onChange={setActiveTab}
         tabs={[
-          // BARU: non-staff cuma liat tab "Inventory" -- Kategori dan tab
-          // generik (Departemen/Supplier) tetap staff-only, sinkron sama
-          // pembatasan `roles` di child sidebar (AppLayout.tsx) dan sama
-          // backend (kategori/departemen/supplier endpoint-nya admin/hr-only).
-          ...CUSTOM_TABS.filter((t) => isStaff || t.key === 'inventory').map((t) => ({ key: t.key, label: t.label, icon: t.icon })),
+          // BARU: non-staff cuma liat tab "Inventory" -- Kategori, Data
+          // User, Cabang, dan tab generik (Departemen/Supplier) dibatasi
+          // lewat `roles` per-tab, sinkron sama pembatasan `roles` di child
+          // sidebar (AppLayout.tsx) dan sama backend.
+          ...CUSTOM_TABS.filter((t) => !t.roles || t.roles.includes(user?.role ?? '')).map((t) => ({ key: t.key, label: t.label, icon: t.icon })),
           ...(isStaff ? (Object.keys(tabConfig) as GenericTabKey[]) : []).map((key) => ({
             key,
             label: tabConfig[key].label,
@@ -365,6 +390,10 @@ export default function MasterData() {
         <TabInventory onCount={() => {}} />
       ) : activeTab === 'kategori' ? (
         <TabKategori />
+      ) : activeTab === 'karyawan' ? (
+        <TabKaryawan />
+      ) : activeTab === 'cabang' ? (
+        <TabCabang />
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {loading && <p className="text-sm text-slate-400 text-center py-8">Memuat data...</p>}

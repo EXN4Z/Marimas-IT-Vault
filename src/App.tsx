@@ -7,14 +7,12 @@ import AppLayout from './components/shared/AppLayout';
 import Login from './pages/Login';
 import VerifyOtp from './pages/VerifyOtp';
 import Dashboard from './pages/Dashboard';
-import Karyawan from './pages/Karyawan';
 import KaryawanEdit from './pages/KaryawanEdit';
 import KaryawanCreate from './pages/KaryawanCreate';
 import Settings from './pages/Settings';
 import AuditLog from './pages/AuditLog';
 import Laporan from './pages/Laporan';
 import MasterData from './pages/MasterData';
-import CabangPage from './pages/CabangPage';
 import PenangananInventory from './pages/PenangananInventory';
 
 interface LocationState {
@@ -55,14 +53,11 @@ function AppRoutes() {
           {/* Inventory sekarang isinya di halaman Master Data (tab "inventory"), bukan
               lagi di Inventaris -- alias lama ini diarahin ke sana. */}
           <Route path="/inventory" element={<Navigate to="/master-data?tab=inventory" replace />} />
-          <Route
-            path="/karyawan"
-            element={
-              <RoleRoute roles={['admin']}>
-                <Karyawan />
-              </RoleRoute>
-            }
-          />
+          {/* Data User (Karyawan.tsx) & Cabang (CabangPage.tsx) sekarang jadi tab
+              di dalam Master Data (tab "karyawan" & "cabang"), bukan halaman
+              sendiri lagi -- alias ini jaga-jaga buat bookmark/link lama. */}
+          <Route path="/karyawan" element={<Navigate to="/master-data?tab=karyawan" replace />} />
+          <Route path="/cabang" element={<Navigate to="/master-data?tab=cabang" replace />} />
           {/* Dashboard Analytics sekarang jadi tab di dalam /dashboard, bukan halaman sendiri.
               Redirect ini cuma buat jaga-jaga kalau ada bookmark/link lama ke /dashboard-analytics. */}
           <Route path="/dashboard-analytics" element={<Navigate to="/dashboard?tab=analytics" replace />} />
@@ -81,14 +76,6 @@ function AppRoutes() {
           />
           <Route path="/master-data" element={<MasterData />} />
           <Route path='/penanganan-inventory' element={<PenangananInventory />} />
-          <Route
-            path="/cabang"
-            element={
-              <RoleRoute roles={['admin']}>
-                <CabangPage />
-              </RoleRoute>
-            }
-          />
 
           {/* Fallback: kalau /karyawan/create atau /karyawan/:id/edit diakses langsung
               (refresh browser / paste link / belum ada backgroundLocation), route ini

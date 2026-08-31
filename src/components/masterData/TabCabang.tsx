@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Building2, MapPin, Phone, Users, Map, Plus, Pencil, Trash2 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { getCabang, createCabang, updateCabang, deleteCabang, type Cabang } from '../api/cabang';
-import RouteModal from '../components/shared/RouteModal';
+import { useAuth } from '../../context/AuthContext';
+import { getCabang, createCabang, updateCabang, deleteCabang, type Cabang } from '../../api/cabang';
+import RouteModal from '../shared/RouteModal';
 
 const STAFF_ROLES = ['admin', 'hr'];
 
-export default function CabangPage() {
+// Dipindah dari halaman /cabang (CabangPage.tsx) -- sekarang jadi tab
+// "Cabang" di dalam Master Data, sepola sama tab Inventory/Kategori/dst
+// (lihat MasterData.tsx). Route /cabang lama di-redirect ke sini.
+export default function TabCabang() {
   const { user } = useAuth();
   const isStaff = !!user && STAFF_ROLES.includes(user.role);
 
