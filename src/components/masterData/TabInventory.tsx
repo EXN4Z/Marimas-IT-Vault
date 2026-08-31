@@ -14,7 +14,7 @@ import InventoryLaporKerusakanModal from './InventoryLaporKerusakanModal';
 import InventoryLepasDariIndukModal from './InventoryLepasDariIndukModal';
 import InventoryPasangIndukModal from './InventoryPasangParentModal';
 import InventoryPenangananSelesaiModal from '../transaksi/InventoryPenangananSelesaiModal';
-import InventoryExportModal from '../masterData/InventoryExportModal';
+import InventoryExportModal from '../laporan/InventoryExportModal';
 import InventoryKelengkapanExportModal from './InventoryKelengkapanExportModal';
 import { useAuth } from '../../context/AuthContext';
 import { printStruk } from '../../utils/printStruk';
