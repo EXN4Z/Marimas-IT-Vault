@@ -193,7 +193,7 @@ export function WelcomeHeader({ user, action }: { user?: UserType | null; action
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-[#171633] leading-tight">
-            {greetingWord()}, {firstName}! <span className="inline-block">👋</span>
+            {greetingWord()}, {firstName}!
           </h2>
           <p className="text-xs text-[#A9A9C6] font-medium capitalize mt-1">{today}</p>
         </div>
@@ -254,7 +254,7 @@ export function KpiCard({
   const cfg = KPI_CONFIG[tone] || KPI_CONFIG.default;
   return (
     <div
-      className={`bg-white rounded-2xl p-4 shadow-[0_4px_24px_rgba(23,22,51,0.06)] hover:shadow-[0_8px_32px_rgba(23,22,51,0.10)] transition-all flex flex-col gap-3 ${className}`}
+      className={`bg-white rounded-lg p-4 shadow-[0_4px_24px_rgba(23,22,51,0.06)] hover:shadow-[0_8px_32px_rgba(23,22,51,0.10)] transition-all flex flex-col gap-3 ${className}`}
     >
       <div className="flex items-center gap-3">
         {/* DEGO-style icon square */}
@@ -536,7 +536,7 @@ export function StatusInventoryDonutCard({
       <SectionHeader
         icon={Layers}
         tone="sky"
-        title="Distribusi Status"
+        title="Status"
         subtitle="Detail kondisi seluruh item"
         right={
           <span className="text-xs font-bold text-[#171633] bg-[#F7F8FC] px-3 py-1.5 rounded-lg">

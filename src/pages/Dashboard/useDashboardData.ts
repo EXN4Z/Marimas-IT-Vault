@@ -104,7 +104,10 @@ export async function fetchDepartemenDistribusi(): Promise<DepartemenDistribusi[
 }
 
 export async function fetchRingkasanInventory(): Promise<RingkasanInventory> {
-  const list = await getInventory({ kategori: 'barang_utama' });
+  // BARU: gak difilter kategori lagi -- sebelumnya cuma hitung 'barang_utama',
+  // sekarang Kelengkapan (charger, adaptor, dll) ikut dihitung juga biar
+  // "Total Inventory" di dashboard sinkron sama total data sebenarnya.
+  const list = await getInventory();
   let tersedia = 0;
   let dipakai = 0;
   let rusakBerat = 0;
@@ -164,7 +167,8 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export async function fetchInventoryPerMerek(): Promise<InventoryPerMerek[]> {
-  const list = await getInventory({ kategori: 'barang_utama' });
+  // BARU: ikut hitung Kelengkapan juga (lihat catatan di fetchRingkasanInventory).
+  const list = await getInventory();
   const counts = new Map<string, number>();
 
   for (const a of list) {
@@ -178,8 +182,9 @@ export async function fetchInventoryPerMerek(): Promise<InventoryPerMerek[]> {
 }
 
 // 6 bulan terakhir, jumlah inventory yang tanggal_pembelian-nya jatuh di bulan itu.
+// BARU: ikut hitung Kelengkapan juga (lihat catatan di fetchRingkasanInventory).
 export async function fetchTrenPembelianInventory(): Promise<TrenPembelianInventory[]> {
-  const list = await getInventory({ kategori: 'barang_utama' });
+  const list = await getInventory();
   const now = new Date();
 
   const bulanKeys: { key: string; label: string }[] = [];
@@ -202,7 +207,8 @@ export async function fetchTrenPembelianInventory(): Promise<TrenPembelianInvent
 }
 
 export async function fetchStatusInventoryDistribusi(): Promise<StatusInventoryDistribusi[]> {
-  const list = await getInventory({ kategori: 'barang_utama' });
+  // BARU: ikut hitung Kelengkapan juga (lihat catatan di fetchRingkasanInventory).
+  const list = await getInventory();
   const counts = new Map<string, number>();
 
   for (const a of list) {
@@ -216,7 +222,8 @@ export async function fetchStatusInventoryDistribusi(): Promise<StatusInventoryD
 }
 
 export async function fetchInventoryPerhatian(): Promise<InventoryPerhatian> {
-  const list = await getInventory({ kategori: 'barang_utama' });
+  // BARU: ikut hitung Kelengkapan juga (lihat catatan di fetchRingkasanInventory).
+  const list = await getInventory();
   const now = Date.now();
   const warningMs = GARANSI_WARNING_DAYS * 24 * 60 * 60 * 1000;
 

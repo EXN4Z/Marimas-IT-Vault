@@ -1,9 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useDashboardCore, useDashboardAnalytics } from './useDashboardData';
-import { Boxes, Package, AlertTriangle, ShieldAlert, PlusCircle } from 'lucide-react';
+import { Boxes, Package, AlertTriangle, ShieldAlert } from 'lucide-react';
 import {
   WelcomeHeader,
-  PrimaryActionButton,
   KpiCard,
   RingkasanInventoryCard,
   HeroTrenPembelianInventoryChart,
@@ -63,13 +62,6 @@ export default function DashboardAdmin() {
       {/* Header + primary action (DEGO "+ Add Product" pattern) */}
       <WelcomeHeader
         user={user}
-        action={
-          <PrimaryActionButton
-            icon={PlusCircle}
-            label="Tambah Inventory"
-            onClick={() => navigate('/master-data?tab=inventory')}
-          />
-        }
       />
 
       {error && (
