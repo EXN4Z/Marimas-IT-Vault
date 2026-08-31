@@ -8,6 +8,7 @@ import TabInventory from '../components/masterData/TabInventory';
 import TabKategori from '../components/masterData/TabKategori';
 import TabKaryawan from '../components/masterData/TabKaryawan';
 import TabCabang from '../components/masterData/TabCabang';
+import { SkeletonTable } from '../components/shared/skeleton';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen, importDepartemen } from '../api/masterData/departemen';
 import { getSupplier, createSupplier, updateSupplier, deleteSupplier, importSupplier } from '../api/masterData/supplier';
@@ -396,7 +397,27 @@ export default function MasterData() {
         <TabCabang />
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          {loading && <p className="text-sm text-slate-400 text-center py-8">Memuat data...</p>}
+          {loading && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[560px]">
+                <thead>
+                  <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
+                    <th className="px-6 py-3 font-medium">Nama</th>
+                    {activeTab === 'supplier' && (
+                      <>
+                        <th className="px-6 py-3 font-medium">Alamat</th>
+                        <th className="px-6 py-3 font-medium">Telepon</th>
+                      </>
+                    )}
+                    <th className="px-6 py-3 font-medium text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <SkeletonTable columns={activeTab === 'supplier' ? 4 : 2} rows={5} />
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {!loading && error && <p className="text-sm text-red-500 text-center py-8">{error}</p>}
 

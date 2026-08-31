@@ -4,6 +4,7 @@ import { User, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { login } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
+import { Skeleton } from '../components/shared/skeleton';
 import '../index.css';
 
 export default function Login() {
@@ -55,11 +56,21 @@ export default function Login() {
 
   // BARU: selama AuthContext masih validasi token ke backend, jangan
   // tampilkan form login dulu — mencegah "kelip" form login sebelum
-  // ke-redirect ke dashboard kalau ternyata user masih login.
+  // ke-redirect ke dashboard kalau ternyata user masih login. Skeleton niru
+  // layout 2-panel asli (branding kiri + form kanan) biar gak ada flash
+  // blank putih di tengah layar.
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-slate-500 text-sm">Memuat...</p>
+      <div className="min-h-screen flex">
+        <div className="hidden lg:block lg:w-1/2 bg-slate-100" />
+        <div className="w-full lg:w-1/2 flex items-center justify-center bg-slate-50 px-6">
+          <div className="w-full max-w-sm space-y-4">
+            <Skeleton className="h-3 w-24 rounded mb-6" />
+            <Skeleton className="h-12 w-full rounded-lg" />
+            <Skeleton className="h-12 w-full rounded-lg" />
+            <Skeleton className="h-12 w-full rounded-lg" />
+          </div>
+        </div>
       </div>
     );
   }

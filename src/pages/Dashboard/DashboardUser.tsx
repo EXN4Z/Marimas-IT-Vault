@@ -6,6 +6,7 @@ import {
   DepartemenDistribusiCard,
   CalendarCard,
   NotifikasiCard,
+  DashboardSkeleton,
 } from './Shared';
 
 export default function DashboardUser() {
@@ -19,14 +20,7 @@ export default function DashboardUser() {
   } = useDashboardCore();
 
   if (loading) {
-    return (
-      <div className="min-h-[400px] flex items-center justify-center">
-        <div className="flex items-center gap-2 text-slate-500 text-sm font-medium">
-          <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-          Memuat dashboard...
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton variant="simple" />;
   }
 
   const totalNotifikasi = notifications.length;

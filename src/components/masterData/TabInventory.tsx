@@ -6,6 +6,7 @@ import ScrollableTabBar from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
 import StatusBadge from '../shared/StatusBadge';
 import Tooltip from '../shared/Tooltip';
+import { Skeleton, SkeletonTable, SkeletonListCard } from '../shared/skeleton';
 import InventoryFormModal from './InventoryFormModal';
 import InventorySerahTerimaModal from './InventorySerahTerimaModal';
 import InventoryPengembalianModal from './InventoryPengembalianModal';
@@ -912,7 +913,23 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
       </div>
 
       <div className="border border-slate-200 rounded-lg overflow-hidden">
-        {loading && <p className="text-sm text-slate-400 text-center py-8">Memuat data...</p>}
+        {loading && (
+          <>
+            {/* Desktop: skeleton tabel, kolom nyesuain filter kategori yang aktif
+                (Kode, Nama, [Kategori], Jumlah/Serial Number, Status, Dipakai Oleh, Aksi) */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <tbody>
+                  <SkeletonTable columns={kategoriFilter === 'semua' ? 7 : 6} rows={6} />
+                </tbody>
+              </table>
+            </div>
+            {/* Mobile: skeleton list card, gantiin tampilan card per baris */}
+            <div className="sm:hidden">
+              <SkeletonListCard rows={5} />
+            </div>
+          </>
+        )}
         {!loading && error && <p className="text-sm text-red-500 text-center py-8">{error}</p>}
         {!loading && !error && filteredInventory.length === 0 && (
           <p className="text-sm text-slate-400 text-center py-8">Belum ada inventory.</p>
@@ -1245,7 +1262,27 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
               </button>
             </div>
 
-            {detailLoading && <p className="text-sm text-slate-400 text-center py-8">Memuat detail...</p>}
+            {detailLoading && (
+              <div className="flex flex-col gap-5">
+                <div className="flex gap-4">
+                  <Skeleton className="w-24 h-24 rounded-lg flex-shrink-0" />
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                    <Skeleton className="h-4 w-3/4 rounded" />
+                    <Skeleton className="h-3 w-1/2 rounded" />
+                    <Skeleton className="h-3 w-2/3 rounded" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="space-y-1.5">
+                      <Skeleton className="h-3 w-24 rounded" />
+                      <Skeleton className="h-4 w-32 rounded" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {!detailLoading && detail && (
               <div className="flex flex-col gap-5">

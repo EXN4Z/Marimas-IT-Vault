@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, X, Tags } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { SkeletonTable } from '../shared/skeleton';
 import {
   getKategori,
   createKategori,
@@ -139,7 +140,15 @@ export default function TabKategori() {
         </button>
       </div>
 
-      {loading && <p className="text-sm text-slate-400 text-center py-8">Memuat data...</p>}
+      {loading && (
+        <div className="overflow-x-auto mt-3">
+          <table className="w-full text-sm min-w-[420px]">
+            <tbody>
+              <SkeletonTable columns={2} rows={2} />
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {!loading && error && <p className="text-sm text-red-500 text-center py-8">{error}</p>}
 

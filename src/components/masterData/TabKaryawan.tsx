@@ -7,6 +7,7 @@ import type { Karyawan } from '../../api/karyawan';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import Pagination from '../shared/Pagination';
 import KaryawanExportModal from '../laporan/KaryawanExportModal';
+import { Skeleton, SkeletonCircle } from '../shared/skeleton';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'cabang';
 type TabKey = 'semua' | 'karyawan' | 'hr_manajer' | 'admin' | 'cabang';
@@ -292,7 +293,22 @@ export default function TabKaryawan() {
                         Total {activeTabLabel} ada <span className="font-semibold text-gray-900">{filtered.length}</span>
                     </p>
 
-                    {loading && <p className="text-center text-sm text-gray-400 py-8">Memuat data...</p>}
+                    {loading && (
+                        <div className="divide-y divide-gray-100">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <div key={i} className="flex items-center justify-between py-3 gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <SkeletonCircle size={36} />
+                                        <div className="min-w-0 space-y-1.5">
+                                            <Skeleton className="h-3.5 w-32 rounded" />
+                                            <Skeleton className="h-3 w-24 rounded" />
+                                        </div>
+                                    </div>
+                                    <Skeleton className="h-5 w-20 rounded-full shrink-0" />
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     {!loading && errorMsg && <p className="text-center text-sm text-gray-400 py-8">{errorMsg}</p>}
 

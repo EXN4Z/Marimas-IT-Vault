@@ -2,6 +2,7 @@ import { useAuth } from '../../context/AuthContext';
 import DashboardUser from './DashboardUser';
 import DashboardAdmin from './DashboardAdmin';
 import DashboardCabang from './DashboardCabang';
+import { DashboardSkeleton } from './Shared';
 
 // Role yang dapet DashboardAdmin (full analytics + inventaris).
 const REVIEWER_ROLES = ['admin', 'hr', 'manajer', 'manager'];
@@ -18,12 +19,10 @@ export default function Dashboard() {
 
   // Nunggu AuthContext kelar validasi token dulu, biar gak sempet nge-render
   // DashboardUser (default) sekilas sebelum ketauan role aslinya admin/cabang.
+  // Role belum ketahuan di titik ini, jadi dipakai skeleton "simple" (generik)
+  // -- begitu role kebaca, dashboard yang sesuai punya skeleton sendiri lagi.
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <p className="text-slate-500 text-sm">Memuat dashboard...</p>
-      </div>
-    );
+    return <DashboardSkeleton variant="simple" />;
   }
 
   const role = cachedUser?.role ?? '';
