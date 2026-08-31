@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Boxes, Users, ClipboardList, Loader2, Download, FileSpreadsheet, Images, History, Tags } from 'lucide-react';
+import { Boxes, Users, ClipboardList, Loader2, Download, FileSpreadsheet, Images, History, Tags, Building2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getInventory, type Inventory } from '../api/masterData/inventory';
 import { karyawanApi, type Karyawan } from '../api/karyawan';
 import { getAllInventoryPemakai, type InventoryPemakai } from '../api/transaksi/inventoryPemakai';
-import InventoryExportModal from '../components/masterData/InventoryExportModal';
+import InventoryExportModal from '../components/laporan/InventoryExportModal';
 import KaryawanExportModal from '../components/laporan/KaryawanExportModal';
-import InventoryPemakaiExportModal from '../components/transaksi/InventoryPemakaiExportModal';
+import InventoryPemakaiExportModal from '../components/laporan/InventoryPemakaiExportModal';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import TabFotoInventory from '../components/transaksi/TabFotoInventory';
 import TabRiwayatInventory from '../components/transaksi/TabRiwayatInventory';
 import { getKategori, type Kategori } from '../api/masterData/kategori';
-import KategoriExportModal from '../components/transaksi/KategoriExportModal';
+import KategoriExportModal from '../components/laporan/KategoriExportModal';
+import { getDepartemen, type Departemen } from '../api/masterData/departemen';
+import DepartemenExportModal from '../components/laporan/DepartemenExportModal';
 
 const STAFF_ROLES = ['admin', 'hr', 'manajer', 'manager', 'cabang'];
 
@@ -82,6 +84,10 @@ export default function Laporan() {
   const [kategoriList, setKategoriList] = useState<Kategori[]>([]);
   const [kategoriLoading, setKategoriLoading] = useState(true);
   const [exportKategoriOpen, setExportKategoriOpen] = useState(false);
+  // departemen
+  const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
+  const [departemenLoading, setDepartemenLoading] = useState(true);
+  const [exportDepartemenOpen, setExportDepartemenOpen] = useState(false);
 
   useEffect(() => {
     if (!isStaff) return;
@@ -94,6 +100,11 @@ export default function Laporan() {
       .then(setKategoriList)
       .catch(console.error)
       .finally(() => setKategoriLoading(false));
+
+    getDepartemen()
+      .then(setDepartemenList)
+      .catch(console.error)
+      .finally(() => setDepartemenLoading(false));
 
     karyawanApi
       .getAll()
@@ -200,6 +211,26 @@ export default function Laporan() {
               </button>
             </div>
           </div>
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
+            <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+              <Building2 size={18} />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Departemen</h3>
+            <p className="text-xs text-slate-500 leading-relaxed flex-1">
+              Export seluruh data departemen sebagai Excel atau PDF.
+            </p>
+
+            <div className="mt-4">
+              <button
+                onClick={() => setExportDepartemenOpen(true)}
+                disabled={departemenLoading}
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
+              >
+                {departemenLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+                {departemenLoading ? 'Memuat data...' : 'Export'}
+              </button>
+            </div>
+          </div>
 
           {isAdmin && (
             <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
@@ -233,6 +264,7 @@ export default function Laporan() {
       <InventoryExportModal open={exportInventoryOpen} onClose={() => setExportInventoryOpen(false)} data={inventoryList} />
       <KaryawanExportModal open={exportKaryawanOpen} onClose={() => setExportKaryawanOpen(false)} data={karyawanList} />
       <KategoriExportModal open={exportKategoriOpen} onClose={() => setExportKategoriOpen(false)} data={kategoriList} />
+      <DepartemenExportModal open={exportDepartemenOpen} onClose={() => setExportDepartemenOpen(false)} data={departemenList} />
       {isAdmin && (
         <InventoryPemakaiExportModal open={exportPemakaiOpen} onClose={() => setExportPemakaiOpen(false)} data={pemakaiList} />
         

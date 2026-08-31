@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FileSpreadsheet, FileText, X, CheckSquare, Square } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { type Inventory } from '../../api/masterData/inventory';
-import { formatTanggalId, namaPemakai } from './inventoryHelpers';
+import { formatTanggalId, namaPemakai } from '../masterData/inventoryHelpers';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
 
