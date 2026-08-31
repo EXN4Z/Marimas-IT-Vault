@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Boxes, Users, Loader2, Download, FileSpreadsheet, Images, History } from 'lucide-react';
+import { Boxes, Users, ClipboardList, Loader2, Download, FileSpreadsheet, Images, History } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getInventory, type Inventory } from '../api/masterData/inventory';
 import { karyawanApi, type Karyawan } from '../api/karyawan';
+import { getAllInventoryPemakai, type InventoryPemakai } from '../api/transaksi/inventoryPemakai';
 import InventoryExportModal from '../components/masterData/InventoryExportModal';
 import KaryawanExportModal from '../components/laporan/KaryawanExportModal';
+import InventoryPemakaiExportModal from '../components/transaksi/InventoryPemakaiExportModal';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import TabFotoInventory from '../components/transaksi/TabFotoInventory';
 import TabRiwayatInventory from '../components/transaksi/TabRiwayatInventory';
@@ -69,6 +71,12 @@ export default function Laporan() {
   const [karyawanLoading, setKaryawanLoading] = useState(true);
   const [exportKaryawanOpen, setExportKaryawanOpen] = useState(false);
 
+  // BARU: kartu export ketiga -- data pemakai inventory (serah-terima &
+  // pengembalian), admin only sama kayak endpoint-nya (lihat routes/api.php).
+  const [pemakaiList, setPemakaiList] = useState<InventoryPemakai[]>([]);
+  const [pemakaiLoading, setPemakaiLoading] = useState(true);
+  const [exportPemakaiOpen, setExportPemakaiOpen] = useState(false);
+
   useEffect(() => {
     if (!isStaff) return;
     getInventory({ kategori: 'barang_utama' })
@@ -82,6 +90,14 @@ export default function Laporan() {
       .catch(console.error)
       .finally(() => setKaryawanLoading(false));
   }, [isStaff]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    getAllInventoryPemakai()
+      .then(setPemakaiList)
+      .catch(console.error)
+      .finally(() => setPemakaiLoading(false));
+  }, [isAdmin]);
 
   if (!isStaff) {
     return (
@@ -152,6 +168,29 @@ export default function Laporan() {
               </button>
             </div>
           </div>
+
+          {isAdmin && (
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
+              <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+                <ClipboardList size={18} />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Pemakai Inventory</h3>
+              <p className="text-xs text-slate-500 leading-relaxed flex-1">
+                Export riwayat serah-terima & pengembalian inventory (pemakai, status, struk, tanggal, dsb) sebagai Excel atau PDF — kolom bisa dipilih sendiri.
+              </p>
+
+              <div className="mt-4">
+                <button
+                  onClick={() => setExportPemakaiOpen(true)}
+                  disabled={pemakaiLoading}
+                  className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
+                >
+                  {pemakaiLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+                  {pemakaiLoading ? 'Memuat data...' : 'Export'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : activeTab === 'foto_inventory' ? (
         <TabFotoInventory />
@@ -161,6 +200,9 @@ export default function Laporan() {
 
       <InventoryExportModal open={exportInventoryOpen} onClose={() => setExportInventoryOpen(false)} data={inventoryList} />
       <KaryawanExportModal open={exportKaryawanOpen} onClose={() => setExportKaryawanOpen(false)} data={karyawanList} />
+      {isAdmin && (
+        <InventoryPemakaiExportModal open={exportPemakaiOpen} onClose={() => setExportPemakaiOpen(false)} data={pemakaiList} />
+      )}
     </>
   );
 }

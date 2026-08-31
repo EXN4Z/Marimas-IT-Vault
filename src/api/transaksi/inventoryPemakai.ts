@@ -28,7 +28,7 @@ export interface InventoryPemakai {
   tanggal_pengembalian: string | null;
   catatan_pengembalian: string | null;
   catatan_penolakan: string | null;
-  inventory?: Inventory; // keisi kalau di-load dari endpoint /inventory-pemakai/riwayat
+  inventory?: Inventory; // keisi kalau di-load dari endpoint /inventory-pemakai/riwayat atau /inventory-pemakai
 }
 
 export interface FotoPemakaiEntry {
@@ -104,6 +104,15 @@ export async function searchKaryawan(query: string, role?: string): Promise<Kary
   const res = await api.get<KaryawanUser[]>('/karyawan', {
     params: { search: query, ...(role ? { role } : {}) },
   });
+  return res.data;
+}
+
+// GET /inventory-pemakai — SEMUA data pemakai inventory apa adanya (bukan
+// event log ringkas kayak /riwayat, bukan cuma yang ada foto kayak /foto),
+// dipakai khusus buat kebutuhan export laporan (InventoryPemakaiExportModal).
+// Admin only (lihat routes/api.php).
+export async function getAllInventoryPemakai(): Promise<InventoryPemakai[]> {
+  const res = await api.get<InventoryPemakai[]>('/inventory-pemakai');
   return res.data;
 }
 
