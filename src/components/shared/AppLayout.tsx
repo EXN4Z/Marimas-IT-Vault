@@ -330,24 +330,7 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // header ilang pas scroll ke bawah, muncul lagi pas scroll ke atas --
-  // dicek dari selisih posisi scroll sekarang vs sebelumnya (bukan cuma
-  // "> 0" doang) biar gak keder pas scroll dikit/jitter di ujung atas
-  const handleContentScroll = () => {
-    const el = contentScrollRef.current;
-    if (!el) return;
-    const currentY = el.scrollTop;
-    const lastY = lastScrollYRef.current;
-
-    if (currentY <= 0) {
-      setHeaderVisible(true);
-    } else if (currentY > lastY + 4) {
-      setHeaderVisible(false);
-    } else if (currentY < lastY - 4) {
-      setHeaderVisible(true);
-    }
-    lastScrollYRef.current = currentY;
-  };
+  const handleContentScroll = () => {};
 
   const handleSearchResultClick = (path: string) => {
     if (OVERLAY_PATHS.includes(path)) {
@@ -588,9 +571,7 @@ const handleLogout = async () => {
             sengaja dihilangin biar sidebar & topbar keliatan nyatu jadi satu
             panel chrome tanpa garis */}
         <header
-          className={`h-18 min-h-18 shrink-0 bg-white flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 transition-transform duration-300 ${
-            headerVisible ? 'translate-y-0' : '-translate-y-full'
-          }`}
+          className="h-18 min-h-18 shrink-0 bg-white flex items-center justify-between px-4 md:px-8 sticky top-0 z-30"
         >
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-600">

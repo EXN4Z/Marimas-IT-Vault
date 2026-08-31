@@ -14,7 +14,7 @@ import InventoryLaporKerusakanModal from './InventoryLaporKerusakanModal';
 import InventoryLepasDariIndukModal from './InventoryLepasDariIndukModal';
 import InventoryPasangIndukModal from './InventoryPasangParentModal';
 import InventoryPenangananSelesaiModal from '../transaksi/InventoryPenangananSelesaiModal';
-import InventoryExportModal from './InventoryExportModal';
+import InventoryExportModal from '../masterData/InventoryExportModal';
 import InventoryKelengkapanExportModal from './InventoryKelengkapanExportModal';
 import { useAuth } from '../../context/AuthContext';
 import { printStruk } from '../../utils/printStruk';
@@ -795,54 +795,58 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         <p className="text-sm text-slate-500">
           Kelola inventory IT — Barang Utama (laptop, monitor, dsb) dan Kelengkapan (charger, tas, mouse, dsb) dalam satu tabel.
         </p>
-        <div className="flex items-center gap-2.5 flex-shrink-0">
-          {/* BARU: Export -- 1 tombol buat semua kategori, isi modalnya
-              nyesuain filter Kategori yang lagi aktif (lihat komentar
-              exportOpen di atas). Sengaja gak dibatasi isAdmin, sama kayak
-              tombol Export lama di TabKelengkapanInventory.tsx (non-admin
-              tetap boleh export data yang KELIATAN buat dia). */}
-          <button
-            onClick={() => setExportOpen(true)}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 transition"
-          >
-            <Download size={16} />
-            Export
-          </button>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full sm:w-auto">
+          <div className="flex items-center gap-2.5">
+            {/* BARU: Export -- 1 tombol buat semua kategori, isi modalnya
+                nyesuain filter Kategori yang lagi aktif (lihat komentar
+                exportOpen di atas). Sengaja gak dibatasi isAdmin, sama kayak
+                tombol Export lama di TabKelengkapanInventory.tsx (non-admin
+                tetap boleh export data yang KELIATAN buat dia). */}
+            <button
+              onClick={() => setExportOpen(true)}
+              className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 transition"
+            >
+              <Download size={16} />
+              Export
+            </button>
+
+            {isAdmin && (
+              <>
+                {/* PINDAHAN dari Inventaris.tsx: Import Excel data inventory */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleFileSelected}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={importLoading}
+                  className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  {importLoading ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Upload size={16} />
+                  )}
+                  {importLoading ? 'Mengimport...' : 'Import Excel'}
+                </button>
+              </>
+            )}
+          </div>
 
           {isAdmin && (
-            <>
-              {/* PINDAHAN dari Inventaris.tsx: Import Excel data inventory */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleFileSelected}
-                className="hidden"
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={importLoading}
-                className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-              >
-                {importLoading ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Upload size={16} />
-                )}
-                {importLoading ? 'Mengimport...' : 'Import Excel'}
-              </button>
-
-              <button
-                onClick={() => {
-                  setEditingInventory(null);
-                  setFormOpen(true);
-                }}
-                className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition"
-              >
-                <Plus size={16} />
-                Tambah Inventory
-              </button>
-            </>
+            <button
+              onClick={() => {
+                setEditingInventory(null);
+                setFormOpen(true);
+              }}
+              className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition"
+            >
+              <Plus size={16} />
+              Tambah Inventory
+            </button>
           )}
         </div>
       </div>

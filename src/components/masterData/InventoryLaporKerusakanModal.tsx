@@ -4,6 +4,7 @@ import { laporKerusakanInventory } from '../../api/transaksi/inventoryPenanganan
 import type { Inventory } from '../../api/masterData/inventory';
 import InventoryFotoUpload from './InventoryFotoUpload';
 import { JENIS_KERUSAKAN_BARANG_UTAMA, JENIS_KERUSAKAN_KELENGKAPAN } from './inventoryHelpers';
+import { ButtonCancel, ButtonSubmit, Field, SelectField, Textarea } from '../shared/FormControls';
 
 interface Props {
   inventory: Inventory;
@@ -88,31 +89,19 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
         {/* Body */}
         <div className="px-6 py-5 overflow-y-auto">
         <div className="flex flex-col gap-3 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Jenis Kerusakan</label>
-            <select
-              value={jenisKerusakan}
-              onChange={(e) => setJenisKerusakan(e.target.value)}
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
-            >
+          <Field label="Jenis Kerusakan">
+            <SelectField value={jenisKerusakan} onChange={setJenisKerusakan}>
               <option value="">Pilih jenis...</option>
               {opsiJenisKerusakan.map((opsi) => (
                 <option key={opsi.value} value={opsi.value}>
                   {opsi.label}
                 </option>
               ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Keluhan</label>
-            <textarea
-              value={keluhan}
-              onChange={(e) => setKeluhan(e.target.value)}
-              rows={4}
-              placeholder="Jelasin kondisi & kejadiannya..."
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
-            />
-          </div>
+            </SelectField>
+          </Field>
+          <Field label="Keluhan">
+            <Textarea value={keluhan} onChange={setKeluhan} placeholder="Jelasin kondisi & kejadiannya..." />
+          </Field>
 
           <InventoryFotoUpload
             files={fotoKerusakan}
@@ -131,26 +120,10 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
 
         {/* Footer */}
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
-          >
-            Batal
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors inline-flex items-center gap-2"
-          >
-            {submitting && (
-              <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.25" />
-                <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-              </svg>
-            )}
-            {submitting ? 'Mengirim...' : 'Kirim Laporan'}
-          </button>
+          <ButtonCancel onClick={onClose} disabled={submitting} />
+          <ButtonSubmit onClick={handleSubmit} loading={submitting} tone="danger" loadingLabel="Mengirim...">
+            Kirim Laporan
+          </ButtonSubmit>
         </div>
       </div>
 

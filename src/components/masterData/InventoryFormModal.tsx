@@ -13,6 +13,7 @@ import { pasangPenggantiKelengkapan } from '../../api/transaksi/inventoryKelengk
 import { getSupplier, type Supplier } from '../../api/masterData/supplier';
 import { getLokasiKantor, type LokasiKantor } from '../../api/lokasiKantor';
 import InventoryKelengkapanPicker, { type StagedKelengkapan } from './InventoryKelengkapanPicker';
+import { ButtonCancel, ButtonSubmit, Field, SelectField, inputClass, inputErrorClass } from '../shared/FormControls';
 
 const KETERANGAN_MAX = 255;
 const MAX_FOTO_MB = 4;
@@ -32,9 +33,9 @@ const STATUS_OPTIONS: { value: InventoryStatus; label: string; dot: string; ring
   { value: 'rusak', label: 'Rusak', dot: 'bg-red-500', ring: 'ring-red-100 border-red-400 bg-red-50/60' },
 ];
 
-const inputClass =
-  'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 shadow-sm outline-none transition-all duration-150 hover:border-slate-400 focus:border-slate-900 focus:ring-4 focus:ring-slate-900/[0.06]';
-const inputErrorClass = 'border-red-400 focus:border-red-500 focus:ring-red-500/10';
+// inputClass/inputErrorClass/Field/SelectField sekarang dari
+// '../shared/FormControls' (dulu didefinisiin lokal di file ini) -- biar
+// stylenya konsisten sama modal lain yang udah dipindah ke situ juga.
 
 interface InventoryFormModalProps {
   inventory: Inventory | null; // null = mode tambah
@@ -194,7 +195,16 @@ export default function InventoryFormModal({
   // ini tau cara render-nya (mis. admin sempat nambah kategori ke-3 lewat
   // tab Kategori) -- form belum support golongan lain, kasih tau lewat UI
   // daripada diam-diam nge-render salah satu mode secara asal.
-  const kategoriTidakDikenal = !kategoriLocked && kategoriId != null && !isKelengkapan && !isBarangUtama;
+  // PENTING: harus nunggu daftarKategori selesai dimuat (!loadingKategori)
+  // dulu sebelum nge-judge "tidak dikenal". Kalau enggak, pas mode edit
+  // (selectedKategoriId udah keisi dari inventory.kategori_id sejak awal
+  // render) tapi daftarKategori masih [] karena getKategori() belum
+  // resolve, kategoriNamaAktif bakal null sesaat -> isKelengkapan &
+  // isBarangUtama dua-duanya false -> kondisi ini keburu true -> modal
+  // "Kategori belum didukung" kekilat sebentar sebelum ketiban form edit
+  // kelengkapan/barang-utama yang asli begitu kategori kelar di-fetch.
+  const kategoriTidakDikenal =
+    !kategoriLocked && !loadingKategori && kategoriId != null && !isKelengkapan && !isBarangUtama;
 
   // ================= Mode barang_utama (state & logic asli, + nama & foto upgrade) =================
   const [form, setForm] = useState<BarangUtamaFormState>({
@@ -684,6 +694,28 @@ export default function InventoryFormModal({
     );
   }
 
+  // ================= Render: kategori dipilih, tapi daftarKategori masih fetch =================
+  // Kejadian di mode edit: selectedKategoriId udah keisi dari inventory.kategori_id
+  // sejak render pertama, tapi daftarKategori (buat resolve id -> nama, dipakai
+  // nentuin isKelengkapan/isBarangUtama) masih [] selama getKategori() belum
+  // resolve. Tampilin loading singkat di sini daripada numpang ke salah satu
+  // mode form (Barang Utama/Kelengkapan) secara asal sebelum kategorinya
+  // kekonfirmasi -- lihat juga catatan di kategoriTidakDikenal di atas.
+  if (!kategoriLocked && loadingKategori && kategoriId != null) {
+    return (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-[fadeIn_150ms_ease-out]">
+        <div className="bg-white rounded-2xl shadow-xl ring-1 ring-slate-900/5 w-full max-w-md p-6 flex items-center gap-3">
+          <svg className="animate-spin text-slate-400" width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.25" />
+            <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+          </svg>
+          <p className="text-sm text-slate-500">Memuat kategori…</p>
+        </div>
+        <style>{`@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }`}</style>
+      </div>
+    );
+  }
+
   // ================= Render: kategori dipilih tapi bukan Barang Utama/Kelengkapan =================
   // Form ini belum tau cara render field yang relevan buat golongan lain --
   // daripada nge-render salah satu mode secara asal (berisiko field/validasi
@@ -1103,28 +1135,10 @@ export default function InventoryFormModal({
 
           {/* Footer */}
           <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 shrink-0">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={saving}
-              className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              form="inventory-kelengkapan-form"
-              disabled={saving}
-              className="px-4 py-2 text-sm rounded-lg bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 transition-all duration-150 inline-flex items-center gap-2"
-            >
-              {saving && (
-                <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.25" />
-                  <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                </svg>
-              )}
-              {saving ? 'Menyimpan...' : inventory ? 'Simpan Perubahan' : 'Tambah'}
-            </button>
+            <ButtonCancel onClick={onClose} disabled={saving} />
+            <ButtonSubmit type="submit" form="inventory-kelengkapan-form" loading={saving} loadingLabel="Menyimpan...">
+              {inventory ? 'Simpan Perubahan' : 'Tambah'}
+            </ButtonSubmit>
           </div>
         </div>
 
@@ -1392,28 +1406,10 @@ export default function InventoryFormModal({
 
         {/* Footer */}
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={submitting}
-            className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
-          >
-            Batal
-          </button>
-          <button
-            type="submit"
-            form="inventory-utama-form"
-            disabled={submitting}
-            className="px-4 py-2 text-sm rounded-lg bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 transition-all duration-150 inline-flex items-center gap-2"
-          >
-            {submitting && (
-              <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.25" />
-                <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-              </svg>
-            )}
-            {submitting ? 'Menyimpan...' : inventory ? 'Simpan Perubahan' : 'Tambah Inventory'}
-          </button>
+          <ButtonCancel onClick={onClose} disabled={submitting} />
+          <ButtonSubmit type="submit" form="inventory-utama-form" loading={submitting} loadingLabel="Menyimpan...">
+            {inventory ? 'Simpan Perubahan' : 'Tambah Inventory'}
+          </ButtonSubmit>
         </div>
       </div>
 
@@ -1458,62 +1454,6 @@ function Section({
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  error,
-  required,
-  children,
-}: {
-  label: string;
-  error?: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block text-sm">
-      <span className="block mb-1.5 font-medium text-slate-700">
-        {label} {required && <span className="text-red-500">*</span>}
-      </span>
-      {children}
-      {error && <span className="block mt-1 text-xs text-red-600 animate-[fadeIn_120ms_ease-out]">{error}</span>}
-    </label>
-  );
-}
-
-function SelectField({
-  value,
-  onChange,
-  disabled,
-  children,
-}: {
-  value: string | number;
-  onChange: (value: string) => void;
-  disabled?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="relative">
-      <select
-        className={`${inputClass} appearance-none pr-9 cursor-pointer disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400`}
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {children}
-      </select>
-      <svg
-        width="12"
-        height="12"
-        viewBox="0 0 16 16"
-        fill="none"
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-      >
-        <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
     </div>
   );
 }
