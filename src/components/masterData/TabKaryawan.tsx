@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FileDown } from 'lucide-react';
-import api from '../api/axios';
-import { importKaryawan } from '../api/auth';
-import type { Karyawan } from '../api/karyawan';
-import ScrollableTabBar from '../components/shared/ScrollableTabBar';
-import Pagination from '../components/shared/Pagination';
-import KaryawanExportModal from '../components/laporan/KaryawanExportModal';
+import api from '../../api/axios';
+import { importKaryawan } from '../../api/auth';
+import type { Karyawan } from '../../api/karyawan';
+import ScrollableTabBar from '../shared/ScrollableTabBar';
+import Pagination from '../shared/Pagination';
+import KaryawanExportModal from '../laporan/KaryawanExportModal';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'cabang';
 type TabKey = 'semua' | 'karyawan' | 'hr_manajer' | 'admin' | 'cabang';
@@ -100,7 +100,10 @@ function initials(name: string): string {
         .toUpperCase();
 }
 
-export default function KaryawanPage() {
+// Dipindah dari halaman /karyawan (Karyawan.tsx) -- sekarang jadi tab
+// "Data User" di dalam Master Data, sepola sama tab Inventory/Kategori/dst
+// (lihat MasterData.tsx). Route /karyawan lama di-redirect ke sini.
+export default function TabKaryawan() {
     const navigate = useNavigate();
     const location = useLocation();
     const [users, setUsers] = useState<User[]>([]);
@@ -226,12 +229,7 @@ export default function KaryawanPage() {
 
     return (
         <>
-            <div className="max-w-6xl mx-auto">
-                <div className="mb-6">
-                    <h1 className="text-xl font-bold text-gray-900">Data User</h1>
-                    <p className="text-sm text-gray-500 mt-1">Kelola data seluruh pengguna sistem.</p>
-                </div>
-
+            <div>
                 <div className="bg-white border border-gray-200 rounded-xl p-4">
                     {/* Tab navigation menggantikan dropdown filter role */}
                     <ScrollableTabBar

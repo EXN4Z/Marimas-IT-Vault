@@ -35,14 +35,19 @@ interface NavItem {
   icon: typeof LayoutDashboard;
   path: string | null; // null = belum ada halamannya (atau dropdown-only parent), tampil tapi non-aktif/non-navigable
   children?: NavChild[]; // kalau ada, item ini jadi dropdown di sidebar
-  matchPrefix?: string; // dipakai buat nentuin dropdown auto-expand + highlight, termasuk buat route dinamis (mis. /karyawan/5/edit)
+  // dipakai buat nentuin dropdown auto-expand + highlight, termasuk buat route
+  // dinamis yang gak punya tombol nav sendiri (mis. /karyawan/5/edit). Bisa
+  // array kalau satu nav item perlu nyocokin lebih dari satu prefix path --
+  // dipakai Master Data buat ikut aktif pas di halaman create/edit User
+  // (/karyawan/create, /karyawan/:id/edit), yang tetap halaman tersendiri
+  // (bukan tab) meski "Data User"-nya sendiri sekarang jadi tab di dalamnya.
+  matchPrefix?: string | string[];
   restricted?: boolean; // true = halaman khusus admin/staff, bukan buat karyawan biasa (dipakai buat naro garis pemisah di sidebar)
   hidden?: boolean; // true = fitur belum lengkap, disembunyikan dari sidebar sementara. Route & filenya TETAP ada, cuma gak ditampilkan di menu.
 }
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { label: 'Data User', icon: Users, path: '/karyawan', matchPrefix: '/karyawan' },
   {
     // dulu "Inventaris" -- sekarang cuma nyisa Penanganan Aset di sini,
     // karena Aset & Kelengkapan Aset pindah ke Master Data, sementara
@@ -64,7 +69,6 @@ const navItems: NavItem[] = [
       { label: 'Penanganan Inventory', icon: Wrench, path: '/penanganan-inventory', roles: ['karyawan', 'cabang', 'manajer', 'hr', 'admin'] },
     ],
   },
-  { label: 'Cabang', icon: Building2, path: '/cabang', matchPrefix: '/cabang' },
   {
     // dulu link tunggal ke /laporan -- sekarang jadi dropdown. Halaman lamanya
     // sendiri tetap ada di sini, cuma dilabel ulang jadi "Export Data".
@@ -86,7 +90,13 @@ const navItems: NavItem[] = [
     label: 'Master Data',
     icon: Database,
     path: null,
-    matchPrefix: '/master-data',
+    // BARU: ikut nyocokin /karyawan & /cabang juga -- Data User & Cabang
+    // sekarang jadi tab di dalam Master Data (bukan halaman sendiri lagi),
+    // tapi halaman create/edit User (/karyawan/create, /karyawan/:id/edit)
+    // tetap route tersendiri, jadi Master Data perlu tetap "aktif" pas
+    // lagi di sana. Alias redirect /karyawan & /cabang lama juga tetap
+    // ngarah ke /master-data (lihat App.tsx).
+    matchPrefix: ['/master-data', '/karyawan', '/cabang'],
     restricted: true,
     children: [
       // Aset & Kelengkapan Aset kontennya sekarang dirender langsung di
@@ -104,6 +114,11 @@ const navItems: NavItem[] = [
       // karyawan biasa.
       { label: 'Inventory', icon: Package, path: '/master-data?tab=inventory' },
       { label: 'Kategori', icon: Tags, path: '/master-data?tab=kategori', roles: ['admin', 'hr'] },
+      // BARU: Data User & Cabang pindahan dari halaman /karyawan & /cabang
+      // (dulu 2 item sidebar terpisah, admin-only) -- sekarang jadi tab di
+      // sini juga, tetap admin-only lewat `roles`.
+      { label: 'Data User', icon: Users, path: '/master-data?tab=karyawan', roles: ['admin'] },
+      { label: 'Cabang', icon: Building2, path: '/master-data?tab=cabang', roles: ['admin'] },
       { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen', roles: ['admin', 'hr'] },
       { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier', roles: ['admin', 'hr'] },
     ],
@@ -133,6 +148,15 @@ const settingsNavItem = navItems.find((i) => i.label === 'Settings');
 const otherNavItems = navItems.filter((i) => i.label !== 'Audit Log' && i.label !== 'Settings');
 
 const interleavedNavItems = interleaveByChildren(otherNavItems);
+
+// dukung matchPrefix yang berupa satu string ATAU array of string (lihat
+// komentar di NavChild/NavItem.matchPrefix) -- dipakai di semua tempat yang
+// sebelumnya langsung nulis `location.pathname.startsWith(item.matchPrefix)`.
+function matchesPrefix(pathname: string, prefix?: string | string[]): boolean {
+  if (!prefix) return false;
+  const prefixes = Array.isArray(prefix) ? prefix : [prefix];
+  return prefixes.some((p) => pathname.startsWith(p));
+}
 
 function initials(name?: string) {
   if (!name) return '?';
@@ -199,10 +223,9 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
     if (item.label === 'Master Data' && !INVENTORY_ROLES.includes(user?.role ?? '')) {
       return false;
     }
-    // Data User & Cabang hanya untuk admin
-    if ((item.label === 'Data User' || item.label === 'Cabang') && user?.role !== 'admin') {
-      return false;
-    }
+    // (Data User & Cabang sekarang jadi child dropdown di Master Data,
+    // dibatasi admin-only lewat `roles` per-child -- lihat hasVisibleContent
+    // & filter visibleChildren di render, bukan lagi di sini.)
     // (dulu Dashboard cuma tampil buat admin -- sekarang semua role
     // sudah punya varian dashboard-nya sendiri: DashboardUser/DashboardCabang/
     // DashboardAdmin, jadi menu ini gak perlu disembunyikan lagi.)
@@ -242,9 +265,15 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
           (child) => location.pathname === child.path.split('?')[0]
         );
         if (match) return match.label;
+        // BARU: kalau gak ada child yang path-nya cocok persis, tetap cek
+        // matchPrefix milik parent-nya sendiri sebelum lanjut ke item
+        // berikutnya -- dipakai Master Data buat halaman create/edit User
+        // (/karyawan/create, /karyawan/:id/edit) yang gak punya tombol nav
+        // sendiri di dropdown (lihat matchPrefix Master Data di atas).
+        if (matchesPrefix(location.pathname, item.matchPrefix)) return item.label;
         continue;
       }
-      if (item.matchPrefix && location.pathname.startsWith(item.matchPrefix)) return item.label;
+      if (matchesPrefix(location.pathname, item.matchPrefix)) return item.label;
       if (item.path && item.path === location.pathname) return item.label;
     }
     return '';
@@ -336,7 +365,7 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
   // kayak /karyawan/5/edit yang gak ada tombol nav-nya sendiri)
   const isParentActive = (item: NavItem): boolean => {
     if (!item.children) return false;
-    if (item.matchPrefix && location.pathname.startsWith(item.matchPrefix)) return true;
+    if (matchesPrefix(location.pathname, item.matchPrefix)) return true;
     return item.children.some((child) => location.pathname === child.path);
   };
 
@@ -512,7 +541,7 @@ const handleLogout = async () => {
 
             // ITEM BIASA (tanpa dropdown)
             const isActive = item.matchPrefix
-              ? location.pathname.startsWith(item.matchPrefix)
+              ? matchesPrefix(location.pathname, item.matchPrefix)
               : item.path === location.pathname;
             const isDisabled = !item.path;
             return (
