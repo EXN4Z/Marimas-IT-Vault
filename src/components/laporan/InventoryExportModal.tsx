@@ -12,7 +12,6 @@ const STATUS_LABEL: Record<Inventory['status'], string> = {
   menunggu_perbaikan: 'Menunggu Perbaikan',
   diperbaiki: 'Sedang Diperbaiki',
   rusak_berat: 'Rusak Berat',
-  rusak: 'Rusak',
   dijual: 'Dijual',
 };
 
