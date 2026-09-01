@@ -11,7 +11,6 @@ import {
 } from '../../api/masterData/inventory';
 import { getKategori, type Kategori } from '../../api/masterData/kategori';
 import { getSupplier, type Supplier } from '../../api/masterData/supplier';
-import { getLokasiKantor, type LokasiKantor } from '../../api/lokasiKantor';
 import InventoryKelengkapanPicker, { type StagedKelengkapan } from './InventoryKelengkapanPicker';
 import { ButtonCancel, ButtonSubmit, Field, SelectField, inputClass, inputErrorClass } from '../shared/FormControls';
 
@@ -83,7 +82,6 @@ interface FormState extends Omit<KelengkapanFormValues, 'jumlah'> {
 const EMPTY_FORM: FormState = {
   kategori_id: null,
   parent_id: null,
-  lokasi_kantor_id: null,
   nama: '',
   warna: '',
   serial_number: '',
@@ -95,7 +93,6 @@ const EMPTY_FORM: FormState = {
   keterangan: '',
   foto: null,
   supplier_id: null,
-  tanggal_pembelian: '',
   tanggal_input: '',
   tanggal_invoice: '',
   no_surat_jalan: '',
@@ -144,21 +141,19 @@ export default function InventoryFormModal({
   const effectiveSupplierOptions = supplierOptions.length > 0 ? supplierOptions : fetchedSupplierOptions;
 
   const [inventoryOptions, setInventoryOptions] = useState<Inventory[]>([]);
-  const [lokasiOptions, setLokasiOptions] = useState<LokasiKantor[]>([]);
   const [loadingRefs, setLoadingRefs] = useState(false);
   useEffect(() => {
     setLoadingRefs(true);
     // Kandidat "Inventory Induk" = item apapun (kategori bebas) yang lagi
     // berdiri sendiri (parent_id null) -- posisi=induk sudah nyaring itu di
     // backend, independen dari kategori_id (lihat InventoryController::index()).
-    Promise.allSettled([getInventory({ posisi: 'induk' }), getLokasiKantor()]).then(([inventoryRes, lokasi]) => {
-      if (inventoryRes.status === 'fulfilled') {
+    getInventory({ posisi: 'induk' })
+      .then((data) => {
         // Item gak boleh jadi induk buat dirinya sendiri.
-        setInventoryOptions(inventoryRes.value.filter((a) => a.id !== inventory?.id));
-      }
-      if (lokasi.status === 'fulfilled') setLokasiOptions(lokasi.value);
-      setLoadingRefs(false);
-    });
+        setInventoryOptions(data.filter((a) => a.id !== inventory?.id));
+      })
+      .catch(() => {})
+      .finally(() => setLoadingRefs(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inventory?.id]);
 
@@ -168,7 +163,6 @@ export default function InventoryFormModal({
       ? {
           kategori_id: inventory.kategori_id ?? null,
           parent_id: inventory.parent_id ?? null,
-          lokasi_kantor_id: inventory.lokasi_kantor_id ?? null,
           nama: inventory.nama || '',
           warna: inventory.warna || '',
           serial_number: inventory.serial_number || '',
@@ -180,7 +174,6 @@ export default function InventoryFormModal({
           keterangan: inventory.keterangan || '',
           foto: null,
           supplier_id: inventory.supplier_id ?? null,
-          tanggal_pembelian: inventory.tanggal_pembelian ? inventory.tanggal_pembelian.slice(0, 10) : '',
           tanggal_input: inventory.tanggal_input ? inventory.tanggal_input.slice(0, 10) : '',
           tanggal_invoice: inventory.tanggal_invoice ? inventory.tanggal_invoice.slice(0, 10) : '',
           no_surat_jalan: inventory.no_surat_jalan || '',
@@ -216,22 +209,11 @@ export default function InventoryFormModal({
   // sebelum refactor), kunci field Inventory Induk & jelasin kenapa.
   const sudahPunyaChildren = existingKelengkapan.length > 0;
 
-  // Inventory Induk & Lokasi Kantor saling meniadakan — item yang nempel ke
-  // inventory induk ikut lokasi inventory itu, jadi begitu pilih inventory
-  // induk, lokasi manual yang sempat diisi otomatis dikosongkan (dan
-  // sebaliknya). Field ini TIDAK pernah di-disable berdasarkan status:
-  // hubungan induk/menempel itu independen dari status pinjam-meminjam (lihat
-  // InventoryPemakaiController::store(), yang otomatis nurunin status item
-  // menempel begitu induknya dipinjamkan).
   function pilihInventoryInduk(id: number | null) {
-    setForm((prev) => ({ ...prev, parent_id: id, lokasi_kantor_id: id ? null : prev.lokasi_kantor_id }));
+    setForm((prev) => ({ ...prev, parent_id: id }));
     if (errors.parent_id) setErrors((prev) => ({ ...prev, parent_id: '' }));
   }
 
-  function pilihLokasiKantor(id: number | null) {
-    setForm((prev) => ({ ...prev, lokasi_kantor_id: id, parent_id: id ? null : prev.parent_id }));
-    if (errors.lokasi_kantor_id) setErrors((prev) => ({ ...prev, lokasi_kantor_id: '' }));
-  }
 
   const [inventorySearch, setInventorySearch] = useState('');
   const [inventoryDropdownOpen, setInventoryDropdownOpen] = useState(false);
@@ -352,9 +334,6 @@ export default function InventoryFormModal({
     const next: Record<string, string> = {};
     if (!form.nama?.trim()) next.nama = 'Nama wajib diisi';
     if (!inventory && form.kategori_id == null) next.kategori_id = 'Kategori wajib dipilih';
-    if (form.tanggal_pembelian && form.tanggal_garansi && form.tanggal_garansi < form.tanggal_pembelian) {
-      next.tanggal_garansi = 'Tanggal garansi tidak boleh sebelum tanggal pembelian';
-    }
     setErrors((prev) => ({ ...prev, ...next }));
     return Object.keys(next).length === 0;
   }
@@ -701,23 +680,6 @@ export default function InventoryFormModal({
               </Field>
             </div>
 
-            <div className="sm:col-span-2">
-              <Field label="Lokasi Kantor" error={errors.lokasi_kantor_id}>
-                <SelectField
-                  value={form.lokasi_kantor_id ?? ''}
-                  onChange={(v) => pilihLokasiKantor(v ? Number(v) : null)}
-                  disabled={!!form.parent_id}
-                >
-                  <option value="">Tidak diisi</option>
-                  {lokasiOptions.map((l) => (
-                    <option key={l.id} value={l.id}>{l.nama}</option>
-                  ))}
-                </SelectField>
-                <p className="mt-1 text-xs text-slate-400">
-                  {!form.parent_id && 'Opsional — isi kalau item ini berdiri sendiri (tanpa inventory induk) supaya tetap ketahuan lokasi fisiknya.'}
-                </p>
-              </Field>
-            </div>
           </Section>
 
           {/* Section: Pembelian & Garansi */}
@@ -742,10 +704,6 @@ export default function InventoryFormModal({
 
             <Field label="Perusahaan">
               <input className={inputClass} value={form.perusahaan} onChange={(e) => setField('perusahaan', e.target.value)} placeholder="cth. mpk, uth" />
-            </Field>
-
-            <Field label="Tanggal Pembelian">
-              <input type="date" className={inputClass} value={form.tanggal_pembelian || ''} onChange={(e) => setField('tanggal_pembelian', e.target.value)} />
             </Field>
 
             <Field label="Tanggal Invoice">

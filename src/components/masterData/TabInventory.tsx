@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Download, MapPin, Link2, Unlink } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Download, Link2, Unlink } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
@@ -1030,7 +1030,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                   <th className="px-6 py-3 font-medium">Kategori</th>
                   <th className="px-6 py-3 font-medium">Jumlah</th>
                   <th className="px-6 py-3 font-medium">Status</th>
-                  <th className="px-6 py-3 font-medium">Dipakai Oleh / Lokasi</th>
+                  <th className="px-6 py-3 font-medium">Dipakai Oleh</th>
                   <th className="px-6 py-3 font-medium">Aksi</th>
                 </tr>
               </thead>
@@ -1064,31 +1064,14 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                         <StatusBadge colorClass={STATUS_STYLE[a.status]}>{STATUS_LABEL[a.status]}</StatusBadge>
                       </td>
                       <td className="px-6 py-3 text-slate-600 max-w-[160px]">
-                        {/* Kolom "Dipakai Oleh / Lokasi" kontekstual: item yang
-                            berdiri sendiri (parent_id null), tidak dipakai, dan
-                            bukan dijual → tampilkan lokasi kantor. Selain itu
-                            tampilkan nama pemakai. */}
-                        {!isChild && !a.pemakai_saat_ini && a.status !== 'dijual' ? (
-                          a.lokasiKantor ? (
-                            <Tooltip content={a.lokasiKantor.nama}>
-                              <span className="inline-flex items-center gap-1.5 min-w-0">
-                                <MapPin size={13} className="text-slate-300 shrink-0" />
-                                <span className="truncate">{a.lokasiKantor.nama}</span>
-                              </span>
-                            </Tooltip>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )
-                        ) : (
-                          <Tooltip content={a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
-                            <p className="truncate">
-                              {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}
-                              {a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && (
-                                <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
-                              )}
-                            </p>
-                          </Tooltip>
-                        )}
+                        <Tooltip content={a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
+                          <p className="truncate">
+                            {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini) || '-'}
+                            {a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && (
+                              <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
+                            )}
+                          </p>
+                        </Tooltip>
                       </td>
                       <td className="px-6 py-3">
                         <div className="flex items-center justify-end gap-1 flex-nowrap">
@@ -1146,20 +1129,13 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
 
                   {expanded && (
                     <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-2">
-                      {!isChild && !a.pemakai_saat_ini && a.status !== 'dijual' ? (
-                        <p className="text-xs text-slate-500">
-                          Lokasi:{' '}
-                          <span className="text-slate-700 font-medium">{a.lokasiKantor?.nama || '-'}</span>
-                        </p>
-                      ) : (
-                        <p className="text-xs text-slate-500">
-                          Dipakai Oleh:{' '}
-                          <span className="text-slate-700 font-medium">
-                            {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}
-                            {a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && ' (Cabang)'}
-                          </span>
-                        </p>
-                      )}
+                      <p className="text-xs text-slate-500">
+                        Dipakai Oleh:{' '}
+                        <span className="text-slate-700 font-medium">
+                          {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini) || '-'}
+                          {a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && ' (Cabang)'}
+                        </span>
+                      </p>
                       <div className="flex items-center flex-wrap gap-1.5">
                         {renderAksi(a)}
                       </div>
@@ -1400,10 +1376,6 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                     <p className="text-slate-800">{detail.type || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400">Tanggal Pembelian</p>
-                    <p className="text-slate-800">{formatTanggalId(detail.tanggal_pembelian)}</p>
-                  </div>
-                  <div>
                     <p className="text-xs text-slate-400">No. Surat Jalan / GR</p>
                     <p className="text-slate-800">{detail.no_surat_jalan || '-'} / {detail.no_good_receive || '-'}</p>
                   </div>
@@ -1411,9 +1383,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                     <p className="text-xs text-slate-400">Tanggal Garansi</p>
                     <p className="text-slate-800">{formatTanggalId(detail.tanggal_garansi)}</p>
                   </div>
-                  {/* BARU: Tanggal Invoice & Tanggal Input -- sama, cuma keisi buat
-                      hasil import format flat, lihat komentar tanggal_pembelian di
-                      InventoryBuktiImport::procesBarisFlat(). */}
+
                   <div>
                     <p className="text-xs text-slate-400">Tanggal Invoice</p>
                     <p className="text-slate-800">{formatTanggalId(detail.tanggal_invoice)}</p>
