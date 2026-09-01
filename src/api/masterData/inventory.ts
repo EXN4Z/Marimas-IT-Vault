@@ -1,7 +1,6 @@
 import api from '../axios';
 import type { Supplier } from './supplier';
 import type { Departemen } from './departemen';
-import type { LokasiKantor } from '../lokasiKantor';
 
 export type InventoryStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'rusak' | 'dijual';
 // Struktur (induk/menempel) sekarang murni soal parent_id, independen dari
@@ -39,8 +38,6 @@ export interface Inventory {
   kategori?: KategoriRef | null;
   departemen_id: number | null;
   departemen?: Departemen | null;
-  lokasi_kantor_id: number | null;
-  lokasiKantor?: LokasiKantor | null; // lokasi kelengkapan kalau berdiri sendiri (tanpa parent)
   nama: string | null;
   warna: string | null;
   serial_number: string | null;
@@ -51,7 +48,6 @@ export interface Inventory {
   foto: string | null;
   supplier_id: number | null;
   supplier?: Supplier | null;
-  tanggal_pembelian: string | null;
   tanggal_input: string | null;
   tanggal_invoice: string | null;
   no_surat_jalan: string | null;
@@ -78,7 +74,6 @@ export interface InventoryFormValues {
   kategori_id?: number | null;
   parent_id?: number | null; // cuma valid kalau kategori-nya 'Kelengkapan', dan harus nunjuk ke barang_utama
   departemen_id?: number | null;
-  lokasi_kantor_id?: number | null;
   nama?: string;
   warna?: string;
   serial_number?: string;
@@ -90,7 +85,6 @@ export interface InventoryFormValues {
   keterangan?: string;
   foto?: File | null;
   supplier_id?: number | null;
-  tanggal_pembelian?: string;
   tanggal_input?: string;
   tanggal_invoice?: string;
   no_surat_jalan?: string;
@@ -110,7 +104,6 @@ function buildInventoryFormData(values: InventoryFormValues): FormData {
   if (values.kategori_id != null) fd.append('kategori_id', String(values.kategori_id));
   if (values.parent_id != null) fd.append('parent_id', String(values.parent_id));
   if (values.departemen_id != null) fd.append('departemen_id', String(values.departemen_id));
-  if (values.lokasi_kantor_id != null) fd.append('lokasi_kantor_id', String(values.lokasi_kantor_id));
   if (values.nama) fd.append('nama', values.nama);
   if (values.warna) fd.append('warna', values.warna);
   if (values.serial_number) fd.append('serial_number', values.serial_number);
@@ -120,7 +113,6 @@ function buildInventoryFormData(values: InventoryFormValues): FormData {
   if (values.keterangan) fd.append('keterangan', values.keterangan);
   if (values.foto) fd.append('foto', values.foto);
   if (values.supplier_id != null) fd.append('supplier_id', String(values.supplier_id));
-  if (values.tanggal_pembelian) fd.append('tanggal_pembelian', values.tanggal_pembelian);
   if (values.no_surat_jalan) fd.append('no_surat_jalan', values.no_surat_jalan);
   if (values.no_good_receive) fd.append('no_good_receive', values.no_good_receive);
   return fd;

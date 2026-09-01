@@ -706,7 +706,7 @@ export default function InventoryFormModal({
               <input className={inputClass} value={form.perusahaan} onChange={(e) => setField('perusahaan', e.target.value)} placeholder="cth. mpk, uth" />
             </Field>
 
-            <Field label="Tanggal Invoice">
+            <Field label="Tanggal Pembelian">
               <input type="date" className={inputClass} value={form.tanggal_invoice || ''} onChange={(e) => setField('tanggal_invoice', e.target.value)} />
             </Field>
 

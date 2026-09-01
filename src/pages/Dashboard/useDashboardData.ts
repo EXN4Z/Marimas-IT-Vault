@@ -44,7 +44,7 @@ export interface InventoryPerMerek {
   jumlah: number;
 }
 
-// Tren jumlah inventory dibeli per bulan (6 bulan terakhir, dari tanggal_pembelian)
+// Tren jumlah inventory dibeli per bulan (6 bulan terakhir, dari tanggal_invoice)
 // — dipakai hero chart "Tren Pembelian Inventory per Bulan" di dashboard admin.
 export interface TrenPembelianInventory {
   bulan: string;
@@ -236,7 +236,7 @@ export async function fetchInventoryPerMerek(): Promise<InventoryPerMerek[]> {
     .sort((a, b) => b.jumlah - a.jumlah);
 }
 
-// 6 bulan terakhir, jumlah inventory yang tanggal_pembelian-nya jatuh di bulan itu.
+// 6 bulan terakhir, jumlah inventory yang tanggal_invoice-nya jatuh di bulan itu.
 // BARU: ikut hitung Kelengkapan juga (lihat catatan di fetchRingkasanInventory).
 export async function fetchTrenPembelianInventory(): Promise<TrenPembelianInventory[]> {
   const list = await getInventory();
@@ -251,8 +251,8 @@ export async function fetchTrenPembelianInventory(): Promise<TrenPembelianInvent
   const counts = new Map(bulanKeys.map((b) => [b.key, 0]));
 
   for (const a of list) {
-    if (!a.tanggal_pembelian) continue;
-    const d = new Date(a.tanggal_pembelian);
+    if (!a.tanggal_invoice) continue;
+    const d = new Date(a.tanggal_invoice);
     if (isNaN(d.getTime())) continue;
     const key = `${d.getFullYear()}-${d.getMonth()}`;
     if (counts.has(key)) counts.set(key, (counts.get(key) ?? 0) + 1);

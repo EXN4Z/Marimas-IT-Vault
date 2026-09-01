@@ -1385,7 +1385,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                   </div>
 
                   <div>
-                    <p className="text-xs text-slate-400">Tanggal Invoice</p>
+                    <p className="text-xs text-slate-400">Tanggal Pembelian</p>
                     <p className="text-slate-800">{formatTanggalId(detail.tanggal_invoice)}</p>
                   </div>
                   <div>

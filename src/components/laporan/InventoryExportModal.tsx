@@ -49,10 +49,10 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { key: 'no_surat_jalan', label: 'No. Surat Jalan', defaultChecked: false, get: (a) => a.no_surat_jalan || '-' },
   { key: 'no_good_receive', label: 'No. Good Receive', defaultChecked: false, get: (a) => a.no_good_receive || '-' },
   {
-    key: 'tanggal_pembelian',
+    key: 'tanggal_invoice',
     label: 'Tanggal Pembelian',
     defaultChecked: true,
-    get: (a) => formatTanggalId(a.tanggal_pembelian),
+    get: (a) => formatTanggalId(a.tanggal_invoice),
   },
   { key: 'keterangan', label: 'Keterangan', defaultChecked: false, get: (a) => a.keterangan || '-' },
 ];
