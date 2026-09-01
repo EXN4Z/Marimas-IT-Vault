@@ -2,6 +2,7 @@ import '../index.css';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2, Package, Tags, Users } from 'lucide-react';
+import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
 import toast from 'react-hot-toast';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import TabInventory from '../components/masterData/TabInventory';
@@ -479,7 +480,7 @@ export default function MasterData() {
       {modalOpen && cfg && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-semibold text-slate-900">
                 {editing ? `Edit ${cfg.singular}` : `Tambah ${cfg.singular}`}
               </h3>
@@ -488,41 +489,50 @@ export default function MasterData() {
               </button>
             </div>
 
-            {activeTab === 'supplier' && (
-              <>
-                <div>
-                  <label className="text-xs font-medium text-slate-500 mb-1 block">Alamat</label>
-                  <input
-                    value={formAlamat}
-                    onChange={(e) => setFormAlamat(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-500 mb-1 block">Telepon</label>
-                  <input
-                    value={formTelepon}
-                    onChange={(e) => setFormTelepon(e.target.value)}
-                    placeholder="cth. 0812xxxxxxx"
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  />
-                </div>
-              </>
-            )}
+            <div className="flex flex-col gap-4">
+              <Field label="Nama" required error={formError && !formAlamat && !formTelepon ? formError : undefined}>
+                <TextInput
+                  value={formNama}
+                  onChange={setFormNama}
+                  placeholder={`Nama ${cfg.singular.toLowerCase()}`}
+                  autoFocus
+                  error={!!formError && !formNama.trim()}
+                />
+              </Field>
 
-            {formError && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                {formError}
-              </p>
-            )}
+              {activeTab === 'supplier' && (
+                <>
+                  <Field label="Alamat">
+                    <TextInput
+                      value={formAlamat}
+                      onChange={setFormAlamat}
+                      placeholder="Alamat lengkap"
+                    />
+                  </Field>
+                  <Field label="Telepon">
+                    <TextInput
+                      value={formTelepon}
+                      onChange={setFormTelepon}
+                      placeholder="cth. 0812xxxxxxx"
+                      type="tel"
+                    />
+                  </Field>
+                </>
+              )}
 
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="w-full text-white text-sm font-semibold py-3 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed bg-slate-900 hover:bg-slate-800"
-            >
-              {submitting ? 'Menyimpan...' : 'Simpan'}
-            </button>
+              {formError && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {formError}
+                </p>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-1">
+                <ButtonCancel onClick={closeModal} disabled={submitting} />
+                <ButtonSubmit onClick={handleSubmit} loading={submitting} loadingLabel="Menyimpan...">
+                  Simpan
+                </ButtonSubmit>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -535,21 +545,11 @@ export default function MasterData() {
             <p className="text-sm text-slate-500 mb-6">
               Yakin mau hapus "{deleteTarget.nama}"? Tindakan ini tidak bisa dibatalkan.
             </p>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                disabled={deleting}
-                className="flex-1 text-sm font-medium py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex-1 text-sm font-semibold py-2.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-40"
-              >
-                {deleting ? 'Menghapus...' : 'Hapus'}
-              </button>
+            <div className="flex items-center justify-end gap-3">
+              <ButtonCancel onClick={() => setDeleteTarget(null)} disabled={deleting} />
+              <ButtonSubmit onClick={handleDelete} loading={deleting} tone="danger" loadingLabel="Menghapus...">
+                Hapus
+              </ButtonSubmit>
             </div>
           </div>
         </div>

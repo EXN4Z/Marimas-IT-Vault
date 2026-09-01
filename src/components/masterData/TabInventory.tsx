@@ -758,6 +758,25 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                 <Undo2 size={15} />
               </button>
             )}
+            {/* Admin bisa lapor kerusakan untuk status tersedia atau dipakai */}
+            {(a.status === 'tersedia' || a.status === 'dipakai') && (
+              <button
+                onClick={() => setPerbaikanInventoryTarget(a)}
+                title="Lapor Kerusakan"
+                className="p-2 text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition"
+              >
+                <Wrench size={15} />
+              </button>
+            )}
+            {(a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak_berat') && (
+              <span
+                title="Laporan kerusakan sudah dikirim, menunggu/sedang ditangani"
+                className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg cursor-default"
+              >
+                <Wrench size={14} />
+                Sudah Lapor
+              </span>
+            )}
             <button
               onClick={() => {
                 setEditingInventory(a);
@@ -1485,6 +1504,22 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                         <Undo2 size={14} />
                         Terima Kembali
                       </button>
+                    )}
+                    {/* Lapor Kerusakan — admin bisa lapor untuk status tersedia atau dipakai */}
+                    {(detail.status === 'tersedia' || detail.status === 'dipakai') && (
+                      <button
+                        onClick={() => setPerbaikanInventoryTarget(detail)}
+                        className="flex items-center gap-1.5 bg-red-50 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-red-100 transition"
+                      >
+                        <Wrench size={14} />
+                        Lapor Kerusakan
+                      </button>
+                    )}
+                    {(detail.status === 'menunggu_perbaikan' || detail.status === 'diperbaiki' || detail.status === 'rusak_berat') && (
+                      <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg cursor-default">
+                        <Wrench size={14} />
+                        Sudah Lapor
+                      </span>
                     )}
                     {/* Item manapun yang berdiri sendiri (parent_id null) &
                         tersedia bisa dipasang ke item lain sebagai child,
