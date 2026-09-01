@@ -40,7 +40,6 @@ export type KelengkapanFormValues = InventoryFormValues & { status: InventorySta
 const STATUS_OPTIONS: { value: InventoryStatus; label: string; dot: string; ring: string }[] = [
   { value: 'tersedia', label: 'Tersedia', dot: 'bg-emerald-500', ring: 'ring-emerald-100 border-emerald-400 bg-emerald-50/60' },
   { value: 'dipakai', label: 'Dipakai', dot: 'bg-blue-500', ring: 'ring-blue-100 border-blue-400 bg-blue-50/60' },
-  { value: 'rusak', label: 'Rusak', dot: 'bg-red-500', ring: 'ring-red-100 border-red-400 bg-red-50/60' },
 ];
 
 interface InventoryFormModalProps {
@@ -510,7 +509,7 @@ export default function InventoryFormModal({
               <input className={inputClass} value={form.type} onChange={(e) => setField('type', e.target.value)} placeholder="cth. Ideapad 3 13ADA05" />
             </Field>
             {/* Status BUKAN field yang bisa diisi manual di sini -- perubahan
-                status (tersedia/dipakai/rusak) selalu lewat transaksi
+                status (tersedia/dipakai/dst) selalu lewat transaksi
                 (pinjamkan, kembalikan, lapor rusak), gak pernah lewat form
                 create/update ini. Waktu create, status awal SELALU 'tersedia'
                 (default kolom di DB). Waktu edit, tampilin status saat-ini

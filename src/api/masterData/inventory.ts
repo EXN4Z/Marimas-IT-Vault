@@ -1,7 +1,7 @@
 import api from '../axios';
 import type { Supplier } from './supplier';
 
-export type InventoryStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'rusak' | 'dijual';
+export type InventoryStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'dijual';
 // Struktur (induk/menempel) sekarang murni soal parent_id, independen dari
 // kategori -- lihat backend InventoryController::index(). 'induk' =
 // parent_id === null (boleh punya children, boleh juga berdiri sendiri
@@ -50,7 +50,7 @@ export interface Inventory {
   no_surat_jalan: string | null;
   no_good_receive: string | null;
   status: InventoryStatus;
-  tanggal_rusak: string | null; // ISO datetime, keisi otomatis begitu status kelengkapan jadi 'rusak'
+  tanggal_rusak: string | null; // ISO datetime, keisi begitu kelengkapan dilaporkan rusak
   pemakai_saat_ini?: InventoryPemakai | null;
   pemakai?: InventoryPemakai[]; // riwayat lengkap, cuma keisi di endpoint show()
   penanganan?: InventoryPenanganan[]; // riwayat lengkap, cuma keisi di endpoint show()

@@ -59,7 +59,6 @@ const STATUS_LABEL: Record<InventoryStatus, string> = {
   dipakai: 'Dipakai',
   menunggu_perbaikan: 'Menunggu Perbaikan',
   diperbaiki: 'Sedang Diperbaiki',
-  rusak: 'Rusak',
   rusak_berat: 'Rusak Berat',
   dijual: 'Dijual',
 };
@@ -69,13 +68,12 @@ const STATUS_STYLE: Record<InventoryStatus, string> = {
   dipakai: 'bg-amber-50 text-amber-700',
   menunggu_perbaikan: 'bg-yellow-50 text-yellow-700',
   diperbaiki: 'bg-orange-50 text-orange-700',
-  rusak: 'bg-red-100 text-red-800',
   rusak_berat: 'bg-red-100 text-red-800',
   dijual: 'bg-purple-50 text-purple-700',
 };
 
 // urutan tampil di tabel: tersedia paling atas, lalu dipakai, lalu status
-// yang lagi dalam proses penanganan, rusak, rusak_berat, dan dijual paling
+// yang lagi dalam proses penanganan, rusak_berat, dan dijual paling
 // bawah — dipakai sebagai key sort di filteredInventory, BUKAN untuk urutan
 // dropdown filter (dropdown tetap ikut urutan STATUS_LABEL di atas).
 const STATUS_PRIORITY: Record<InventoryStatus, number> = {
@@ -83,9 +81,8 @@ const STATUS_PRIORITY: Record<InventoryStatus, number> = {
   dipakai: 2,
   menunggu_perbaikan: 3,
   diperbaiki: 4,
-  rusak: 5,
-  rusak_berat: 6,
-  dijual: 7,
+  rusak_berat: 5,
+  dijual: 6,
 };
 
 function formatTanggalId(iso: string | null): string {
@@ -128,8 +125,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
   const [kategoriDropdownOpen, setKategoriDropdownOpen] = useState(false);
 
   // BARU: Lapor Rusak Kelengkapan -- dipindah dari TabKelengkapanInventory.tsx.
-  // Final, gak bisa dibatalin (kelengkapan dilepas otomatis dari induk & pindah
-  // ke status 'rusak').
+  // Masuk alur InventoryPenanganan (menunggu_perbaikan -> diperbaiki -> selesai).
 
   // Export -- 1 tombol & 1 modal (InventoryExportModal) untuk semua kategori.
   const [exportOpen, setExportOpen] = useState(false);
@@ -568,7 +564,6 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
       dipakai: 0,
       menunggu_perbaikan: 0,
       diperbaiki: 0,
-      rusak: 0,
       rusak_berat: 0,
       dijual: 0,
     };
@@ -915,16 +910,16 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
             badge: Object.values(statusCounts).reduce((sum, n) => sum + n, 0),
             badgeClassName: statusFilter === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
           },
-          // Tab "Rusak", "Rusak Berat" & "Dijual" cuma buat admin -- non-admin
-          // gak perlu (dan gak boleh) lihat inventory yang rusak/rusak
-          // berat/udah di-writeoff/dijual. Sinkron sama pembatasan yang sudah
+          // Tab "Rusak Berat" & "Dijual" cuma buat admin -- non-admin gak
+          // perlu (dan gak boleh) lihat inventory yang rusak berat/udah
+          // di-writeoff/dijual. Sinkron sama pembatasan yang sudah
           // ditegakkan di backend (InventoryController::index()/show()), yang
-          // meng-exclude total ketiga status ini dari response non-admin.
+          // meng-exclude total kedua status ini dari response non-admin.
           // Status "Dijual" disembunyikan kalau semua item di filter aktif
           // adalah child (parent_id terisi) -- karena endpoint jual() menolak
           // item yang punya parent_id. Cek via adaIndukDiFilterAktif.
           ...(Object.keys(STATUS_LABEL) as InventoryStatus[])
-            .filter((s) => isAdmin || !['rusak', 'rusak_berat', 'dijual'].includes(s))
+            .filter((s) => isAdmin || !['rusak_berat', 'dijual'].includes(s))
             .filter((s) => adaIndukDiFilterAktif || !STATUS_KHUSUS_INDUK.includes(s))
             .map((s) => ({
               key: s,
