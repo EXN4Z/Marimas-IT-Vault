@@ -1,6 +1,5 @@
 import api from '../axios';
 import type { Supplier } from './supplier';
-import type { Departemen } from './departemen';
 
 export type InventoryStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'rusak' | 'dijual';
 // Struktur (induk/menempel) sekarang murni soal parent_id, independen dari
@@ -36,8 +35,6 @@ export interface Inventory {
   type: string | null;
   kategori_id: number | null;
   kategori?: KategoriRef | null;
-  departemen_id: number | null;
-  departemen?: Departemen | null;
   nama: string | null;
   warna: string | null;
   serial_number: string | null;
@@ -73,7 +70,6 @@ export interface Inventory {
 export interface InventoryFormValues {
   kategori_id?: number | null;
   parent_id?: number | null; // cuma valid kalau kategori-nya 'Kelengkapan', dan harus nunjuk ke barang_utama
-  departemen_id?: number | null;
   nama?: string;
   warna?: string;
   serial_number?: string;
@@ -103,7 +99,6 @@ function buildInventoryFormData(values: InventoryFormValues): FormData {
   const fd = new FormData();
   if (values.kategori_id != null) fd.append('kategori_id', String(values.kategori_id));
   if (values.parent_id != null) fd.append('parent_id', String(values.parent_id));
-  if (values.departemen_id != null) fd.append('departemen_id', String(values.departemen_id));
   if (values.nama) fd.append('nama', values.nama);
   if (values.warna) fd.append('warna', values.warna);
   if (values.serial_number) fd.append('serial_number', values.serial_number);
