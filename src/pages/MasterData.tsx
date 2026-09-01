@@ -140,13 +140,23 @@ export default function MasterData() {
   // kalau user klik link dropdown sidebar yang query-nya beda (mis. lagi di tab
   // "departemen" terus klik "Supplier"), pathname sama jadi gak remount komponen —
   // effect ini yang nangkep perubahan query dan update activeTab-nya.
+  //
+  // FIX: effect ini juga harus jalan ulang begitu `user` kelar dimuat (bukan
+  // cuma pas `searchParams` berubah). Kalau di-refresh browser di halaman
+  // kayak "?tab=kategori", pas mount pertama `user` masih null (AuthContext
+  // masih nunggu GET /user), jadi canViewTab('kategori') sempet false dan
+  // state awal activeTab kepaksa jatuh ke 'inventory' (lihat useState di
+  // atas). Tanpa `user` di dependency array, effect ini gak pernah nangkep
+  // momen user selesai dimuat -> activeTab nyangkut di 'inventory' selamanya
+  // walau URL (dan sidebar, yang baca location.search langsung) tetep nunjuk
+  // ke 'kategori'. Makanya kelihatannya "konten inventory, sidebar kategori".
   useEffect(() => {
     const fromUrl = searchParams.get('tab');
     if (isTabKey(fromUrl) && fromUrl !== activeTab && canViewTab(fromUrl)) {
       setActiveTabState(fromUrl);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [searchParams, user]);
 
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
