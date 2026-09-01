@@ -87,6 +87,8 @@ const EMPTY_FORM: FormState = {
   nama: '',
   warna: '',
   serial_number: '',
+  merk: '',
+  type: '',
   jumlah: '1',
   tanggal_garansi: '',
   perusahaan: '',
@@ -94,6 +96,8 @@ const EMPTY_FORM: FormState = {
   foto: null,
   supplier_id: null,
   tanggal_pembelian: '',
+  tanggal_input: '',
+  tanggal_invoice: '',
   no_surat_jalan: '',
   no_good_receive: '',
   status: 'tersedia',
@@ -168,6 +172,8 @@ export default function InventoryFormModal({
           nama: inventory.nama || '',
           warna: inventory.warna || '',
           serial_number: inventory.serial_number || '',
+          merk: inventory.merk || '',
+          type: inventory.type || '',
           jumlah: inventory.jumlah ? String(inventory.jumlah) : '1',
           tanggal_garansi: inventory.tanggal_garansi ? inventory.tanggal_garansi.slice(0, 10) : '',
           perusahaan: inventory.perusahaan || '',
@@ -175,6 +181,8 @@ export default function InventoryFormModal({
           foto: null,
           supplier_id: inventory.supplier_id ?? null,
           tanggal_pembelian: inventory.tanggal_pembelian ? inventory.tanggal_pembelian.slice(0, 10) : '',
+          tanggal_input: inventory.tanggal_input ? inventory.tanggal_input.slice(0, 10) : '',
+          tanggal_invoice: inventory.tanggal_invoice ? inventory.tanggal_invoice.slice(0, 10) : '',
           no_surat_jalan: inventory.no_surat_jalan || '',
           no_good_receive: inventory.no_good_receive || '',
           status: inventory.status,
@@ -515,7 +523,13 @@ export default function InventoryFormModal({
                 <p className="mt-1 text-xs text-slate-400">Sertakan merek/tipe di dalam nama, mis. "Laptop Lenovo".</p>
               </Field>
             </div>
+            <Field label="Merk">
+              <input className={inputClass} value={form.merk} onChange={(e) => setField('merk', e.target.value)} placeholder="cth. Lenovo, HP, WD" />
+            </Field>
 
+            <Field label="Type">
+              <input className={inputClass} value={form.type} onChange={(e) => setField('type', e.target.value)} placeholder="cth. Ideapad 3 13ADA05" />
+            </Field>
             {/* Status BUKAN field yang bisa diisi manual di sini -- perubahan
                 status (tersedia/dipakai/rusak) selalu lewat transaksi
                 (pinjamkan, kembalikan, lapor rusak), gak pernah lewat form
@@ -732,6 +746,14 @@ export default function InventoryFormModal({
 
             <Field label="Tanggal Pembelian">
               <input type="date" className={inputClass} value={form.tanggal_pembelian || ''} onChange={(e) => setField('tanggal_pembelian', e.target.value)} />
+            </Field>
+
+            <Field label="Tanggal Invoice">
+              <input type="date" className={inputClass} value={form.tanggal_invoice || ''} onChange={(e) => setField('tanggal_invoice', e.target.value)} />
+            </Field>
+
+            <Field label="Tanggal Input">
+              <input type="date" className={inputClass} value={form.tanggal_input || ''} onChange={(e) => setField('tanggal_input', e.target.value)} />
             </Field>
 
             <Field label="No Surat Jalan">

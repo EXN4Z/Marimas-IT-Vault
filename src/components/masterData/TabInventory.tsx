@@ -1369,6 +1369,17 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                     <p className="text-xs text-slate-400">Supplier</p>
                     <p className="text-slate-800">{detail.supplier?.nama || '-'}</p>
                   </div>
+                  {/* BARU: Merk & Type -- kolom hasil import Excel (procesBarisFlat),
+                      cuma keisi buat inventory hasil import format "Data Inventory".
+                      Item yang ditambah manual lewat form biasa kemungkinan null. */}
+                  <div>
+                    <p className="text-xs text-slate-400">Merk</p>
+                    <p className="text-slate-800">{detail.merk || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Type</p>
+                    <p className="text-slate-800">{detail.type || '-'}</p>
+                  </div>
                   <div>
                     <p className="text-xs text-slate-400">Tanggal Pembelian</p>
                     <p className="text-slate-800">{formatTanggalId(detail.tanggal_pembelian)}</p>
@@ -1380,6 +1391,17 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                   <div>
                     <p className="text-xs text-slate-400">Tanggal Garansi</p>
                     <p className="text-slate-800">{formatTanggalId(detail.tanggal_garansi)}</p>
+                  </div>
+                  {/* BARU: Tanggal Invoice & Tanggal Input -- sama, cuma keisi buat
+                      hasil import format flat, lihat komentar tanggal_pembelian di
+                      InventoryBuktiImport::procesBarisFlat(). */}
+                  <div>
+                    <p className="text-xs text-slate-400">Tanggal Invoice</p>
+                    <p className="text-slate-800">{formatTanggalId(detail.tanggal_invoice)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Tanggal Input</p>
+                    <p className="text-slate-800">{formatTanggalId(detail.tanggal_input)}</p>
                   </div>
                 </div>
 

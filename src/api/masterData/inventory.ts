@@ -33,6 +33,8 @@ export interface Inventory {
   parent_id: number | null;
   parent?: Inventory | null;
   children?: Inventory[];
+  merk: string | null;
+  type: string | null;
   kategori_id: number | null;
   kategori?: KategoriRef | null;
   departemen_id: number | null;
@@ -50,6 +52,8 @@ export interface Inventory {
   supplier_id: number | null;
   supplier?: Supplier | null;
   tanggal_pembelian: string | null;
+  tanggal_input: string | null;
+  tanggal_invoice: string | null;
   no_surat_jalan: string | null;
   no_good_receive: string | null;
   status: InventoryStatus;
@@ -78,6 +82,8 @@ export interface InventoryFormValues {
   nama?: string;
   warna?: string;
   serial_number?: string;
+  merk?: string;
+  type?: string;
   jumlah?: number;
   tanggal_garansi?: string;
   perusahaan?: string;
@@ -85,6 +91,8 @@ export interface InventoryFormValues {
   foto?: File | null;
   supplier_id?: number | null;
   tanggal_pembelian?: string;
+  tanggal_input?: string;
+  tanggal_invoice?: string;
   no_surat_jalan?: string;
   no_good_receive?: string;
 }
