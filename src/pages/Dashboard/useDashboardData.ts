@@ -72,6 +72,31 @@ export interface InventoryPerhatian {
 // gak cuma keliatan kalau user sadar buka tab Riwayat di dalam Inventaris.
 export type AktivitasInventoryTerbaru = RiwayatInventoryEvent;
 
+// Ringkasan aktivitas inventory PRIBADI user yang lagi login -- dipakai kartu
+// KPI "Sedang Dipinjam" di DashboardUser, gantiin "Total Karyawan" yang
+// gak seharusnya keliatan buat role non-admin. `totalTersedia` juga dihitung
+// dari list yang sama (gak perlu request tambahan) -- ini AMAN buat non-admin
+// karena GET /inventory buat role non-admin sudah balikin SEMUA item
+// 'tersedia' apa adanya (independen dari siapa yang punya), lihat
+// InventoryController::index().
+// Catatan: gak ada field "menunggu persetujuan" -- app ini gak punya alur
+// request/approve buat pinjam inventory (InventoryPemakaiController::store()
+// selalu langsung set status 'disetujui', admin serah-terima langsung tanpa
+// approval), jadi status 'pending' di enum gak pernah kepakai di praktiknya.
+export interface InventoryPribadi {
+  sedangDipinjam: number;
+  totalTersedia: number;
+}
+
+// Ringkasan riwayat aktivitas pribadi lainnya (di luar "sedang dipinjam" saat
+// ini) -- total yang PERNAH dipinjam sepanjang waktu & total laporan
+// kerusakan yang pernah dia buat. Sumbernya /inventory-pemakai/riwayat yang
+// backend-nya self-scoped buat non-admin, jadi aman dipanggil apa adanya.
+export interface RingkasanAktivitasPribadi {
+  totalPernahDipinjam: number;
+  totalLaporRusak: number;
+}
+
 export interface NotificationItem {
   id: string;
   data: { message: string; [key: string]: any };
@@ -151,6 +176,36 @@ export async function fetchAktivitasInventoryTerbaru(): Promise<AktivitasInvento
 export async function fetchAktivitasInventoryKalender(): Promise<AktivitasInventoryTerbaru[]> {
   const res = await getRiwayatInventory(1, 200);
   return res.data;
+}
+
+// GET /inventory buat role non-admin sudah discoping backend (lihat
+// InventoryController::index()): cuma balikin item 'tersedia' + item yang
+// LAGI dipegang user ini sendiri. Jadi aman langsung difilter pemakai_saat_ini
+// di sini tanpa risiko data pemakaian karyawan lain ikut kehitung.
+export async function fetchInventoryPribadi(userId: number): Promise<InventoryPribadi> {
+  const list = await getInventory();
+  let sedangDipinjam = 0;
+  let totalTersedia = 0;
+
+  for (const a of list) {
+    if (a.pemakai_saat_ini?.user_id === userId) sedangDipinjam += 1;
+    if (a.status === 'tersedia') totalTersedia += 1;
+  }
+
+  return { sedangDipinjam, totalTersedia };
+}
+
+// Dua panggilan ringan ke endpoint riwayat yang sama (cukup baca field
+// `total`-nya, gak butuh isi datanya) -- backend sudah self-scope ke riwayat
+// milik user ini sendiri buat role non-admin (lihat
+// InventoryPemakaiController::riwayat()).
+export async function fetchRingkasanAktivitasPribadi(): Promise<RingkasanAktivitasPribadi> {
+  const [pinjam, laporRusak] = await Promise.all([
+    getRiwayatInventory(1, 10, 'pinjam'),
+    getRiwayatInventory(1, 10, 'lapor_rusak'),
+  ]);
+
+  return { totalPernahDipinjam: pinjam.total, totalLaporRusak: laporRusak.total };
 }
 
 const GARANSI_WARNING_DAYS = 30;
@@ -250,12 +305,13 @@ export async function fetchInventoryPerhatian(): Promise<InventoryPerhatian> {
 const AUTO_DELETE_AFTER_READ_MS = 30 * 60 * 1000; // 30 menit
 
 // ============================================================================
-// CORE HOOK — dipakai oleh DashboardUser, DashboardAdmin, DashboardCabang.
+// CORE HOOK — dipakai oleh DashboardUser & DashboardAdmin.
 // Berisi semua data & section yang tampil di SEMUA role: user, notifikasi
-// (+ realtime & auto-delete), distribusi departemen, plus guard redirect
-// ke /login.
+// (+ realtime & auto-delete), distribusi departemen (opsional, lihat
+// includeDepartemen), plus guard redirect ke /login.
 // ============================================================================
-export function useDashboardCore() {
+export function useDashboardCore(options: { includeDepartemen?: boolean } = {}) {
+  const { includeDepartemen = true } = options;
   const { user: cachedUser, isLoading: authLoading, setUser } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -283,11 +339,15 @@ export function useDashboardCore() {
     enabled: sessionReady,
   });
 
+  // Cuma di-fetch kalau includeDepartemen true -- DashboardUser mematikan ini
+  // (lewat useDashboardCore({ includeDepartemen: false })) supaya data
+  // organisasi-lebar (jumlah staf per departemen) gak pernah ke-hit sama
+  // sekali buat role non-admin/cabang, bukan cuma disembunyiin di UI.
   const { data: departemen } = useQuery({
     queryKey: ['departemen-distribusi'],
     queryFn: fetchDepartemenDistribusi,
     staleTime: 5 * 60 * 1000,
-    enabled: sessionReady,
+    enabled: sessionReady && includeDepartemen,
   });
 
   const notifications = notificationsRes?.data ?? [];
@@ -422,9 +482,36 @@ export function useDashboardCore() {
 }
 
 // ============================================================================
-// ANALYTICS HOOK — dipakai DashboardAdmin (semua flag true) & DashboardCabang
-// (cuma sebagian). `enabled` jadi gate utama, per query masih bisa
-// dimatikan lewat opsi `include`.
+// PERSONAL INVENTORY HOOK — khusus DashboardUser. Beda dari useDashboardAnalytics
+// (yang datanya lintas-perusahaan, admin/hr only secara norma), hook ini cuma
+// ngitung inventory milik user yang login sendiri.
+// ============================================================================
+export function usePersonalInventoryActivity(userId?: number): InventoryPribadi {
+  const { data } = useQuery({
+    queryKey: ['inventory-pribadi', userId],
+    queryFn: () => fetchInventoryPribadi(userId as number),
+    enabled: !!userId,
+    staleTime: 60 * 1000,
+  });
+
+  return data ?? { sedangDipinjam: 0, totalTersedia: 0 };
+}
+
+export function usePersonalActivitySummary(enabled: boolean): RingkasanAktivitasPribadi {
+  const { data } = useQuery({
+    queryKey: ['ringkasan-aktivitas-pribadi'],
+    queryFn: fetchRingkasanAktivitasPribadi,
+    enabled,
+    staleTime: 60 * 1000,
+  });
+
+  return data ?? { totalPernahDipinjam: 0, totalLaporRusak: 0 };
+}
+
+// ============================================================================
+// ANALYTICS HOOK — dipakai DashboardAdmin (semua flag true) & DashboardUser
+// (cuma sebagian, aktivitasInventoryTerbaru/Kalender aja). `enabled` jadi
+// gate utama, per query masih bisa dimatikan lewat opsi `include`.
 // ============================================================================
 export function useDashboardAnalytics(
   enabled: boolean,

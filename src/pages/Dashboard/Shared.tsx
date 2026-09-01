@@ -222,7 +222,8 @@ export function WelcomeHeader({ user, action }: { user?: UserType | null; action
 // ==== Skeleton loading buat Dashboard, niru layout asli tiap varian biar
 // gak "loncat" pas data beneran datang. Dipakai selagi useDashboardCore()/
 // useDashboardAnalytics() masih loading. ====
-// - 'simple' = DashboardCabang & DashboardUser: header + 4 KPI + 2 card + calendar
+// - 'simple' = DashboardUser (dipakai semua role non-reviewer, termasuk
+//   cabang): header + 4 KPI + 2 card + calendar
 // - 'full'   = DashboardAdmin: 'simple' + row chart (hero+donut) + tabel aktivitas + 3 card operasional
 export function DashboardSkeleton({ variant = 'simple' }: { variant?: 'simple' | 'full' }) {
   return (
