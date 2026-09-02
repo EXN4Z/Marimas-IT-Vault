@@ -310,6 +310,7 @@ export default function TabKaryawan() {
                                         isAdmin={isAdmin}
                                         onDelete={() => setUserToDelete(user)}
                                         onEdit={() => navigate(`/karyawan/${user.id}/edit`, { state: { backgroundLocation: location } })}
+                                        onDetail={() => navigate(`/karyawan/${user.id}`, { state: { backgroundLocation: location } })}
                                     />
                                 ))}
                             </div>
@@ -362,9 +363,10 @@ interface UserRowProps {
     isAdmin: boolean;
     onDelete: () => void;
     onEdit: () => void;
+    onDetail: () => void;
 }
 
-function UserRow({ user, isAdmin, onDelete, onEdit }: UserRowProps) {
+function UserRow({ user, isAdmin, onDelete, onEdit, onDetail }: UserRowProps) {
     return (
         <div className="flex items-center justify-between py-3 gap-3">
             <div className="flex items-center gap-3 min-w-0">
@@ -385,6 +387,9 @@ function UserRow({ user, isAdmin, onDelete, onEdit }: UserRowProps) {
                         {user.departemen?.nama || 'Departemen tidak ditentukan'}
                     </span>
                 )}
+                <button onClick={onDetail} className="text-xs text-gray-500 hover:text-black">
+                    Detail
+                </button>
                 {isAdmin && (
                     <>
                         <button onClick={onEdit} className="text-xs text-gray-500 hover:text-black">

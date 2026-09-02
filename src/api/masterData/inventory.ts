@@ -102,8 +102,16 @@ function buildInventoryFormData(values: InventoryFormValues): FormData {
   if (values.nama) fd.append('nama', values.nama);
   if (values.warna) fd.append('warna', values.warna);
   if (values.serial_number) fd.append('serial_number', values.serial_number);
+  // FIX: merk & type sebelumnya gak pernah ikut ke-append ke FormData, jadi
+  // walau user udah isi di form, backend gak pernah nerima nilainya sama
+  // sekali -- makanya kekesan "gak nyimpen". Sama juga tanggal_input &
+  // tanggal_invoice, ikut ketinggalan.
+  if (values.merk) fd.append('merk', values.merk);
+  if (values.type) fd.append('type', values.type);
   if (values.jumlah != null) fd.append('jumlah', String(values.jumlah));
   if (values.tanggal_garansi) fd.append('tanggal_garansi', values.tanggal_garansi);
+  if (values.tanggal_input) fd.append('tanggal_input', values.tanggal_input);
+  if (values.tanggal_invoice) fd.append('tanggal_invoice', values.tanggal_invoice);
   if (values.perusahaan) fd.append('perusahaan', values.perusahaan);
   if (values.keterangan) fd.append('keterangan', values.keterangan);
   if (values.foto) fd.append('foto', values.foto);
