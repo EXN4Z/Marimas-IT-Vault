@@ -132,7 +132,7 @@ export default function CreateKaryawanPage() {
         >
             <>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <Field label="Nama" error={errors.name?.[0]}>
+                    <Field label="Nama" error={errors.name?.[0]} required>
                         <input
                             type="text"
                             value={form.name}
@@ -160,7 +160,7 @@ export default function CreateKaryawanPage() {
                         />
                     </Field>
 
-                    <Field label="Password" error={errors.password?.[0]}>
+                    <Field label="Password" error={errors.password?.[0]} required>
                         <input
                             type="password"
                             value={form.password}
@@ -170,7 +170,7 @@ export default function CreateKaryawanPage() {
                         />
                     </Field>
 
-                    <Field label="Posisi" error={errors.role?.[0]}>
+                    <Field label="Posisi" error={errors.role?.[0]} required>
                         <Select
                             value={form.role}
                             onChange={(v) => handleRoleChange(v as Role)}
@@ -186,7 +186,7 @@ export default function CreateKaryawanPage() {
                     </Field>
 
                     {!isCabang && (
-                        <Field label="NIK" error={errors.nik?.[0]}>
+                        <Field label="NIK" error={errors.nik?.[0]} required>
                             <input
                                 type="text"
                                 value={form.nik}
@@ -209,7 +209,7 @@ export default function CreateKaryawanPage() {
                             </Field>
                         )}
 
-                        <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]}>
+                        <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]} required={isCabang}>
                             <Select
                                 value={form.lokasi_kantor_id}
                                 onChange={(v) => handleChange('lokasi_kantor_id', v)}
@@ -252,10 +252,13 @@ export default function CreateKaryawanPage() {
     );
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
+function Field({ label, error, required, children }: { label: string; error?: string; required?: boolean; children: ReactNode }) {
     return (
         <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+                {label}
+                {required && <span className="text-red-500 ml-0.5">*</span>}
+            </label>
             {children}
             {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
         </div>
