@@ -56,8 +56,8 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, onC
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[70] px-4">
-      <div className="bg-white rounded-xl w-full max-w-sm p-5">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[70] px-4 animate-[fadeIn_150ms_ease-out]">
+      <div className="bg-white rounded-xl w-full max-w-sm p-5 animate-[slideUp_180ms_ease-out]">
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
             <Link2 size={16} className="text-slate-400" />

@@ -1189,8 +1189,8 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
     
       {/* KONFIRMASI HAPUS */}
       {deleteTarget && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] px-4">
-          <div className="bg-white rounded-xl w-full max-w-sm p-5">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] px-4 animate-[fadeIn_150ms_ease-out]">
+          <div className="bg-white rounded-xl w-full max-w-sm p-5 animate-[slideUp_180ms_ease-out]">
             <h2 className="text-base font-semibold text-slate-900 mb-1">Hapus inventory?</h2>
             <p className="text-sm text-slate-500 mb-3">
               <span className="font-medium text-slate-700">{deleteTarget.kode_inventory}</span> akan dihapus permanen
@@ -1290,8 +1290,8 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         !jualTarget &&
         !lepasTarget &&
         !pasangIndukTarget && (
-        <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4 animate-[fadeIn_150ms_ease-out]">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto animate-[slideUp_180ms_ease-out]">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
                 <Boxes size={18} className="text-slate-400" />
