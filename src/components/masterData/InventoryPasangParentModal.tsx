@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { X, Link2, Search, Check } from 'lucide-react';
 import { pasangPenggantiKelengkapanInventory, type Inventory } from '../../api/masterData/inventory';
+import { ButtonCancel, ButtonSubmit, inputClass } from '../shared/FormControls';
 
 interface Props {
   // Kelengkapan yang mau dipasang -- selalu status 'tersedia' & parent_id
@@ -85,7 +86,7 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, onC
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari kode atau nama item..."
-            className="w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 py-2.5 text-sm text-slate-700 outline-none transition hover:border-slate-400 focus:border-slate-900 focus:ring-4 focus:ring-slate-900/[0.06]"
+            className={`${inputClass} pl-9`}
           />
         </div>
 
@@ -140,20 +141,10 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, onC
         )}
 
         <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            disabled={loading}
-            className="text-sm px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
-          >
-            Batal
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading || !parentId}
-            className="text-sm px-4 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
-          >
-            {loading ? 'Memasang...' : 'Pasang'}
-          </button>
+          <ButtonCancel onClick={onClose} disabled={loading} />
+          <ButtonSubmit onClick={handleSubmit} disabled={!parentId} loading={loading} loadingLabel="Memasang...">
+            Pasang
+          </ButtonSubmit>
         </div>
       </div>
     </div>

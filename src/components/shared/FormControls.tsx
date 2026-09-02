@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { Children, isValidElement, type ReactElement, type ReactNode } from 'react';
+import Select, { type SelectOption } from './Select';
 
 // Style dasar dipatok dari InventoryFormModal (paling lengkap: shadow-sm +
 // hover border + ring-4 pas fokus). Semua form/modal lain sebaiknya pindah
@@ -84,27 +85,30 @@ interface SelectFieldProps {
   children: ReactNode;
 }
 
+// Dulu ini pembungkus <select> native. Sekarang jalan di atas komponen
+// <Select> custom (lihat Select.tsx) biar konsisten & bebas dari quirk
+// scrollbar/tampilan select bawaan browser -- tapi API-nya sengaja dibikin
+// sama persis (value/onChange/children berupa <option>) biar semua tempat
+// yang udah makai SelectField gak perlu diubah sama sekali.
 export function SelectField({ value, onChange, disabled, error, children }: SelectFieldProps) {
+  const options: SelectOption[] = Children.toArray(children)
+    .filter((child): child is ReactElement<{ value?: string | number; disabled?: boolean; children?: ReactNode }> =>
+      isValidElement(child)
+    )
+    .map((child) => ({
+      value: String(child.props.value ?? ''),
+      label: typeof child.props.children === 'string' ? child.props.children : String(child.props.children ?? ''),
+      disabled: child.props.disabled,
+    }));
+
   return (
-    <div className="relative">
-      <select
-        className={`${inputClass} appearance-none pr-9 cursor-pointer disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400 ${error ? inputErrorClass : ''}`}
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {children}
-      </select>
-      <svg
-        width="12"
-        height="12"
-        viewBox="0 0 16 16"
-        fill="none"
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-      >
-        <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </div>
+    <Select
+      value={String(value)}
+      onChange={onChange}
+      options={options}
+      disabled={disabled}
+      error={error}
+    />
   );
 }
 

@@ -15,6 +15,7 @@ import InventoryLepasDariIndukModal from './InventoryLepasDariIndukModal';
 import InventoryPasangIndukModal from './InventoryPasangParentModal';
 import InventoryPenangananSelesaiModal from '../transaksi/InventoryPenangananSelesaiModal';
 import InventoryExportModal from '../laporan/InventoryExportModal';
+import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 // InventoryKelengkapanExportModal sudah tidak dipakai -- export sekarang
 // pakai 1 modal (InventoryExportModal) buat semua kategori, karena
 // kategori gak lagi nentuin bentuk export.
@@ -123,6 +124,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
   const [selectedKategoriIds, setSelectedKategoriIds] = useState<number[]>([]);
   const [kategoriOptions, setKategoriOptions] = useState<Kategori[]>([]);
   const [kategoriDropdownOpen, setKategoriDropdownOpen] = useState(false);
+  const kategoriDropdownRef = useRef<HTMLDivElement>(null);
 
   // BARU: Lapor Rusak Kelengkapan -- dipindah dari TabKelengkapanInventory.tsx.
   // Masuk alur InventoryPenanganan (menunggu_perbaikan -> diperbaiki -> selesai).
@@ -261,12 +263,21 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
     return () => clearInterval(interval);
   }, []);
 
-  // Tutup dropdown kategori kalau klik di luar
+  // Tutup dropdown kategori kalau klik di luar. Sebelumnya pakai listener
+  // capture-phase yang nutup dropdown pada SETIAP klik di document tanpa
+  // ngecek apakah kliknya di dalam dropdown -- akibatnya checkbox kategori
+  // gak bisa dipilih lebih dari satu kali, karena tiap klik checkbox juga
+  // langsung nutup dropdown-nya. Sekarang dicek dulu apakah target klik ada
+  // di dalam kategoriDropdownRef sebelum nutup.
   useEffect(() => {
     if (!kategoriDropdownOpen) return;
-    const close = () => setKategoriDropdownOpen(false);
-    document.addEventListener('click', close, { capture: true });
-    return () => document.removeEventListener('click', close, { capture: true });
+    const close = (e: MouseEvent) => {
+      if (kategoriDropdownRef.current && !kategoriDropdownRef.current.contains(e.target as Node)) {
+        setKategoriDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
   }, [kategoriDropdownOpen]);
 
   const lastCount = useRef<number | null>(null);
@@ -940,7 +951,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         {/* Filter Kategori -- dropdown checklist dinamis dari getKategori().
             Multi-select: bisa pilih lebih dari 1 kategori sekaligus.
             Array kosong = semua kategori lolos (default). */}
-        <div className="relative sm:w-56">
+        <div className="relative sm:w-56" ref={kategoriDropdownRef}>
           <button
             type="button"
             onClick={() => setKategoriDropdownOpen((v) => !v)}
@@ -1192,32 +1203,31 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
               </p>
             )}
             <div className="flex justify-end gap-2">
-              <button
+              <ButtonCancel
                 onClick={() => {
                   setDeleteTarget(null);
                   setDeleteError('');
                   setDeleteForceAvailable(false);
                 }}
                 disabled={deleting}
-                className="text-sm px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
-              >
-                Batal
-              </button>
-              <button
+              />
+              <ButtonSubmit
                 onClick={() => confirmDelete(false)}
-                disabled={deleting}
-                className="text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                loading={deleting}
+                loadingLabel="Menghapus..."
+                tone="danger"
               >
-                {deleting ? 'Menghapus...' : 'Ya, hapus'}
-              </button>
+                Ya, hapus
+              </ButtonSubmit>
               {deleteForceAvailable && (
-                <button
+                <ButtonSubmit
                   onClick={() => confirmDelete(true)}
-                  disabled={deleting}
-                  className="text-sm px-4 py-2 rounded-lg bg-red-800 text-white hover:bg-red-900 disabled:opacity-50"
+                  loading={deleting}
+                  loadingLabel="Menghapus..."
+                  tone="danger"
                 >
-                  {deleting ? 'Menghapus...' : 'Hapus Paksa'}
-                </button>
+                  Hapus Paksa
+                </ButtonSubmit>
               )}
             </div>
           </div>

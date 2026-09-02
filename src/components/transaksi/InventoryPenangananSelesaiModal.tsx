@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
+import Select from '../shared/Select';
 import { selesaikanPenangananInventory } from '../../api/transaksi/inventoryPenanganan';
 import type { InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
 import type { Inventory } from '../../api/masterData/inventory';
@@ -134,14 +135,14 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Hasil</label>
-            <select
+            <Select
               value={hasil}
-              onChange={(e) => handleHasilChange(e.target.value as 'diperbaiki' | 'rusak_berat')}
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
-            >
-              <option value="diperbaiki">Diperbaiki</option>
-              <option value="rusak_berat">Rusak Berat (tidak bisa diperbaiki)</option>
-            </select>
+              onChange={(v) => handleHasilChange(v as 'diperbaiki' | 'rusak_berat')}
+              options={[
+                { value: 'diperbaiki', label: 'Diperbaiki' },
+                { value: 'rusak_berat', label: 'Rusak Berat (tidak bisa diperbaiki)' },
+              ]}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Catatan (opsional)</label>

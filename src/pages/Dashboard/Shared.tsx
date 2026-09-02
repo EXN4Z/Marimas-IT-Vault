@@ -30,10 +30,10 @@ import {
   Building2,
   CheckCircle2,
   Search,
-  ChevronDown,
   type LucideIcon,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import Select from '../../components/shared/Select';
 import type { User as UserType } from '../../types/user';
 import type {
   NotificationItem,
@@ -1138,16 +1138,16 @@ export function RiwayatAktivitasTableCard({
               className="text-xs bg-[#F7F8FC] rounded-lg pl-7 pr-3 py-2 w-40 sm:w-48 focus:outline-none focus:ring-2 focus:ring-[#EFEAFF] placeholder:text-[#A9A9C6]"
             />
           </div>
-          <div className="relative">
-            <select
+          <div className="w-28">
+            <Select
+              size="compact"
               value={sortDir}
-              onChange={(e) => handleSort(e.target.value as SortDir)}
-              className="appearance-none text-xs font-semibold text-[#171633] bg-[#F7F8FC] rounded-lg pl-3 pr-7 py-2 focus:outline-none cursor-pointer"
-            >
-              <option value="terbaru">Terbaru</option>
-              <option value="terlama">Terlama</option>
-            </select>
-            <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#A9A9C6] pointer-events-none" />
+              onChange={(v) => handleSort(v as SortDir)}
+              options={[
+                { value: 'terbaru', label: 'Terbaru' },
+                { value: 'terlama', label: 'Terlama' },
+              ]}
+            />
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
 import RouteModal from '../components/shared/RouteModal';
+import Select from '../components/shared/Select';
 import { getDepartemen } from '../api/masterData/departemen';
 import { getCabang, type Cabang } from '../api/cabang';
 import { setKaryawanPassword } from '../api/auth';
@@ -234,18 +235,18 @@ export default function EditKaryawanPage() {
                     </Field>
 
                     <Field label="Role" error={errors.role?.[0]}>
-                        <select
+                        <Select
                             value={form.role}
-                            onChange={(e) => handleRoleChange(e.target.value as Role)}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                        >
-                            <option value="karyawan">Karyawan</option>
-                            <option value="manajer">Manajer</option>
-                            <option value="hr">HR</option>
-                            <option value="admin">Admin</option>
-                            <option value="guest">Guest</option>
-                            <option value="cabang">Cabang</option>
-                        </select>
+                            onChange={(v) => handleRoleChange(v as Role)}
+                            options={[
+                                { value: 'karyawan', label: 'Karyawan' },
+                                { value: 'manajer', label: 'Manajer' },
+                                { value: 'hr', label: 'HR' },
+                                { value: 'admin', label: 'Admin' },
+                                { value: 'guest', label: 'Guest' },
+                                { value: 'cabang', label: 'Cabang' },
+                            ]}
+                        />
                     </Field>
 
                     {!isCabang && (
@@ -262,35 +263,22 @@ export default function EditKaryawanPage() {
 
                     {!isCabang && (
                         <Field label="Departemen" error={errors.departemen_id?.[0]}>
-                            <select
+                            <Select
                                 value={form.departemen_id}
-                                onChange={(e) => handleChange('departemen_id', e.target.value)}
-                                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                            >
-                                <option value="">Pilih departemen</option>
-                                {departemenList.map((d) => (
-                                    <option key={d.id} value={d.id}>
-                                        {d.nama}
-                                    </option>
-                                ))}
-                            </select>
+                                onChange={(v) => handleChange('departemen_id', v)}
+                                placeholder="Pilih departemen"
+                                options={departemenList.map((d) => ({ value: String(d.id), label: d.nama }))}
+                            />
                         </Field>
                     )}
 
                     <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]}>
-                        <select
+                        <Select
                             value={form.lokasi_kantor_id}
-                            onChange={(e) => handleChange('lokasi_kantor_id', e.target.value)}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                            required={isCabang}
-                        >
-                            <option value="">Pilih cabang</option>
-                            {cabangList.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.nama}
-                                </option>
-                            ))}
-                        </select>
+                            onChange={(v) => handleChange('lokasi_kantor_id', v)}
+                            placeholder="Pilih cabang"
+                            options={cabangList.map((c) => ({ value: String(c.id), label: c.nama }))}
+                        />
                     </Field>
 
                     {!isCabang && (
