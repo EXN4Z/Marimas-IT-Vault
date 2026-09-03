@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
-import { Building2, MapPin, Phone, Map, Plus, Pencil, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Building2, MapPin, Phone, Map, Plus, Pencil, Trash2, Upload, Download, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
-import { getPerusahaan, createPerusahaan, updatePerusahaan, deletePerusahaan, type Perusahaan } from '../../api/perusahaan';
+import { getPerusahaan, createPerusahaan, updatePerusahaan, deletePerusahaan, importPerusahaan, type Perusahaan } from '../../api/perusahaan';
 import RouteModal from '../shared/RouteModal';
 import { Skeleton } from '../shared/skeleton';
 import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
+import { downloadStyledExcel } from '../../utils/excelReport';
 
 const STAFF_ROLES = ['admin', 'hr'];
 
@@ -35,6 +36,14 @@ export default function TabPerusahaan() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
+  // Import Excel & export Excel -- sepola sama tabConfig generik di
+  // MasterData.tsx (Departemen/Supplier), tapi disematkan langsung di sini
+  // karena Perusahaan adalah custom tab (dirender sendiri, bukan lewat
+  // tabConfig).
+  const [importLoading, setImportLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const loadData = async () => {
     setLoading(true);
     setError('');
@@ -56,6 +65,53 @@ export default function TabPerusahaan() {
     if (isStaff) loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportLoading(true);
+    try {
+      const res = await importPerusahaan(file);
+      toast.success(res.message || 'Berhasil import data perusahaan.');
+      loadData();
+    } catch (err: any) {
+      const apiErrors: string[] | undefined = err.response?.data?.errors;
+      const msg = (apiErrors && apiErrors[0]) || err.response?.data?.message || 'Gagal import data perusahaan.';
+      toast.error(msg);
+    } finally {
+      setImportLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = ''; // reset biar bisa upload file yang sama lagi
+    }
+  };
+
+  const handleExport = async () => {
+    if (perusahaanList.length === 0) {
+      toast.error('Gak ada data perusahaan buat diexport.');
+      return;
+    }
+
+    setExporting(true);
+    try {
+      const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      await downloadStyledExcel(
+        {
+          title: 'Data Perusahaan',
+          subtitle: `${perusahaanList.length} perusahaan per ${today}`,
+          headers: ['Nama', 'Alamat', 'Telepon', 'Link'],
+          rows: perusahaanList.map((item) => [item.nama, item.alamat || '', item.telepon || '', item.link || '']),
+          sheetName: 'Data Perusahaan',
+        },
+        `Data Perusahaan - ${today}.xlsx`
+      );
+      toast.success(`${perusahaanList.length} perusahaan berhasil diexport.`);
+    } catch (err) {
+      console.error(err);
+      toast.error('Gagal export data perusahaan.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const openCreateModal = () => {
     setEditing(null);
@@ -170,13 +226,40 @@ export default function TabPerusahaan() {
         <p className="text-sm text-slate-500">
           Kelola data perusahaan beserta lokasi kantornya.
         </p>
-        <button
-          onClick={openCreateModal}
-          className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition flex-shrink-0"
-        >
-          <Plus size={16} />
-          Tambah Perusahaan
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            {exporting ? 'Mengexport...' : 'Export Excel'}
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleFileSelected}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importLoading}
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            {importLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+            {importLoading ? 'Mengimport...' : 'Import Excel'}
+          </button>
+
+          <button
+            onClick={openCreateModal}
+            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition flex-shrink-0"
+          >
+            <Plus size={16} />
+            Tambah Perusahaan
+          </button>
+        </div>
       </div>
 
       {loading && (
