@@ -31,7 +31,7 @@ export function getEcho() {
     key: pusherKey,
     cluster: import.meta.env.VITE_PUSHER_CLUSTER,
     forceTLS: true,
-    authEndpoint: `${import.meta.env.VITE_API_URL}/api/broadcasting/auth`,
+    authEndpoint: `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/broadcasting/auth`,
     auth: {
       headers: {
         Authorization: `Bearer ${token}`,

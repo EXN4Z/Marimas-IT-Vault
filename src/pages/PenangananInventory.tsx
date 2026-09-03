@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { X, Wrench, Printer, PlayCircle, Eye, ImageOff, Upload, Download, Loader2 } from 'lucide-react';
 import Pagination from '../components/shared/Pagination';
+import Select from '../components/shared/Select';
 import api from '../api/axios';
 import { terimaPenangananInventory, selesaikanPenangananInventory, getInventoryPenanganan, type InventoryPenanganan } from '../api/transaksi/inventoryPenanganan';
 import { formatTanggalId, namaPemakai, formatJenisKerusakan } from '../components/masterData/inventoryHelpers';
@@ -777,14 +778,14 @@ function FormPerbaikanModal({
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Hasil</label>
-            <select
+            <Select
               value={hasil}
-              onChange={(e) => handleHasilChange(e.target.value as 'diperbaiki' | 'rusak_berat')}
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
-            >
-              <option value="diperbaiki">Diperbaiki</option>
-              <option value="rusak_berat">Rusak Berat (tidak bisa diperbaiki)</option>
-            </select>
+              onChange={(v) => handleHasilChange(v as 'diperbaiki' | 'rusak_berat')}
+              options={[
+                { value: 'diperbaiki', label: 'Diperbaiki' },
+                { value: 'rusak_berat', label: 'Rusak Berat (tidak bisa diperbaiki)' },
+              ]}
+            />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>

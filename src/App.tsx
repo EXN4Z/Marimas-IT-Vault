@@ -9,6 +9,7 @@ import VerifyOtp from './pages/VerifyOtp';
 import Dashboard from './pages/Dashboard';
 import KaryawanEdit from './pages/KaryawanEdit';
 import KaryawanCreate from './pages/KaryawanCreate';
+import KaryawanDetail from './pages/KaryawanDetail';
 import Settings from './pages/Settings';
 import AuditLog from './pages/AuditLog';
 import Laporan from './pages/Laporan';
@@ -90,6 +91,14 @@ function AppRoutes() {
             }
           />
           <Route
+            path="/karyawan/:id"
+            element={
+              <AdminRoute>
+                <KaryawanDetail />
+              </AdminRoute>
+            }
+          />
+          <Route
             path="/karyawan/create"
             element={
               <AdminRoute>
@@ -112,6 +121,14 @@ function AppRoutes() {
             element={
               <AdminRoute>
                 <KaryawanEdit />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/karyawan/:id"
+            element={
+              <AdminRoute>
+                <KaryawanDetail />
               </AdminRoute>
             }
           />

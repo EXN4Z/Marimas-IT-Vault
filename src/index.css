@@ -56,3 +56,30 @@ html, body, #root {
 .route-modal-panel {
   animation: route-modal-panel-in 0.18s ease-out;
 }
+
+/* Keyframes generik dipakai lewat Tailwind arbitrary value (animate-[fadeIn_...],
+   animate-[slideUp_...], dst) di banyak modal (InventoryFormModal,
+   InventoryLepasDariIndukModal, InventoryPengembalianModal, InventorySerahTerimaModal,
+   InventoryLaporKerusakanModal, InventoryPenangananSelesaiModal, PenangananInventory).
+   Sebelumnya keyframes ini gak pernah didefinisiin di manapun, jadi semua
+   animate-[...] yang makai nama-nama ini diem-diem gak jalan (browser gak
+   nemu @keyframes yang cocok, tapi juga gak error). */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

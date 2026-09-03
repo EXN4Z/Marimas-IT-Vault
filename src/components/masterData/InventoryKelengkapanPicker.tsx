@@ -39,8 +39,13 @@ export default function InventoryKelengkapanPicker({ staged, onChange, existing,
   useEffect(() => {
     setStokLoading(true);
     setStokError('');
-    getInventory({ kategori: 'kelengkapan' })
-      .then((data) => setStokItems(data.filter((k) => k.status === 'tersedia' && k.parent_id === null)))
+    // "Stok" di sini = item apapun (kategori bebas) yang lagi berdiri
+    // sendiri (parent_id null) & tersedia buat dipasangkan sebagai
+    // kelengkapan/menempel ke inventory lain. ?posisi=induk sudah nyaring
+    // parent_id di backend; filter status tetap di FE karena endpoint index()
+    // gak punya filter status.
+    getInventory({ posisi: 'induk' })
+      .then((data) => setStokItems(data.filter((k) => k.status === 'tersedia')))
       .catch(() => setStokError('Gagal memuat daftar stok kelengkapan.'))
       .finally(() => setStokLoading(false));
   }, []);
@@ -195,7 +200,6 @@ export default function InventoryKelengkapanPicker({ staged, onChange, existing,
       {showTambahBaru && (
         <InventoryFormModal
           inventory={null}
-          kategoriKode="kelengkapan"
           supplierOptions={[]}
           onClose={() => {
             setShowTambahBaru(false);

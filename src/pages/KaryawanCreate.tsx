@@ -1,8 +1,10 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
 import RouteModal from '../components/shared/RouteModal';
+import Select from '../components/shared/Select';
+import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
 import { getDepartemen, type Departemen } from '../api/masterData/departemen';
 import { getCabang, type Cabang } from '../api/cabang';
 
@@ -44,6 +46,10 @@ export default function CreateKaryawanPage() {
     const [cabangList, setCabangList] = useState<Cabang[]>([]);
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
+    // BARU: pesan error umum (non-per-field), dirender sebagai banner --
+    // dulu dipakein toast.error, sekarang disamain sama pola InventoryFormModal
+    // (errors._general) biar desainnya konsisten di semua form.
+    const [generalError, setGeneralError] = useState('');
 
     const isCabang = form.role === 'cabang';
 
@@ -94,6 +100,22 @@ export default function CreateKaryawanPage() {
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
+        setGeneralError('');
+
+        const newErrors: FieldErrors = {};
+        if (!form.name.trim()) newErrors.name = ['Nama lengkap wajib diisi.'];
+        if (!form.password.trim()) newErrors.password = ['Password awal wajib diisi.'];
+        else if (form.password.length < 6) newErrors.password = ['Password minimal 6 karakter.'];
+        if (!form.role) newErrors.role = ['Role wajib dipilih.'];
+        if (!isCabang && !form.nik.trim()) newErrors.nik = ['NIK karyawan wajib diisi.'];
+        if (isCabang && !form.lokasi_kantor_id) newErrors.lokasi_kantor_id = ['Cabang penempatan wajib dipilih.'];
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            toast.error('Mohon lengkapi kolom yang bertanda bintang (*).');
+            return;
+        }
+
         setSaving(true);
         setErrors({});
 
@@ -110,12 +132,15 @@ export default function CreateKaryawanPage() {
             navigate('/karyawan');
         } catch (err: any) {
             if (err.response?.status === 422) {
+                // error per-field dirender di bawah masing-masing input (lihat Field
+                // di bawah) -- gak perlu toast lagi, cukup banner umum kalau memang
+                // ada pesan non-per-field dari server.
                 setErrors(err.response.data.errors ?? {});
-                toast.error('Periksa kembali data yang diisi.');
+                toast.error('Ada data yang belum sesuai dengan format server.');
             } else if (err.response?.status === 403) {
-                toast.error('Anda tidak punya akses untuk menambah user.');
+                setGeneralError('Anda tidak punya akses untuk menambah user.');
             } else {
-                toast.error('Gagal menyimpan user. Coba lagi.');
+                setGeneralError('Gagal menyimpan user. Coba lagi.');
             }
         } finally {
             setSaving(false);
@@ -129,147 +154,116 @@ export default function CreateKaryawanPage() {
             fallbackPath="/karyawan"
             onClose={closeModal}
         >
-            <>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <Field label="Nama" error={errors.name?.[0]}>
-                        <input
-                            type="text"
-                            value={form.name}
-                            onChange={(e) => handleChange('name', e.target.value)}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                            required
+            <form onSubmit={handleSubmit} className="space-y-4">
+                {generalError && (
+                    <p className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2.5 animate-[fadeIn_150ms_ease-out]" role="alert">
+                        {generalError}
+                    </p>
+                )}
+
+                <Field label="Nama" error={errors.name?.[0]} required>
+                    <TextInput
+                        value={form.name}
+                        onChange={(v) => handleChange('name', v)}
+                        error={!!errors.name}
+                        autoFocus
+                    />
+                </Field>
+
+                <Field label="Email" error={errors.email?.[0]}>
+                    <TextInput
+                        type="email"
+                        value={form.email}
+                        onChange={(v) => handleChange('email', v)}
+                        error={!!errors.email}
+                    />
+                </Field>
+
+                <Field label="Nomor Telepon" error={errors.phone?.[0]}>
+                    <TextInput
+                        value={form.phone}
+                        onChange={(v) => handleChange('phone', v)}
+                        error={!!errors.phone}
+                    />
+                </Field>
+
+                <Field label="Password" error={errors.password?.[0]} required>
+                    <TextInput
+                        type="password"
+                        value={form.password}
+                        onChange={(v) => handleChange('password', v)}
+                        error={!!errors.password}
+                    />
+                </Field>
+
+                <Field label="Posisi" error={errors.role?.[0]} required>
+                    <Select
+                        value={form.role}
+                        onChange={(v) => handleRoleChange(v as Role)}
+                        error={!!errors.role}
+                        options={[
+                            { value: 'karyawan', label: 'Karyawan' },
+                            { value: 'manajer', label: 'Manajer' },
+                            { value: 'hr', label: 'HR' },
+                            { value: 'admin', label: 'Admin' },
+                            { value: 'guest', label: 'Guest' },
+                            { value: 'cabang', label: 'Cabang' },
+                        ]}
+                    />
+                </Field>
+
+                {!isCabang && (
+                    <Field label="NIK" error={errors.nik?.[0]} required>
+                        <TextInput
+                            value={form.nik}
+                            onChange={(v) => handleChange('nik', v)}
+                            error={!!errors.nik}
                         />
                     </Field>
+                )}
 
-                    <Field label="Email" error={errors.email?.[0]}>
-                        <input
-                            type="email"
-                            value={form.email}
-                            onChange={(e) => handleChange('email', e.target.value)}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                        />
-                    </Field>
-
-                    <Field label="Nomor Telepon" error={errors.phone?.[0]}>
-                        <input
-                            type="text"
-                            value={form.phone}
-                            onChange={(e) => handleChange('phone', e.target.value)}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                        />
-                    </Field>
-
-                    <Field label="Password" error={errors.password?.[0]}>
-                        <input
-                            type="password"
-                            value={form.password}
-                            onChange={(e) => handleChange('password', e.target.value)}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                            required
-                        />
-                    </Field>
-
-                    <Field label="Posisi" error={errors.role?.[0]}>
-                        <select
-                            value={form.role}
-                            onChange={(e) => handleRoleChange(e.target.value as Role)}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                        >
-                            <option value="karyawan">Karyawan</option>
-                            <option value="manajer">Manajer</option>
-                            <option value="hr">HR</option>
-                            <option value="admin">Admin</option>
-                            <option value="guest">Guest</option>
-                            <option value="cabang">Cabang</option>
-                        </select>
-                    </Field>
-
+                <div className={`grid gap-4 ${!isCabang ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
                     {!isCabang && (
-                        <Field label="NIK" error={errors.nik?.[0]}>
-                            <input
-                                type="text"
-                                value={form.nik}
-                                onChange={(e) => handleChange('nik', e.target.value)}
-                                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                                required
+                        <Field label="Departemen" error={errors.departemen_id?.[0]}>
+                            <Select
+                                value={form.departemen_id}
+                                onChange={(v) => handleChange('departemen_id', v)}
+                                placeholder="Pilih departemen"
+                                error={!!errors.departemen_id}
+                                options={departemenList.map((d) => ({ value: String(d.id), label: d.nama }))}
                             />
                         </Field>
                     )}
 
-                    <div className={`grid gap-4 ${!isCabang ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
-                        {!isCabang && (
-                            <Field label="Departemen" error={errors.departemen_id?.[0]}>
-                                <select
-                                    value={form.departemen_id}
-                                    onChange={(e) => handleChange('departemen_id', e.target.value)}
-                                    className={`w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10 ${form.departemen_id === '' ? 'text-gray-400' : 'text-gray-900'}`}
-                                >
-                                    <option value="">Pilih departemen</option>
-                                    {departemenList.map((d) => (
-                                        <option key={d.id} value={d.id}>
-                                            {d.nama}
-                                        </option>
-                                    ))}
-                                </select>
-                            </Field>
-                        )}
+                    <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]} required={isCabang}>
+                        <Select
+                            value={form.lokasi_kantor_id}
+                            onChange={(v) => handleChange('lokasi_kantor_id', v)}
+                            placeholder="Pilih cabang"
+                            error={!!errors.lokasi_kantor_id}
+                            options={cabangList.map((c) => ({ value: String(c.id), label: c.nama }))}
+                        />
+                    </Field>
+                </div>
 
-                        <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]}>
-                            <select
-                                value={form.lokasi_kantor_id}
-                                onChange={(e) => handleChange('lokasi_kantor_id', e.target.value)}
-                                className={`w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10 ${form.lokasi_kantor_id === '' ? 'text-gray-400' : 'text-gray-900'}`}
-                                required={isCabang}
-                            >
-                                <option value="">Pilih cabang</option>
-                                {cabangList.map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                        {c.nama}
-                                    </option>
-                                ))}
-                            </select>
-                        </Field>
-                    </div>
+                {!isCabang && (
+                    <Field label="Tanggal Masuk" error={errors.tanggal_masuk?.[0]}>
+                        <TextInput
+                            type="date"
+                            value={form.tanggal_masuk}
+                            onChange={(v) => handleChange('tanggal_masuk', v)}
+                            error={!!errors.tanggal_masuk}
+                        />
+                    </Field>
+                )}
 
-                    {!isCabang && (
-                        <Field label="Tanggal Masuk" error={errors.tanggal_masuk?.[0]}>
-                            <input
-                                type="date"
-                                value={form.tanggal_masuk}
-                                onChange={(e) => handleChange('tanggal_masuk', e.target.value)}
-                                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                            />
-                        </Field>
-                    )}
-
-                    <div className="flex justify-end gap-2 pt-2">
-                        <button
-                            type="button"
-                            onClick={closeModal}
-                            className="text-sm px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={saving}
-                            className="text-sm px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
-                        >
-                            {saving ? 'Menyimpan...' : 'Simpan User'}
-                        </button>
-                    </div>
-                </form>
-            </>
+                <div className="flex items-center justify-end gap-3 pt-2">
+                    <ButtonCancel onClick={closeModal} disabled={saving} />
+                    <ButtonSubmit type="submit" loading={saving} loadingLabel="Menyimpan...">
+                        Simpan User
+                    </ButtonSubmit>
+                </div>
+            </form>
         </RouteModal>
-    );
-}
-
-function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
-    return (
-        <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
-            {children}
-            {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
-        </div>
     );
 }

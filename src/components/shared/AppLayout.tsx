@@ -119,6 +119,10 @@ const navItems: NavItem[] = [
       // sini juga, tetap admin-only lewat `roles`.
       { label: 'Data User', icon: Users, path: '/master-data?tab=karyawan', roles: ['admin'] },
       { label: 'Cabang', icon: Building2, path: '/master-data?tab=cabang', roles: ['admin'] },
+      // BARU: mirror 'Cabang' -- admin-only, sama pola. Urutan harus samain
+      // sama TAB_KEYS di MasterData.tsx (dipakai buat nentuin "child pertama"
+      // default dropdown).
+      { label: 'Perusahaan', icon: Building2, path: '/master-data?tab=perusahaan', roles: ['admin'] },
       { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen', roles: ['admin', 'hr'] },
       { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier', roles: ['admin', 'hr'] },
     ],
@@ -190,8 +194,6 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
   const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
-  const [headerVisible, setHeaderVisible] = useState(true);
-  const lastScrollYRef = useRef(0);
   const contentScrollRef = useRef<HTMLDivElement>(null);
   const searchBoxRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -227,8 +229,9 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
     // dibatasi admin-only lewat `roles` per-child -- lihat hasVisibleContent
     // & filter visibleChildren di render, bukan lagi di sini.)
     // (dulu Dashboard cuma tampil buat admin -- sekarang semua role
-    // sudah punya varian dashboard-nya sendiri: DashboardUser/DashboardCabang/
-    // DashboardAdmin, jadi menu ini gak perlu disembunyikan lagi.)
+    // sudah punya varian dashboard-nya sendiri: DashboardUser (semua role
+    // non-reviewer, termasuk cabang) / DashboardAdmin, jadi menu ini gak
+    // perlu disembunyikan lagi.)
     // Laporan untuk admin/hr/manajer
     if (item.label === 'Laporan' && !STAFF_ROLES.includes(user?.role ?? '')) {
       return false;
@@ -330,24 +333,7 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // header ilang pas scroll ke bawah, muncul lagi pas scroll ke atas --
-  // dicek dari selisih posisi scroll sekarang vs sebelumnya (bukan cuma
-  // "> 0" doang) biar gak keder pas scroll dikit/jitter di ujung atas
-  const handleContentScroll = () => {
-    const el = contentScrollRef.current;
-    if (!el) return;
-    const currentY = el.scrollTop;
-    const lastY = lastScrollYRef.current;
-
-    if (currentY <= 0) {
-      setHeaderVisible(true);
-    } else if (currentY > lastY + 4) {
-      setHeaderVisible(false);
-    } else if (currentY < lastY - 4) {
-      setHeaderVisible(true);
-    }
-    lastScrollYRef.current = currentY;
-  };
+  const handleContentScroll = () => {};
 
   const handleSearchResultClick = (path: string) => {
     if (OVERLAY_PATHS.includes(path)) {
@@ -588,9 +574,7 @@ const handleLogout = async () => {
             sengaja dihilangin biar sidebar & topbar keliatan nyatu jadi satu
             panel chrome tanpa garis */}
         <header
-          className={`h-18 min-h-18 shrink-0 bg-white flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 transition-transform duration-300 ${
-            headerVisible ? 'translate-y-0' : '-translate-y-full'
-          }`}
+          className="h-18 min-h-18 shrink-0 bg-white flex items-center justify-between px-4 md:px-8 sticky top-0 z-30"
         >
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-600">

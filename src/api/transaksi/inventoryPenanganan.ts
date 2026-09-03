@@ -13,9 +13,10 @@ export interface InventoryPenanganan {
   id: number;
   inventory_id: number;
   inventory_pemakai_id: number | null;
-  // Barang Utama: 'hardware' | 'software'. Kelengkapan: 'tidak_berfungsi' |
-  // 'hancur' | 'terputus_sobek'. Dibiarkan string biasa (bukan union) karena
-  // opsinya tergantung kategori inventory -- lihat inventoryHelpers.ts.
+  // Satu daftar gabungan buat item apapun, gak lagi tergantung kategori/
+  // posisi (induk vs menempel): 'hardware' | 'software' | 'tidak_berfungsi'
+  // | 'hancur' | 'terputus_sobek'. Dibiarkan string biasa (bukan union)
+  // biar longgar -- lihat JENIS_KERUSAKAN_OPTIONS di inventoryHelpers.ts.
   jenis_kerusakan: string;
   keluhan: string;
   tanggal_lapor: string;
@@ -67,10 +68,11 @@ export async function getFotoKerusakanInventory(
 }
 
 // POST /inventory-penanganan — bisa dipanggil siapa aja yang sedang
-// memegang barang utama tsb (role:karyawan,manajer,hr,admin). HANYA berlaku
-// buat Barang Utama — Kelengkapan lewat laporRusakKelengkapan() di
-// inventory.ts, bukan endpoint ini (backend nolak 422 kalau dikirim id
-// Kelengkapan). `foto` WAJIB diisi (validasi backend: image, max 1MB).
+// memegang item tsb (role:karyawan,manajer,hr,admin). Berlaku buat item
+// apapun, induk maupun yang menempel ke induk lain -- endpoint terpisah
+// buat "kelengkapan" (laporRusakKelengkapan) sudah dihapus sejak alur ini
+// digeneralisasi (lihat komentar InventoryPenangananController::store()).
+// `foto` WAJIB diisi (validasi backend: image, max 1MB).
 export async function laporKerusakanInventory(payload: {
   inventory_id: number;
   jenis_kerusakan: string;

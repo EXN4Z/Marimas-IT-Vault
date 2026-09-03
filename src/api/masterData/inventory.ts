@@ -1,12 +1,12 @@
 import api from '../axios';
 import type { Supplier } from './supplier';
-import type { Departemen } from './departemen';
-import type { LokasiKantor } from '../lokasiKantor';
 
-export type InventoryStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'rusak' | 'dijual';
-// 'barang_utama' = boleh punya children (kelengkapan), gak boleh punya parent_id.
-// 'kelengkapan' = parent_id boleh diisi (nempel ke barang utama) atau null (berdiri sendiri).
-export type KategoriKode = 'barang_utama' | 'kelengkapan';
+export type InventoryStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'dijual';
+// Struktur (induk/menempel) sekarang murni soal parent_id, independen dari
+// kategori -- lihat backend InventoryController::index(). 'induk' =
+// parent_id === null (boleh punya children, boleh juga berdiri sendiri
+// tanpa children). 'menempel' = parent_id !== null.
+export type InventoryPosisi = 'induk' | 'menempel';
 
 export interface KategoriRef {
   id: number;
@@ -20,10 +20,10 @@ import type { InventoryPenanganan } from '../transaksi/inventoryPenanganan';
 // import dari sana, jangan didefinisikan ulang di sini.
 import type { InventoryPemakai } from '../transaksi/inventoryPemakai';
 
-// Satu baris `inventory` bisa berupa Barang Utama ATAU Kelengkapan — dibedakan
-// lewat kategori.nama (persis "Barang Utama" / "Kelengkapan"), BUKAN lewat
-// ada/tidaknya parent_id (lihat dokumen migrasi #2.3). `parent`/`children`
-// cuma keisi di endpoint show(), atau lewat query ?parent_id= di index() buat
+// Satu baris `inventory` bisa jadi kategori APA SAJA (bebas, gak lagi cuma 2
+// golongan "Barang Utama"/"Kelengkapan") -- struktur induk/menempel murni
+// ditentukan `parent_id`, independen dari kategori. `parent`/`children` cuma
+// keisi di endpoint show(), atau lewat query ?parent_id= di index() buat
 // nested/expand view.
 export interface Inventory {
   id: number;
@@ -31,12 +31,10 @@ export interface Inventory {
   parent_id: number | null;
   parent?: Inventory | null;
   children?: Inventory[];
+  merk: string | null;
+  type: string | null;
   kategori_id: number | null;
   kategori?: KategoriRef | null;
-  departemen_id: number | null;
-  departemen?: Departemen | null;
-  lokasi_kantor_id: number | null;
-  lokasiKantor?: LokasiKantor | null; // lokasi kelengkapan kalau berdiri sendiri (tanpa parent)
   nama: string | null;
   warna: string | null;
   serial_number: string | null;
@@ -47,11 +45,12 @@ export interface Inventory {
   foto: string | null;
   supplier_id: number | null;
   supplier?: Supplier | null;
-  tanggal_pembelian: string | null;
+  tanggal_input: string | null;
+  tanggal_invoice: string | null;
   no_surat_jalan: string | null;
   no_good_receive: string | null;
   status: InventoryStatus;
-  tanggal_rusak: string | null; // ISO datetime, keisi otomatis begitu status kelengkapan jadi 'rusak'
+  tanggal_rusak: string | null; // ISO datetime, keisi begitu kelengkapan dilaporkan rusak
   pemakai_saat_ini?: InventoryPemakai | null;
   pemakai?: InventoryPemakai[]; // riwayat lengkap, cuma keisi di endpoint show()
   penanganan?: InventoryPenanganan[]; // riwayat lengkap, cuma keisi di endpoint show()
@@ -71,18 +70,19 @@ export interface Inventory {
 export interface InventoryFormValues {
   kategori_id?: number | null;
   parent_id?: number | null; // cuma valid kalau kategori-nya 'Kelengkapan', dan harus nunjuk ke barang_utama
-  departemen_id?: number | null;
-  lokasi_kantor_id?: number | null;
   nama?: string;
   warna?: string;
   serial_number?: string;
+  merk?: string;
+  type?: string;
   jumlah?: number;
   tanggal_garansi?: string;
   perusahaan?: string;
   keterangan?: string;
   foto?: File | null;
   supplier_id?: number | null;
-  tanggal_pembelian?: string;
+  tanggal_input?: string;
+  tanggal_invoice?: string;
   no_surat_jalan?: string;
   no_good_receive?: string;
 }
@@ -99,28 +99,35 @@ function buildInventoryFormData(values: InventoryFormValues): FormData {
   const fd = new FormData();
   if (values.kategori_id != null) fd.append('kategori_id', String(values.kategori_id));
   if (values.parent_id != null) fd.append('parent_id', String(values.parent_id));
-  if (values.departemen_id != null) fd.append('departemen_id', String(values.departemen_id));
-  if (values.lokasi_kantor_id != null) fd.append('lokasi_kantor_id', String(values.lokasi_kantor_id));
   if (values.nama) fd.append('nama', values.nama);
   if (values.warna) fd.append('warna', values.warna);
   if (values.serial_number) fd.append('serial_number', values.serial_number);
+  // FIX: merk & type sebelumnya gak pernah ikut ke-append ke FormData, jadi
+  // walau user udah isi di form, backend gak pernah nerima nilainya sama
+  // sekali -- makanya kekesan "gak nyimpen". Sama juga tanggal_input &
+  // tanggal_invoice, ikut ketinggalan.
+  if (values.merk) fd.append('merk', values.merk);
+  if (values.type) fd.append('type', values.type);
   if (values.jumlah != null) fd.append('jumlah', String(values.jumlah));
   if (values.tanggal_garansi) fd.append('tanggal_garansi', values.tanggal_garansi);
+  if (values.tanggal_input) fd.append('tanggal_input', values.tanggal_input);
+  if (values.tanggal_invoice) fd.append('tanggal_invoice', values.tanggal_invoice);
   if (values.perusahaan) fd.append('perusahaan', values.perusahaan);
   if (values.keterangan) fd.append('keterangan', values.keterangan);
   if (values.foto) fd.append('foto', values.foto);
   if (values.supplier_id != null) fd.append('supplier_id', String(values.supplier_id));
-  if (values.tanggal_pembelian) fd.append('tanggal_pembelian', values.tanggal_pembelian);
   if (values.no_surat_jalan) fd.append('no_surat_jalan', values.no_surat_jalan);
   if (values.no_good_receive) fd.append('no_good_receive', values.no_good_receive);
   return fd;
 }
 
-// GET /inventory — ?kategori=barang_utama|kelengkapan filter berdasar
-// kategori.nama (mapped di backend). ?parent_id=123 buat nested/expand view
-// (kelengkapan yang nempel ke barang utama tertentu).
+// GET /inventory — ?kategori_id=123 filter berdasar kategori beneran.
+// ?posisi=induk|menempel filter berdasar parent_id (independen dari
+// kategori_id, bisa dipakai bareng). ?parent_id=123 buat nested/expand view
+// (item yang nempel ke inventory induk tertentu).
 export async function getInventory(params?: {
-  kategori?: KategoriKode;
+  kategori_id?: number;
+  posisi?: InventoryPosisi;
   parent_id?: number;
   search?: string;
 }): Promise<Inventory[]> {

@@ -1,44 +1,45 @@
 import { useState } from 'react';
 import { FileSpreadsheet, FileText, X, CheckSquare, Square, FileDown, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { type Karyawan } from '../../api/karyawan';
+import { type InventoryPemakai } from '../../api/transaksi/inventoryPemakai';
 import { formatTanggalId } from '../masterData/inventoryHelpers';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
 import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 
-const ROLE_LABEL: Record<string, string> = {
-  guest: 'Guest',
-  karyawan: 'Karyawan',
-  cabang: 'Cabang',
-  manajer: 'Manajer',
-  hr: 'HR',
-  admin: 'Admin',
+const STATUS_LABEL: Record<InventoryPemakai['status'], string> = {
+  pending: 'Pending',
+  disetujui: 'Disetujui',
+  ditolak: 'Ditolak',
 };
 
-// Sama pola dengan AsetExportModal — daftar kolom yang bisa diexport,
-// urutan di sini = urutan checkbox & urutan kolom di file hasil export.
+// Daftar kolom yang bisa diekspor buat data pemakai inventory (serah-terima
+// & pengembalian) — ngikutin pola yang sama kayak InventoryExportModal:
+// key = identitas field, label = judul kolom di file export, defaultChecked
+// = dicentang otomatis pas modal dibuka, get = cara ambil nilainya dari 1
+// baris InventoryPemakai (lewat relasi inventory & user; requested_by_user_id
+// belum punya objek relasi yang dikirim BE, jadi belum ada kolom buat itu).
 interface ExportColumn {
   key: string;
   label: string;
   defaultChecked: boolean;
-  get: (k: Karyawan) => string;
+  get: (p: InventoryPemakai) => string;
 }
 
 const EXPORT_COLUMNS: ExportColumn[] = [
-  { key: 'nik', label: 'NIK', defaultChecked: true, get: (k) => k.nik || '-' },
-  { key: 'name', label: 'Nama', defaultChecked: true, get: (k) => k.name },
-  { key: 'email', label: 'Email', defaultChecked: true, get: (k) => k.email },
-  { key: 'phone', label: 'Telepon', defaultChecked: false, get: (k) => k.phone || '-' },
-  { key: 'departemen', label: 'Departemen', defaultChecked: true, get: (k) => k.departemen?.nama || '-' },
-  { key: 'lokasi_kantor', label: 'Lokasi Kantor', defaultChecked: false, get: (k) => k.lokasi_kantor?.nama || '-' },
-    {
-    key: 'tanggal_masuk',
-    label: 'Tanggal Masuk',
-    defaultChecked: true,
-    get: (k) => (k.tanggal_masuk ? formatTanggalId(k.tanggal_masuk) : '-'),
-    },
-  { key: 'role', label: 'Role', defaultChecked: true, get: (k) => ROLE_LABEL[k.role] || k.role },
+  { key: 'kode_inventory', label: 'Kode Inventory', defaultChecked: true, get: (p) => p.inventory?.kode_inventory || '-' },
+  { key: 'nama_inventory', label: 'Nama Barang', defaultChecked: true, get: (p) => p.inventory?.nama || '-' },
+  { key: 'pemakai', label: 'Pemakai', defaultChecked: true, get: (p) => p.user?.name || '-' },
+  { key: 'status', label: 'Status', defaultChecked: true, get: (p) => STATUS_LABEL[p.status] },
+  { key: 'nomor_penerimaan', label: 'Nomor Penerimaan', defaultChecked: false, get: (p) => p.nomor_penerimaan || '-' },
+  { key: 'no_struk_penerimaan', label: 'No. Struk Penerimaan', defaultChecked: true, get: (p) => p.no_struk_penerimaan || '-' },
+  { key: 'tanggal_penerimaan', label: 'Tanggal Penerimaan', defaultChecked: true, get: (p) => formatTanggalId(p.tanggal_penerimaan) },
+  { key: 'catatan_penerimaan', label: 'Catatan Penerimaan', defaultChecked: false, get: (p) => p.catatan_penerimaan || '-' },
+  { key: 'nomor_pengembalian', label: 'Nomor Pengembalian', defaultChecked: false, get: (p) => p.nomor_pengembalian || '-' },
+  { key: 'no_struk_pengembalian', label: 'No. Struk Pengembalian', defaultChecked: true, get: (p) => p.no_struk_pengembalian || '-' },
+  { key: 'tanggal_pengembalian', label: 'Tanggal Pengembalian', defaultChecked: true, get: (p) => formatTanggalId(p.tanggal_pengembalian) },
+  { key: 'catatan_pengembalian', label: 'Catatan Pengembalian', defaultChecked: false, get: (p) => p.catatan_pengembalian || '-' },
+  { key: 'catatan_penolakan', label: 'Catatan Penolakan', defaultChecked: false, get: (p) => p.catatan_penolakan || '-' },
 ];
 
 type FileType = 'excel' | 'pdf';
@@ -46,11 +47,11 @@ type FileType = 'excel' | 'pdf';
 interface Props {
   open: boolean;
   onClose: () => void;
-  /** data yang mau diexport — sudah difilter sesuai tampilan tabel saat ini (search/departemen/dll) */
-  data: Karyawan[];
+  /** data yang mau diexport — sudah difilter sesuai tampilan tabel saat ini (search/status/dll) */
+  data: InventoryPemakai[];
 }
 
-export default function KaryawanExportModal({ open, onClose, data }: Props) {
+export default function InventoryPemakaiExportModal({ open, onClose, data }: Props) {
   const [fileType, setFileType] = useState<FileType>('excel');
   const [checkedKeys, setCheckedKeys] = useState<Set<string>>(
     () => new Set(EXPORT_COLUMNS.filter((c) => c.defaultChecked).map((c) => c.key))
@@ -79,13 +80,13 @@ export default function KaryawanExportModal({ open, onClose, data }: Props) {
       return;
     }
     if (data.length === 0) {
-      toast.error('Gak ada data user buat diexport.');
+      toast.error('Gak ada data pemakai inventory buat diexport.');
       return;
     }
 
-    // Sama seperti AsetExportModal: window.open() untuk PDF harus dipanggil
-    // di sini, langsung di handler klik, sebelum proses lain — biar gak
-    // keblokir popup blocker browser.
+    // PENTING: kalau export PDF, window.open() HARUS dipanggil di sini,
+    // langsung di dalam handler klik, SEBELUM ada proses lain — supaya
+    // browser tetap anggap ini popup hasil aksi user (gak keblokir).
     const printWindow = fileType === 'pdf' ? window.open('', '_blank') : null;
     if (fileType === 'pdf' && !printWindow) {
       toast.error('Popup diblokir browser. Izinkan popup buat export PDF.');
@@ -95,34 +96,37 @@ export default function KaryawanExportModal({ open, onClose, data }: Props) {
     setExporting(true);
     try {
       const headers = selectedColumns.map((c) => c.label);
-      const rows = data.map((k) => selectedColumns.map((c) => c.get(k)));
+      const rows = data.map((p) => selectedColumns.map((c) => c.get(p)));
       const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      // Kalau kolom "Status" dicentang, index-nya dikirim ke builder Excel
+      // biar sel status itu diwarnai badge (hijau/merah/kuning) otomatis.
+      const statusColIdx = selectedColumns.findIndex((c) => c.key === 'status');
 
       if (fileType === 'excel') {
         await downloadStyledExcel(
           {
-            title: 'Data User',
-            subtitle: `${data.length} user sesuai filter saat ini`,
+            title: 'Data Pemakai Inventory',
+            subtitle: `${data.length} data pemakai sesuai filter saat ini`,
             headers,
             rows,
-            sheetName: 'Data User',
-            statusColumnIndexes: [],
+            sheetName: 'Data Pemakai Inventory',
+            statusColumnIndexes: statusColIdx >= 0 ? [statusColIdx] : [],
           },
-          `Data User - ${today}.xlsx`
+          `Data Pemakai Inventory - ${today}.xlsx`
         );
       } else if (printWindow) {
         printRowsAsReport(
           headers,
           rows,
-          { title: 'Data User', periodLabel: `Diexport ${today} — ${data.length} user` },
+          { title: 'Data Pemakai Inventory', periodLabel: `Diexport ${today} — ${data.length} data pemakai` },
           printWindow
         );
       }
-      toast.success(`${data.length} user berhasil diexport.`);
+      toast.success(`${data.length} data pemakai berhasil diexport.`);
       onClose();
     } catch (err) {
       console.error(err);
-      toast.error('Gagal export data user.');
+      toast.error('Gagal export data pemakai inventory.');
     } finally {
       setExporting(false);
     }
@@ -143,9 +147,9 @@ export default function KaryawanExportModal({ open, onClose, data }: Props) {
               <FileDown size={20} className="text-blue-600" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-slate-900 leading-tight">Export Data Karyawan</h2>
+              <h2 className="text-base font-semibold text-slate-900 leading-tight">Export Data Pemakai Inventory</h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                <span className="font-semibold text-slate-700">{data.length}</span> user karyawan sesuai filter aktif
+                <span className="font-semibold text-slate-700">{data.length}</span> riwayat pemakai sesuai filter aktif
               </p>
             </div>
           </div>
@@ -165,7 +169,7 @@ export default function KaryawanExportModal({ open, onClose, data }: Props) {
           {data.length === 0 && (
             <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
               <AlertCircle size={16} className="shrink-0 text-amber-600" />
-              <span>Tidak ada data karyawan yang cocok dengan filter saat ini untuk diekspor.</span>
+              <span>Tidak ada data pemakai yang cocok dengan filter saat ini untuk diekspor.</span>
             </div>
           )}
 
@@ -278,7 +282,7 @@ export default function KaryawanExportModal({ open, onClose, data }: Props) {
             loading={exporting}
             loadingLabel="Mengekspor..."
           >
-            Export {data.length} User ({fileType === 'excel' ? 'Excel' : 'PDF'})
+            Export {data.length} Data ({fileType === 'excel' ? 'Excel' : 'PDF'})
           </ButtonSubmit>
         </div>
       </div>

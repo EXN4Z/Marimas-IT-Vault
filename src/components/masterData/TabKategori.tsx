@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, X, Tags } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Tags, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { SkeletonTable } from '../shared/skeleton';
+import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
+import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
+import { useBackdropClose } from '../../hooks/useBackdropClose';
 import {
   getKategori,
   createKategori,
@@ -12,10 +15,12 @@ import {
 } from '../../api/masterData/kategori';
 
 // Sekarang full CRUD -- beda dari sebelumnya (read-only 2 baris fix).
-// Perhatian: baris "Barang Utama" / "Kelengkapan" dipakai logic sistem
-// (cek persis lewat nama), jadi rename/hapus baris itu di sini bisa bikin
-// fitur lain (validasi parent_id, filter golongan, dsb) salah baca. Ini
-// risiko yang sudah disepakati -- tidak ada proteksi khusus di UI ini.
+// (REFACTOR KATEGORI BEBAS Fase 4: peringatan lama di sini -- yang bilang
+// baris "Barang Utama"/"Kelengkapan" dipakai logic sistem lewat nama --
+// sudah gak berlaku. Sejak Fase 1-2, semua logic (validasi parent_id,
+// filter struktur induk/menempel, dst) murni berbasis kolom parent_id,
+// gak baca nama kategori sama sekali. Kategori sekarang cuma label bebas,
+// aman di-rename/hapus/tambah tanpa mempengaruhi fitur lain.)
 export default function TabKategori() {
   const [items, setItems] = useState<Kategori[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,9 +76,11 @@ export default function TabKategori() {
     setModalOpen(false);
   };
 
+  const backdropModal = useBackdropClose(closeModal);
+
   const handleSubmit = async () => {
     if (!formNama.trim()) {
-      setFormError('Nama tidak boleh kosong.');
+      setFormError('Nama kategori wajib diisi.');
       return;
     }
     setSubmitting(true);
@@ -127,8 +134,8 @@ export default function TabKategori() {
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="flex items-center justify-between gap-3 px-6 pt-5 pb-1 flex-wrap">
         <p className="text-xs text-slate-400 max-w-md">
-          Kategori adalah pembagian dasar barang (mis. Barang Utama / Kelengkapan), dipakai buat
-          nentuin field mana yang berlaku waktu bikin Inventory.
+          Kategori adalah label jenis barang (mis. Laptop, Charger, Speaker) buat mengelompokkan
+          data Inventory. Nama bebas apa saja -- gak menentukan field atau alur mana pun.
         </p>
         <button
           onClick={openCreateModal}
@@ -206,83 +213,92 @@ export default function TabKategori() {
 
       {/* MODAL TAMBAH / EDIT */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-slate-900">
-                {editing ? 'Edit Kategori' : 'Tambah Kategori'}
-              </h3>
-              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600">
-                <X size={20} />
+        <div
+          className="fixed inset-0 bg-slate-950/50 backdrop-blur-[2px] z-[70] flex items-center justify-center p-4 animate-[fadeIn_150ms_ease-out]"
+          {...backdropModal}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md overflow-hidden transform transition-all animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-sm shrink-0">
+                  <Tags size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900">
+                    {editing ? 'Edit Kategori' : 'Tambah Kategori'}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {editing ? 'Perbarui nama kelompok kategori barang' : 'Buat kelompok kategori barang baru'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeModal}
+                disabled={submitting}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-40"
+              >
+                <X size={18} />
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-medium text-slate-500 mb-1 block">Nama</label>
-                <input
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit();
+              }}
+              className="p-6 space-y-4"
+            >
+              <Field
+                label="Nama Kategori"
+                required
+                error={formError && !formNama.trim() ? formError : undefined}
+                hint="Contoh: Laptop, Monitor, Smartphone, Printer, Audio"
+              >
+                <TextInput
                   value={formNama}
-                  onChange={(e) => setFormNama(e.target.value)}
-                  placeholder="cth. Barang Utama"
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  onChange={(val) => {
+                    setFormNama(val);
+                    if (formError) setFormError('');
+                  }}
+                  placeholder="Contoh: Laptop / Komputer"
+                  autoFocus
+                  error={!!formError && !formNama.trim()}
                 />
-              </div>
+              </Field>
 
-              {formError && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  {formError}
-                </p>
+              {formError && formNama.trim() && (
+                <div className="flex items-start gap-2.5 p-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl animate-[fadeIn_150ms_ease-out]">
+                  <AlertCircle size={15} className="shrink-0 mt-0.5 text-red-600" />
+                  <span>{formError}</span>
+                </div>
               )}
 
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="w-full text-white text-sm font-semibold py-3 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed bg-slate-900 hover:bg-slate-800"
-              >
-                {submitting ? 'Menyimpan...' : 'Simpan'}
-              </button>
-            </div>
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <ButtonCancel onClick={closeModal} disabled={submitting} />
+                <ButtonSubmit type="submit" loading={submitting} loadingLabel="Menyimpan...">
+                  {editing ? 'Simpan Perubahan' : 'Tambah Kategori'}
+                </ButtonSubmit>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
       {/* MODAL KONFIRMASI HAPUS */}
-      {deleteTarget && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-base font-semibold text-slate-900 mb-2">Hapus Kategori?</h3>
-            <p className="text-sm text-slate-500 mb-4">
-              Yakin mau hapus "{deleteTarget.nama}"? Tindakan ini tidak bisa dibatalkan.
-            </p>
-
-            {deleteError && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
-                {deleteError}
-              </p>
-            )}
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => {
-                  setDeleteTarget(null);
-                  setDeleteError('');
-                }}
-                disabled={deleting}
-                className="flex-1 text-sm font-medium py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex-1 text-sm font-semibold py-2.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-40"
-              >
-                {deleting ? 'Menghapus...' : 'Hapus'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget}
+        itemName={deleteTarget?.nama || ''}
+        itemType="Kategori"
+        loading={deleting}
+        errorMessage={deleteError}
+        warningMessage="Pastikan tidak ada aset/inventory yang sedang terkait dengan kategori ini."
+        onClose={() => {
+          setDeleteTarget(null);
+          setDeleteError('');
+        }}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

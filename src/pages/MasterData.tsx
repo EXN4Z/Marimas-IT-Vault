@@ -1,18 +1,22 @@
 import '../index.css';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2, Package, Tags, Users } from 'lucide-react';
+import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2, Package, Tags, Users, AlertCircle } from 'lucide-react';
+import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
+import ConfirmDeleteModal from '../components/shared/ConfirmDeleteModal';
 import toast from 'react-hot-toast';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import TabInventory from '../components/masterData/TabInventory';
 import TabKategori from '../components/masterData/TabKategori';
 import TabKaryawan from '../components/masterData/TabKaryawan';
 import TabCabang from '../components/masterData/TabCabang';
+import TabPerusahaan from '../components/masterData/TabPerusahaan';
 import { SkeletonTable } from '../components/shared/skeleton';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen, importDepartemen } from '../api/masterData/departemen';
 import { getSupplier, createSupplier, updateSupplier, deleteSupplier, importSupplier } from '../api/masterData/supplier';
 import { downloadStyledExcel } from '../utils/excelReport';
+import { useBackdropClose } from '../hooks/useBackdropClose';
 
 // Aset & Kelengkapan Aset pindahan dari Inventaris -- beda pola dari
 // Departemen/Supplier (bukan CRUD nama/alamat/telepon generik), makanya
@@ -30,7 +34,10 @@ type GenericTabKey = 'departemen' | 'supplier';
 // /cabang -- sekarang jadi tab di Master Data juga, sepola sama Aset/Kategori
 // (dirender lewat komponen dedicated-nya sendiri, bukan lewat tabConfig
 // generik, karena bentuknya beda dari CRUD nama/alamat/telepon).
-type CustomTabKey = 'inventory' | 'kategori' | 'karyawan' | 'cabang';
+// 'perusahaan' -- BARU, mirror struktur & tab 'cabang' persis (lihat
+// TabPerusahaan.tsx / api/perusahaan.ts), tapi sengaja tanpa relasi ke
+// tabel lain.
+type CustomTabKey = 'inventory' | 'kategori' | 'karyawan' | 'cabang' | 'perusahaan';
 type TabKey = CustomTabKey | GenericTabKey;
 
 // alamat & telepon cuma dipakai tab 'supplier'
@@ -41,7 +48,7 @@ type FormPayload = { nama: string; alamat?: string; telepon?: string };
 // AppLayout nentuin dropdown Master Data mana yang default aktif kalau
 // URL belum punya "?tab=" -- harus samain urutannya sama children di
 // AppLayout.tsx (Inventory, Kategori, Departemen, Supplier).
-const TAB_KEYS: TabKey[] = ['inventory', 'kategori', 'karyawan', 'cabang', 'departemen', 'supplier'];
+const TAB_KEYS: TabKey[] = ['inventory', 'kategori', 'karyawan', 'cabang', 'perusahaan', 'departemen', 'supplier'];
 
 function isTabKey(value: string | null): value is TabKey {
   return !!value && (TAB_KEYS as string[]).includes(value);
@@ -62,6 +69,8 @@ const CUSTOM_TABS: { key: CustomTabKey; label: string; icon: typeof Package; rol
   { key: 'kategori', label: 'Kategori', icon: Tags, roles: STAFF_ROLES },
   { key: 'karyawan', label: 'Data User', icon: Users, roles: ['admin'] },
   { key: 'cabang', label: 'Cabang', icon: Building2, roles: ['admin'] },
+  // BARU: mirror 'cabang' -- admin-only, sama pola.
+  { key: 'perusahaan', label: 'Perusahaan', icon: Building2, roles: ['admin'] },
 ];
 
 const tabConfig: Record<
@@ -89,8 +98,6 @@ const tabConfig: Record<
     update: (id, payload) => updateDepartemen(id, payload.nama),
     remove: deleteDepartemen,
     import: importDepartemen,
-    exportHeaders: ['Nama'],
-    exportRow: (item) => [item.nama],
   },
   supplier: {
     label: 'Supplier',
@@ -118,7 +125,7 @@ export default function MasterData() {
   // sendiri, /karyawan & /cabang).
   const canViewTab = (tab: TabKey): boolean => {
     if (tab === 'inventory') return true;
-    if (tab === 'karyawan' || tab === 'cabang') return isAdmin;
+    if (tab === 'karyawan' || tab === 'cabang' || tab === 'perusahaan') return isAdmin;
     return isStaff;
   };
 
@@ -141,13 +148,23 @@ export default function MasterData() {
   // kalau user klik link dropdown sidebar yang query-nya beda (mis. lagi di tab
   // "departemen" terus klik "Supplier"), pathname sama jadi gak remount komponen —
   // effect ini yang nangkep perubahan query dan update activeTab-nya.
+  //
+  // FIX: effect ini juga harus jalan ulang begitu `user` kelar dimuat (bukan
+  // cuma pas `searchParams` berubah). Kalau di-refresh browser di halaman
+  // kayak "?tab=kategori", pas mount pertama `user` masih null (AuthContext
+  // masih nunggu GET /user), jadi canViewTab('kategori') sempet false dan
+  // state awal activeTab kepaksa jatuh ke 'inventory' (lihat useState di
+  // atas). Tanpa `user` di dependency array, effect ini gak pernah nangkep
+  // momen user selesai dimuat -> activeTab nyangkut di 'inventory' selamanya
+  // walau URL (dan sidebar, yang baca location.search langsung) tetep nunjuk
+  // ke 'kategori'. Makanya kelihatannya "konten inventory, sidebar kategori".
   useEffect(() => {
     const fromUrl = searchParams.get('tab');
     if (isTabKey(fromUrl) && fromUrl !== activeTab && canViewTab(fromUrl)) {
       setActiveTabState(fromUrl);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [searchParams, user]);
 
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
@@ -269,10 +286,12 @@ export default function MasterData() {
     setModalOpen(false);
   };
 
+  const backdropModal = useBackdropClose(closeModal);
+
   const handleSubmit = async () => {
     if (!cfg) return;
     if (!formNama.trim()) {
-      setFormError('Nama tidak boleh kosong.');
+      setFormError(`Nama ${cfg.singular.toLowerCase()} wajib diisi.`);
       return;
     }
     setSubmitting(true);
@@ -284,8 +303,10 @@ export default function MasterData() {
       };
       if (editing) {
         await cfg.update(editing.id, payload);
+        toast.success(`${cfg.singular} berhasil diperbarui.`);
       } else {
         await cfg.create(payload);
+        toast.success(`${cfg.singular} berhasil ditambahkan.`);
       }
       setModalOpen(false);
       loadData(activeTab as GenericTabKey);
@@ -305,10 +326,11 @@ export default function MasterData() {
     setDeleting(true);
     try {
       await cfg.remove(deleteTarget.id);
+      toast.success(`${cfg.singular} berhasil dihapus.`);
       setDeleteTarget(null);
       loadData(activeTab as GenericTabKey);
     } catch (err: any) {
-      setError(err.response?.data?.message || `Gagal menghapus ${cfg.singular.toLowerCase()}.`);
+      toast.error(err.response?.data?.message || `Gagal menghapus ${cfg.singular.toLowerCase()}.`);
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
@@ -321,7 +343,7 @@ export default function MasterData() {
         <p className="text-sm text-slate-500">
           {isStaff
             ? isAdmin
-              ? 'Kelola data inventory, kategori, departemen, supplier, data user, dan cabang yang dipakai di seluruh sistem.'
+              ? 'Kelola data inventory, kategori, departemen, supplier, data user, cabang, dan perusahaan yang dipakai di seluruh sistem.'
               : 'Kelola data referensi aset, kelengkapan aset, departemen, dan supplier yang dipakai di seluruh sistem.'
             : 'Lihat inventory yang tersedia atau lagi kamu pinjam.'}
         </p>
@@ -395,6 +417,8 @@ export default function MasterData() {
         <TabKaryawan />
       ) : activeTab === 'cabang' ? (
         <TabCabang />
+      ) : activeTab === 'perusahaan' ? (
+        <TabPerusahaan />
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {loading && (
@@ -479,83 +503,107 @@ export default function MasterData() {
 
       {/* MODAL TAMBAH / EDIT -- cuma relevan buat tab generik (Departemen/Supplier) */}
       {modalOpen && cfg && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-slate-900">
-                {editing ? `Edit ${cfg.singular}` : `Tambah ${cfg.singular}`}
-              </h3>
-              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600">
-                <X size={20} />
+        <div
+          className="fixed inset-0 bg-slate-950/50 backdrop-blur-[2px] z-[70] flex items-center justify-center p-4 animate-[fadeIn_150ms_ease-out]"
+          {...backdropModal}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md overflow-hidden transform transition-all animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-sm shrink-0">
+                  {activeTab === 'departemen' ? <Building2 size={20} /> : <Truck size={20} />}
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900">
+                    {editing ? `Edit ${cfg.singular}` : `Tambah ${cfg.singular}`}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {editing ? `Perbarui data ${cfg.singular.toLowerCase()}` : `Isi data ${cfg.singular.toLowerCase()} baru`}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeModal}
+                disabled={submitting}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-40"
+              >
+                <X size={18} />
               </button>
             </div>
 
-            {activeTab === 'supplier' && (
-              <>
-                <div>
-                  <label className="text-xs font-medium text-slate-500 mb-1 block">Alamat</label>
-                  <input
-                    value={formAlamat}
-                    onChange={(e) => setFormAlamat(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-500 mb-1 block">Telepon</label>
-                  <input
-                    value={formTelepon}
-                    onChange={(e) => setFormTelepon(e.target.value)}
-                    placeholder="cth. 0812xxxxxxx"
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  />
-                </div>
-              </>
-            )}
-
-            {formError && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                {formError}
-              </p>
-            )}
-
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="w-full text-white text-sm font-semibold py-3 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed bg-slate-900 hover:bg-slate-800"
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit();
+              }}
+              className="p-6 space-y-4"
             >
-              {submitting ? 'Menyimpan...' : 'Simpan'}
-            </button>
+              <Field
+                label={`Nama ${cfg.singular}`}
+                required
+                error={formError && !formNama.trim() ? formError : undefined}
+                hint={`Nama ${cfg.singular.toLowerCase()} harus jelas dan unik`}
+              >
+                <TextInput
+                  value={formNama}
+                  onChange={(val) => {
+                    setFormNama(val);
+                    if (formError) setFormError('');
+                  }}
+                  placeholder={`Contoh: ${activeTab === 'departemen' ? 'Divisi Finance & Accounting' : 'PT Sumber Makmur Solusindo'}`}
+                  autoFocus
+                  error={!!formError && !formNama.trim()}
+                />
+              </Field>
+
+              {activeTab === 'supplier' && (
+                <>
+                  <Field label="Alamat Kantor / Gudang" hint="Opsional, alamat pengiriman atau domisili supplier">
+                    <TextInput
+                      value={formAlamat}
+                      onChange={setFormAlamat}
+                      placeholder="Contoh: Jl. Pahlawan No. 45, Semarang"
+                    />
+                  </Field>
+                  <Field label="Nomor Kontak / Telepon" hint="Opsional, nomor telepon kantor atau perwakilan supplier">
+                    <TextInput
+                      value={formTelepon}
+                      onChange={setFormTelepon}
+                      placeholder="Contoh: 0812-3456-7890 / 024-8765432"
+                      type="tel"
+                    />
+                  </Field>
+                </>
+              )}
+
+              {formError && formNama.trim() && (
+                <div className="flex items-start gap-2.5 p-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl animate-[fadeIn_150ms_ease-out]">
+                  <AlertCircle size={15} className="shrink-0 mt-0.5 text-red-600" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <ButtonCancel onClick={closeModal} disabled={submitting} />
+                <ButtonSubmit type="submit" loading={submitting} loadingLabel="Menyimpan...">
+                  {editing ? 'Simpan Perubahan' : `Tambah ${cfg.singular}`}
+                </ButtonSubmit>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
       {/* MODAL KONFIRMASI HAPUS */}
-      {deleteTarget && cfg && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-base font-semibold text-slate-900 mb-2">Hapus {cfg.singular}?</h3>
-            <p className="text-sm text-slate-500 mb-6">
-              Yakin mau hapus "{deleteTarget.nama}"? Tindakan ini tidak bisa dibatalkan.
-            </p>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                disabled={deleting}
-                className="flex-1 text-sm font-medium py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex-1 text-sm font-semibold py-2.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-40"
-              >
-                {deleting ? 'Menghapus...' : 'Hapus'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget && !!cfg}
+        itemName={deleteTarget?.nama || ''}
+        itemType={cfg?.singular || 'Data'}
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
     </>
   );
 }

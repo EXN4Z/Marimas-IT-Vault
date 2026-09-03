@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FileDown } from 'lucide-react';
+import toast from 'react-hot-toast';
 import api from '../../api/axios';
 import { importKaryawan } from '../../api/auth';
-import type { Karyawan } from '../../api/karyawan';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import Pagination from '../shared/Pagination';
-import KaryawanExportModal from '../laporan/KaryawanExportModal';
 import { Skeleton, SkeletonCircle } from '../shared/skeleton';
+import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'cabang';
 type TabKey = 'semua' | 'karyawan' | 'hr_manajer' | 'admin' | 'cabang';
@@ -128,7 +127,6 @@ export default function TabKaryawan() {
 
     // BARU: state untuk modal export (Excel/PDF) — komponennya sudah ada &
     // dipakai di halaman Laporan, di sini tinggal dipasang ulang.
-    const [showExportModal, setShowExportModal] = useState<boolean>(false);
 
     function loadUsers() {
         setLoading(true);
@@ -181,14 +179,14 @@ export default function TabKaryawan() {
         setDeleting(true);
         try {
             await api.delete(`/karyawan/${userToDelete.id}`);
+            toast.success(`User ${userToDelete.name} berhasil dihapus.`);
             setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
             setUserToDelete(null);
         } catch (err: any) {
-            if (err.response?.status === 403) {
-                setErrorMsg('Anda tidak punya akses untuk menghapus user ini.');
-            } else {
-                setErrorMsg('Gagal menghapus user. Coba lagi.');
-            }
+            const msg = err.response?.status === 403
+                ? 'Anda tidak punya akses untuk menghapus user ini.'
+                : err.response?.data?.message || 'Gagal menghapus user. Coba lagi.';
+            toast.error(msg);
             setUserToDelete(null);
         } finally {
             setDeleting(false);
@@ -258,18 +256,6 @@ export default function TabKaryawan() {
                                 className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none"
                             />
                         </div>
-                            <div className="flex gap-2">
-                                {/* BARU: tombol Export (Excel/PDF) — dibuka buat semua role yang
-                                    bisa lihat halaman ini, bukan cuma admin, soalnya cuma nampilin
-                                    data yang sudah kefilter/keliatan di tabel (bukan aksi ubah data). */}
-                                <button
-                                    onClick={() => setShowExportModal(true)}
-                                    className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 whitespace-nowrap"
-                                >
-                                    <FileDown size={16} />
-                                    Export
-                                </button>
-                            </div>
                             {isAdmin && (
                                 <div className="flex gap-2">
                                     {/* BARU: tombol Import Excel */}
@@ -326,6 +312,7 @@ export default function TabKaryawan() {
                                         isAdmin={isAdmin}
                                         onDelete={() => setUserToDelete(user)}
                                         onEdit={() => navigate(`/karyawan/${user.id}/edit`, { state: { backgroundLocation: location } })}
+                                        onDetail={() => navigate(`/karyawan/${user.id}`, { state: { backgroundLocation: location } })}
                                     />
                                 ))}
                             </div>
@@ -342,14 +329,16 @@ export default function TabKaryawan() {
                 </div>
             </div>
 
-            {userToDelete && (
-                <ConfirmDeleteModal
-                    user={userToDelete}
-                    deleting={deleting}
-                    onCancel={() => setUserToDelete(null)}
-                    onConfirm={confirmDelete}
-                />
-            )}
+            <ConfirmDeleteModal
+                isOpen={!!userToDelete}
+                itemName={userToDelete?.name || ''}
+                itemCode={userToDelete?.nik || undefined}
+                itemType="Karyawan / User"
+                warningMessage="Akun login dan seluruh hak akses user ini akan dicabut secara permanen."
+                loading={deleting}
+                onClose={() => setUserToDelete(null)}
+                onConfirm={confirmDelete}
+            />
 
             {/* BARU: modal import Excel */}
             {showImportModal && (
@@ -369,13 +358,6 @@ export default function TabKaryawan() {
             {/* BARU: modal export Excel/PDF — data yang dikirim udah sesuai
                 filter tab & pencarian yang lagi aktif di tabel (bukan cuma
                 halaman yang lagi ditampilin, tapi SEMUA hasil filter). */}
-            {showExportModal && (
-                <KaryawanExportModal
-                    open={showExportModal}
-                    onClose={() => setShowExportModal(false)}
-                    data={filtered as unknown as Karyawan[]}
-                />
-            )}
         </>
     );
 }
@@ -385,9 +367,10 @@ interface UserRowProps {
     isAdmin: boolean;
     onDelete: () => void;
     onEdit: () => void;
+    onDetail: () => void;
 }
 
-function UserRow({ user, isAdmin, onDelete, onEdit }: UserRowProps) {
+function UserRow({ user, isAdmin, onDelete, onEdit, onDetail }: UserRowProps) {
     return (
         <div className="flex items-center justify-between py-3 gap-3">
             <div className="flex items-center gap-3 min-w-0">
@@ -408,6 +391,9 @@ function UserRow({ user, isAdmin, onDelete, onEdit }: UserRowProps) {
                         {user.departemen?.nama || 'Departemen tidak ditentukan'}
                     </span>
                 )}
+                <button onClick={onDetail} className="text-xs text-gray-500 hover:text-black">
+                    Detail
+                </button>
                 {isAdmin && (
                     <>
                         <button onClick={onEdit} className="text-xs text-gray-500 hover:text-black">
@@ -418,43 +404,6 @@ function UserRow({ user, isAdmin, onDelete, onEdit }: UserRowProps) {
                         </button>
                     </>
                 )}
-            </div>
-        </div>
-    );
-}
-
-interface ConfirmDeleteModalProps {
-    user: User;
-    deleting: boolean;
-    onCancel: () => void;
-    onConfirm: () => void;
-}
-
-function ConfirmDeleteModal({ user, deleting, onCancel, onConfirm }: ConfirmDeleteModalProps) {
-    return (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-            <div className="bg-white rounded-xl w-full max-w-sm p-5 max-h-[90vh] overflow-y-auto">
-                <h2 className="text-base font-semibold text-gray-900 mb-1">Hapus user?</h2>
-                <p className="text-sm text-gray-500 mb-5">
-                    <span className="font-medium text-gray-700">{user.name}</span> akan dihapus permanen dan
-                    tidak bisa dikembalikan.
-                </p>
-                <div className="flex justify-end gap-2">
-                    <button
-                        onClick={onCancel}
-                        disabled={deleting}
-                        className="text-sm px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                        Batal
-                    </button>
-                    <button
-                        onClick={onConfirm}
-                        disabled={deleting}
-                        className="text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
-                    >
-                        {deleting ? 'Menghapus...' : 'Ya, hapus'}
-                    </button>
-                </div>
             </div>
         </div>
     );
