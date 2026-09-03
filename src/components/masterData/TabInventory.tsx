@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Download, Link2, Unlink } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Download, Link2, Unlink, User } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
@@ -15,7 +15,7 @@ import InventoryLepasDariIndukModal from './InventoryLepasDariIndukModal';
 import InventoryPasangIndukModal from './InventoryPasangParentModal';
 import InventoryPenangananSelesaiModal from '../transaksi/InventoryPenangananSelesaiModal';
 import InventoryExportModal from '../laporan/InventoryExportModal';
-import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';
+import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 // InventoryKelengkapanExportModal sudah tidak dipakai -- export sekarang
 // pakai 1 modal (InventoryExportModal) buat semua kategori, karena
 // kategori gak lagi nentuin bentuk export.
@@ -1188,51 +1188,26 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
 
     
       {/* KONFIRMASI HAPUS */}
-      {deleteTarget && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] px-4 animate-[fadeIn_150ms_ease-out]">
-          <div className="bg-white rounded-xl w-full max-w-sm p-5 animate-[slideUp_180ms_ease-out]">
-            <h2 className="text-base font-semibold text-slate-900 mb-1">Hapus inventory?</h2>
-            <p className="text-sm text-slate-500 mb-3">
-              <span className="font-medium text-slate-700">{deleteTarget.kode_inventory}</span> akan dihapus permanen
-              beserta riwayatnya, dan tidak bisa dikembalikan.
-            </p>
-            {deleteError && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
-                {deleteError}
-                {deleteForceAvailable && ' Inventory ini punya riwayat, tapi bisa dihapus paksa kalau memang data lama/test.'}
-              </p>
-            )}
-            <div className="flex justify-end gap-2">
-              <ButtonCancel
-                onClick={() => {
-                  setDeleteTarget(null);
-                  setDeleteError('');
-                  setDeleteForceAvailable(false);
-                }}
-                disabled={deleting}
-              />
-              <ButtonSubmit
-                onClick={() => confirmDelete(false)}
-                loading={deleting}
-                loadingLabel="Menghapus..."
-                tone="danger"
-              >
-                Ya, hapus
-              </ButtonSubmit>
-              {deleteForceAvailable && (
-                <ButtonSubmit
-                  onClick={() => confirmDelete(true)}
-                  loading={deleting}
-                  loadingLabel="Menghapus..."
-                  tone="danger"
-                >
-                  Hapus Paksa
-                </ButtonSubmit>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget}
+        itemName={deleteTarget?.nama || deleteTarget?.kode_inventory || ''}
+        itemCode={deleteTarget?.kode_inventory}
+        itemType="Inventory"
+        loading={deleting}
+        errorMessage={deleteError}
+        forceAvailable={deleteForceAvailable}
+        warningMessage={
+          deleteForceAvailable
+            ? 'Inventory ini memiliki riwayat pemakaian/penanganan. Anda dapat melakukan Hapus Paksa jika memang data lama/test.'
+            : 'Menghapus inventory akan menghapus data beserta seluruh riwayat terkait secara permanen.'
+        }
+        onClose={() => {
+          setDeleteTarget(null);
+          setDeleteError('');
+          setDeleteForceAvailable(false);
+        }}
+        onConfirm={(force) => confirmDelete(!!force)}
+      />
 
       {/* BARU: KONFIRMASI JUAL ASET — cuma tanda, gak ada form */}
       {jualTarget && (
@@ -1290,18 +1265,38 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         !jualTarget &&
         !lepasTarget &&
         !pasangIndukTarget && (
-        <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4 animate-[fadeIn_150ms_ease-out]">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto animate-[slideUp_180ms_ease-out]">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
-                <Boxes size={18} className="text-slate-400" />
-                {detail?.kode_inventory || 'Memuat...'}
-              </h3>
-              <button onClick={closeDetail} className="text-slate-400 hover:text-slate-600">
-                <X size={20} />
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 backdrop-blur-[2px] p-4 animate-[fadeIn_150ms_ease-out]"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeDetail();
+          }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-lg max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
+            {/* Header */}
+            <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+                  <Boxes size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900 leading-tight">
+                    {detail?.kode_inventory || 'Memuat...'}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Detail Inventory</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeDetail}
+                aria-label="Tutup"
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition"
+              >
+                <X size={18} />
               </button>
             </div>
 
+            {/* Body */}
+            <div className="px-6 py-5 overflow-y-auto">
             {detailLoading && (
               <div className="flex flex-col gap-5">
                 <div className="flex gap-4">
@@ -1790,6 +1785,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                 </div>
               </div>
             )}
+            </div>
           </div>
         </div>
       )}

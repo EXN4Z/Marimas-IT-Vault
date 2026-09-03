@@ -1,8 +1,9 @@
 import '../index.css';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2, Package, Tags, Users } from 'lucide-react';
+import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2, Package, Tags, Users, AlertCircle } from 'lucide-react';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
+import ConfirmDeleteModal from '../components/shared/ConfirmDeleteModal';
 import toast from 'react-hot-toast';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import TabInventory from '../components/masterData/TabInventory';
@@ -281,7 +282,7 @@ export default function MasterData() {
   const handleSubmit = async () => {
     if (!cfg) return;
     if (!formNama.trim()) {
-      setFormError('Nama tidak boleh kosong.');
+      setFormError(`Nama ${cfg.singular.toLowerCase()} wajib diisi.`);
       return;
     }
     setSubmitting(true);
@@ -293,8 +294,10 @@ export default function MasterData() {
       };
       if (editing) {
         await cfg.update(editing.id, payload);
+        toast.success(`${cfg.singular} berhasil diperbarui.`);
       } else {
         await cfg.create(payload);
+        toast.success(`${cfg.singular} berhasil ditambahkan.`);
       }
       setModalOpen(false);
       loadData(activeTab as GenericTabKey);
@@ -314,10 +317,11 @@ export default function MasterData() {
     setDeleting(true);
     try {
       await cfg.remove(deleteTarget.id);
+      toast.success(`${cfg.singular} berhasil dihapus.`);
       setDeleteTarget(null);
       loadData(activeTab as GenericTabKey);
     } catch (err: any) {
-      setError(err.response?.data?.message || `Gagal menghapus ${cfg.singular.toLowerCase()}.`);
+      toast.error(err.response?.data?.message || `Gagal menghapus ${cfg.singular.toLowerCase()}.`);
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
@@ -488,23 +492,57 @@ export default function MasterData() {
 
       {/* MODAL TAMBAH / EDIT -- cuma relevan buat tab generik (Departemen/Supplier) */}
       {modalOpen && cfg && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-semibold text-slate-900">
-                {editing ? `Edit ${cfg.singular}` : `Tambah ${cfg.singular}`}
-              </h3>
-              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600">
-                <X size={20} />
+        <div
+          className="fixed inset-0 bg-slate-950/50 backdrop-blur-[2px] z-[70] flex items-center justify-center p-4 animate-[fadeIn_150ms_ease-out]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !submitting) closeModal();
+          }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md overflow-hidden transform transition-all animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-sm shrink-0">
+                  {activeTab === 'departemen' ? <Building2 size={20} /> : <Truck size={20} />}
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900">
+                    {editing ? `Edit ${cfg.singular}` : `Tambah ${cfg.singular}`}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {editing ? `Perbarui data ${cfg.singular.toLowerCase()}` : `Isi data ${cfg.singular.toLowerCase()} baru`}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeModal}
+                disabled={submitting}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-40"
+              >
+                <X size={18} />
               </button>
             </div>
 
-            <div className="flex flex-col gap-4">
-              <Field label="Nama" required error={formError && !formAlamat && !formTelepon ? formError : undefined}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit();
+              }}
+              className="p-6 space-y-4"
+            >
+              <Field
+                label={`Nama ${cfg.singular}`}
+                required
+                error={formError && !formNama.trim() ? formError : undefined}
+                hint={`Nama ${cfg.singular.toLowerCase()} harus jelas dan unik`}
+              >
                 <TextInput
                   value={formNama}
-                  onChange={setFormNama}
-                  placeholder={`Nama ${cfg.singular.toLowerCase()}`}
+                  onChange={(val) => {
+                    setFormNama(val);
+                    if (formError) setFormError('');
+                  }}
+                  placeholder={`Contoh: ${activeTab === 'departemen' ? 'Divisi Finance & Accounting' : 'PT Sumber Makmur Solusindo'}`}
                   autoFocus
                   error={!!formError && !formNama.trim()}
                 />
@@ -512,58 +550,51 @@ export default function MasterData() {
 
               {activeTab === 'supplier' && (
                 <>
-                  <Field label="Alamat">
+                  <Field label="Alamat Kantor / Gudang" hint="Opsional, alamat pengiriman atau domisili supplier">
                     <TextInput
                       value={formAlamat}
                       onChange={setFormAlamat}
-                      placeholder="Alamat lengkap"
+                      placeholder="Contoh: Jl. Pahlawan No. 45, Semarang"
                     />
                   </Field>
-                  <Field label="Telepon">
+                  <Field label="Nomor Kontak / Telepon" hint="Opsional, nomor telepon kantor atau perwakilan supplier">
                     <TextInput
                       value={formTelepon}
                       onChange={setFormTelepon}
-                      placeholder="cth. 0812xxxxxxx"
+                      placeholder="Contoh: 0812-3456-7890 / 024-8765432"
                       type="tel"
                     />
                   </Field>
                 </>
               )}
 
-              {formError && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  {formError}
-                </p>
+              {formError && formNama.trim() && (
+                <div className="flex items-start gap-2.5 p-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl animate-[fadeIn_150ms_ease-out]">
+                  <AlertCircle size={15} className="shrink-0 mt-0.5 text-red-600" />
+                  <span>{formError}</span>
+                </div>
               )}
 
-              <div className="flex items-center justify-end gap-3 pt-1">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <ButtonCancel onClick={closeModal} disabled={submitting} />
-                <ButtonSubmit onClick={handleSubmit} loading={submitting} loadingLabel="Menyimpan...">
-                  Simpan
+                <ButtonSubmit type="submit" loading={submitting} loadingLabel="Menyimpan...">
+                  {editing ? 'Simpan Perubahan' : `Tambah ${cfg.singular}`}
                 </ButtonSubmit>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
 
       {/* MODAL KONFIRMASI HAPUS */}
-      {deleteTarget && cfg && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-base font-semibold text-slate-900 mb-2">Hapus {cfg.singular}?</h3>
-            <p className="text-sm text-slate-500 mb-6">
-              Yakin mau hapus "{deleteTarget.nama}"? Tindakan ini tidak bisa dibatalkan.
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <ButtonCancel onClick={() => setDeleteTarget(null)} disabled={deleting} />
-              <ButtonSubmit onClick={handleDelete} loading={deleting} tone="danger" loadingLabel="Menghapus...">
-                Hapus
-              </ButtonSubmit>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget && !!cfg}
+        itemName={deleteTarget?.nama || ''}
+        itemType={cfg?.singular || 'Data'}
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
     </>
   );
 }

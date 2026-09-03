@@ -11,6 +11,8 @@ import { setKaryawanPassword } from '../api/auth';
 import type { Departemen } from '../api/masterData/departemen';
 import { createPortal } from 'react-dom';
 import { Skeleton } from '../components/shared/skeleton';
+import ConfirmDeleteModal from '../components/shared/ConfirmDeleteModal';
+import { KeyRound, X } from 'lucide-react';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest' | 'cabang';
 
@@ -69,6 +71,8 @@ export default function EditKaryawanPage() {
 
     // BARU: state buat modal "Ubah password" (admin nentuin sendiri password-nya)
     const [showSetPassword, setShowSetPassword] = useState<boolean>(false);
+    const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+    const [deleting, setDeleting] = useState<boolean>(false);
 
     const isCabang = form.role === 'cabang';
 
@@ -138,9 +142,22 @@ export default function EditKaryawanPage() {
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
+        setGeneralError('');
+
+        const newErrors: FieldErrors = {};
+        if (!form.name.trim()) newErrors.name = ['Nama lengkap wajib diisi.'];
+        if (!form.role) newErrors.role = ['Role wajib dipilih.'];
+        if (!isCabang && !form.nik.trim()) newErrors.nik = ['NIK karyawan wajib diisi.'];
+        if (isCabang && !form.lokasi_kantor_id) newErrors.lokasi_kantor_id = ['Cabang penempatan wajib dipilih.'];
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            toast.error('Mohon lengkapi kolom yang bertanda bintang (*).');
+            return;
+        }
+
         setSaving(true);
         setErrors({});
-        setGeneralError('');
 
         try {
             const payload = {
@@ -156,6 +173,7 @@ export default function EditKaryawanPage() {
         } catch (err: any) {
             if (err.response?.status === 422) {
                 setErrors(err.response.data.errors ?? {});
+                toast.error('Ada data yang belum sesuai dengan format server.');
             } else if (err.response?.status === 403) {
                 setGeneralError('Anda tidak punya akses untuk mengubah data ini.');
             } else {
@@ -166,15 +184,21 @@ export default function EditKaryawanPage() {
         }
     }
 
-    async function handleDelete() {
-        if (!window.confirm('Hapus user ini? Tindakan ini tidak bisa dibatalkan.')) return;
+    function handleDelete() {
+        setShowDeleteModal(true);
+    }
 
+    async function confirmDeleteUser() {
+        setDeleting(true);
         try {
             await api.delete(`/karyawan/${id}`);
             toast.success('User berhasil dihapus.');
             navigate('/karyawan');
-        } catch {
-            toast.error('Gagal menghapus user.');
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Gagal menghapus user.');
+            setShowDeleteModal(false);
+        } finally {
+            setDeleting(false);
         }
     }
 
@@ -334,6 +358,17 @@ export default function EditKaryawanPage() {
                     onSubmit={handleSetPassword}
                 />
             )}
+
+            <ConfirmDeleteModal
+                isOpen={showDeleteModal}
+                itemName={form.name || 'User ini'}
+                itemCode={form.nik || undefined}
+                itemType="Karyawan / User"
+                warningMessage="Akun login dan seluruh hak akses user ini akan dicabut secara permanen."
+                loading={deleting}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={confirmDeleteUser}
+            />
         </>
     );
 }
@@ -355,16 +390,22 @@ function SetPasswordModal({
         e.preventDefault();
         setErrors({});
 
+        const newErrors: { password?: string; confirmation?: string } = {};
         if (!password.trim()) {
-            setErrors({ password: 'Password baru wajib diisi.' });
-            return;
+            newErrors.password = 'Password baru wajib diisi.';
+        } else if (password.length < 6) {
+            newErrors.password = 'Password minimal 6 karakter.';
         }
+
         if (!confirmation.trim()) {
-            setErrors({ confirmation: 'Konfirmasi password wajib diisi.' });
-            return;
+            newErrors.confirmation = 'Konfirmasi password wajib diisi.';
+        } else if (password && confirmation && password !== confirmation) {
+            newErrors.confirmation = 'Konfirmasi password tidak cocok.';
         }
-        if (password !== confirmation) {
-            setErrors({ confirmation: 'Konfirmasi password tidak sama.' });
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            toast.error('Mohon periksa kembali isian password.');
             return;
         }
 
@@ -377,6 +418,7 @@ function SetPasswordModal({
                 setErrors({
                     password: apiErrors.password?.[0] ?? 'Periksa kembali password yang diisi.',
                 });
+                toast.error(apiErrors.password?.[0] || 'Password tidak memenuhi kriteria.');
             } else if (err.response?.status === 403) {
                 setErrors({ password: 'Anda tidak punya akses untuk mengubah password ini.' });
             } else {
@@ -389,46 +431,70 @@ function SetPasswordModal({
 
     return createPortal(
         <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 backdrop-blur-[2px] p-4 animate-[fadeIn_150ms_ease-out]"
             onClick={onClose}
         >
-            <form
-                onSubmit={handleSubmit}
-                className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl"
+            <div
+                className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h3 className="text-sm font-semibold text-gray-900">Ubah password</h3>
-                <p className="text-xs text-gray-500 mt-1">
-                    Tentukan password baru untuk akun ini secara langsung.
-                </p>
+                <div className="flex items-start justify-between p-6 pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3.5">
+                        <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0">
+                            <KeyRound size={22} className="text-blue-600" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-semibold text-slate-900 leading-tight">Ubah Password</h3>
+                            <p className="text-xs text-slate-500 mt-0.5">Tentukan kata sandi baru untuk akun pengguna ini.</p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={submitting}
+                        aria-label="Tutup"
+                        className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-40"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
 
-                <div className="mt-4 space-y-3">
-                    <Field label="Password baru" error={errors.password} required>
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <Field label="Password Baru" error={errors.password} required>
                         <TextInput
                             type="password"
                             autoFocus
+                            placeholder="Minimal 6 karakter"
                             value={password}
-                            onChange={setPassword}
+                            onChange={(v) => {
+                                setPassword(v);
+                                if (errors.password) setErrors((prev) => ({ ...prev, password: '' }));
+                            }}
                             error={!!errors.password}
                         />
                     </Field>
-                    <Field label="Konfirmasi password" error={errors.confirmation} required>
+
+                    <Field label="Konfirmasi Password Baru" error={errors.confirmation} required>
                         <TextInput
                             type="password"
+                            placeholder="Ulangi password baru"
                             value={confirmation}
-                            onChange={setConfirmation}
+                            onChange={(v) => {
+                                setConfirmation(v);
+                                if (errors.confirmation) setErrors((prev) => ({ ...prev, confirmation: '' }));
+                            }}
                             error={!!errors.confirmation}
                         />
                     </Field>
-                </div>
 
-                <div className="mt-5 flex justify-end gap-3">
-                    <ButtonCancel onClick={onClose} disabled={submitting} />
-                    <ButtonSubmit type="submit" loading={submitting} loadingLabel="Menyimpan...">
-                        Simpan password
-                    </ButtonSubmit>
-                </div>
-            </form>
+                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
+                        <ButtonCancel onClick={onClose} disabled={submitting} />
+                        <ButtonSubmit type="submit" loading={submitting} loadingLabel="Menyimpan...">
+                            Simpan Password
+                        </ButtonSubmit>
+                    </div>
+                </form>
+            </div>
         </div>,
         document.body
     );

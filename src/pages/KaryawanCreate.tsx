@@ -100,9 +100,24 @@ export default function CreateKaryawanPage() {
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
+        setGeneralError('');
+
+        const newErrors: FieldErrors = {};
+        if (!form.name.trim()) newErrors.name = ['Nama lengkap wajib diisi.'];
+        if (!form.password.trim()) newErrors.password = ['Password awal wajib diisi.'];
+        else if (form.password.length < 6) newErrors.password = ['Password minimal 6 karakter.'];
+        if (!form.role) newErrors.role = ['Role wajib dipilih.'];
+        if (!isCabang && !form.nik.trim()) newErrors.nik = ['NIK karyawan wajib diisi.'];
+        if (isCabang && !form.lokasi_kantor_id) newErrors.lokasi_kantor_id = ['Cabang penempatan wajib dipilih.'];
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            toast.error('Mohon lengkapi kolom yang bertanda bintang (*).');
+            return;
+        }
+
         setSaving(true);
         setErrors({});
-        setGeneralError('');
 
         try {
             const payload = {
@@ -121,6 +136,7 @@ export default function CreateKaryawanPage() {
                 // di bawah) -- gak perlu toast lagi, cukup banner umum kalau memang
                 // ada pesan non-per-field dari server.
                 setErrors(err.response.data.errors ?? {});
+                toast.error('Ada data yang belum sesuai dengan format server.');
             } else if (err.response?.status === 403) {
                 setGeneralError('Anda tidak punya akses untuk menambah user.');
             } else {

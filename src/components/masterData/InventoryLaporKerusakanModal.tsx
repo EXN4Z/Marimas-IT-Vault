@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { laporKerusakanInventory } from '../../api/transaksi/inventoryPenanganan';
 import type { Inventory } from '../../api/masterData/inventory';
 import InventoryFotoUpload from './InventoryFotoUpload';
@@ -17,19 +18,24 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
   const [keluhan, setKeluhan] = useState('');
   const [fotoKerusakan, setFotoKerusakan] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<{ jenis_kerusakan?: string; keluhan?: string; foto?: string }>({});
+  const [serverError, setServerError] = useState('');
 
   const handleSubmit = async () => {
-    if (!jenisKerusakan.trim() || !keluhan.trim()) {
-      setError('Jenis kerusakan dan keluhan wajib diisi.');
+    const newErrors: { jenis_kerusakan?: string; keluhan?: string; foto?: string } = {};
+    if (!jenisKerusakan.trim()) newErrors.jenis_kerusakan = 'Jenis kerusakan wajib dipilih.';
+    if (!keluhan.trim()) newErrors.keluhan = 'Keluhan / kronologi kerusakan wajib diisi.';
+    if (fotoKerusakan.length === 0) newErrors.foto = 'Unggah minimal 1 foto bukti kerusakan.';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error('Mohon lengkapi seluruh data laporan kerusakan.');
       return;
     }
-    if (fotoKerusakan.length === 0) {
-      setError('Unggah minimal 1 foto bukti kerusakan.');
-      return;
-    }
+
     setSubmitting(true);
-    setError('');
+    setErrors({});
+    setServerError('');
     try {
       await laporKerusakanInventory({
         inventory_id: inventory.id,
@@ -37,14 +43,16 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
         keluhan: keluhan.trim(),
         foto: fotoKerusakan[0], // ambil 1 file pertama, sesuai kolom foto di backend
       });
+      toast.success('Laporan kerusakan berhasil dikirim.');
       onSuccess();
     } catch (err: any) {
-      setError(
+      const msg =
         err.response?.data?.errors?.jenis_kerusakan?.[0] ||
-          err.response?.data?.errors?.foto?.[0] ||
-          err.response?.data?.message ||
-          'Gagal mengirim laporan. Coba lagi.'
-      );
+        err.response?.data?.errors?.foto?.[0] ||
+        err.response?.data?.message ||
+        'Gagal mengirim laporan. Coba lagi.';
+      setServerError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -52,41 +60,48 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-[fadeIn_150ms_ease-out]"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 backdrop-blur-[2px] p-4 animate-[fadeIn_150ms_ease-out]"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !submitting) onClose();
       }}
     >
-      <div className="bg-white rounded-2xl shadow-xl ring-1 ring-slate-900/5 w-full max-w-sm max-h-[90vh] flex flex-col animate-[slideUp_180ms_ease-out]">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              {inventory.kode_inventory} · {inventory.nama || '-'}
-            </p>
-            <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-              <AlertTriangle size={18} className="text-red-500" />
-              Lapor Kerusakan
-            </h3>
+        <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-red-600 shadow-sm shrink-0">
+              <AlertTriangle size={20} className="text-red-600" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-slate-900 leading-tight">Lapor Kerusakan</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                <span className="font-mono font-medium text-slate-700">{inventory.kode_inventory}</span> · {inventory.nama || '-'}
+              </p>
+            </div>
           </div>
           <button
             type="button"
             onClick={onClose}
+            disabled={submitting}
             aria-label="Tutup"
-            className="grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-40"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M1 1L15 15M15 1L1 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-            </svg>
+            <X size={18} />
           </button>
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 overflow-y-auto">
-        <div className="flex flex-col gap-3 mb-4">
-          <Field label="Jenis Kerusakan">
-            <SelectField value={jenisKerusakan} onChange={setJenisKerusakan}>
-              <option value="">Pilih jenis...</option>
+        <div className="px-6 py-5 overflow-y-auto space-y-4">
+          <Field label="Jenis Kerusakan" error={errors.jenis_kerusakan} required>
+            <SelectField
+              value={jenisKerusakan}
+              onChange={(v) => {
+                setJenisKerusakan(v);
+                if (errors.jenis_kerusakan) setErrors((prev) => ({ ...prev, jenis_kerusakan: '' }));
+              }}
+              error={!!errors.jenis_kerusakan}
+            >
+              <option value="">Pilih jenis kerusakan...</option>
               {JENIS_KERUSAKAN_OPTIONS.map((opsi) => (
                 <option key={opsi.value} value={opsi.value}>
                   {opsi.label}
@@ -94,38 +109,49 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
               ))}
             </SelectField>
           </Field>
-          <Field label="Keluhan">
-            <Textarea value={keluhan} onChange={setKeluhan} placeholder="Jelasin kondisi & kejadiannya..." />
+
+          <Field label="Keluhan / Kronologi Kerusakan" error={errors.keluhan} required>
+            <Textarea
+              value={keluhan}
+              onChange={(v) => {
+                setKeluhan(v);
+                if (errors.keluhan) setErrors((prev) => ({ ...prev, keluhan: '' }));
+              }}
+              placeholder="Jelaskan kondisi dan kronologi kejadiannya..."
+              error={!!errors.keluhan}
+            />
           </Field>
 
-          <InventoryFotoUpload
-            files={fotoKerusakan}
-            onChange={setFotoKerusakan}
-            max={1}
-            label="Foto Bukti Kerusakan"
-          />
-        </div>
+          <div>
+            <InventoryFotoUpload
+              files={fotoKerusakan}
+              onChange={(files) => {
+                setFotoKerusakan(files);
+                if (errors.foto) setErrors((prev) => ({ ...prev, foto: '' }));
+              }}
+              max={1}
+              label="Foto Bukti Kerusakan"
+            />
+            {errors.foto && (
+              <p className="mt-1 text-xs text-red-600 font-medium">{errors.foto}</p>
+            )}
+          </div>
 
-        {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
-            {error}
-          </p>
-        )}
+          {serverError && (
+            <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg p-3 animate-[fadeIn_150ms_ease-out]">
+              {serverError}
+            </p>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 shrink-0">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 shrink-0 bg-slate-50/60">
           <ButtonCancel onClick={onClose} disabled={submitting} />
           <ButtonSubmit onClick={handleSubmit} loading={submitting} tone="danger" loadingLabel="Mengirim...">
             Kirim Laporan
           </ButtonSubmit>
         </div>
       </div>
-
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(8px) scale(.98) } to { opacity: 1; transform: translateY(0) scale(1) } }
-      `}</style>
     </div>
   );
 }

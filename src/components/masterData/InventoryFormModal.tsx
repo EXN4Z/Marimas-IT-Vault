@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   createInventory,
   getInventory,
@@ -331,10 +332,14 @@ export default function InventoryFormModal({
   // ================= Validasi & submit =================
   function validate(): boolean {
     const next: Record<string, string> = {};
-    if (!form.nama?.trim()) next.nama = 'Nama wajib diisi';
-    if (!inventory && form.kategori_id == null) next.kategori_id = 'Kategori wajib dipilih';
+    if (!form.nama?.trim()) next.nama = 'Nama inventory wajib diisi.';
+    if (!inventory && form.kategori_id == null) next.kategori_id = 'Kategori barang wajib dipilih.';
     setErrors((prev) => ({ ...prev, ...next }));
-    return Object.keys(next).length === 0;
+    const hasErrors = Object.keys(next).length > 0;
+    if (hasErrors) {
+      toast.error('Mohon lengkapi kolom yang bertanda bintang (*).');
+    }
+    return !hasErrors;
   }
 
   async function handleSubmit(e: React.FormEvent) {

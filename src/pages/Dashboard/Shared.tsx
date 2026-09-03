@@ -471,20 +471,21 @@ export function RingkasanInventoryCard({
 
 // ==== Hero Chart: Tren Pembelian Inventory ====
 export function HeroTrenPembelianInventoryChart({
-  trenPembelianInventory,
+  trenPembelianInventory = [],
   className = '',
 }: {
-  trenPembelianInventory: TrenPembelianInventory[];
+  trenPembelianInventory?: TrenPembelianInventory[];
   className?: string;
 }) {
-  const totalTahunIni = trenPembelianInventory.reduce((sum, d) => sum + d.jumlah, 0);
-  const maxJumlah = trenPembelianInventory.length ? Math.max(...trenPembelianInventory.map((d) => d.jumlah)) : 0;
-  const avgJumlah = trenPembelianInventory.length ? totalTahunIni / trenPembelianInventory.length : 0;
-  const peakIndex = maxJumlah > 0 ? trenPembelianInventory.findIndex((d) => d.jumlah === maxJumlah) : -1;
+  const safeData = Array.isArray(trenPembelianInventory) ? trenPembelianInventory : [];
+  const totalTahunIni = safeData.reduce((sum, d) => sum + (d?.jumlah || 0), 0);
+  const maxJumlah = safeData.length ? Math.max(...safeData.map((d) => d?.jumlah || 0)) : 0;
+  const avgJumlah = safeData.length ? totalTahunIni / safeData.length : 0;
+  const peakIndex = maxJumlah > 0 ? safeData.findIndex((d) => d?.jumlah === maxJumlah) : -1;
 
-  const lastIdx = trenPembelianInventory.length - 1;
-  const lastVal = lastIdx >= 0 ? trenPembelianInventory[lastIdx].jumlah : 0;
-  const prevVal = lastIdx >= 1 ? trenPembelianInventory[lastIdx - 1].jumlah : null;
+  const lastIdx = safeData.length - 1;
+  const lastVal = lastIdx >= 0 ? (safeData[lastIdx]?.jumlah || 0) : 0;
+  const prevVal = lastIdx >= 1 ? (safeData[lastIdx - 1]?.jumlah || 0) : null;
   const delta = prevVal !== null ? lastVal - prevVal : null;
 
   const renderDot = (props: any) => {
@@ -612,13 +613,14 @@ const STATUS_ASET_COLOR: Record<string, string> = {
 };
 
 export function StatusInventoryDonutCard({
-  statusInventoryDistribusi,
+  statusInventoryDistribusi = [],
   className = '',
 }: {
-  statusInventoryDistribusi: StatusInventoryDistribusi[];
+  statusInventoryDistribusi?: StatusInventoryDistribusi[];
   className?: string;
 }) {
-  const total = statusInventoryDistribusi.reduce((sum, d) => sum + d.jumlah, 0);
+  const safeData = Array.isArray(statusInventoryDistribusi) ? statusInventoryDistribusi : [];
+  const total = safeData.reduce((sum, d) => sum + (d?.jumlah || 0), 0);
 
   return (
     <div className={`${cardClass} ${className}`}>
@@ -764,14 +766,15 @@ export function InventoryPerhatianCard({
 
 // ==== Top Inventory Items ====
 export function TopInventoryCard({
-  inventoryPerMerek,
+  inventoryPerMerek = [],
   className = '',
 }: {
-  inventoryPerMerek: InventoryPerMerek[];
+  inventoryPerMerek?: InventoryPerMerek[];
   className?: string;
 }) {
   const navigate = useNavigate();
-  const topItems = useMemo(() => inventoryPerMerek.slice(0, 5), [inventoryPerMerek]);
+  const safeData = Array.isArray(inventoryPerMerek) ? inventoryPerMerek : [];
+  const topItems = useMemo(() => safeData.slice(0, 5), [safeData]);
   const maxCount = topItems.length > 0 ? Math.max(...topItems.map((i) => i.jumlah), 1) : 1;
 
   return (
@@ -832,14 +835,15 @@ export function TopInventoryCard({
 
 // ==== Distribusi Departemen Card ====
 export function DepartemenDistribusiCard({
-  departemen,
+  departemen = [],
   className = '',
 }: {
-  departemen: DepartemenDistribusi[];
+  departemen?: DepartemenDistribusi[];
   className?: string;
 }) {
-  const totalKaryawan = useMemo(() => departemen.reduce((s, d) => s + d.jumlah, 0), [departemen]);
-  const sorted = useMemo(() => [...departemen].sort((a, b) => b.jumlah - a.jumlah).slice(0, 5), [departemen]);
+  const safeDepartemen = Array.isArray(departemen) ? departemen : [];
+  const totalKaryawan = useMemo(() => safeDepartemen.reduce((s, d) => s + (d?.jumlah || 0), 0), [safeDepartemen]);
+  const sorted = useMemo(() => [...safeDepartemen].sort((a, b) => (b?.jumlah || 0) - (a?.jumlah || 0)).slice(0, 5), [safeDepartemen]);
 
   return (
     <div className={`${cardClass} ${className}`}>
@@ -847,7 +851,7 @@ export function DepartemenDistribusiCard({
         icon={Building2}
         tone="emerald"
         title="Distribusi Departemen"
-        subtitle={`${departemen.length} Departemen / ${totalKaryawan} Karyawan`}
+        subtitle={`${safeDepartemen.length} Departemen / ${totalKaryawan} Karyawan`}
         right={
           <span className="text-xs font-bold text-[#34A853] bg-[#E7F6EC] px-3 py-1.5 rounded-lg">
             {totalKaryawan} Staff
@@ -888,16 +892,17 @@ export function DepartemenDistribusiCard({
 
 // ==== Notifikasi Card ====
 export function NotifikasiCard({
-  notifications,
+  notifications = [],
   onMarkAsRead,
   className = '',
 }: {
-  notifications: NotificationItem[];
+  notifications?: NotificationItem[];
   onMarkAsRead: (id: string) => void;
   className?: string;
 }) {
   const navigate = useNavigate();
-  const unreadCount = notifications.filter((n) => !n.read_at).length;
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
+  const unreadCount = safeNotifications.filter((n) => !n?.read_at).length;
 
   const handleClick = (n: NotificationItem) => {
     if (!n.read_at) onMarkAsRead(n.id);
@@ -922,13 +927,13 @@ export function NotifikasiCard({
         }
       />
 
-      {notifications.length === 0 ? (
+      {safeNotifications.length === 0 ? (
         <div className="py-6 text-center">
           <p className="text-xs text-[#A9A9C6]">Belum ada notifikasi</p>
         </div>
       ) : (
         <ul className="flex flex-col gap-2 overflow-y-auto pr-0.5 my-auto max-h-[190px]">
-          {notifications.slice(0, 5).map((n) => {
+          {safeNotifications.slice(0, 5).map((n) => {
             const unread = !n.read_at;
             return (
               <li
@@ -940,8 +945,8 @@ export function NotifikasiCard({
               >
                 <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${unread ? 'bg-[#5A32FA]' : 'bg-[#D5D5E8]'}`} />
                 <div className="min-w-0 flex-1">
-                  <p className={`text-xs leading-snug ${unread ? 'text-[#171633] font-semibold' : 'text-[#666687]'}`}>{n.data.message}</p>
-                  <p className="text-[10px] text-[#A9A9C6] mt-1">{new Date(n.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</p>
+                  <p className={`text-xs leading-snug ${unread ? 'text-[#171633] font-semibold' : 'text-[#666687]'}`}>{n.data?.message || 'Notifikasi baru'}</p>
+                  <p className="text-[10px] text-[#A9A9C6] mt-1">{n.created_at ? new Date(n.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }) : '-'}</p>
                 </div>
               </li>
             );
@@ -950,7 +955,7 @@ export function NotifikasiCard({
       )}
 
       <div className="pt-3 border-t border-[#F0F1F7] flex items-center justify-between text-[10px] text-[#A9A9C6]">
-        <span>{notifications.length} notifikasi tersimpan</span>
+        <span>{safeNotifications.length} notifikasi tersimpan</span>
         <span>Auto-sync Pusher</span>
       </div>
     </div>
@@ -990,20 +995,21 @@ function formatWaktuSingkat(iso: string): string {
 }
 
 function AktivitasTimelineList({
-  events,
+  events = [],
   timeFormatter,
 }: {
-  events: AktivitasInventoryTerbaru[];
+  events?: AktivitasInventoryTerbaru[];
   timeFormatter: (waktu: string) => string;
 }) {
+  const safeEvents = Array.isArray(events) ? events : [];
   return (
     <ul className="flex flex-col">
-      {events.map((ev, idx) => {
+      {safeEvents.map((ev, idx) => {
         const s = AKTIVITAS_ASET_STYLE[ev.type] || { color: THEME.slate, label: 'mengubah status', tone: 'slate' as const };
         const kode = ev.inventory?.kode_inventory || '-';
         const pelaku =
           ev.nama ?? (ev.type === 'mulai_perbaikan' || ev.type === 'selesai_perbaikan' ? 'Admin' : null);
-        const isLast = idx === events.length - 1;
+        const isLast = idx === safeEvents.length - 1;
         return (
           <li key={`${ev.type}-${idx}`} className="flex gap-3">
             <div className="flex flex-col items-center">
@@ -1025,13 +1031,14 @@ function AktivitasTimelineList({
 }
 
 export function AktivitasInventoryCard({
-  aktivitasInventoryTerbaru,
+  aktivitasInventoryTerbaru = [],
   className = '',
 }: {
-  aktivitasInventoryTerbaru: AktivitasInventoryTerbaru[];
+  aktivitasInventoryTerbaru?: AktivitasInventoryTerbaru[];
   className?: string;
 }) {
   const navigate = useNavigate();
+  const safeAktivitas = Array.isArray(aktivitasInventoryTerbaru) ? aktivitasInventoryTerbaru : [];
 
   return (
     <div className={`${cardClass} ${className}`}>
@@ -1050,11 +1057,11 @@ export function AktivitasInventoryCard({
         }
       />
 
-      {aktivitasInventoryTerbaru.length === 0 ? (
+      {safeAktivitas.length === 0 ? (
         <p className="text-xs text-[#A9A9C6] py-6 text-center">Belum ada aktivitas inventory.</p>
       ) : (
         <div className="overflow-y-auto pr-0.5 my-auto max-h-[190px]">
-          <AktivitasTimelineList events={aktivitasInventoryTerbaru} timeFormatter={formatWaktuSingkat} />
+          <AktivitasTimelineList events={safeAktivitas} timeFormatter={formatWaktuSingkat} />
         </div>
       )}
 
@@ -1073,10 +1080,10 @@ type SortDir = 'terbaru' | 'terlama';
 const TABLE_PAGE_SIZE = 8;
 
 export function RiwayatAktivitasTableCard({
-  aktivitas,
+  aktivitas = [],
   className = '',
 }: {
-  aktivitas: AktivitasInventoryTerbaru[];
+  aktivitas?: AktivitasInventoryTerbaru[];
   className?: string;
 }) {
   const navigate = useNavigate();
@@ -1084,9 +1091,11 @@ export function RiwayatAktivitasTableCard({
   const [sortDir, setSortDir] = useState<SortDir>('terbaru');
   const [page, setPage] = useState(1);
 
+  const safeAktivitas = Array.isArray(aktivitas) ? aktivitas : [];
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    let list = aktivitas;
+    let list = safeAktivitas;
     if (q) {
       list = list.filter((ev) => {
         const kode = ev.inventory?.kode_inventory?.toLowerCase() ?? '';
@@ -1101,7 +1110,7 @@ export function RiwayatAktivitasTableCard({
       return sortDir === 'terbaru' ? tb - ta : ta - tb;
     });
     return sorted;
-  }, [aktivitas, search, sortDir]);
+  }, [safeAktivitas, search, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / TABLE_PAGE_SIZE));
   const clampedPage = Math.min(page, totalPages);
@@ -1276,9 +1285,11 @@ export function CalendarCard({
   const weeks: { date: Date; inMonth: boolean }[][] = [];
   for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
 
+  const safeAktivitas = Array.isArray(aktivitas) ? aktivitas : [];
+
   const aktivitasPerTanggal = useMemo(() => {
     const map = new Map<string, AktivitasInventoryTerbaru[]>();
-    for (const ev of aktivitas) {
+    for (const ev of safeAktivitas) {
       const d = new Date(ev.waktu);
       if (isNaN(d.getTime())) continue;
       const key = dateKeyLocal(d);
@@ -1287,7 +1298,7 @@ export function CalendarCard({
       else map.set(key, [ev]);
     }
     return map;
-  }, [aktivitas]);
+  }, [safeAktivitas]);
 
   const aktivitasHariIni = useMemo(() => {
     const list = aktivitasPerTanggal.get(dateKeyLocal(selected)) ?? [];

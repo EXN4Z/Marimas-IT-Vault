@@ -124,8 +124,12 @@ export async function fetchNotifications(): Promise<NotificationsResponse> {
 }
 
 export async function fetchDepartemenDistribusi(): Promise<DepartemenDistribusi[]> {
-  const res = await api.get<DepartemenDistribusi[]>('/dashboard/kpd');
-  return res.data;
+  try {
+    const res = await api.get<DepartemenDistribusi[]>('/dashboard/kpd');
+    return Array.isArray(res.data) ? res.data : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchRingkasanInventory(): Promise<RingkasanInventory> {
@@ -164,8 +168,12 @@ export async function fetchRingkasanInventory(): Promise<RingkasanInventory> {
 // tanpa filter type/search) — sumber sama persis dengan tab "Riwayat Inventory"
 // di Inventaris, cuma dipotong ke 5 item terbaru buat widget dashboard.
 export async function fetchAktivitasInventoryTerbaru(): Promise<AktivitasInventoryTerbaru[]> {
-  const res = await getRiwayatInventory(1, 10);
-  return res.data.slice(0, 5);
+  try {
+    const res = await getRiwayatInventory(1, 10);
+    return Array.isArray(res?.data) ? res.data.slice(0, 5) : [];
+  } catch {
+    return [];
+  }
 }
 
 // Aktivitas inventory dalam jumlah lebih banyak (bukan cuma 5 teratas) -- dipakai
@@ -174,8 +182,12 @@ export async function fetchAktivitasInventoryTerbaru(): Promise<AktivitasInvento
 // beberapa bulan ke belakang. Tetap satu panggilan API aja (bukan loop per
 // tanggal), sumbernya sama persis dengan tab Riwayat Inventory di Inventaris.
 export async function fetchAktivitasInventoryKalender(): Promise<AktivitasInventoryTerbaru[]> {
-  const res = await getRiwayatInventory(1, 200);
-  return res.data;
+  try {
+    const res = await getRiwayatInventory(1, 200);
+    return Array.isArray(res?.data) ? res.data : [];
+  } catch {
+    return [];
+  }
 }
 
 // GET /inventory buat role non-admin sudah discoping backend (lihat
@@ -475,9 +487,9 @@ export function useDashboardCore(options: { includeDepartemen?: boolean } = {}) 
     user: data,
     loading,
     error,
-    notifications,
+    notifications: Array.isArray(notifications) ? notifications : [],
     handleMarkAsRead,
-    departemen: departemen ?? [],
+    departemen: Array.isArray(departemen) ? departemen : [],
   };
 }
 
@@ -590,11 +602,11 @@ export function useDashboardAnalytics(
 
   return {
     ringkasanInventory,
-    inventoryPerMerek: inventoryPerMerek ?? [],
+    inventoryPerMerek: Array.isArray(inventoryPerMerek) ? inventoryPerMerek : [],
     inventoryPerhatian,
-    trenPembelianInventory: trenPembelianInventory ?? [],
-    statusInventoryDistribusi: statusInventoryDistribusi ?? [],
-    aktivitasInventoryTerbaru: aktivitasInventoryTerbaru ?? [],
-    aktivitasInventoryKalender: aktivitasInventoryKalender ?? [],
+    trenPembelianInventory: Array.isArray(trenPembelianInventory) ? trenPembelianInventory : [],
+    statusInventoryDistribusi: Array.isArray(statusInventoryDistribusi) ? statusInventoryDistribusi : [],
+    aktivitasInventoryTerbaru: Array.isArray(aktivitasInventoryTerbaru) ? aktivitasInventoryTerbaru : [],
+    aktivitasInventoryKalender: Array.isArray(aktivitasInventoryKalender) ? aktivitasInventoryKalender : [],
   };
 }

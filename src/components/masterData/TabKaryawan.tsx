@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import api from '../../api/axios';
 import { importKaryawan } from '../../api/auth';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import Pagination from '../shared/Pagination';
 import { Skeleton, SkeletonCircle } from '../shared/skeleton';
+import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'cabang';
 type TabKey = 'semua' | 'karyawan' | 'hr_manajer' | 'admin' | 'cabang';
@@ -177,14 +179,14 @@ export default function TabKaryawan() {
         setDeleting(true);
         try {
             await api.delete(`/karyawan/${userToDelete.id}`);
+            toast.success(`User ${userToDelete.name} berhasil dihapus.`);
             setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
             setUserToDelete(null);
         } catch (err: any) {
-            if (err.response?.status === 403) {
-                setErrorMsg('Anda tidak punya akses untuk menghapus user ini.');
-            } else {
-                setErrorMsg('Gagal menghapus user. Coba lagi.');
-            }
+            const msg = err.response?.status === 403
+                ? 'Anda tidak punya akses untuk menghapus user ini.'
+                : err.response?.data?.message || 'Gagal menghapus user. Coba lagi.';
+            toast.error(msg);
             setUserToDelete(null);
         } finally {
             setDeleting(false);
@@ -327,14 +329,16 @@ export default function TabKaryawan() {
                 </div>
             </div>
 
-            {userToDelete && (
-                <ConfirmDeleteModal
-                    user={userToDelete}
-                    deleting={deleting}
-                    onCancel={() => setUserToDelete(null)}
-                    onConfirm={confirmDelete}
-                />
-            )}
+            <ConfirmDeleteModal
+                isOpen={!!userToDelete}
+                itemName={userToDelete?.name || ''}
+                itemCode={userToDelete?.nik || undefined}
+                itemType="Karyawan / User"
+                warningMessage="Akun login dan seluruh hak akses user ini akan dicabut secara permanen."
+                loading={deleting}
+                onClose={() => setUserToDelete(null)}
+                onConfirm={confirmDelete}
+            />
 
             {/* BARU: modal import Excel */}
             {showImportModal && (
@@ -400,43 +404,6 @@ function UserRow({ user, isAdmin, onDelete, onEdit, onDetail }: UserRowProps) {
                         </button>
                     </>
                 )}
-            </div>
-        </div>
-    );
-}
-
-interface ConfirmDeleteModalProps {
-    user: User;
-    deleting: boolean;
-    onCancel: () => void;
-    onConfirm: () => void;
-}
-
-function ConfirmDeleteModal({ user, deleting, onCancel, onConfirm }: ConfirmDeleteModalProps) {
-    return (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-            <div className="bg-white rounded-xl w-full max-w-sm p-5 max-h-[90vh] overflow-y-auto">
-                <h2 className="text-base font-semibold text-gray-900 mb-1">Hapus user?</h2>
-                <p className="text-sm text-gray-500 mb-5">
-                    <span className="font-medium text-gray-700">{user.name}</span> akan dihapus permanen dan
-                    tidak bisa dikembalikan.
-                </p>
-                <div className="flex justify-end gap-2">
-                    <button
-                        onClick={onCancel}
-                        disabled={deleting}
-                        className="text-sm px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                        Batal
-                    </button>
-                    <button
-                        onClick={onConfirm}
-                        disabled={deleting}
-                        className="text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
-                    >
-                        {deleting ? 'Menghapus...' : 'Ya, hapus'}
-                    </button>
-                </div>
             </div>
         </div>
     );

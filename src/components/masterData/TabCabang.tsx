@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Building2, MapPin, Phone, Users, Map, Plus, Pencil, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { getCabang, createCabang, updateCabang, deleteCabang, type Cabang } from '../../api/cabang';
 import RouteModal from '../shared/RouteModal';
 import { Skeleton } from '../shared/skeleton';
 import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
+import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 
 const STAFF_ROLES = ['admin', 'hr'];
 
@@ -79,14 +81,26 @@ export default function TabCabang() {
     setModalOpen(false);
   };
 
+  const clearFieldError = (field: string) => {
+    if (formErrors[field] || formErrors._general) {
+      setFormErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        delete next._general;
+        return next;
+      });
+    }
+  };
+
   const handleSubmit = async () => {
     const clientErrors: Record<string, string> = {};
     if (!formNama.trim()) clientErrors.nama = 'Nama cabang wajib diisi.';
-    if (!formAlamat.trim()) clientErrors.alamat = 'Alamat wajib diisi.';
-    if (!formTelepon.trim()) clientErrors.telepon = 'Nomor telepon wajib diisi.';
-    if (!formLink.trim()) clientErrors.link = 'Link lokasi wajib diisi.';
+    if (!formAlamat.trim()) clientErrors.alamat = 'Alamat cabang wajib diisi.';
+    if (!formTelepon.trim()) clientErrors.telepon = 'Nomor telepon cabang wajib diisi.';
+    if (!formLink.trim()) clientErrors.link = 'Link lokasi Google Maps wajib diisi.';
     if (Object.keys(clientErrors).length > 0) {
       setFormErrors(clientErrors);
+      toast.error('Mohon lengkapi semua kolom yang wajib diisi.');
       return;
     }
 
@@ -101,8 +115,10 @@ export default function TabCabang() {
       };
       if (editing) {
         await updateCabang(editing.id, payload);
+        toast.success('Data cabang berhasil diperbarui.');
       } else {
         await createCabang(payload);
+        toast.success('Cabang baru berhasil ditambahkan.');
       }
       setModalOpen(false);
       loadData();
@@ -129,6 +145,7 @@ export default function TabCabang() {
     setDeleteError('');
     try {
       await deleteCabang(deleteTarget.id);
+      toast.success('Cabang berhasil dihapus.');
       setDeleteTarget(null);
       loadData();
     } catch (err: any) {
@@ -273,48 +290,61 @@ export default function TabCabang() {
               </p>
             )}
 
-            <Field label="Nama Cabang" error={formErrors.nama} required>
+            <Field label="Nama Cabang" error={formErrors.nama} required hint="Nama identitas kantor cabang">
               <TextInput
                 value={formNama}
-                onChange={setFormNama}
-                placeholder="Contoh: Kantor Pusat Semarang"
+                onChange={(val) => {
+                  setFormNama(val);
+                  clearFieldError('nama');
+                }}
+                placeholder="Contoh: Kantor Cabang Surabaya Barat"
                 error={!!formErrors.nama}
                 autoFocus
               />
             </Field>
 
-            <Field label="Alamat" error={formErrors.alamat} required>
+            <Field label="Alamat Lengkap" error={formErrors.alamat} required hint="Alamat fisik operasional kantor">
               <Textarea
                 value={formAlamat}
-                onChange={setFormAlamat}
+                onChange={(val) => {
+                  setFormAlamat(val);
+                  clearFieldError('alamat');
+                }}
                 rows={2}
-                placeholder="Alamat lengkap cabang..."
+                placeholder="Contoh: Jl. Mayjen Sungkono No. 88, Dukuh Pakis, Surabaya"
                 error={!!formErrors.alamat}
               />
             </Field>
 
-            <Field label="Nomor Telepon" error={formErrors.telepon} required>
+            <Field label="Nomor Telepon" error={formErrors.telepon} required hint="Nomor telepon aktif kantor / WhatsApp CS">
               <TextInput
                 value={formTelepon}
-                onChange={setFormTelepon}
-                placeholder="cth. 024-1234567"
+                onChange={(val) => {
+                  setFormTelepon(val);
+                  clearFieldError('telepon');
+                }}
+                placeholder="Contoh: 031-7345678 / 0812-3344-5566"
                 error={!!formErrors.telepon}
+                type="tel"
               />
             </Field>
 
-            <Field label="Link Lokasi (Google Maps, dsb)" error={formErrors.link} required>
+            <Field label="Link Lokasi Peta (Google Maps)" error={formErrors.link} required hint="Tautan URL Google Maps atau koordinat GPS">
               <TextInput
                 value={formLink}
-                onChange={setFormLink}
+                onChange={(val) => {
+                  setFormLink(val);
+                  clearFieldError('link');
+                }}
                 placeholder="https://maps.app.goo.gl/..."
                 error={!!formErrors.link}
               />
             </Field>
 
-            <div className="flex items-center justify-end gap-3 pt-1">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
               <ButtonCancel onClick={closeModal} disabled={submitting} />
               <ButtonSubmit onClick={handleSubmit} loading={submitting} loadingLabel="Menyimpan...">
-                Simpan
+                {editing ? 'Simpan Perubahan' : 'Tambah Cabang'}
               </ButtonSubmit>
             </div>
           </div>
@@ -322,39 +352,19 @@ export default function TabCabang() {
       )}
 
       {/* MODAL KONFIRMASI HAPUS */}
-      {deleteTarget && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-base font-semibold text-slate-900 mb-2">Hapus Cabang?</h3>
-            <p className="text-sm text-slate-500 mb-4">
-              Yakin mau hapus "{deleteTarget.nama}"? Tindakan ini tidak bisa dibatalkan.
-            </p>
-
-            {deleteError && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
-                {deleteError}
-              </p>
-            )}
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                disabled={deleting}
-                className="flex-1 text-sm font-medium py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex-1 text-sm font-semibold py-2.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-40"
-              >
-                {deleting ? 'Menghapus...' : 'Hapus'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget}
+        itemName={deleteTarget?.nama || ''}
+        itemType="Cabang"
+        loading={deleting}
+        errorMessage={deleteError}
+        warningMessage="Pastikan tidak ada data karyawan atau inventaris yang tertaut dengan cabang ini."
+        onClose={() => {
+          setDeleteTarget(null);
+          setDeleteError('');
+        }}
+        onConfirm={handleDelete}
+      />
     </>
   );
 }
