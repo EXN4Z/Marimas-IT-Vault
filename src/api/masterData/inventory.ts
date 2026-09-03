@@ -40,7 +40,7 @@ export interface Inventory {
   serial_number: string | null;
   jumlah: number;
   tanggal_garansi: string | null;
-  perusahaan: string | null;
+  perusahaan_id: number | null;
   keterangan: string | null;
   foto: string | null;
   supplier_id: number | null;
@@ -77,7 +77,7 @@ export interface InventoryFormValues {
   type?: string;
   jumlah?: number;
   tanggal_garansi?: string;
-  perusahaan?: string;
+  perusahaan_id?: number | null;
   keterangan?: string;
   foto?: File | null;
   supplier_id?: number | null;
@@ -112,7 +112,7 @@ function buildInventoryFormData(values: InventoryFormValues): FormData {
   if (values.tanggal_garansi) fd.append('tanggal_garansi', values.tanggal_garansi);
   if (values.tanggal_input) fd.append('tanggal_input', values.tanggal_input);
   if (values.tanggal_invoice) fd.append('tanggal_invoice', values.tanggal_invoice);
-  if (values.perusahaan) fd.append('perusahaan', values.perusahaan);
+  if (values.perusahaan_id != null) fd.append('perusahaan_id', String(values.perusahaan_id));
   if (values.keterangan) fd.append('keterangan', values.keterangan);
   if (values.foto) fd.append('foto', values.foto);
   if (values.supplier_id != null) fd.append('supplier_id', String(values.supplier_id));

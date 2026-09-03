@@ -12,6 +12,7 @@ import {
 } from '../../api/masterData/inventory';
 import { getKategori, type Kategori } from '../../api/masterData/kategori';
 import { getSupplier, type Supplier } from '../../api/masterData/supplier';
+import { getPerusahaan, type Perusahaan } from '../../api/perusahaan';
 import InventoryKelengkapanPicker, { type StagedKelengkapan } from './InventoryKelengkapanPicker';
 import { ButtonCancel, ButtonSubmit, Field, SelectField, inputClass, inputErrorClass } from '../shared/FormControls';
 
@@ -89,7 +90,7 @@ const EMPTY_FORM: FormState = {
   type: '',
   jumlah: '1',
   tanggal_garansi: '',
-  perusahaan: '',
+  perusahaan_id: null,
   keterangan: '',
   foto: null,
   supplier_id: null,
@@ -110,7 +111,7 @@ export default function InventoryFormModal({
   lockInventoryField,
   onStage,
 }: InventoryFormModalProps) {
-  // ================= Referensi: kategori, supplier, inventory induk, lokasi =================
+  // ================= Referensi: kategori, supplier, perusahaan, inventory induk, lokasi =================
   const [daftarKategori, setDaftarKategori] = useState<Kategori[]>([]);
   const [loadingKategori, setLoadingKategori] = useState(true);
   useEffect(() => {
@@ -139,6 +140,24 @@ export default function InventoryFormModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supplierOptions.length]);
   const effectiveSupplierOptions = supplierOptions.length > 0 ? supplierOptions : fetchedSupplierOptions;
+
+  const [daftarPerusahaan, setDaftarPerusahaan] = useState<Perusahaan[]>([]);
+  const [loadingPerusahaan, setLoadingPerusahaan] = useState(true);
+  useEffect(() => {
+    let active = true;
+    setLoadingPerusahaan(true);
+    getPerusahaan()
+      .then((data) => {
+        if (active) setDaftarPerusahaan(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoadingPerusahaan(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const [inventoryOptions, setInventoryOptions] = useState<Inventory[]>([]);
   const [loadingRefs, setLoadingRefs] = useState(false);
@@ -170,7 +189,7 @@ export default function InventoryFormModal({
           type: inventory.type || '',
           jumlah: inventory.jumlah ? String(inventory.jumlah) : '1',
           tanggal_garansi: inventory.tanggal_garansi ? inventory.tanggal_garansi.slice(0, 10) : '',
-          perusahaan: inventory.perusahaan || '',
+          perusahaan_id: inventory.perusahaan_id ?? null,
           keterangan: inventory.keterangan || '',
           foto: null,
           supplier_id: inventory.supplier_id ?? null,
@@ -706,8 +725,23 @@ export default function InventoryFormModal({
               </SelectField>
             </Field>
 
+            {/* Perusahaan sekarang dropdown yang menyambung ke perusahaan_id
+                (FK ke tabel perusahaan) -- sebelumnya field teks bebas. Yang
+                ditampilkan di opsi adalah nama perusahaan, yang dikirim ke
+                backend tetap id-nya. */}
             <Field label="Perusahaan">
-              <input className={inputClass} value={form.perusahaan} onChange={(e) => setField('perusahaan', e.target.value)} placeholder="cth. mpk, uth" />
+              <SelectField
+                value={form.perusahaan_id ?? ''}
+                disabled={loadingPerusahaan}
+                onChange={(v) => setField('perusahaan_id', v ? Number(v) : null)}
+              >
+                <option value="">{loadingPerusahaan ? 'Memuat perusahaan…' : 'Pilih perusahaan'}</option>
+                {daftarPerusahaan.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nama}
+                  </option>
+                ))}
+              </SelectField>
             </Field>
 
             <Field label="Tanggal Pembelian">
