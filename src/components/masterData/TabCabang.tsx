@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getCabang, createCabang, updateCabang, deleteCabang, type Cabang } from '../../api/cabang';
 import RouteModal from '../shared/RouteModal';
 import { Skeleton } from '../shared/skeleton';
+import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 
 const STAFF_ROLES = ['admin', 'hr'];
 
@@ -24,7 +25,7 @@ export default function TabCabang() {
   const [formAlamat, setFormAlamat] = useState('');
   const [formTelepon, setFormTelepon] = useState('');
   const [formLink, setFormLink] = useState('');
-  const [formError, setFormError] = useState('');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<Cabang | null>(null);
@@ -59,7 +60,7 @@ export default function TabCabang() {
     setFormAlamat('');
     setFormTelepon('');
     setFormLink('');
-    setFormError('');
+    setFormErrors({});
     setModalOpen(true);
   };
 
@@ -69,7 +70,7 @@ export default function TabCabang() {
     setFormAlamat(item.alamat || '');
     setFormTelepon(item.telepon || '');
     setFormLink(item.link || '');
-    setFormError('');
+    setFormErrors({});
     setModalOpen(true);
   };
 
@@ -79,13 +80,18 @@ export default function TabCabang() {
   };
 
   const handleSubmit = async () => {
-    if (!formNama.trim()) {
-      setFormError('Nama cabang tidak boleh kosong.');
+    const clientErrors: Record<string, string> = {};
+    if (!formNama.trim()) clientErrors.nama = 'Nama cabang wajib diisi.';
+    if (!formAlamat.trim()) clientErrors.alamat = 'Alamat wajib diisi.';
+    if (!formTelepon.trim()) clientErrors.telepon = 'Nomor telepon wajib diisi.';
+    if (!formLink.trim()) clientErrors.link = 'Link lokasi wajib diisi.';
+    if (Object.keys(clientErrors).length > 0) {
+      setFormErrors(clientErrors);
       return;
     }
 
     setSubmitting(true);
-    setFormError('');
+    setFormErrors({});
     try {
       const payload = {
         nama: formNama.trim(),
@@ -101,12 +107,17 @@ export default function TabCabang() {
       setModalOpen(false);
       loadData();
     } catch (err: any) {
-      const msg =
-        err.response?.data?.errors?.nama?.[0] ||
-        err.response?.data?.errors?.link?.[0] ||
-        err.response?.data?.message ||
-        'Gagal menyimpan cabang.';
-      setFormError(msg);
+      if (err.response?.status === 422) {
+        const apiErrors = err.response.data?.errors ?? {};
+        setFormErrors({
+          nama: apiErrors.nama?.[0],
+          alamat: apiErrors.alamat?.[0],
+          telepon: apiErrors.telepon?.[0],
+          link: apiErrors.link?.[0],
+        });
+      } else {
+        setFormErrors({ _general: err.response?.data?.message || 'Gagal menyimpan cabang.' });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -256,61 +267,56 @@ export default function TabCabang() {
           maxWidthClassName="max-w-md"
         >
           <div className="flex flex-col gap-4">
-            <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">Nama Cabang<span className="text-red-500 ml-0.5">*</span></label>
-              <input
-                value={formNama}
-                onChange={(e) => setFormNama(e.target.value)}
-                maxLength={150}
-                placeholder="Contoh: Kantor Pusat Semarang"
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">Alamat</label>
-              <textarea
-                value={formAlamat}
-                onChange={(e) => setFormAlamat(e.target.value)}
-                rows={2}
-                placeholder="Alamat lengkap cabang..."
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">Nomor Telepon</label>
-              <input
-                value={formTelepon}
-                onChange={(e) => setFormTelepon(e.target.value)}
-                placeholder="cth. 024-1234567"
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">Link Lokasi (Google Maps, dsb)<span className="text-red-500 ml-0.5">*</span></label>
-              <input
-                value={formLink}
-                onChange={(e) => setFormLink(e.target.value)}
-                placeholder="https://maps.app.goo.gl/..."
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-            </div>
-
-            {formError && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                {formError}
+            {formErrors._general && (
+              <p className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2.5 animate-[fadeIn_150ms_ease-out]" role="alert">
+                {formErrors._general}
               </p>
             )}
 
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="w-full text-white text-sm font-semibold py-3 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed bg-slate-900 hover:bg-slate-800"
-            >
-              {submitting ? 'Menyimpan...' : 'Simpan'}
-            </button>
+            <Field label="Nama Cabang" error={formErrors.nama} required>
+              <TextInput
+                value={formNama}
+                onChange={setFormNama}
+                placeholder="Contoh: Kantor Pusat Semarang"
+                error={!!formErrors.nama}
+                autoFocus
+              />
+            </Field>
+
+            <Field label="Alamat" error={formErrors.alamat} required>
+              <Textarea
+                value={formAlamat}
+                onChange={setFormAlamat}
+                rows={2}
+                placeholder="Alamat lengkap cabang..."
+                error={!!formErrors.alamat}
+              />
+            </Field>
+
+            <Field label="Nomor Telepon" error={formErrors.telepon} required>
+              <TextInput
+                value={formTelepon}
+                onChange={setFormTelepon}
+                placeholder="cth. 024-1234567"
+                error={!!formErrors.telepon}
+              />
+            </Field>
+
+            <Field label="Link Lokasi (Google Maps, dsb)" error={formErrors.link} required>
+              <TextInput
+                value={formLink}
+                onChange={setFormLink}
+                placeholder="https://maps.app.goo.gl/..."
+                error={!!formErrors.link}
+              />
+            </Field>
+
+            <div className="flex items-center justify-end gap-3 pt-1">
+              <ButtonCancel onClick={closeModal} disabled={submitting} />
+              <ButtonSubmit onClick={handleSubmit} loading={submitting} loadingLabel="Menyimpan...">
+                Simpan
+              </ButtonSubmit>
+            </div>
           </div>
         </RouteModal>
       )}

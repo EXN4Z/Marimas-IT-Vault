@@ -1,9 +1,10 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
 import RouteModal from '../components/shared/RouteModal';
 import Select from '../components/shared/Select';
+import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
 import { getDepartemen } from '../api/masterData/departemen';
 import { getCabang, type Cabang } from '../api/cabang';
 import { setKaryawanPassword } from '../api/auth';
@@ -61,8 +62,10 @@ export default function EditKaryawanPage() {
     const [loading, setLoading] = useState<boolean>(true);
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
-
-
+    // BARU: pesan error umum (non-per-field) -- disamain sama pola
+    // InventoryFormModal (errors._general), gantiin toast.error yang dulu
+    // dipakai buat kasus 422/403/gagal-simpan.
+    const [generalError, setGeneralError] = useState('');
 
     // BARU: state buat modal "Ubah password" (admin nentuin sendiri password-nya)
     const [showSetPassword, setShowSetPassword] = useState<boolean>(false);
@@ -137,6 +140,7 @@ export default function EditKaryawanPage() {
         e.preventDefault();
         setSaving(true);
         setErrors({});
+        setGeneralError('');
 
         try {
             const payload = {
@@ -152,11 +156,10 @@ export default function EditKaryawanPage() {
         } catch (err: any) {
             if (err.response?.status === 422) {
                 setErrors(err.response.data.errors ?? {});
-                toast.error('Periksa kembali data yang diisi.');
             } else if (err.response?.status === 403) {
-                toast.error('Anda tidak punya akses untuk mengubah data ini.');
+                setGeneralError('Anda tidak punya akses untuk mengubah data ini.');
             } else {
-                toast.error('Gagal menyimpan perubahan. Coba lagi.');
+                setGeneralError('Gagal menyimpan perubahan. Coba lagi.');
             }
         } finally {
             setSaving(false);
@@ -206,31 +209,35 @@ export default function EditKaryawanPage() {
                 onClose={closeModal}
             >
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    {generalError && (
+                        <p className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2.5 animate-[fadeIn_150ms_ease-out]" role="alert">
+                            {generalError}
+                        </p>
+                    )}
+
                     <Field label="Nama" error={errors.name?.[0]} required>
-                        <input
-                            type="text"
+                        <TextInput
                             value={form.name}
-                            onChange={(e) => handleChange('name', e.target.value)}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                            required
+                            onChange={(v) => handleChange('name', v)}
+                            error={!!errors.name}
+                            autoFocus
                         />
                     </Field>
 
                     <Field label="Email" error={errors.email?.[0]}>
-                        <input
+                        <TextInput
                             type="email"
                             value={form.email}
-                            onChange={(e) => handleChange('email', e.target.value)}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                            onChange={(v) => handleChange('email', v)}
+                            error={!!errors.email}
                         />
                     </Field>
 
                     <Field label="Nomor Telepon" error={errors.phone?.[0]}>
-                        <input
-                            type="text"
+                        <TextInput
                             value={form.phone}
-                            onChange={(e) => handleChange('phone', e.target.value)}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                            onChange={(v) => handleChange('phone', v)}
+                            error={!!errors.phone}
                         />
                     </Field>
 
@@ -238,6 +245,7 @@ export default function EditKaryawanPage() {
                         <Select
                             value={form.role}
                             onChange={(v) => handleRoleChange(v as Role)}
+                            error={!!errors.role}
                             options={[
                                 { value: 'karyawan', label: 'Karyawan' },
                                 { value: 'manajer', label: 'Manajer' },
@@ -251,12 +259,10 @@ export default function EditKaryawanPage() {
 
                     {!isCabang && (
                         <Field label="NIK" error={errors.nik?.[0]} required>
-                            <input
-                                type="text"
+                            <TextInput
                                 value={form.nik}
-                                onChange={(e) => handleChange('nik', e.target.value)}
-                                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
-                                required
+                                onChange={(v) => handleChange('nik', v)}
+                                error={!!errors.nik}
                             />
                         </Field>
                     )}
@@ -267,6 +273,7 @@ export default function EditKaryawanPage() {
                                 value={form.departemen_id}
                                 onChange={(v) => handleChange('departemen_id', v)}
                                 placeholder="Pilih departemen"
+                                error={!!errors.departemen_id}
                                 options={departemenList.map((d) => ({ value: String(d.id), label: d.nama }))}
                             />
                         </Field>
@@ -277,17 +284,18 @@ export default function EditKaryawanPage() {
                             value={form.lokasi_kantor_id}
                             onChange={(v) => handleChange('lokasi_kantor_id', v)}
                             placeholder="Pilih cabang"
+                            error={!!errors.lokasi_kantor_id}
                             options={cabangList.map((c) => ({ value: String(c.id), label: c.nama }))}
                         />
                     </Field>
 
                     {!isCabang && (
                         <Field label="Tanggal Masuk" error={errors.tanggal_masuk?.[0]}>
-                            <input
+                            <TextInput
                                 type="date"
                                 value={form.tanggal_masuk}
-                                onChange={(e) => handleChange('tanggal_masuk', e.target.value)}
-                                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                                onChange={(v) => handleChange('tanggal_masuk', v)}
+                                error={!!errors.tanggal_masuk}
                             />
                         </Field>
                     )}
@@ -310,21 +318,11 @@ export default function EditKaryawanPage() {
                             </button>
                         </div>
 
-                        <div className="flex gap-2">
-                            <button
-                                type="button"
-                                onClick={closeModal}
-                                className="text-sm px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={saving}
-                                className="text-sm px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
-                            >
-                                {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
-                            </button>
+                        <div className="flex gap-3">
+                            <ButtonCancel onClick={closeModal} disabled={saving} />
+                            <ButtonSubmit type="submit" loading={saving} loadingLabel="Menyimpan...">
+                                Simpan Perubahan
+                            </ButtonSubmit>
                         </div>
                     </div>
                 </form>
@@ -340,19 +338,6 @@ export default function EditKaryawanPage() {
     );
 }
 
-function Field({ label, error, required, children }: { label: string; error?: string; required?: boolean; children: ReactNode }) {
-    return (
-        <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
-                {label}
-                {required && <span className="text-red-500 ml-0.5">*</span>}
-            </label>
-            {children}
-            {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
-        </div>
-    );
-}
-
 // BARU: modal buat admin nentuin sendiri password baru untuk karyawan
 function SetPasswordModal({
     onClose,
@@ -364,14 +349,22 @@ function SetPasswordModal({
     const [password, setPassword] = useState('');
     const [confirmation, setConfirmation] = useState('');
     const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [errors, setErrors] = useState<{ password?: string; confirmation?: string }>({});
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
-        setError(null);
+        setErrors({});
 
+        if (!password.trim()) {
+            setErrors({ password: 'Password baru wajib diisi.' });
+            return;
+        }
+        if (!confirmation.trim()) {
+            setErrors({ confirmation: 'Konfirmasi password wajib diisi.' });
+            return;
+        }
         if (password !== confirmation) {
-            setError('Konfirmasi password tidak sama.');
+            setErrors({ confirmation: 'Konfirmasi password tidak sama.' });
             return;
         }
 
@@ -380,12 +373,14 @@ function SetPasswordModal({
             await onSubmit(password, confirmation);
         } catch (err: any) {
             if (err.response?.status === 422) {
-                const errors = err.response.data?.errors ?? {};
-                setError(errors.password?.[0] ?? 'Periksa kembali password yang diisi.');
+                const apiErrors = err.response.data?.errors ?? {};
+                setErrors({
+                    password: apiErrors.password?.[0] ?? 'Periksa kembali password yang diisi.',
+                });
             } else if (err.response?.status === 403) {
-                setError('Anda tidak punya akses untuk mengubah password ini.');
+                setErrors({ password: 'Anda tidak punya akses untuk mengubah password ini.' });
             } else {
-                setError('Gagal mengubah password. Coba lagi.');
+                setErrors({ password: 'Gagal mengubah password. Coba lagi.' });
             }
         } finally {
             setSubmitting(false);
@@ -408,45 +403,30 @@ function SetPasswordModal({
                 </p>
 
                 <div className="mt-4 space-y-3">
-                    <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Password baru</label>
-                        <input
+                    <Field label="Password baru" error={errors.password} required>
+                        <TextInput
                             type="password"
                             autoFocus
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                            onChange={setPassword}
+                            error={!!errors.password}
                         />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Konfirmasi password</label>
-                        <input
+                    </Field>
+                    <Field label="Konfirmasi password" error={errors.confirmation} required>
+                        <TextInput
                             type="password"
                             value={confirmation}
-                            onChange={(e) => setConfirmation(e.target.value)}
-                            required
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/10"
+                            onChange={setConfirmation}
+                            error={!!errors.confirmation}
                         />
-                    </div>
-                    {error && <p className="text-xs text-red-600">{error}</p>}
+                    </Field>
                 </div>
 
-                <div className="mt-5 flex justify-end gap-2">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-sm px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50"
-                    >
-                        Batal
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={submitting}
-                        className="text-sm px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
-                    >
-                        {submitting ? 'Menyimpan...' : 'Simpan password'}
-                    </button>
+                <div className="mt-5 flex justify-end gap-3">
+                    <ButtonCancel onClick={onClose} disabled={submitting} />
+                    <ButtonSubmit type="submit" loading={submitting} loadingLabel="Menyimpan...">
+                        Simpan password
+                    </ButtonSubmit>
                 </div>
             </form>
         </div>,
