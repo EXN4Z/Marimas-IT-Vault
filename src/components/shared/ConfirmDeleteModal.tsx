@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { AlertTriangle, Trash2, X, AlertCircle } from 'lucide-react';
 import { ButtonCancel, ButtonSubmit } from './FormControls';
+import { useBackdropClose } from '../../hooks/useBackdropClose';
 
 interface ConfirmDeleteModalProps {
   title?: string;
@@ -33,6 +34,8 @@ export default function ConfirmDeleteModal({
   onConfirm,
   children,
 }: ConfirmDeleteModalProps) {
+  const backdrop = useBackdropClose(onClose, !loading);
+
   if (!isOpen) return null;
 
   const modalTitle = title || `Hapus ${itemType}?`;
@@ -40,9 +43,7 @@ export default function ConfirmDeleteModal({
   return (
     <div
       className="fixed inset-0 bg-slate-950/50 backdrop-blur-[2px] z-[80] flex items-center justify-center p-4 animate-[fadeIn_150ms_ease-out]"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !loading) onClose();
-      }}
+      {...backdrop}
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-delete-title"

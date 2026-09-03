@@ -15,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen, importDepartemen } from '../api/masterData/departemen';
 import { getSupplier, createSupplier, updateSupplier, deleteSupplier, importSupplier } from '../api/masterData/supplier';
 import { downloadStyledExcel } from '../utils/excelReport';
+import { useBackdropClose } from '../hooks/useBackdropClose';
 
 // Aset & Kelengkapan Aset pindahan dari Inventaris -- beda pola dari
 // Departemen/Supplier (bukan CRUD nama/alamat/telepon generik), makanya
@@ -279,6 +280,8 @@ export default function MasterData() {
     setModalOpen(false);
   };
 
+  const backdropModal = useBackdropClose(closeModal);
+
   const handleSubmit = async () => {
     if (!cfg) return;
     if (!formNama.trim()) {
@@ -494,9 +497,7 @@ export default function MasterData() {
       {modalOpen && cfg && (
         <div
           className="fixed inset-0 bg-slate-950/50 backdrop-blur-[2px] z-[70] flex items-center justify-center p-4 animate-[fadeIn_150ms_ease-out]"
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !submitting) closeModal();
-          }}
+          {...backdropModal}
         >
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md overflow-hidden transform transition-all animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/60">

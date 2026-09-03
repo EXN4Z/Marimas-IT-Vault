@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { SkeletonTable } from '../shared/skeleton';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
+import { useBackdropClose } from '../../hooks/useBackdropClose';
 import {
   getKategori,
   createKategori,
@@ -74,6 +75,8 @@ export default function TabKategori() {
     if (submitting) return;
     setModalOpen(false);
   };
+
+  const backdropModal = useBackdropClose(closeModal);
 
   const handleSubmit = async () => {
     if (!formNama.trim()) {
@@ -212,9 +215,7 @@ export default function TabKategori() {
       {modalOpen && (
         <div
           className="fixed inset-0 bg-slate-950/50 backdrop-blur-[2px] z-[70] flex items-center justify-center p-4 animate-[fadeIn_150ms_ease-out]"
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !submitting) closeModal();
-          }}
+          {...backdropModal}
         >
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md overflow-hidden transform transition-all animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/60">
