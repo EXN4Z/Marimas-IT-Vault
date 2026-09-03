@@ -10,6 +10,7 @@ import TabInventory from '../components/masterData/TabInventory';
 import TabKategori from '../components/masterData/TabKategori';
 import TabKaryawan from '../components/masterData/TabKaryawan';
 import TabCabang from '../components/masterData/TabCabang';
+import TabPerusahaan from '../components/masterData/TabPerusahaan';
 import { SkeletonTable } from '../components/shared/skeleton';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen, importDepartemen } from '../api/masterData/departemen';
@@ -33,7 +34,10 @@ type GenericTabKey = 'departemen' | 'supplier';
 // /cabang -- sekarang jadi tab di Master Data juga, sepola sama Aset/Kategori
 // (dirender lewat komponen dedicated-nya sendiri, bukan lewat tabConfig
 // generik, karena bentuknya beda dari CRUD nama/alamat/telepon).
-type CustomTabKey = 'inventory' | 'kategori' | 'karyawan' | 'cabang';
+// 'perusahaan' -- BARU, mirror struktur & tab 'cabang' persis (lihat
+// TabPerusahaan.tsx / api/perusahaan.ts), tapi sengaja tanpa relasi ke
+// tabel lain.
+type CustomTabKey = 'inventory' | 'kategori' | 'karyawan' | 'cabang' | 'perusahaan';
 type TabKey = CustomTabKey | GenericTabKey;
 
 // alamat & telepon cuma dipakai tab 'supplier'
@@ -44,7 +48,7 @@ type FormPayload = { nama: string; alamat?: string; telepon?: string };
 // AppLayout nentuin dropdown Master Data mana yang default aktif kalau
 // URL belum punya "?tab=" -- harus samain urutannya sama children di
 // AppLayout.tsx (Inventory, Kategori, Departemen, Supplier).
-const TAB_KEYS: TabKey[] = ['inventory', 'kategori', 'karyawan', 'cabang', 'departemen', 'supplier'];
+const TAB_KEYS: TabKey[] = ['inventory', 'kategori', 'karyawan', 'cabang', 'perusahaan', 'departemen', 'supplier'];
 
 function isTabKey(value: string | null): value is TabKey {
   return !!value && (TAB_KEYS as string[]).includes(value);
@@ -65,6 +69,8 @@ const CUSTOM_TABS: { key: CustomTabKey; label: string; icon: typeof Package; rol
   { key: 'kategori', label: 'Kategori', icon: Tags, roles: STAFF_ROLES },
   { key: 'karyawan', label: 'Data User', icon: Users, roles: ['admin'] },
   { key: 'cabang', label: 'Cabang', icon: Building2, roles: ['admin'] },
+  // BARU: mirror 'cabang' -- admin-only, sama pola.
+  { key: 'perusahaan', label: 'Perusahaan', icon: Building2, roles: ['admin'] },
 ];
 
 const tabConfig: Record<
@@ -119,7 +125,7 @@ export default function MasterData() {
   // sendiri, /karyawan & /cabang).
   const canViewTab = (tab: TabKey): boolean => {
     if (tab === 'inventory') return true;
-    if (tab === 'karyawan' || tab === 'cabang') return isAdmin;
+    if (tab === 'karyawan' || tab === 'cabang' || tab === 'perusahaan') return isAdmin;
     return isStaff;
   };
 
@@ -337,7 +343,7 @@ export default function MasterData() {
         <p className="text-sm text-slate-500">
           {isStaff
             ? isAdmin
-              ? 'Kelola data inventory, kategori, departemen, supplier, data user, dan cabang yang dipakai di seluruh sistem.'
+              ? 'Kelola data inventory, kategori, departemen, supplier, data user, cabang, dan perusahaan yang dipakai di seluruh sistem.'
               : 'Kelola data referensi aset, kelengkapan aset, departemen, dan supplier yang dipakai di seluruh sistem.'
             : 'Lihat inventory yang tersedia atau lagi kamu pinjam.'}
         </p>
@@ -411,6 +417,8 @@ export default function MasterData() {
         <TabKaryawan />
       ) : activeTab === 'cabang' ? (
         <TabCabang />
+      ) : activeTab === 'perusahaan' ? (
+        <TabPerusahaan />
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {loading && (

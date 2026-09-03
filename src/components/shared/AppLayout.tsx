@@ -119,6 +119,10 @@ const navItems: NavItem[] = [
       // sini juga, tetap admin-only lewat `roles`.
       { label: 'Data User', icon: Users, path: '/master-data?tab=karyawan', roles: ['admin'] },
       { label: 'Cabang', icon: Building2, path: '/master-data?tab=cabang', roles: ['admin'] },
+      // BARU: mirror 'Cabang' -- admin-only, sama pola. Urutan harus samain
+      // sama TAB_KEYS di MasterData.tsx (dipakai buat nentuin "child pertama"
+      // default dropdown).
+      { label: 'Perusahaan', icon: Building2, path: '/master-data?tab=perusahaan', roles: ['admin'] },
       { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen', roles: ['admin', 'hr'] },
       { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier', roles: ['admin', 'hr'] },
     ],
