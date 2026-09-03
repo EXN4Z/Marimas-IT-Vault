@@ -24,8 +24,6 @@ export default function TabCabang() {
   const [formAlamat, setFormAlamat] = useState('');
   const [formTelepon, setFormTelepon] = useState('');
   const [formLink, setFormLink] = useState('');
-  const [formLatitude, setFormLatitude] = useState('');
-  const [formLongitude, setFormLongitude] = useState('');
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -61,8 +59,6 @@ export default function TabCabang() {
     setFormAlamat('');
     setFormTelepon('');
     setFormLink('');
-    setFormLatitude('');
-    setFormLongitude('');
     setFormError('');
     setModalOpen(true);
   };
@@ -73,8 +69,6 @@ export default function TabCabang() {
     setFormAlamat(item.alamat || '');
     setFormTelepon(item.telepon || '');
     setFormLink(item.link || '');
-    setFormLatitude(item.latitude != null ? String(item.latitude) : '');
-    setFormLongitude(item.longitude != null ? String(item.longitude) : '');
     setFormError('');
     setModalOpen(true);
   };
@@ -90,19 +84,6 @@ export default function TabCabang() {
       return;
     }
 
-    const lat = parseFloat(formLatitude);
-    const lng = parseFloat(formLongitude);
-
-    if (formLatitude.trim() === '' || isNaN(lat) || lat < -90 || lat > 90) {
-      setFormError('Latitude wajib diisi angka valid antara -90 dan 90.');
-      return;
-    }
-
-    if (formLongitude.trim() === '' || isNaN(lng) || lng < -180 || lng > 180) {
-      setFormError('Longitude wajib diisi angka valid antara -180 dan 180.');
-      return;
-    }
-
     setSubmitting(true);
     setFormError('');
     try {
@@ -111,8 +92,6 @@ export default function TabCabang() {
         alamat: formAlamat.trim(),
         telepon: formTelepon.trim(),
         link: formLink.trim(),
-        latitude: lat,
-        longitude: lng,
       };
       if (editing) {
         await updateCabang(editing.id, payload);
@@ -125,8 +104,6 @@ export default function TabCabang() {
       const msg =
         err.response?.data?.errors?.nama?.[0] ||
         err.response?.data?.errors?.link?.[0] ||
-        err.response?.data?.errors?.latitude?.[0] ||
-        err.response?.data?.errors?.longitude?.[0] ||
         err.response?.data?.message ||
         'Gagal menyimpan cabang.';
       setFormError(msg);
@@ -319,29 +296,6 @@ export default function TabCabang() {
                 placeholder="https://maps.app.goo.gl/..."
                 className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-slate-500 mb-1 block">Latitude<span className="text-red-500 ml-0.5">*</span></label>
-                <input
-                  value={formLatitude}
-                  onChange={(e) => setFormLatitude(e.target.value)}
-                  inputMode="decimal"
-                  placeholder="cth. -6.9814739"
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-slate-500 mb-1 block">Longitude<span className="text-red-500 ml-0.5">*</span></label>
-                <input
-                  value={formLongitude}
-                  onChange={(e) => setFormLongitude(e.target.value)}
-                  inputMode="decimal"
-                  placeholder="cth. 110.4147936"
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-              </div>
             </div>
 
             {formError && (
