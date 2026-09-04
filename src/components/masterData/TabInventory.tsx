@@ -1358,7 +1358,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-xs text-slate-400">Perusahaan</p>
-                    <p className="text-slate-800">{detail.perusahaan || '-'}</p>
+                    <p className="text-slate-800">{detail.perusahaan?.nama || '-'}</p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-400">Supplier</p>

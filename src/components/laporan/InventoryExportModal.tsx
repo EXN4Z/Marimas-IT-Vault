@@ -44,7 +44,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
     defaultChecked: false,
     get: (a) => formatTanggalId(a.tanggal_garansi),
   },
-  { key: 'perusahaan', label: 'Perusahaan', defaultChecked: false, get: (a) => a.perusahaan || '-' },
+  { key: 'perusahaan_id', label: 'Perusahaan', defaultChecked: false, get: (a) => a.perusahaan?.nama || '-' },
   { key: 'supplier', label: 'Supplier', defaultChecked: false, get: (a) => a.supplier?.nama || '-' },
   { key: 'no_surat_jalan', label: 'No. Surat Jalan', defaultChecked: false, get: (a) => a.no_surat_jalan || '-' },
   { key: 'no_good_receive', label: 'No. Good Receive', defaultChecked: false, get: (a) => a.no_good_receive || '-' },

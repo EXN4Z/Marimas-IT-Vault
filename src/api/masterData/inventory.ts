@@ -1,6 +1,8 @@
 import api from '../axios';
 import type { Supplier } from './supplier';
 
+import type { Perusahaan } from '../perusahaan';
+
 export type InventoryStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'dijual';
 // Struktur (induk/menempel) sekarang murni soal parent_id, independen dari
 // kategori -- lihat backend InventoryController::index(). 'induk' =
@@ -41,6 +43,7 @@ export interface Inventory {
   jumlah: number;
   tanggal_garansi: string | null;
   perusahaan_id: number | null;
+  perusahaan?: Perusahaan | null;
   keterangan: string | null;
   foto: string | null;
   supplier_id: number | null;
