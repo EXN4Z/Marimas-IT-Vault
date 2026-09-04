@@ -118,7 +118,9 @@ function buildInventoryFormData(values: InventoryFormValues): FormData {
   if (values.perusahaan_id != null) fd.append('perusahaan_id', String(values.perusahaan_id));
   if (values.keterangan) fd.append('keterangan', values.keterangan);
   if (values.foto) fd.append('foto', values.foto);
-  if (values.supplier_id != null) fd.append('supplier_id', String(values.supplier_id));
+    if (values.supplier_id !== undefined) {
+      fd.append('supplier_id', values.supplier_id != null ? String(values.supplier_id) : '');
+    }
   if (values.no_surat_jalan) fd.append('no_surat_jalan', values.no_surat_jalan);
   if (values.no_good_receive) fd.append('no_good_receive', values.no_good_receive);
   return fd;
