@@ -191,7 +191,12 @@ interface AppLayoutProps {
 export default function AppLayout({ title, children }: AppLayoutProps = {}) {
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
+  // Override manual buat tiap dropdown: true = dipaksa kebuka, false = dipaksa
+  // ketutup, gak ada entry = ikutin default (isParentActive). Sebelumnya ini
+  // Set<string> yang cuma bisa "nambahin kebuka", jadi kalau lagi di halaman
+  // child-nya (isParentActive true), klik toggle gak bisa maksa nutup karena
+  // isDropdownOpen di-OR sama isParentActive.
+  const [dropdownOverrides, setDropdownOverrides] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const contentScrollRef = useRef<HTMLDivElement>(null);
@@ -356,7 +361,9 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
   };
 
   const isDropdownOpen = (item: NavItem): boolean => {
-    return isParentActive(item) || openDropdowns.has(item.label);
+    const override = dropdownOverrides[item.label];
+    if (override !== undefined) return override;
+    return isParentActive(item);
   };
 
   // support 2 pola child path: polos ("/izin/create") atau pakai query tab
@@ -375,16 +382,11 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
     return currentTab === childTab;
   };
 
-  const toggleDropdown = (label: string) => {
-    setOpenDropdowns((prev) => {
-      const next = new Set(prev);
-      if (next.has(label)) {
-        next.delete(label);
-      } else {
-        next.add(label);
-      }
-      return next;
-    });
+  const toggleDropdown = (item: NavItem) => {
+    setDropdownOverrides((prev) => ({
+      ...prev,
+      [item.label]: !isDropdownOpen(item),
+    }));
   };
 
 const handleLogout = async () => {
@@ -408,7 +410,7 @@ const handleLogout = async () => {
 
   const handleNavClick = (item: NavItem) => {
     if (item.children) {
-      toggleDropdown(item.label);
+      toggleDropdown(item);
       return;
     }
     if (item.path) {
