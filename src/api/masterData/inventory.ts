@@ -98,6 +98,11 @@ export interface PaginatedInventory {
   per_page: number;
 }
 
+// Sama bentuknya kayak PaginatedInventory, cuma dipisah jadi tipe sendiri
+// biar jelas ini khusus response getFotoDasarInventory (tab "Inventory" di
+// halaman Foto Inventory).
+export type PaginatedInventoryFoto = PaginatedInventory;
+
 function buildInventoryFormData(values: InventoryFormValues): FormData {
   const fd = new FormData();
   if (values.kategori_id != null) fd.append('kategori_id', String(values.kategori_id));
@@ -142,6 +147,22 @@ export async function getInventory(params?: {
 
 export async function getInventoryById(id: number): Promise<Inventory> {
   const res = await api.get<Inventory>(`/inventory/${id}`);
+  return res.data;
+}
+
+// GET /inventory/foto — daftar item yang punya foto DASAR (diupload pas
+// tambah/edit barang di Master Data), buat tab "Inventory" di halaman Foto
+// Inventory. Beda dari getFotoPemakaiInventory (foto serah-terima/
+// pengembalian) & getFotoKerusakanInventory (foto laporan kerusakan) di
+// api/transaksi/* -- ini foto BARANGNYA sendiri, bukan foto transaksi.
+export async function getFotoDasarInventory(
+  page = 1,
+  perPage = 12,
+  search?: string
+): Promise<PaginatedInventoryFoto> {
+  const res = await api.get<PaginatedInventoryFoto>('/inventory/foto', {
+    params: { page, per_page: perPage, search: search || undefined },
+  });
   return res.data;
 }
 

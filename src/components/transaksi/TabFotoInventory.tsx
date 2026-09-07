@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Images, X, ChevronLeft, ChevronRight, HandCoins, Undo2, Wrench, Eye } from 'lucide-react';
+import { Images, X, ChevronLeft, ChevronRight, HandCoins, Undo2, Wrench, Eye, Package } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import ScrollableTabBar, { type ScrollableTabItem } from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
+import { getFotoDasarInventory, type Inventory } from '../../api/masterData/inventory';
 import { getFotoPemakaiInventory, type FotoPemakaiEntry } from '../../api/transaksi/inventoryPemakai';
 import { getFotoKerusakanInventory, type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
 import { namaPemakai, formatTanggalWaktuId, formatJenisKerusakan } from '../masterData/inventoryHelpers';
@@ -11,9 +12,10 @@ import { SkeletonTable } from '../shared/skeleton';
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 const PER_PAGE = 10;
 
-type FotoTab = 'peminjaman' | 'pengembalian' | 'rusak';
+type FotoTab = 'inventory' | 'peminjaman' | 'pengembalian' | 'rusak';
 
 const TABS: ScrollableTabItem<FotoTab>[] = [
+  { key: 'inventory', label: 'Inventory', icon: Package },
   { key: 'peminjaman', label: 'Peminjaman', icon: HandCoins },
   { key: 'pengembalian', label: 'Pengembalian', icon: Undo2 },
   { key: 'rusak', label: 'Rusak', icon: Wrench },
@@ -49,8 +51,9 @@ const initialTabState = <T,>(): TabState<T> => ({
 });
 
 export default function TabFotoInventory({}: Props) {
-  const [activeTab, setActiveTab] = useState<FotoTab>('peminjaman');
+  const [activeTab, setActiveTab] = useState<FotoTab>('inventory');
 
+  const [inventory, setInventoryState] = useState<TabState<Inventory>>(initialTabState);
   const [peminjaman, setPeminjaman] = useState<TabState<FotoPemakaiEntry>>(initialTabState);
   const [pengembalian, setPengembalian] = useState<TabState<FotoPemakaiEntry>>(initialTabState);
   const [rusak, setRusak] = useState<TabState<InventoryPenanganan>>(initialTabState);
@@ -58,6 +61,18 @@ export default function TabFotoInventory({}: Props) {
   const [modalPhotos, setModalPhotos] = useState<{ photos: string[]; index: number } | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const loadInventory = (targetPage: number, targetSearch: string) => {
+    setInventoryState((s) => ({ ...s, loading: true }));
+    getFotoDasarInventory(targetPage, PER_PAGE, targetSearch || undefined)
+      .then((res) =>
+        setInventoryState((s) => ({ ...s, entries: res.data, page: res.current_page, lastPage: res.last_page, total: res.total, loading: false, loaded: true }))
+      )
+      .catch((err) => {
+        console.error(err);
+        setInventoryState((s) => ({ ...s, loading: false, loaded: true }));
+      });
+  };
 
   const loadPeminjaman = (targetPage: number, targetSearch: string) => {
     setPeminjaman((s) => ({ ...s, loading: true }));
@@ -98,6 +113,7 @@ export default function TabFotoInventory({}: Props) {
   // load awal buat ketiga tab sekalian (biar badge count di masing-masing
   // sub-tab langsung kebaca meski user belum pindah-pindah tab)
   useEffect(() => {
+    loadInventory(1, '');
     loadPeminjaman(1, '');
     loadPengembalian(1, '');
     loadRusak(1, '');
@@ -105,23 +121,29 @@ export default function TabFotoInventory({}: Props) {
   }, []);
 
   const currentSearch =
+    activeTab === 'inventory' ? inventory.search :
     activeTab === 'peminjaman' ? peminjaman.search : activeTab === 'pengembalian' ? pengembalian.search : rusak.search;
 
   const handleSearchChange = (value: string) => {
-    if (activeTab === 'peminjaman') setPeminjaman((s) => ({ ...s, search: value }));
+    if (activeTab === 'inventory') setInventoryState((s) => ({ ...s, search: value }));
+    else if (activeTab === 'peminjaman') setPeminjaman((s) => ({ ...s, search: value }));
     else if (activeTab === 'pengembalian') setPengembalian((s) => ({ ...s, search: value }));
     else setRusak((s) => ({ ...s, search: value }));
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      if (activeTab === 'peminjaman') loadPeminjaman(1, value);
+      if (activeTab === 'inventory') loadInventory(1, value);
+      else if (activeTab === 'peminjaman') loadPeminjaman(1, value);
       else if (activeTab === 'pengembalian') loadPengembalian(1, value);
       else loadRusak(1, value);
     }, 400);
   };
 
   const gantiHalaman = (target: number) => {
-    if (activeTab === 'peminjaman') {
+    if (activeTab === 'inventory') {
+      if (target < 1 || target > inventory.lastPage || target === inventory.page) return;
+      loadInventory(target, inventory.search);
+    } else if (activeTab === 'peminjaman') {
       if (target < 1 || target > peminjaman.lastPage || target === peminjaman.page) return;
       loadPeminjaman(target, peminjaman.search);
     } else if (activeTab === 'pengembalian') {
@@ -150,6 +172,77 @@ export default function TabFotoInventory({}: Props) {
   );
 
   const renderTable = () => {
+    // ==== Tab Inventory (foto dasar barang, diupload pas tambah/edit di
+    // Master Data) — beda dari 3 tab lain yang isinya foto TRANSAKSI ====
+    if (activeTab === 'inventory') {
+      if (inventory.loading) {
+        return (
+          <div className="border border-slate-200 bg-white rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[640px]">
+                <tbody>
+                  <SkeletonTable columns={4} rows={5} />
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      }
+
+      if (inventory.entries.length === 0) {
+        return (
+          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+            <Images size={32} className="mb-2" />
+            <p className="text-sm">
+              {inventory.search ? `Tidak ada hasil untuk "${inventory.search}".` : 'Belum ada foto barang yang diunggah.'}
+            </p>
+          </div>
+        );
+      }
+
+      return (
+        <div className="border border-slate-200 bg-white rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[640px]">
+              <thead>
+                <tr className="border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wide">
+                  <th className="px-4 py-3 font-medium text-left">Inventory</th>
+                  <th className="px-4 py-3 font-medium text-left">Kategori</th>
+                  <th className="px-4 py-3 font-medium text-left">Tgl Input</th>
+                  <th className="px-4 py-3 font-medium text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inventory.entries.map((item) => (
+                  <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
+                    <td className="px-4 py-3 whitespace-nowrap">{inventoryLabel(item)}</td>
+                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{item.kategori?.nama || '-'}</td>
+                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(null, item.tanggal_input)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end">
+                        {item.foto ? (
+                          <button
+                            onClick={() => openModal([item.foto as string], 0)}
+                            title="Lihat Foto"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                          >
+                            <Eye size={14} />
+                            Lihat Foto
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-300">-</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
     if (activeTab === 'peminjaman' || activeTab === 'pengembalian') {
       const state = activeTab === 'peminjaman' ? peminjaman : pengembalian;
       const tanggalKey = activeTab === 'peminjaman' ? 'tanggal_penerimaan' : 'tanggal_pengembalian';
@@ -312,12 +405,12 @@ export default function TabFotoInventory({}: Props) {
     );
   };
 
-  const activeState = activeTab === 'peminjaman' ? peminjaman : activeTab === 'pengembalian' ? pengembalian : rusak;
+  const activeState = activeTab === 'inventory' ? inventory : activeTab === 'peminjaman' ? peminjaman : activeTab === 'pengembalian' ? pengembalian : rusak;
 
   // Badge muncul cuma abis fetch pertama kelar (loaded=true), biar gak
   // sempet kelip nunjukin "0" dulu sebelum totalnya beneran kebaca.
   const tabsWithBadge: ScrollableTabItem<FotoTab>[] = TABS.map((t) => {
-    const state = t.key === 'peminjaman' ? peminjaman : t.key === 'pengembalian' ? pengembalian : rusak;
+    const state = t.key === 'inventory' ? inventory : t.key === 'peminjaman' ? peminjaman : t.key === 'pengembalian' ? pengembalian : rusak;
     return { ...t, badge: state.loaded ? state.total : null };
   });
 
