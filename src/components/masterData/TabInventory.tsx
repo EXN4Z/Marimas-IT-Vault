@@ -651,6 +651,14 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
     if (!isAdmin) return null;
     return (
       <>
+        {/* BARU: Detail — kelengkapan yang nempel ke induk tetap bisa dibuka detailnya */}
+        <button
+          onClick={() => openDetail(a.id)}
+          title="Detail"
+          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+        >
+          <Eye size={15} />
+        </button>
         {(a.status === 'tersedia' || a.status === 'dipakai') && (
           <button
             onClick={() => setPerbaikanInventoryTarget(a)}
