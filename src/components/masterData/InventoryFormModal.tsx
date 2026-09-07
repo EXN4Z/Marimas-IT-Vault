@@ -18,6 +18,7 @@ import { ButtonCancel, ButtonSubmit, Field, SelectField, inputClass, inputErrorC
 
 const KETERANGAN_MAX = 255;
 const MAX_FOTO_MB = 4;
+const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 const ACCEPTED_FOTO_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 
 // REFACTOR KATEGORI BEBAS (Fase 3): form ini dulu punya 2 mode terpisah total
@@ -292,7 +293,9 @@ export default function InventoryFormModal({
   }, [bisaPunyaKelengkapan]);
 
   // ================= Foto (drag & drop + preview) =================
-  const [fotoPreview, setFotoPreview] = useState<string | null>(inventory?.foto || null);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(
+    inventory?.foto ? STORAGE_BASE_URL + inventory.foto : null
+  );
   const [isDraggingFoto, setIsDraggingFoto] = useState(false);
   const [fotoError, setFotoError] = useState('');
   const fotoObjectUrl = useRef<string | null>(null);
