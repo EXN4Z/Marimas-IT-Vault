@@ -651,6 +651,14 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
     if (!isAdmin) return null;
     return (
       <>
+        {/* BARU: Detail — kelengkapan yang nempel ke induk tetap bisa dibuka detailnya */}
+        <button
+          onClick={() => openDetail(a.id)}
+          title="Detail"
+          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+        >
+          <Eye size={15} />
+        </button>
         {(a.status === 'tersedia' || a.status === 'dipakai') && (
           <button
             onClick={() => setPerbaikanInventoryTarget(a)}
@@ -1339,18 +1347,6 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                     <p className="text-xs text-slate-400">Jumlah: {detail.jumlah ?? 1}</p>
                   </div>
                 </div>
-
-                {/* BARU: indikator "Menempel ke ..." di panel detail -- sebelumnya
-                    cuma ada di badge baris tabel (lihat isChild di render tabel),
-                    sekarang ditampilkan juga di sini biar kelihatan langsung pas
-                    buka detail item kelengkapan yang masih nempel ke induk. */}
-                {detail.parent_id && detail.parent && (
-                  <div className="flex items-center gap-2 bg-sky-50 text-sky-700 rounded-lg px-3 py-2 text-xs font-medium">
-                    <Link2 size={13} className="shrink-0" />
-                    Menempel ke {detail.parent.kode_inventory}
-                    {detail.parent.nama ? ` — ${detail.parent.nama}` : ''}
-                  </div>
-                )}
 
                 {detail.status === 'dipakai' && detail.pemakai_saat_ini && (
                   <div className="bg-slate-50 rounded-lg p-3 text-sm">
