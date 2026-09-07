@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Download, Link2, Unlink,} from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Download, Link2, Unlink, MapPin,} from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
@@ -1357,7 +1357,10 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <div>
-                    <p className="text-xs text-slate-400">Perusahaan</p>
+                    <p className="text-xs text-slate-400 flex items-center gap-1">
+                      <MapPin size={12} className="text-slate-400" />
+                      Perusahaan
+                    </p>
                     <p className="text-slate-800">{detail.perusahaan?.nama || '-'}</p>
                   </div>
                   <div>
