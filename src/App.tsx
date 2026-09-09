@@ -149,7 +149,7 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/frontend">
         <AppRoutes />
       </BrowserRouter>
     </AuthProvider>
