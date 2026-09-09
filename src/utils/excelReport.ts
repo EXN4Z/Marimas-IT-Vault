@@ -59,7 +59,7 @@ function computeColumnWidth(header: string, values: string[]): number {
 
 async function loadLogoBuffer(): Promise<ArrayBuffer | null> {
   try {
-    const res = await fetch('/logo.png');
+    const res = await fetch(`${import.meta.env.BASE_URL}logo.png`);
     if (!res.ok) return null;
     return await res.arrayBuffer();
   } catch {

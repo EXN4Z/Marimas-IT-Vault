@@ -185,7 +185,7 @@ function buildPrintableHtml({ title, periodLabel, headers, rows }: PrintReportOp
 </head>
 <body>
   <div class="banner">
-    <img src="/logo.png" alt="Marimas One" onerror="this.style.display='none'" />
+    <img src="${import.meta.env.BASE_URL}logo.png" alt="Marimas One" onerror="this.style.display='none'" />
     <div class="titles">
       <h1>${escapeHtml(title)}</h1>
       <p>Periode: ${escapeHtml(periodLabel)}</p>

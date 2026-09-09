@@ -455,7 +455,7 @@ const handleLogout = async () => {
       >
         <div className="flex items-center justify-between px-6 h-18 shrink-0">
           <div className="flex p-1 items-center mx-auto gap-2">
-            <img src="/logo.png" alt="Marimas One" className="h-18 w-auto p-1" />
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Marimas One" className="h-18 w-auto p-1" />
           </div>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400">
             <X size={20} />

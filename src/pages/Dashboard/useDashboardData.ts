@@ -403,7 +403,7 @@ export function useDashboardCore(options: { includeDepartemen?: boolean } = {}) 
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('Notifikasi Baru', {
           body: payload.message,
-          icon: '/logo.png',
+          icon: `${import.meta.env.BASE_URL}logo.png`,
         });
       }
     });
