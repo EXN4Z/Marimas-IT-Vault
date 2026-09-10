@@ -126,7 +126,7 @@ function buildInventoryFormData(values: InventoryFormValues): FormData {
   // 3. values.foto === undefined -> foto tidak disentuh sama sekali, biarkan foto lama
   if (values.foto instanceof File) {
     fd.append('foto', values.foto);
-  } else if (values.foto === null) {
+  } else if (values.hapus_foto) {
     fd.append('hapus_foto', '1');
   }
   // kalau undefined, sengaja tidak append apa-apa -- foto lama dibiarkan.
