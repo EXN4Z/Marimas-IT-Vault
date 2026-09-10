@@ -7,6 +7,7 @@ import Select from '../components/shared/Select';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
 import { getDepartemen, type Departemen } from '../api/masterData/departemen';
 import { getCabang, type Cabang } from '../api/cabang';
+import SearchableSelect from '../components/shared/SearchableSelect';
 
 type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest' | 'cabang';
 
@@ -225,10 +226,10 @@ export default function CreateKaryawanPage() {
                 <div className={`grid gap-4 ${!isCabang ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
                     {!isCabang && (
                         <Field label="Departemen" error={errors.departemen_id?.[0]}>
-                            <Select
+                            <SearchableSelect
                                 value={form.departemen_id}
                                 onChange={(v) => handleChange('departemen_id', v)}
-                                placeholder="Pilih departemen"
+                                placeholder="Cari departemen..."
                                 error={!!errors.departemen_id}
                                 options={departemenList.map((d) => ({ value: String(d.id), label: d.nama }))}
                             />
