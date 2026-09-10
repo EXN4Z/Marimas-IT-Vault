@@ -88,6 +88,7 @@ export interface InventoryFormValues {
   tanggal_invoice?: string;
   no_surat_jalan?: string;
   no_good_receive?: string;
+  hapus_foto?: boolean;
 }
 
 export interface PaginatedInventory {
@@ -110,10 +111,6 @@ function buildInventoryFormData(values: InventoryFormValues): FormData {
   if (values.nama) fd.append('nama', values.nama);
   if (values.warna) fd.append('warna', values.warna);
   if (values.serial_number) fd.append('serial_number', values.serial_number);
-  // FIX: merk & type sebelumnya gak pernah ikut ke-append ke FormData, jadi
-  // walau user udah isi di form, backend gak pernah nerima nilainya sama
-  // sekali -- makanya kekesan "gak nyimpen". Sama juga tanggal_input &
-  // tanggal_invoice, ikut ketinggalan.
   if (values.merk) fd.append('merk', values.merk);
   if (values.type) fd.append('type', values.type);
   if (values.jumlah != null) fd.append('jumlah', String(values.jumlah));
@@ -122,15 +119,25 @@ function buildInventoryFormData(values: InventoryFormValues): FormData {
   if (values.tanggal_invoice) fd.append('tanggal_invoice', values.tanggal_invoice);
   if (values.perusahaan_id != null) fd.append('perusahaan_id', String(values.perusahaan_id));
   if (values.keterangan) fd.append('keterangan', values.keterangan);
-  if (values.foto) fd.append('foto', values.foto);
-    if (values.supplier_id !== undefined) {
-      fd.append('supplier_id', values.supplier_id != null ? String(values.supplier_id) : '');
-    }
+
+  // FIX: foto punya 3 kemungkinan kondisi yang harus dibedakan:
+  // 1. values.foto instanceof File -> user upload/ganti foto baru
+  // 2. values.foto === null (eksplisit) -> user klik "Hapus Foto"
+  // 3. values.foto === undefined -> foto tidak disentuh sama sekali, biarkan foto lama
+  if (values.foto instanceof File) {
+    fd.append('foto', values.foto);
+  } else if (values.foto === null) {
+    fd.append('hapus_foto', '1');
+  }
+  // kalau undefined, sengaja tidak append apa-apa -- foto lama dibiarkan.
+
+  if (values.supplier_id !== undefined) {
+    fd.append('supplier_id', values.supplier_id != null ? String(values.supplier_id) : '');
+  }
   if (values.no_surat_jalan) fd.append('no_surat_jalan', values.no_surat_jalan);
   if (values.no_good_receive) fd.append('no_good_receive', values.no_good_receive);
   return fd;
 }
-
 // GET /inventory — ?kategori_id=123 filter berdasar kategori beneran.
 // ?posisi=induk|menempel filter berdasar parent_id (independen dari
 // kategori_id, bisa dipakai bareng). ?parent_id=123 buat nested/expand view

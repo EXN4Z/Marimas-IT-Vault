@@ -301,6 +301,17 @@ export default function InventoryFormModal({
   const fotoObjectUrl = useRef<string | null>(null);
   const dragCounter = useRef(0);
 
+  // FIX (hapus foto): form.foto SELALU null baik pas form baru dibuka untuk
+  // edit (foto lama masih ada, cuma preview-nya yang ditampilkan lewat
+  // fotoPreview) MAUPUN setelah user klik "Hapus" -- dua kondisi itu gak
+  // bisa dibedakan cuma dari value form.foto (sama-sama null). Makanya
+  // dibutuhkan flag terpisah ini buat menandai user SECARA EKSPLISIT memilih
+  // untuk menghapus foto yang sudah ada, biar buildInventoryFormData() bisa
+  // ngirim sinyal 'hapus_foto' ke backend HANYA kalau memang ini yang
+  // dimaksud user (bukan ke-trigger tiap kali form disubmit tanpa foto
+  // baru).
+  const [fotoDihapus, setFotoDihapus] = useState(false);
+
   useEffect(() => {
     return () => {
       if (fotoObjectUrl.current) URL.revokeObjectURL(fotoObjectUrl.current);
@@ -323,6 +334,9 @@ export default function InventoryFormModal({
     fotoObjectUrl.current = url;
     setField('foto', file);
     setFotoPreview(url);
+    // FIX: kalau user pilih foto baru, batalkan flag hapus -- yang dia mau
+    // sekarang adalah GANTI foto, bukan menghapusnya tanpa pengganti.
+    setFotoDihapus(false);
   }
 
   function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -349,6 +363,9 @@ export default function InventoryFormModal({
     fotoObjectUrl.current = null;
     setField('foto', null);
     setFotoPreview(null);
+    // FIX: tandai eksplisit bahwa user memang mau menghapus foto yang ada
+    // (bukan sekadar kondisi awal form yang belum disentuh).
+    setFotoDihapus(true);
   }
 
   // ================= Validasi & submit =================
@@ -375,6 +392,10 @@ export default function InventoryFormModal({
     const payload: InventoryFormValues = {
       ...rest,
       jumlah: jumlah ? Number(jumlah) : undefined,
+      // FIX: sertakan flag hapus_foto ke payload -- cuma true kalau user
+      // benar-benar klik "Hapus" dan gak diikuti pemilihan foto baru
+      // setelahnya (lihat applyFoto()/removeFoto() di atas).
+      hapus_foto: fotoDihapus,
     };
 
     // Mode staged: gak ada inventory induk beneran di backend buat nempelin
@@ -839,6 +860,13 @@ export default function InventoryFormModal({
                 )}
               </label>
               {fotoError && <span className="block mt-1 text-xs text-red-600 animate-[fadeIn_120ms_ease-out]">{fotoError}</span>}
+              {/* BARU: indikator kecil biar admin sadar foto bakal beneran
+                  dihapus pas disimpan (bukan cuma preview lokal yang hilang). */}
+              {fotoDihapus && (
+                <p className="mt-1 text-xs text-amber-600 animate-[fadeIn_120ms_ease-out]">
+                  Foto akan dihapus saat perubahan disimpan.
+                </p>
+              )}
             </div>
           </Section>
 
