@@ -20,13 +20,24 @@ const STAFF_ROLES = ['admin', 'hr', 'manajer', 'manager', 'cabang'];
 
 // dulu halaman ini cuma 2 kartu export (Inventory & Karyawan) -- sekarang jadi
 // tab-based karena Foto Inventory & Riwayat Inventory (pindahan dari Inventaris.tsx,
-// yang bakal dihapus) ikut digabung ke sini. Tab "export" (kartu-kartu di
-// bawah) sengaja gak dikasih query "?tab=" biar cocok sama child "Export
-// Data" di dropdown sidebar Laporan (AppLayout.tsx) yang path-nya polos
-// "/laporan" tanpa query.
-type TabKey = 'export' | 'foto_inventory' | 'riwayat_inventory';
+// yang bakal dihapus) ikut digabung ke sini.
+//
+// REVISI: tab "export" DULU sengaja gak dikasih query "?tab=" biar cocok
+// sama child "Export Data" di dropdown sidebar Laporan (AppLayout.tsx) yang
+// path-nya polos "/laporan" tanpa query. Sekarang diseragamkan -- SEMUA tab
+// (termasuk export) selalu tercermin di query param, jadi url yang benar
+// buat tab ini adalah "/laporan?tab=export_data", BUKAN "/laporan" polos.
+// Kalau halaman diakses tanpa query sama sekali (mis. link lama/bookmark),
+// effect di bawah otomatis redirect (replace, gak nge-reload) ke
+// "?tab=export_data" biar url selalu konsisten dengan tab yang lagi aktif.
+//
+// CATATAN: kalau ada link sidebar (AppLayout.tsx) yang masih nunjuk ke
+// "/laporan" polos buat menu "Export Data", sebaiknya diupdate juga jadi
+// "/laporan?tab=export_data" supaya url di address bar langsung benar sejak
+// awal klik, bukan nunggu di-redirect oleh effect ini.
+type TabKey = 'export_data' | 'foto_inventory' | 'riwayat_inventory';
 
-const TAB_KEYS: TabKey[] = ['export', 'foto_inventory', 'riwayat_inventory'];
+const TAB_KEYS: TabKey[] = ['export_data', 'foto_inventory', 'riwayat_inventory'];
 
 function isTabKey(value: string | null): value is TabKey {
   return !!value && (TAB_KEYS as string[]).includes(value);
@@ -40,29 +51,35 @@ export default function Laporan() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTabState] = useState<TabKey>(() => {
     const fromUrl = searchParams.get('tab');
-    return isTabKey(fromUrl) ? fromUrl : 'export';
+    return isTabKey(fromUrl) ? fromUrl : 'export_data';
   });
 
-  // ganti tab sekaligus sinkronin ke query param "?tab=" -- kecuali tab
-  // "export" yang sengaja gak pakai query sama sekali (lihat komentar di atas).
+  // ganti tab sekaligus sinkronin ke query param "?tab=" -- SEKARANG semua
+  // tab (termasuk 'export_data') selalu nulis query-nya, gak ada
+  // pengecualian lagi.
   const setActiveTab = (tab: TabKey) => {
     setActiveTabState(tab);
-    if (tab === 'export') {
-      setSearchParams({}, { replace: true });
-    } else {
-      setSearchParams({ tab }, { replace: true });
-    }
+    setSearchParams({ tab }, { replace: true });
   };
 
   // kalau user klik link dropdown sidebar yang query-nya beda tapi pathname
   // sama (gak remount komponen), effect ini yang nangkep perubahan query dan
   // update activeTab-nya -- sama pola kayak MasterData.tsx / Inventaris.tsx.
+  //
+  // REVISI: dulu ada cabang khusus "kalau gak ada query sama sekali ->
+  // anggap tab export tanpa nulis balik ke url". Sekarang begitu halaman
+  // diakses tanpa query ("/laporan" polos, mis. dari bookmark lama atau link
+  // sidebar yang belum diupdate), url-nya DIPAKSA nulis balik jadi
+  // "?tab=export_data" lewat setSearchParams (replace, gak nge-reload) biar
+  // address bar selalu mencerminkan tab yang lagi aktif, konsisten dengan
+  // 2 tab lain.
   useEffect(() => {
     const fromUrl = searchParams.get('tab');
-    if (isTabKey(fromUrl) && fromUrl !== activeTab) {
-      setActiveTabState(fromUrl);
-    } else if (!fromUrl && activeTab !== 'export') {
-      setActiveTabState('export');
+    if (isTabKey(fromUrl)) {
+      if (fromUrl !== activeTab) setActiveTabState(fromUrl);
+    } else {
+      setActiveTabState('export_data');
+      setSearchParams({ tab: 'export_data' }, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -130,7 +147,7 @@ export default function Laporan() {
   }
 
   const tabs: { key: TabKey; label: string; icon: typeof FileSpreadsheet; adminOnly?: boolean }[] = [
-    { key: 'export', label: 'Export Data', icon: FileSpreadsheet },
+    { key: 'export_data', label: 'Export Data', icon: FileSpreadsheet },
     // pindahan dari Inventaris.tsx
     { key: 'foto_inventory', label: 'Foto Inventory', icon: Images, adminOnly: true },
     { key: 'riwayat_inventory', label: 'Riwayat Inventory', icon: History },
@@ -147,7 +164,7 @@ export default function Laporan() {
           .map((t) => ({ key: t.key, label: t.label, icon: t.icon }))}
       />
 
-      {activeTab === 'export' ? (
+      {activeTab === 'export_data' ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
             <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">

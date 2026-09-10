@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { SkeletonTable } from '../shared/skeleton';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
+import Pagination from '../shared/Pagination';
 import { useBackdropClose } from '../../hooks/useBackdropClose';
 import {
   getKategori,
@@ -21,6 +22,12 @@ import {
 // filter struktur induk/menempel, dst) murni berbasis kolom parent_id,
 // gak baca nama kategori sama sekali. Kategori sekarang cuma label bebas,
 // aman di-rename/hapus/tambah tanpa mempengaruhi fitur lain.)
+
+// pagination client-side -- data kategori dimuat penuh sekali lewat
+// getKategori(), jadi tinggal dipotong per halaman di sini (sama pola
+// yang dipakai buat tab Departemen/Supplier di MasterData.tsx).
+const ITEMS_PER_PAGE = 10;
+
 export default function TabKategori() {
   const [items, setItems] = useState<Kategori[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +42,8 @@ export default function TabKategori() {
   const [deleteTarget, setDeleteTarget] = useState<Kategori | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+
+  const [currentPage, setCurrentPage] = useState(1);
 
   const loadData = async () => {
     setLoading(true);
@@ -56,6 +65,15 @@ export default function TabKategori() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
+  const paginatedItems = items.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  // kalau data berkurang (mis. abis hapus item terakhir di halaman
+  // terakhir), pastikan currentPage gak nyangkut di halaman kosong.
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [totalPages, currentPage]);
 
   const openCreateModal = () => {
     setEditing(null);
@@ -93,6 +111,7 @@ export default function TabKategori() {
       } else {
         await createKategori(payload);
         toast.success('Kategori berhasil ditambahkan.');
+        setCurrentPage(1); // biar kategori baru langsung kelihatan
       }
       setModalOpen(false);
       loadData();
@@ -164,51 +183,63 @@ export default function TabKategori() {
       )}
 
       {!loading && !error && items.length > 0 && (
-        <div className="overflow-x-auto mt-3">
-          <table className="w-full text-sm min-w-[420px]">
-            <thead>
-              <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
-                <th className="px-6 py-3 font-medium">Nama</th>
-                <th className="px-6 py-3 font-medium text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                  <td className="px-6 py-3 text-slate-800">
-                    <div className="flex items-center gap-2">
-                      <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 text-slate-500">
-                        <Tags size={14} />
-                      </span>
-                      {item.nama}
-                    </div>
-                  </td>
-                  <td className="px-6 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => openEditModal(item)}
-                        title="Edit"
-                        className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setDeleteError('');
-                          setDeleteTarget(item);
-                        }}
-                        title="Hapus"
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </td>
+        <>
+          <div className="overflow-x-auto mt-3">
+            <table className="w-full text-sm min-w-[420px]">
+              <thead>
+                <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
+                  <th className="px-6 py-3 font-medium">Nama</th>
+                  <th className="px-6 py-3 font-medium text-right">Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {paginatedItems.map((item) => (
+                  <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
+                    <td className="px-6 py-3 text-slate-800">
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 text-slate-500">
+                          <Tags size={14} />
+                        </span>
+                        {item.nama}
+                      </div>
+                    </td>
+                    <td className="px-6 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => openEditModal(item)}
+                          title="Edit"
+                          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDeleteError('');
+                            setDeleteTarget(item);
+                          }}
+                          title="Hapus"
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="px-6 pb-5">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={items.length}
+              itemLabel="kategori"
+            />
+          </div>
+        </>
       )}
 
       {/* MODAL TAMBAH / EDIT */}

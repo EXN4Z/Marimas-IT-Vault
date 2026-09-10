@@ -12,6 +12,7 @@ import TabKaryawan from '../components/masterData/TabKaryawan';
 import TabCabang from '../components/masterData/TabCabang';
 import TabPerusahaan from '../components/masterData/TabPerusahaan';
 import { SkeletonTable } from '../components/shared/skeleton';
+import Pagination from '../components/shared/Pagination';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen, importDepartemen } from '../api/masterData/departemen';
 import { getSupplier, createSupplier, updateSupplier, deleteSupplier, importSupplier } from '../api/masterData/supplier';
@@ -49,6 +50,11 @@ type FormPayload = { nama: string; alamat?: string; telepon?: string };
 // URL belum punya "?tab=" -- harus samain urutannya sama children di
 // AppLayout.tsx (Inventory, Kategori, Departemen, Supplier).
 const TAB_KEYS: TabKey[] = ['inventory', 'kategori', 'karyawan', 'cabang', 'perusahaan', 'departemen', 'supplier'];
+
+// pagination client-side buat tabel generik (Departemen/Supplier) -- data
+// dimuat penuh sekali lewat cfg.get(), tinggal dipotong per halaman di sini
+// (pola yang sama dipakai di TabKategori.tsx).
+const ITEMS_PER_PAGE = 10;
 
 function isTabKey(value: string | null): value is TabKey {
   return !!value && (TAB_KEYS as string[]).includes(value);
@@ -187,6 +193,8 @@ export default function MasterData() {
   const [exporting, setExporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+
   // null kalau tab aktifnya Aset/Kelengkapan Aset -- keduanya dirender lewat
   // komponen dedicated-nya sendiri, bukan lewat blok tabel generik di bawah.
   const cfg = isGenericTab(activeTab) ? tabConfig[activeTab] : null;
@@ -210,7 +218,17 @@ export default function MasterData() {
 
   useEffect(() => {
     if (isGenericTab(activeTab)) loadData(activeTab);
+    setCurrentPage(1); // reset halaman tiap pindah tab (Departemen <-> Supplier)
   }, [activeTab]);
+
+  const totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
+  const paginatedItems = items.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  // kalau data berkurang (mis. abis hapus item terakhir di halaman
+  // terakhir), pastikan currentPage gak nyangkut di halaman kosong.
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [totalPages, currentPage]);
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -307,6 +325,7 @@ export default function MasterData() {
       } else {
         await cfg.create(payload);
         toast.success(`${cfg.singular} berhasil ditambahkan.`);
+        setCurrentPage(1); // biar data baru langsung kelihatan
       }
       setModalOpen(false);
       loadData(activeTab as GenericTabKey);
@@ -450,53 +469,65 @@ export default function MasterData() {
           )}
 
           {!loading && !error && items.length > 0 && cfg && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[560px]">
-              <thead>
-                <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
-                  <th className="px-6 py-3 font-medium">Nama</th>
-                  {activeTab === 'supplier' && (
-                    <>
-                      <th className="px-6 py-3 font-medium">Alamat</th>
-                      <th className="px-6 py-3 font-medium">Telepon</th>
-                    </>
-                  )}
-                  <th className="px-6 py-3 font-medium text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                    <td className="px-6 py-3 text-slate-800">{item.nama}</td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[560px]">
+                <thead>
+                  <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
+                    <th className="px-6 py-3 font-medium">Nama</th>
                     {activeTab === 'supplier' && (
                       <>
-                        <td className="px-6 py-3 text-slate-600">{item.alamat || '-'}</td>
-                        <td className="px-6 py-3 text-slate-600">{item.telepon || '-'}</td>
+                        <th className="px-6 py-3 font-medium">Alamat</th>
+                        <th className="px-6 py-3 font-medium">Telepon</th>
                       </>
                     )}
-                    <td className="px-6 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => openEditModal(item)}
-                          title="Edit"
-                          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          onClick={() => setDeleteTarget(item)}
-                          title="Hapus"
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
+                    <th className="px-6 py-3 font-medium text-right">Aksi</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {paginatedItems.map((item) => (
+                    <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
+                      <td className="px-6 py-3 text-slate-800">{item.nama}</td>
+                      {activeTab === 'supplier' && (
+                        <>
+                          <td className="px-6 py-3 text-slate-600">{item.alamat || '-'}</td>
+                          <td className="px-6 py-3 text-slate-600">{item.telepon || '-'}</td>
+                        </>
+                      )}
+                      <td className="px-6 py-3">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => openEditModal(item)}
+                            title="Edit"
+                            className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            onClick={() => setDeleteTarget(item)}
+                            title="Hapus"
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="px-6 pb-5">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                totalItems={items.length}
+                itemLabel={cfg.label.toLowerCase()}
+              />
+            </div>
+          </>
           )}
         </div>
       )}
