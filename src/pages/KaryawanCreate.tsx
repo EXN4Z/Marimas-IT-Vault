@@ -106,7 +106,6 @@ export default function CreateKaryawanPage() {
         const newErrors: FieldErrors = {};
         if (!form.name.trim()) newErrors.name = ['Nama lengkap wajib diisi.'];
         if (!form.password.trim()) newErrors.password = ['Password awal wajib diisi.'];
-        else if (form.password.length < 6) newErrors.password = ['Password minimal 6 karakter.'];
         if (!form.role) newErrors.role = ['Role wajib dipilih.'];
         if (!isCabang && !form.nik.trim()) newErrors.nik = ['NIK karyawan wajib diisi.'];
         if (isCabang && !form.lokasi_kantor_id) newErrors.lokasi_kantor_id = ['Cabang penempatan wajib dipilih.'];

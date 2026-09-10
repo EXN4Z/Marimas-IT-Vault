@@ -393,8 +393,6 @@ function SetPasswordModal({
         const newErrors: { password?: string; confirmation?: string } = {};
         if (!password.trim()) {
             newErrors.password = 'Password baru wajib diisi.';
-        } else if (password.length < 6) {
-            newErrors.password = 'Password minimal 6 karakter.';
         }
 
         if (!confirmation.trim()) {
@@ -464,7 +462,7 @@ function SetPasswordModal({
                         <TextInput
                             type="password"
                             autoFocus
-                            placeholder="Minimal 6 karakter"
+                            placeholder="Password baru"
                             value={password}
                             onChange={(v) => {
                                 setPassword(v);
