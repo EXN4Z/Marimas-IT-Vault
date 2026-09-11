@@ -110,18 +110,20 @@ const navItems: NavItem[] = [
       // (GET /inventory sudah role:karyawan,manajer,hr,admin) dan sama
       // "Master Data" parent yang sekarang gak diblokir total lagi buat
       // non-staff (lihat roleFilter di bawah). Kategori/Departemen/Supplier
-      // TETAP staff-only, murni data referensi yang gak relevan buat
-      // karyawan biasa.
+      // ADMIN-ONLY sekarang (dulu staff-only/admin+hr) -- semua role
+      // selain admin (hr termasuk) disamakan persis seperti karyawan,
+      // yaitu TIDAK punya akses ke data referensi ini.
       { label: 'Inventory', icon: Package, path: '/master-data?tab=inventory' },
       { label: 'Kategori', icon: Tags, path: '/master-data?tab=kategori', roles: ['admin'] },
       // BARU: Data User & Cabang pindahan dari halaman /karyawan & /cabang
       // (dulu 2 item sidebar terpisah, admin-only) -- sekarang jadi tab di
       // sini juga, tetap admin-only lewat `roles`.
+      // Data User, Cabang, Perusahaan, Departemen, & Supplier: admin-only
+      // lewat `roles`. Urutan Perusahaan harus samain sama TAB_KEYS di
+      // MasterData.tsx (dipakai buat nentuin "child pertama" default
+      // dropdown).
       { label: 'Data User', icon: Users, path: '/master-data?tab=karyawan', roles: ['admin'] },
       { label: 'Cabang', icon: Building2, path: '/master-data?tab=cabang', roles: ['admin'] },
-      // BARU: mirror 'Cabang' -- admin-only, sama pola. Urutan harus samain
-      // sama TAB_KEYS di MasterData.tsx (dipakai buat nentuin "child pertama"
-      // default dropdown).
       { label: 'Perusahaan', icon: Building2, path: '/master-data?tab=perusahaan', roles: ['admin'] },
       { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen', roles: ['admin'] },
       { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier', roles: ['admin'] },
@@ -204,8 +206,6 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const STAFF_ROLES = ['admin'];
-
   // roles yang backend izinin buka GET /inventory (routes/api.php) --
   // dipakai buat nentuin siapa yang masih boleh liat menu "Master Data"
   // sama sekali (isi tab Inventory-nya), meski cuma admin/hr yang boleh
@@ -237,8 +237,10 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
     // sudah punya varian dashboard-nya sendiri: DashboardUser (semua role
     // non-reviewer, termasuk cabang) / DashboardAdmin, jadi menu ini gak
     // perlu disembunyikan lagi.)
-    // Laporan untuk admin/hr/manajer
-    if (item.label === 'Laporan' && !STAFF_ROLES.includes(user?.role ?? '')) {
+    // Laporan: admin-only. Semua role selain admin (hr/manajer/cabang
+    // termasuk) disamakan persis seperti karyawan -- yaitu TIDAK punya
+    // akses ke menu ini (lihat Laporan.tsx: isStaff sekarang juga admin-only).
+    if (item.label === 'Laporan' && user?.role !== 'admin') {
       return false;
     }
     return true;

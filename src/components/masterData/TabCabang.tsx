@@ -9,14 +9,15 @@ import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../share
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 import { downloadStyledExcel } from '../../utils/excelReport';
 
-const STAFF_ROLES = ['admin', 'hr'];
-
 // Dipindah dari halaman /cabang (CabangPage.tsx) -- sekarang jadi tab
 // "Cabang" di dalam Master Data, sepola sama tab Inventory/Kategori/dst
 // (lihat MasterData.tsx). Route /cabang lama di-redirect ke sini.
+// Admin-only, sinkron sama backend (routes/api.php: apiResource('cabang')
+// ada di dalam grup 'role:admin' murni). Semua role selain admin (hr
+// termasuk) disamakan persis seperti karyawan -- yaitu TIDAK punya akses.
 export default function TabCabang() {
   const { user } = useAuth();
-  const isStaff = !!user && STAFF_ROLES.includes(user.role);
+  const isStaff = user?.role === 'admin';
 
   const [cabangList, setCabangList] = useState<Cabang[]>([]);
   const [loading, setLoading] = useState(true);
