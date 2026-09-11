@@ -48,6 +48,9 @@ export default function NotificationDropdown() {
   // gagal kalau Pusher gak konek di production. Sekarang polling (di atas) yang
   // jadi satu-satunya sumber, dan tiap ketemu notif ID baru yang belum pernah
   // kelihatan sebelumnya, langsung munculin toast alert -- gak butuh Pusher sama sekali.
+  // Kecuali kalau data.silent true (misal: notif laporan kerusakan yang
+  // ditujukan buat pelapornya sendiri) -- tetap masuk ke list & unread_count,
+  // cuma toast-nya di-skip biar gak nge-alert orang soal aksinya sendiri.
   const seenIdsRef = useRef<Set<string> | null>(null);
 
   useEffect(() => {
@@ -57,7 +60,7 @@ export default function NotificationDropdown() {
 
     if (seenIdsRef.current) {
       const belumPernahMuncul = items.filter(
-        (n) => !seenIdsRef.current!.has(n.id) && !n.read_at
+        (n) => !seenIdsRef.current!.has(n.id) && !n.read_at && !n.data?.silent
       );
 
       belumPernahMuncul.forEach((n) => {
