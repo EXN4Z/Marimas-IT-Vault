@@ -7,9 +7,15 @@ import Select from '../components/shared/Select';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
 import { getDepartemen, type Departemen } from '../api/masterData/departemen';
 import { getCabang, type Cabang } from '../api/cabang';
+import { getRole, type RoleItem } from '../api/masterData/role';
 import SearchableSelect from '../components/shared/SearchableSelect';
 
-type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest' | 'cabang';
+// BARU: role dulu union type tetap (hardcode 6 role), sekarang plain
+// string -- daftar pilihannya ditarik dinamis dari tabel Role (Master
+// Data > Role), lihat `roleList` di bawah. 'cabang' masih dicek sebagai
+// nama spesifik (bukan lewat union type) buat nentuin field kepegawaian
+// mana yang disembunyikan/wajib.
+type Role = string;
 
 interface FormState {
     name: string;
@@ -45,6 +51,9 @@ export default function CreateKaryawanPage() {
     const [form, setForm] = useState<FormState>(initialForm);
     const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
     const [cabangList, setCabangList] = useState<Cabang[]>([]);
+    // BARU: daftar role buat dropdown "Posisi" -- ditarik dari Master Data
+    // > Role, bukan hardcode lagi.
+    const [roleList, setRoleList] = useState<RoleItem[]>([]);
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
     // BARU: pesan error umum (non-per-field), dirender sebagai banner --
@@ -57,6 +66,9 @@ export default function CreateKaryawanPage() {
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
         getCabang().then(setCabangList).catch(() => {});
+        // per_page besar biar semua role kebawa sekaligus (dropdown, bukan
+        // tabel paginated) -- sama pola dengan handleExport di TabRole.tsx.
+        getRole(1, '', 100).then((res) => setRoleList(res.data)).catch(() => {});
     }, []);
 
     function closeModal() {
@@ -201,14 +213,8 @@ export default function CreateKaryawanPage() {
                         value={form.role}
                         onChange={(v) => handleRoleChange(v as Role)}
                         error={!!errors.role}
-                        options={[
-                            { value: 'karyawan', label: 'Karyawan' },
-                            { value: 'manajer', label: 'Manajer' },
-                            { value: 'hr', label: 'HR' },
-                            { value: 'admin', label: 'Admin' },
-                            { value: 'guest', label: 'Guest' },
-                            { value: 'cabang', label: 'Cabang' },
-                        ]}
+                        placeholder="Pilih posisi"
+                        options={roleList.map((r) => ({ value: r.nama, label: r.label || r.nama }))}
                     />
                 </Field>
 

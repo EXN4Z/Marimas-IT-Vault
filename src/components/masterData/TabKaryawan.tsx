@@ -8,7 +8,11 @@ import Pagination from '../shared/Pagination';
 import { Skeleton, SkeletonCircle } from '../shared/skeleton';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 
-type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'cabang';
+// BARU: dulu union type tetap (5 role), sekarang plain string -- role
+// baru bisa dibuat bebas lewat Master Data > Role, jadi daftar user di
+// sini juga harus bisa nampilin role apapun (lihat roleStyles/roleLabels
+// fallback di bawah), gak cuma 5 role bawaan.
+type Role = string;
 type TabKey = 'semua' | 'karyawan' | 'hr_manajer' | 'admin' | 'cabang';
 
 interface User {
@@ -27,15 +31,18 @@ interface User {
     tanggal_masuk?: string | null;
 }
 
-const roleStyles: Record<Role, string> = {
+const roleStyles: Record<string, string> = {
     admin: 'bg-red-50 text-red-700',
     hr: 'bg-pink-50 text-pink-700',
     manajer: 'bg-purple-50 text-purple-700',
     karyawan: 'bg-teal-50 text-teal-700',
     cabang: 'bg-blue-50 text-blue-700',
 };
+// role baru di luar 5 role bawaan (dibuat lewat Master Data > Role) belum
+// punya warna sendiri -- fallback ke abu-abu netral daripada blank/error.
+const defaultRoleStyle = 'bg-slate-50 text-slate-700';
 
-const roleLabels: Record<Role, string> = {
+const roleLabels: Record<string, string> = {
     admin: 'Admin',
     hr: 'HR',
     manajer: 'Manajer',
@@ -383,8 +390,8 @@ function UserRow({ user, isAdmin, onDelete, onEdit, onDetail }: UserRowProps) {
                 </div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
-                <span className={`text-xs px-3 py-1 rounded-full ${roleStyles[user.role]}`}>
-                    {roleLabels[user.role]}
+                <span className={`text-xs px-3 py-1 rounded-full ${roleStyles[user.role] || defaultRoleStyle}`}>
+                    {roleLabels[user.role] || user.role}
                 </span>
                 {user.departemen && (
                     <span className="text-xs text-gray-500">
