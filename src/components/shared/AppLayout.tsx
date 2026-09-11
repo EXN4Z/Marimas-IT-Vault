@@ -19,6 +19,7 @@ import {
   Images,
   History,
   Tags,
+  Shield,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import NotificationDropdown from './NotificationDropDown';
@@ -125,6 +126,9 @@ const navItems: NavItem[] = [
       { label: 'Data User', icon: Users, path: '/master-data?tab=karyawan', roles: ['admin'] },
       { label: 'Cabang', icon: Building2, path: '/master-data?tab=cabang', roles: ['admin'] },
       { label: 'Perusahaan', icon: Building2, path: '/master-data?tab=perusahaan', roles: ['admin'] },
+      // BARU: "Role" -- CRUD data referensi role/hak akses, admin-only,
+      // sama pola.
+      { label: 'Role', icon: Shield, path: '/master-data?tab=role', roles: ['admin'] },
       { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen', roles: ['admin'] },
       { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier', roles: ['admin'] },
     ],

@@ -1,7 +1,7 @@
 import '../index.css';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2, Package, Tags, Users, AlertCircle } from 'lucide-react';
+import { Building2, Truck, Plus, Pencil, Trash2, X, Upload, Download, Loader2, Package, Tags, Users, AlertCircle, Shield } from 'lucide-react';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
 import ConfirmDeleteModal from '../components/shared/ConfirmDeleteModal';
 import toast from 'react-hot-toast';
@@ -11,6 +11,7 @@ import TabKategori from '../components/masterData/TabKategori';
 import TabKaryawan from '../components/masterData/TabKaryawan';
 import TabCabang from '../components/masterData/TabCabang';
 import TabPerusahaan from '../components/masterData/TabPerusahaan';
+import TabRole from '../components/masterData/TabRole';
 import { SkeletonTable } from '../components/shared/skeleton';
 import Pagination from '../components/shared/Pagination';
 import { useAuth } from '../context/AuthContext';
@@ -38,7 +39,10 @@ type GenericTabKey = 'departemen' | 'supplier';
 // 'perusahaan' -- BARU, mirror struktur & tab 'cabang' persis (lihat
 // TabPerusahaan.tsx / api/perusahaan.ts), tapi sengaja tanpa relasi ke
 // tabel lain.
-type CustomTabKey = 'inventory' | 'kategori' | 'karyawan' | 'cabang' | 'perusahaan';
+// 'role' -- BARU: tab "Role" (CRUD data referensi role/hak akses),
+// dirender lewat TabRole.tsx (paginated server-side, sama pola
+// api/auditLog.ts), admin-only sama kayak Data User/Cabang/Perusahaan.
+type CustomTabKey = 'inventory' | 'kategori' | 'karyawan' | 'cabang' | 'perusahaan' | 'role';
 type TabKey = CustomTabKey | GenericTabKey;
 
 // alamat & telepon cuma dipakai tab 'supplier'
@@ -49,7 +53,7 @@ type FormPayload = { nama: string; alamat?: string; telepon?: string };
 // AppLayout nentuin dropdown Master Data mana yang default aktif kalau
 // URL belum punya "?tab=" -- harus samain urutannya sama children di
 // AppLayout.tsx (Inventory, Kategori, Departemen, Supplier).
-const TAB_KEYS: TabKey[] = ['inventory', 'kategori', 'karyawan', 'cabang', 'perusahaan', 'departemen', 'supplier'];
+const TAB_KEYS: TabKey[] = ['inventory', 'kategori', 'karyawan', 'cabang', 'perusahaan', 'role', 'departemen', 'supplier'];
 
 // pagination client-side buat tabel generik (Departemen/Supplier) -- data
 // dimuat penuh sekali lewat cfg.get(), tinggal dipotong per halaman di sini
@@ -79,6 +83,8 @@ const CUSTOM_TABS: { key: CustomTabKey; label: string; icon: typeof Package; rol
   { key: 'cabang', label: 'Cabang', icon: Building2, roles: ['admin'] },
   // BARU: mirror 'cabang' -- admin-only, sama pola.
   { key: 'perusahaan', label: 'Perusahaan', icon: Building2, roles: ['admin'] },
+  // BARU: tab "Role" -- admin-only, sama pola.
+  { key: 'role', label: 'Role', icon: Shield, roles: ['admin'] },
 ];
 
 const tabConfig: Record<
@@ -137,7 +143,7 @@ export default function MasterData() {
   // /karyawan & /cabang).
   const canViewTab = (tab: TabKey): boolean => {
     if (tab === 'inventory') return true;
-    if (tab === 'karyawan' || tab === 'cabang' || tab === 'perusahaan') return isAdmin;
+    if (tab === 'karyawan' || tab === 'cabang' || tab === 'perusahaan' || tab === 'role') return isAdmin;
     return isStaff;
   };
 
@@ -368,7 +374,7 @@ export default function MasterData() {
         <p className="text-sm text-slate-500">
           {isStaff
             ? isAdmin
-              ? 'Kelola data inventory, kategori, departemen, supplier, data user, cabang, dan perusahaan yang dipakai di seluruh sistem.'
+              ? 'Kelola data inventory, kategori, departemen, supplier, data user, cabang, perusahaan, dan role yang dipakai di seluruh sistem.'
               : 'Kelola data referensi aset, kelengkapan aset, departemen, dan supplier yang dipakai di seluruh sistem.'
             : 'Lihat inventory yang tersedia atau lagi kamu pinjam.'}
         </p>
@@ -444,6 +450,8 @@ export default function MasterData() {
         <TabCabang />
       ) : activeTab === 'perusahaan' ? (
         <TabPerusahaan />
+      ) : activeTab === 'role' ? (
+        <TabRole />
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {loading && (
