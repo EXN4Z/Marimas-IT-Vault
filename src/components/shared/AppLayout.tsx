@@ -115,6 +115,9 @@ const navItems: NavItem[] = [
       // yaitu TIDAK punya akses ke data referensi ini.
       { label: 'Inventory', icon: Package, path: '/master-data?tab=inventory' },
       { label: 'Kategori', icon: Tags, path: '/master-data?tab=kategori', roles: ['admin'] },
+      // BARU: Data User & Cabang pindahan dari halaman /karyawan & /cabang
+      // (dulu 2 item sidebar terpisah, admin-only) -- sekarang jadi tab di
+      // sini juga, tetap admin-only lewat `roles`.
       // Data User, Cabang, Perusahaan, Departemen, & Supplier: admin-only
       // lewat `roles`. Urutan Perusahaan harus samain sama TAB_KEYS di
       // MasterData.tsx (dipakai buat nentuin "child pertama" default
