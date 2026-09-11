@@ -19,11 +19,13 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, onC
 
   const filteredOptions = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return indukOptions;
-    return indukOptions.filter(
-      (p) => p.kode_inventory.toLowerCase().includes(q) || (p.nama || '').toLowerCase().includes(q)
-    );
-  }, [indukOptions, search]);
+    return indukOptions
+      // item gak boleh jadi induk buat dirinya sendiri
+      .filter((p) => p.id !== inventory.id)
+      .filter(
+        (p) => !q || p.kode_inventory.toLowerCase().includes(q) || (p.nama || '').toLowerCase().includes(q)
+      );
+  }, [indukOptions, search, inventory.id]);
 
   const selected = indukOptions.find((p) => p.id === parentId) || null;
 
