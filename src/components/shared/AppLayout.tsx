@@ -113,7 +113,7 @@ const navItems: NavItem[] = [
       // TETAP staff-only, murni data referensi yang gak relevan buat
       // karyawan biasa.
       { label: 'Inventory', icon: Package, path: '/master-data?tab=inventory' },
-      { label: 'Kategori', icon: Tags, path: '/master-data?tab=kategori', roles: ['admin', 'hr'] },
+      { label: 'Kategori', icon: Tags, path: '/master-data?tab=kategori', roles: ['admin'] },
       // BARU: Data User & Cabang pindahan dari halaman /karyawan & /cabang
       // (dulu 2 item sidebar terpisah, admin-only) -- sekarang jadi tab di
       // sini juga, tetap admin-only lewat `roles`.
@@ -123,8 +123,8 @@ const navItems: NavItem[] = [
       // sama TAB_KEYS di MasterData.tsx (dipakai buat nentuin "child pertama"
       // default dropdown).
       { label: 'Perusahaan', icon: Building2, path: '/master-data?tab=perusahaan', roles: ['admin'] },
-      { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen', roles: ['admin', 'hr'] },
-      { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier', roles: ['admin', 'hr'] },
+      { label: 'Departemen', icon: Building2, path: '/master-data?tab=departemen', roles: ['admin'] },
+      { label: 'Supplier', icon: Truck, path: '/master-data?tab=supplier', roles: ['admin'] },
     ],
   },
   { label: 'Audit Log', icon: ScrollText, path: '/audit-log', restricted: true },
@@ -204,7 +204,7 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const STAFF_ROLES = ['admin', 'hr'];
+  const STAFF_ROLES = ['admin'];
 
   // roles yang backend izinin buka GET /inventory (routes/api.php) --
   // dipakai buat nentuin siapa yang masih boleh liat menu "Master Data"

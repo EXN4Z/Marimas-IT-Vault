@@ -70,7 +70,7 @@ function AppRoutes() {
           <Route
             path="/laporan"
             element={
-              <RoleRoute roles={['admin']}>
+              <RoleRoute roles={['admin', 'hr']}>
                 <Laporan />
               </RoleRoute>
             }
