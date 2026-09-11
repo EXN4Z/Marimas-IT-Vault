@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, useMemo, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
@@ -15,17 +15,12 @@ import { Skeleton } from '../components/shared/skeleton';
 import ConfirmDeleteModal from '../components/shared/ConfirmDeleteModal';
 import { KeyRound, X } from 'lucide-react';
 
-// BARU: role dulu union type tetap (hardcode 6 role), sekarang plain
-// string -- daftar pilihannya ditarik dinamis dari tabel Role (Master
-// Data > Role), lihat `roleList` di bawah.
-type Role = string;
-
 interface User {
     id: number;
     name: string;
     email: string | null;
     phone: string | null;
-    role: Role;
+    role_id: string;
     nik: string | null;
     departemen_id?: number | null;
     lokasi_kantor_id?: number | null;
@@ -36,7 +31,7 @@ interface FormState {
     name: string;
     email: string;
     phone: string;
-    role: Role;
+    role_id: string;
     nik: string;
     departemen_id: string;
     lokasi_kantor_id: string;
@@ -51,7 +46,7 @@ const initialForm: FormState = {
     name: '',
     email: '',
     phone: '',
-    role: 'karyawan',
+    role_id: '',
     nik: '',
     departemen_id: '',
     lokasi_kantor_id: '',
@@ -65,29 +60,25 @@ export default function EditKaryawanPage() {
     const [form, setForm] = useState<FormState>(initialForm);
     const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
     const [cabangList, setCabangList] = useState<Cabang[]>([]);
-    // BARU: daftar role buat dropdown "Role" -- ditarik dari Master Data >
-    // Role, bukan hardcode lagi.
     const [roleList, setRoleList] = useState<RoleItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
-    // BARU: pesan error umum (non-per-field) -- disamain sama pola
-    // InventoryFormModal (errors._general), gantiin toast.error yang dulu
-    // dipakai buat kasus 422/403/gagal-simpan.
     const [generalError, setGeneralError] = useState('');
 
-    // BARU: state buat modal "Ubah password" (admin nentuin sendiri password-nya)
     const [showSetPassword, setShowSetPassword] = useState<boolean>(false);
     const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
     const [deleting, setDeleting] = useState<boolean>(false);
 
-    const isCabang = form.role === 'cabang';
+    const selectedRole = useMemo(
+        () => roleList.find((r) => String(r.id) === form.role_id),
+        [roleList, form.role_id]
+    );
+    const isCabang = selectedRole?.nama === 'cabang';
 
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
         getCabang().then(setCabangList).catch(() => {});
-        // per_page besar biar semua role kebawa sekaligus (dropdown, bukan
-        // tabel paginated) -- sama pola dengan handleExport di TabRole.tsx.
         getRole(1, '', 100).then((res) => setRoleList(res.data)).catch(() => {});
 
         api
@@ -98,7 +89,7 @@ export default function EditKaryawanPage() {
                     name: u.name,
                     email: u.email ?? '',
                     phone: u.phone ?? '',
-                    role: u.role,
+                    role_id: String(u.role_id), // BARU: pastikan string, jaga-jaga kalau backend ngirim angka
                     nik: u.nik ?? '',
                     departemen_id: u.departemen_id ? String(u.departemen_id) : '',
                     lokasi_kantor_id: u.lokasi_kantor_id ? String(u.lokasi_kantor_id) : '',
@@ -130,18 +121,24 @@ export default function EditKaryawanPage() {
         }
     }
 
-    function handleRoleChange(value: Role) {
+    // BARU: parameter sekarang string id (value dari <Select>), bukan nama
+    // role -- dulu nulis ke field `role` yang gak ada di FormState (typo),
+    // dan ngecek `value === 'cabang'` langsung padahal value seharusnya id.
+    function handleRoleChange(value: string) {
+        const role = roleList.find((r) => String(r.id) === value);
+        const goingToCabang = role?.nama === 'cabang';
+
         setForm((prev) => ({
             ...prev,
-            role: value,
-            ...(value === 'cabang'
+            role_id: value,
+            ...(goingToCabang
                 ? { nik: '', departemen_id: '', tanggal_masuk: '' }
                 : {}),
         }));
         setErrors((prev) => {
             const next = { ...prev };
-            delete next.role;
-            if (value === 'cabang') {
+            delete next.role_id;
+            if (goingToCabang) {
                 delete next.nik;
                 delete next.departemen_id;
                 delete next.tanggal_masuk;
@@ -156,7 +153,7 @@ export default function EditKaryawanPage() {
 
         const newErrors: FieldErrors = {};
         if (!form.name.trim()) newErrors.name = ['Nama lengkap wajib diisi.'];
-        if (!form.role) newErrors.role = ['Role wajib dipilih.'];
+        if (!form.role_id) newErrors.role_id = ['Role wajib dipilih.']; // BARU: key dibetulkan dari 'role'
         if (!isCabang && !form.nik.trim()) newErrors.nik = ['NIK karyawan wajib diisi.'];
         if (isCabang && !form.lokasi_kantor_id) newErrors.lokasi_kantor_id = ['Cabang penempatan wajib dipilih.'];
 
@@ -172,6 +169,7 @@ export default function EditKaryawanPage() {
         try {
             const payload = {
                 ...form,
+                role_id: Number(form.role_id), // BARU: kirim sebagai integer, samain kayak CreateKaryawanPage
                 nik: isCabang ? null : form.nik,
                 departemen_id: isCabang ? null : form.departemen_id || null,
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
@@ -212,7 +210,6 @@ export default function EditKaryawanPage() {
         }
     }
 
-    // BARU: admin nentuin sendiri password baru untuk karyawan ini (bukan random)
     async function handleSetPassword(password: string, passwordConfirmation: string) {
         await setKaryawanPassword(Number(id), password, passwordConfirmation);
         toast.success('Password berhasil diubah.');
@@ -275,13 +272,13 @@ export default function EditKaryawanPage() {
                         />
                     </Field>
 
-                    <Field label="Role" error={errors.role?.[0]} required>
+                    <Field label="Role" error={errors.role_id?.[0]} required>
                         <Select
-                            value={form.role}
-                            onChange={(v) => handleRoleChange(v as Role)}
-                            error={!!errors.role}
+                            value={form.role_id}
+                            onChange={(v) => handleRoleChange(v)}
+                            error={!!errors.role_id}
                             placeholder="Pilih role"
-                            options={roleList.map((r) => ({ value: r.nama, label: r.label || r.nama }))}
+                            options={roleList.map((r) => ({ value: String(r.id), label: r.label || r.nama }))}
                         />
                     </Field>
 
@@ -377,7 +374,7 @@ export default function EditKaryawanPage() {
     );
 }
 
-// BARU: modal buat admin nentuin sendiri password baru untuk karyawan
+// Modal buat admin nentuin sendiri password baru untuk karyawan
 function SetPasswordModal({
     onClose,
     onSubmit,
