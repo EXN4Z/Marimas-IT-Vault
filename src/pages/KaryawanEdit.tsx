@@ -7,6 +7,7 @@ import Select from '../components/shared/Select';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
 import { getDepartemen } from '../api/masterData/departemen';
 import { getCabang, type Cabang } from '../api/cabang';
+import { getRole, type RoleItem } from '../api/masterData/role';
 import { setKaryawanPassword } from '../api/auth';
 import type { Departemen } from '../api/masterData/departemen';
 import { createPortal } from 'react-dom';
@@ -14,7 +15,10 @@ import { Skeleton } from '../components/shared/skeleton';
 import ConfirmDeleteModal from '../components/shared/ConfirmDeleteModal';
 import { KeyRound, X } from 'lucide-react';
 
-type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest' | 'cabang';
+// BARU: role dulu union type tetap (hardcode 6 role), sekarang plain
+// string -- daftar pilihannya ditarik dinamis dari tabel Role (Master
+// Data > Role), lihat `roleList` di bawah.
+type Role = string;
 
 interface User {
     id: number;
@@ -61,6 +65,9 @@ export default function EditKaryawanPage() {
     const [form, setForm] = useState<FormState>(initialForm);
     const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
     const [cabangList, setCabangList] = useState<Cabang[]>([]);
+    // BARU: daftar role buat dropdown "Role" -- ditarik dari Master Data >
+    // Role, bukan hardcode lagi.
+    const [roleList, setRoleList] = useState<RoleItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
@@ -79,6 +86,9 @@ export default function EditKaryawanPage() {
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
         getCabang().then(setCabangList).catch(() => {});
+        // per_page besar biar semua role kebawa sekaligus (dropdown, bukan
+        // tabel paginated) -- sama pola dengan handleExport di TabRole.tsx.
+        getRole(1, '', 100).then((res) => setRoleList(res.data)).catch(() => {});
 
         api
             .get<User>(`/karyawan/${id}`)
@@ -270,14 +280,8 @@ export default function EditKaryawanPage() {
                             value={form.role}
                             onChange={(v) => handleRoleChange(v as Role)}
                             error={!!errors.role}
-                            options={[
-                                { value: 'karyawan', label: 'Karyawan' },
-                                { value: 'manajer', label: 'Manajer' },
-                                { value: 'hr', label: 'HR' },
-                                { value: 'admin', label: 'Admin' },
-                                { value: 'guest', label: 'Guest' },
-                                { value: 'cabang', label: 'Cabang' },
-                            ]}
+                            placeholder="Pilih role"
+                            options={roleList.map((r) => ({ value: r.nama, label: r.label || r.nama }))}
                         />
                     </Field>
 
