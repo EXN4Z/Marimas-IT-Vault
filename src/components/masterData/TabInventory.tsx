@@ -75,7 +75,7 @@ const STATUS_STYLE: Record<InventoryStatus, string> = {
 
 // urutan tampil di tabel: tersedia paling atas, lalu dipakai, lalu status
 // yang lagi dalam proses penanganan, rusak_berat, dan dijual paling
-// bawah — dipakai sebagai key sort di filteredInventory, BUKAN untuk urutan
+// bawah -- dipakai sebagai key sort di filteredInventory, BUKAN untuk urutan
 // dropdown filter (dropdown tetap ikut urutan STATUS_LABEL di atas).
 const STATUS_PRIORITY: Record<InventoryStatus, number> = {
   tersedia: 1,
@@ -499,29 +499,27 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
     }
   };
 
-  // KARYAWAN/CABANG cuma boleh liat inventory yang masih tersedia, atau inventory yang
-  // LAGI dia pinjam sendiri (bukan yang PERNAH -- begitu pengembalian sudah
-  // terjadi, otomatis maupun manual, inventory itu bukan "milik" dia lagi).
-  // FIX: pakai userIdPemakai() (bukan akses langsung .pekerja?.user?.id),
-  // biar akun cabang (yang gak punya pekerja, cuma user langsung) juga
-  // kedeteksi bener sebagai pemilik record, bukan malah inventory yang lagi dia
-  // pegang sendiri ikut ke-filter hilang dari tabelnya.
-  //
-  // FIX BUG: dulu filter kepemilikan ini cuma dipasang di rantai
-  // `filteredInventory` (buat nentuin baris tabel), sementara `statusCounts` &
-  // badge "Semua Status" masih ngitung dari `inventoryList` MENTAH (belum kena
-  // filter ini). Akibatnya begitu inventory karyawan dikembalikan otomatis
-  // (mis. admin tandai rusak berat), barisnya udah ilang dari tabel, tapi
-  // angka di badge tab tetap ngitung inventory itu -- angka "kecantol" padahal
-  // tabelnya kosong. Sekarang filter kepemilikan ditarik jadi satu sumber
-  // (`visibleInventoryList`) yang dipakai bareng oleh tabel & badge, jadi
-  // keduanya selalu sinkron.
+  // BARU: karyawan/cabang sekarang selalu lihat TABEL yang isinya cuma
+  // inventory berstatus 'tersedia' (siap dipinjam) -- apapun status filter
+  // yang mereka pilih, tabel gak lagi nyampur nampilin inventory yang lagi
+  // dia pakai sendiri. Item yang lagi dia pakai dipisah & ditampilkan
+  // sebagai card di section "Sedang Anda Pakai" (lihat myBorrowedItems di
+  // bawah), bukan sebagai baris tabel lagi.
   const visibleInventoryList = useMemo(() => {
     if (isAdmin) return inventoryList;
-    return inventoryList.filter((a) => {
-      const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
-      return a.status === 'tersedia' || akuPeminjamnya;
-    });
+    return inventoryList.filter((a) => a.status === 'tersedia');
+  }, [inventoryList, isAdmin]);
+
+  // BARU: daftar inventory yang lagi dipakai/ditangani (proses perbaikan)
+  // oleh karyawan/cabang yang sedang login -- dipakai buat render section
+  // card "Sedang Anda Pakai" di atas tabel, terpisah dari tabel utama yang
+  // sekarang murni isinya inventory tersedia. Pakai userIdPemakai() (bukan
+  // akses langsung .pekerja?.user?.id) biar akun cabang (yang gak punya
+  // pekerja, cuma user langsung) juga kedeteksi bener sebagai pemilik
+  // record.
+  const myBorrowedItems = useMemo(() => {
+    if (isAdmin) return [];
+    return inventoryList.filter((a) => userIdPemakai(a.pemakai_saat_ini) === user?.id);
   }, [inventoryList, isAdmin, user?.id]);
 
   // Daftar item yang boleh jadi induk (parent_id === null, apapun
@@ -566,7 +564,9 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
   // Jumlah inventory per status (dari visibleInventoryList -- yang udah kena filter
   // kepemilikan, sama kayak sumber filteredInventory -- BUKAN dari inventoryList
   // mentah), dipakai buat badge angka di tiap opsi dropdown status. Ini
-  // yang bikin badge tab selalu sinkron sama isi tabelnya.
+  // yang bikin badge tab selalu sinkron sama isi tabelnya. Buat non-admin,
+  // visibleInventoryList cuma berisi status 'tersedia', jadi tab status pun
+  // sudah disembunyikan sekalian (lihat isAdmin && <ScrollableTabBar> di bawah).
   // Ngitung dari populasi yang sudah kena filter kategori aktif (selectedKategoriIds)
   // biar badge per-status konsisten dengan badge "Semua Status".
   const statusCounts = useMemo(() => {
@@ -717,9 +717,31 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
 
   // Dipakai bareng oleh tabel (desktop) & card (mobile) biar tombol aksinya
   // gak ke-duplikasi/nyimpang antara 2 tampilan itu.
+  //
+  // BARU: karena tabel non-admin sekarang cuma berisi inventory berstatus
+  // 'tersedia' (item yang lagi mereka pakai dipindah ke card "Sedang Anda
+  // Pakai" -- lihat myBorrowedItems), baris tabel buat karyawan/cabang cuma
+  // punya aksi Detail.
   const renderAksiInventory = (a: Inventory) => {
     const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
-    const bolehLihatDetail = isAdmin || akuPeminjamnya;
+    const bolehLihatDetail = isAdmin || a.status === 'tersedia' || akuPeminjamnya;
+
+    if (!isAdmin) {
+      return (
+        <>
+          {bolehLihatDetail && (
+            <button
+              onClick={() => openDetail(a.id)}
+              title="Detail"
+              className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+            >
+              <Eye size={15} />
+            </button>
+          )}
+        </>
+      );
+    }
+
     return (
       <>
         {bolehLihatDetail && (
@@ -732,92 +754,38 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
           </button>
         )}
 
-        {isAdmin && (
-          <>
-            {/* Item manapun yang berdiri sendiri (parent_id null) & tersedia
-                bisa dipasang ke item lain sebagai child -- tidak terbatas
-                ke kategori tertentu lagi. */}
-            {!a.parent_id && a.status === 'tersedia' && (
-              <button
-                onClick={() => setPasangIndukTarget(a)}
-                title="Pasang ke Induk"
-                className="p-2 text-sky-600 bg-sky-50 rounded-lg hover:bg-sky-100 transition"
-              >
-                <Link2 size={15} />
-              </button>
-            )}
-            {a.status === 'tersedia' && (
-              <button
-                onClick={() => setSerahTerimaInventory(a)}
-                title="Serahkan ke Karyawan"
-                className="p-2 text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition"
-              >
-                <HandCoins size={15} />
-              </button>
-            )}
-            {a.status === 'dipakai' && a.pemakai_saat_ini && (
-              <button
-                onClick={() => setPengembalianTarget({ inventory: a, pemakai: a.pemakai_saat_ini! })}
-                title="Terima Kembali"
-                className="p-2 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition"
-              >
-                <Undo2 size={15} />
-              </button>
-            )}
-            {/* Admin bisa lapor kerusakan untuk status tersedia atau dipakai */}
-            {(a.status === 'tersedia' || a.status === 'dipakai') && (
-              <button
-                onClick={() => setPerbaikanInventoryTarget(a)}
-                title="Lapor Kerusakan"
-                className="p-2 text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition"
-              >
-                <Wrench size={15} />
-              </button>
-            )}
-            {(a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak_berat') && (
-              <span
-                title="Laporan kerusakan sudah dikirim, menunggu/sedang ditangani"
-                className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg cursor-default"
-              >
-                <Wrench size={14} />
-                Sudah Lapor
-              </span>
-            )}
-            <button
-              onClick={() => {
-                setEditingInventory(a);
-                setFormOpen(true);
-              }}
-              title="Edit"
-              className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-            >
-              <Pencil size={15} />
-            </button>
-            <button
-              onClick={() => {
-                setDeleteError('');
-                setDeleteForceAvailable(false);
-                setDeleteTarget(a);
-              }}
-              title="Hapus"
-              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-            >
-              <Trash2 size={15} />
-            </button>
-          </>
+        {/* Item manapun yang berdiri sendiri (parent_id null) &
+            tersedia bisa dipasang ke item lain sebagai child -- tidak terbatas
+            ke kategori tertentu lagi. */}
+        {!a.parent_id && a.status === 'tersedia' && (
+          <button
+            onClick={() => setPasangIndukTarget(a)}
+            title="Pasang ke Induk"
+            className="p-2 text-sky-600 bg-sky-50 rounded-lg hover:bg-sky-100 transition"
+          >
+            <Link2 size={15} />
+          </button>
         )}
-
-        {!isAdmin && akuPeminjamnya && a.status === 'dipakai' && a.pemakai_saat_ini && (
+        {a.status === 'tersedia' && (
+          <button
+            onClick={() => setSerahTerimaInventory(a)}
+            title="Serahkan ke Karyawan"
+            className="p-2 text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition"
+          >
+            <HandCoins size={15} />
+          </button>
+        )}
+        {a.status === 'dipakai' && a.pemakai_saat_ini && (
           <button
             onClick={() => setPengembalianTarget({ inventory: a, pemakai: a.pemakai_saat_ini! })}
-            title="Kembalikan"
+            title="Terima Kembali"
             className="p-2 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition"
           >
             <Undo2 size={15} />
           </button>
         )}
-
-        {!isAdmin && akuPeminjamnya && a.status === 'dipakai' && (
+        {/* Admin bisa lapor kerusakan untuk status tersedia atau dipakai */}
+        {(a.status === 'tersedia' || a.status === 'dipakai') && (
           <button
             onClick={() => setPerbaikanInventoryTarget(a)}
             title="Lapor Kerusakan"
@@ -826,15 +794,36 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
             <Wrench size={15} />
           </button>
         )}
-        {!isAdmin && akuPeminjamnya && (a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak_berat') && (
+        {(a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak_berat') && (
           <span
-            title="Laporan kerusakan sudah dikirim, menunggu ditangani admin"
+            title="Laporan kerusakan sudah dikirim, menunggu/sedang ditangani"
             className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg cursor-default"
           >
             <Wrench size={14} />
             Sudah Lapor
           </span>
         )}
+        <button
+          onClick={() => {
+            setEditingInventory(a);
+            setFormOpen(true);
+          }}
+          title="Edit"
+          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+        >
+          <Pencil size={15} />
+        </button>
+        <button
+          onClick={() => {
+            setDeleteError('');
+            setDeleteForceAvailable(false);
+            setDeleteTarget(a);
+          }}
+          title="Hapus"
+          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+        >
+          <Trash2 size={15} />
+        </button>
       </>
     );
   };
@@ -907,39 +896,97 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         </p>
       )}
 
+      {/* BARU: section card "Sedang Anda Pakai" -- cuma buat karyawan/cabang
+          (non-admin), berisi inventory yang lagi dia pakai/lagi ditangani
+          (menunggu_perbaikan/diperbaiki/rusak_berat) sendiri. Item-item ini
+          sengaja TIDAK ikut ditampilkan sebagai baris di tabel utama lagi --
+          tabel utama sekarang murni daftar inventory 'tersedia' (lihat
+          visibleInventoryList). Ditaruh sebelum tab status/tabel biar
+          langsung kelihatan begitu tab ini dibuka. */}
+      {!isAdmin && myBorrowedItems.length > 0 && (
+        <div className="mb-5">
+          <p className="text-sm font-semibold text-slate-900 mb-3">Sedang Anda Pakai</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {myBorrowedItems.map((a) => (
+              <div key={a.id} className="border border-slate-200 rounded-xl p-4 flex flex-col gap-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{a.kode_inventory}</p>
+                    <p className="text-xs text-slate-500 truncate">{a.nama || '-'}</p>
+                  </div>
+                  <StatusBadge colorClass={STATUS_STYLE[a.status]} className="shrink-0">
+                    {STATUS_LABEL[a.status]}
+                  </StatusBadge>
+                </div>
+                <div className="flex items-center flex-wrap gap-2">
+                  <button
+                    onClick={() => openDetail(a.id)}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition"
+                  >
+                    Detail
+                  </button>
+                  {a.status === 'dipakai' && a.pemakai_saat_ini && (
+                    <>
+                      <button
+                        onClick={() => setPengembalianTarget({ inventory: a, pemakai: a.pemakai_saat_ini! })}
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                      >
+                        <Undo2 size={13} />
+                        Kembalikan
+                      </button>
+                      <button
+                        onClick={() => setPerbaikanInventoryTarget(a)}
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition"
+                      >
+                        <Wrench size={13} />
+                        Lapor Kerusakan
+                      </button>
+                    </>
+                  )}
+                  {(a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak_berat') && (
+                    <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg cursor-default">
+                      <Wrench size={13} />
+                      Sudah Lapor
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Filter status sekarang pakai tab nav (ScrollableTabBar) -- sama pola
           kayak Forum Penanganan Inventory, biar konsisten di seluruh halaman
-          Inventaris. */}
-      <ScrollableTabBar
-        className="mb-4"
-        activeTab={statusFilter === '' ? 'semua' : statusFilter}
-        onChange={(key) => setStatusFilter(key === 'semua' ? '' : (key as InventoryStatus))}
-        tabs={[
-          {
-            key: 'semua' as const,
-            label: 'Semua Status',
-            badge: Object.values(statusCounts).reduce((sum, n) => sum + n, 0),
-            badgeClassName: statusFilter === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
-          },
-          // Tab "Rusak Berat" & "Dijual" cuma buat admin -- non-admin gak
-          // perlu (dan gak boleh) lihat inventory yang rusak berat/udah
-          // di-writeoff/dijual. Sinkron sama pembatasan yang sudah
-          // ditegakkan di backend (InventoryController::index()/show()), yang
-          // meng-exclude total kedua status ini dari response non-admin.
-          // Status "Dijual" disembunyikan kalau semua item di filter aktif
-          // adalah child (parent_id terisi) -- karena endpoint jual() menolak
-          // item yang punya parent_id. Cek via adaIndukDiFilterAktif.
-          ...(Object.keys(STATUS_LABEL) as InventoryStatus[])
-            .filter((s) => isAdmin || !['rusak_berat', 'dijual'].includes(s))
-            .filter((s) => adaIndukDiFilterAktif || !STATUS_KHUSUS_INDUK.includes(s))
-            .map((s) => ({
-              key: s,
-              label: STATUS_LABEL[s],
-              badge: statusCounts[s],
-              badgeClassName: statusFilter === s ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
-            })),
-        ]}
-      />
+          Inventaris. BARU: cuma dimunculkan buat admin -- tabel non-admin
+          sekarang selalu isinya inventory 'tersedia' aja (lihat
+          visibleInventoryList), jadi tab status gak relevan lagi buat mereka. */}
+      {isAdmin && (
+        <ScrollableTabBar
+          className="mb-4"
+          activeTab={statusFilter === '' ? 'semua' : statusFilter}
+          onChange={(key) => setStatusFilter(key === 'semua' ? '' : (key as InventoryStatus))}
+          tabs={[
+            {
+              key: 'semua' as const,
+              label: 'Semua Status',
+              badge: Object.values(statusCounts).reduce((sum, n) => sum + n, 0),
+              badgeClassName: statusFilter === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
+            },
+            // Status "Dijual" disembunyikan kalau semua item di filter aktif
+            // adalah child (parent_id terisi) -- karena endpoint jual() menolak
+            // item yang punya parent_id. Cek via adaIndukDiFilterAktif.
+            ...(Object.keys(STATUS_LABEL) as InventoryStatus[])
+              .filter((s) => adaIndukDiFilterAktif || !STATUS_KHUSUS_INDUK.includes(s))
+              .map((s) => ({
+                key: s,
+                label: STATUS_LABEL[s],
+                badge: statusCounts[s],
+                badgeClassName: statusFilter === s ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
+              })),
+          ]}
+        />
+      )}
 
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
         <SearchInput
