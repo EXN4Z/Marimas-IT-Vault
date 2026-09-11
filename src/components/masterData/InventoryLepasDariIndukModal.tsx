@@ -26,7 +26,6 @@ export default function InventoryLepasDariIndukModal({ inventory, onClose, onSuc
       const updated = await lepasDariIndukInventory(inventory.id, {
         keterangan: keterangan.trim() || undefined,
       });
-      toast.success('Kelengkapan berhasil dilepas dari induk.');
       onSuccess(updated);
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Gagal melepas kelengkapan dari induk. Coba lagi.';

@@ -43,7 +43,6 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
         keluhan: keluhan.trim(),
         foto: fotoKerusakan[0], // ambil 1 file pertama, sesuai kolom foto di backend
       });
-      toast.success('Laporan kerusakan berhasil dikirim.');
       onSuccess();
     } catch (err: any) {
       const msg =

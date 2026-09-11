@@ -19,13 +19,11 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, onC
 
   const filteredOptions = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return indukOptions
-      // item gak boleh jadi induk buat dirinya sendiri
-      .filter((p) => p.id !== inventory.id)
-      .filter(
-        (p) => !q || p.kode_inventory.toLowerCase().includes(q) || (p.nama || '').toLowerCase().includes(q)
-      );
-  }, [indukOptions, search, inventory.id]);
+    if (!q) return indukOptions;
+    return indukOptions.filter(
+      (p) => p.kode_inventory.toLowerCase().includes(q) || (p.nama || '').toLowerCase().includes(q)
+    );
+  }, [indukOptions, search]);
 
   const selected = indukOptions.find((p) => p.id === parentId) || null;
 
@@ -38,7 +36,6 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, onC
     setError('');
     try {
       const updated = await pasangPenggantiKelengkapanInventory(inventory.id, parentId);
-      toast.success('Kelengkapan berhasil dipasangkan ke induk.');
       onSuccess(updated);
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Gagal memasang kelengkapan ke induk.';
