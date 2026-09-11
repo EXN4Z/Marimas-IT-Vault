@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
@@ -10,19 +10,18 @@ import { getCabang, type Cabang } from '../api/cabang';
 import { getRole, type RoleItem } from '../api/masterData/role';
 import SearchableSelect from '../components/shared/SearchableSelect';
 
-// BARU: role dulu union type tetap (hardcode 6 role), sekarang plain
-// string -- daftar pilihannya ditarik dinamis dari tabel Role (Master
-// Data > Role), lihat `roleList` di bawah. 'cabang' masih dicek sebagai
-// nama spesifik (bukan lewat union type) buat nentuin field kepegawaian
-// mana yang disembunyikan/wajib.
-type Role = string;
+// BARU: dulu form nyimpen `role` (nama role sebagai string, union type
+// tetap). Sekarang backend pakai relasi `role_id` (foreign key ke tabel
+// roles), jadi form ini nyimpen ID-nya, bukan namanya -- lihat
+// `roleList`/`selectedRole` di bawah buat nentuin field kepegawaian mana
+// yang disembunyikan/wajib berdasarkan NAMA role dari id yang dipilih.
 
 interface FormState {
     name: string;
     email: string;
     phone: string;
     password: string;
-    role: Role;
+    role_id: string; // BARU: ganti dari `role: Role` (nama) ke id
     nik: string;
     departemen_id: string;
     lokasi_kantor_id: string;
@@ -38,7 +37,7 @@ const initialForm: FormState = {
     email: '',
     phone: '',
     password: '',
-    role: 'karyawan',
+    role_id: '', // BARU: kosong dulu, di-set setelah roleList kefetch (lihat useEffect)
     nik: '',
     departemen_id: '',
     lokasi_kantor_id: '',
@@ -51,25 +50,40 @@ export default function CreateKaryawanPage() {
     const [form, setForm] = useState<FormState>(initialForm);
     const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
     const [cabangList, setCabangList] = useState<Cabang[]>([]);
-    // BARU: daftar role buat dropdown "Posisi" -- ditarik dari Master Data
-    // > Role, bukan hardcode lagi.
+    // Daftar role buat dropdown "Posisi" -- ditarik dari Master Data > Role.
     const [roleList, setRoleList] = useState<RoleItem[]>([]);
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
-    // BARU: pesan error umum (non-per-field), dirender sebagai banner --
-    // dulu dipakein toast.error, sekarang disamain sama pola InventoryFormModal
-    // (errors._general) biar desainnya konsisten di semua form.
     const [generalError, setGeneralError] = useState('');
-
-    const isCabang = form.role === 'cabang';
 
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
         getCabang().then(setCabangList).catch(() => {});
         // per_page besar biar semua role kebawa sekaligus (dropdown, bukan
         // tabel paginated) -- sama pola dengan handleExport di TabRole.tsx.
-        getRole(1, '', 100).then((res) => setRoleList(res.data)).catch(() => {});
+        getRole(1, '', 100)
+            .then((res) => {
+                setRoleList(res.data);
+                // BARU: prefill ke role "karyawan" kalau ketemu (dulu default
+                // form.role = 'karyawan' langsung di initialForm; sekarang
+                // harus nunggu roleList kefetch dulu buat tau id-nya).
+                const defaultRole = res.data.find((r) => r.nama === 'karyawan');
+                if (defaultRole) {
+                    setForm((prev) => ({ ...prev, role_id: String(defaultRole.id) }));
+                }
+            })
+            .catch(() => {});
     }, []);
+
+    // BARU: cari objek role yang sedang dipilih berdasarkan role_id,
+    // dipakai buat nentuin isCabang (dulu langsung cek form.role === 'cabang'
+    // karena form.role isinya nama; sekarang form.role_id isinya angka jadi
+    // harus di-lookup dulu ke roleList).
+    const selectedRole = useMemo(
+        () => roleList.find((r) => String(r.id) === form.role_id),
+        [roleList, form.role_id]
+    );
+    const isCabang = selectedRole?.nama === 'cabang';
 
     function closeModal() {
         if (window.history.state && window.history.state.idx > 0) {
@@ -90,19 +104,25 @@ export default function CreateKaryawanPage() {
         }
     }
 
-    function handleRoleChange(value: Role) {
+    // BARU: parameter sekarang string id (value dari <Select>), bukan nama
+    // role. Cek "cabang" dilakukan lewat lookup ke roleList, bukan
+    // perbandingan string langsung ke value.
+    function handleRoleChange(value: string) {
+        const role = roleList.find((r) => String(r.id) === value);
+        const goingToCabang = role?.nama === 'cabang';
+
         setForm((prev) => ({
             ...prev,
-            role: value,
+            role_id: value,
             // bersihkan field kepegawaian kalau role diganti ke cabang
-            ...(value === 'cabang'
+            ...(goingToCabang
                 ? { nik: '', departemen_id: '', tanggal_masuk: '' }
                 : {}),
         }));
         setErrors((prev) => {
             const next = { ...prev };
-            delete next.role;
-            if (value === 'cabang') {
+            delete next.role_id;
+            if (goingToCabang) {
                 delete next.nik;
                 delete next.departemen_id;
                 delete next.tanggal_masuk;
@@ -118,7 +138,7 @@ export default function CreateKaryawanPage() {
         const newErrors: FieldErrors = {};
         if (!form.name.trim()) newErrors.name = ['Nama lengkap wajib diisi.'];
         if (!form.password.trim()) newErrors.password = ['Password awal wajib diisi.'];
-        if (!form.role) newErrors.role = ['Role wajib dipilih.'];
+        if (!form.role_id) newErrors.role_id = ['Role wajib dipilih.'];
         if (!isCabang && !form.nik.trim()) newErrors.nik = ['NIK karyawan wajib diisi.'];
         if (isCabang && !form.lokasi_kantor_id) newErrors.lokasi_kantor_id = ['Cabang penempatan wajib dipilih.'];
 
@@ -134,6 +154,7 @@ export default function CreateKaryawanPage() {
         try {
             const payload = {
                 ...form,
+                role_id: Number(form.role_id), // BARU: kirim sebagai integer, bukan string
                 nik: isCabang ? null : form.nik,
                 departemen_id: isCabang ? null : form.departemen_id || null,
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
@@ -144,9 +165,6 @@ export default function CreateKaryawanPage() {
             navigate('/karyawan');
         } catch (err: any) {
             if (err.response?.status === 422) {
-                // error per-field dirender di bawah masing-masing input (lihat Field
-                // di bawah) -- gak perlu toast lagi, cukup banner umum kalau memang
-                // ada pesan non-per-field dari server.
                 setErrors(err.response.data.errors ?? {});
                 toast.error('Ada data yang belum sesuai dengan format server.');
             } else if (err.response?.status === 403) {
@@ -208,13 +226,13 @@ export default function CreateKaryawanPage() {
                     />
                 </Field>
 
-                <Field label="Posisi" error={errors.role?.[0]} required>
+                <Field label="Posisi" error={errors.role_id?.[0]} required>
                     <Select
-                        value={form.role}
-                        onChange={(v) => handleRoleChange(v as Role)}
-                        error={!!errors.role}
+                        value={form.role_id}
+                        onChange={(v) => handleRoleChange(v)}
+                        error={!!errors.role_id}
                         placeholder="Pilih posisi"
-                        options={roleList.map((r) => ({ value: r.nama, label: r.label || r.nama }))}
+                        options={roleList.map((r) => ({ value: String(r.id), label: r.label || r.nama }))}
                     />
                 </Field>
 
