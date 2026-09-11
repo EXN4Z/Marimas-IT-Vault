@@ -638,9 +638,10 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
   // Barang Utama -- kalau hasilnya "diperbaiki" tetap nempel ke induk, kalau
   // "rusak_berat" backend otomatis copot parent_id + kembaliin pemakaian
   // aktif, lihat InventoryPenangananController::update()), Edit, Hapus.
-  // TIDAK ada Detail/Serah Terima/Terima Kembali/Jual (kelengkapan yang
-  // nempel gak ikut alur peminjaman perorangan -- dia ikut serah-terima/
-  // kembali BARENG induknya lewat form Barang Utama, bukan sendiri-sendiri).
+  // Detail (lihat riwayat/spesifikasi item ini sendiri) tetap ada, tapi
+  // TIDAK ada Serah Terima/Terima Kembali/Jual (kelengkapan yang nempel
+  // gak ikut alur peminjaman perorangan -- dia ikut serah-terima/kembali
+  // BARENG induknya lewat form Barang Utama, bukan sendiri-sendiri).
   // Non-admin gak dapat aksi apapun di baris ini, sama seperti behaviour
   // TabKelengkapanInventory.tsx yang lama.
   //
@@ -651,6 +652,13 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
     if (!isAdmin) return null;
     return (
       <>
+        <button
+          onClick={() => openDetail(a.id)}
+          title="Detail"
+          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+        >
+          <Eye size={15} />
+        </button>
         {(a.status === 'tersedia' || a.status === 'dipakai') && (
           <button
             onClick={() => setPerbaikanInventoryTarget(a)}
