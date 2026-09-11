@@ -16,7 +16,9 @@ import KategoriExportModal from '../components/laporan/KategoriExportModal';
 import { getDepartemen, type Departemen } from '../api/masterData/departemen';
 import DepartemenExportModal from '../components/laporan/DepartemenExportModal';
 
-const STAFF_ROLES = ['admin', 'hr', 'manajer', 'manager', 'cabang'];
+// Admin-only. Semua role selain admin (hr/manajer/cabang termasuk)
+// disamakan persis seperti karyawan -- yaitu TIDAK punya akses ke halaman
+// Laporan ini (sinkron sama menu sidebar di AppLayout.tsx).
 
 // dulu halaman ini cuma 2 kartu export (Inventory & Karyawan) -- sekarang jadi
 // tab-based karena Foto Inventory & Riwayat Inventory (pindahan dari Inventaris.tsx,
@@ -45,7 +47,7 @@ function isTabKey(value: string | null): value is TabKey {
 
 export default function Laporan() {
   const { user } = useAuth();
-  const isStaff = !!user && STAFF_ROLES.includes(user.role);
+  const isStaff = user?.role === 'admin';
   const isAdmin = user?.role === 'admin';
 
   const [searchParams, setSearchParams] = useSearchParams();

@@ -64,15 +64,17 @@ function isGenericTab(tab: TabKey): tab is GenericTabKey {
   return tab === 'departemen' || tab === 'supplier';
 }
 
-const STAFF_ROLES = ['admin', 'hr'];
-
 // `roles` opsional -- kalau diisi, tab ini cuma muncul buat role yang
-// disebut (dicek di bagian render ScrollableTabBar di bawah). Data User &
-// Cabang admin-only, sinkron sama RoleRoute yang dulu dipasang di App.tsx
-// waktu keduanya masih halaman sendiri (/karyawan, /cabang).
+// disebut (dicek di bagian render ScrollableTabBar di bawah). Data User,
+// Cabang, Perusahaan, & Kategori admin-only, sinkron sama backend
+// (routes/api.php: semua ada di dalam grup 'role:admin' murni). Semua role
+// selain admin (hr termasuk) disamakan persis seperti karyawan -- yaitu
+// TIDAK punya akses ke tab-tab ini.
+const ADMIN_ONLY_ROLES = ['admin'];
+
 const CUSTOM_TABS: { key: CustomTabKey; label: string; icon: typeof Package; roles?: string[] }[] = [
   { key: 'inventory', label: 'Inventory', icon: Package },
-  { key: 'kategori', label: 'Kategori', icon: Tags, roles: STAFF_ROLES },
+  { key: 'kategori', label: 'Kategori', icon: Tags, roles: ADMIN_ONLY_ROLES },
   { key: 'karyawan', label: 'Data User', icon: Users, roles: ['admin'] },
   { key: 'cabang', label: 'Cabang', icon: Building2, roles: ['admin'] },
   // BARU: mirror 'cabang' -- admin-only, sama pola.
@@ -121,14 +123,18 @@ const tabConfig: Record<
 
 export default function MasterData() {
   const { user } = useAuth();
-  const isStaff = !!user && STAFF_ROLES.includes(user.role);
   const isAdmin = !!user && user.role === 'admin';
+  // Kategori/Departemen/Supplier admin-only sekarang (dulu isStaff = admin
+  // ATAU hr). Semua role selain admin disamakan persis seperti karyawan --
+  // yaitu TIDAK punya akses ke tab-tab ini, sama seperti Data User/Cabang/
+  // Perusahaan di bawah.
+  const isStaff = isAdmin;
 
   // BARU: helper terpusat buat nentuin siapa boleh liat tab apa -- Inventory
-  // kebuka buat semua yang bisa akses Master Data, Kategori/Departemen/Supplier
-  // staff-only (admin/hr), Data User & Cabang admin-only (sinkron sama
-  // RoleRoute yang dulu dipasang di App.tsx waktu keduanya masih halaman
-  // sendiri, /karyawan & /cabang).
+  // kebuka buat semua yang bisa akses Master Data, Kategori/Departemen/Supplier/
+  // Data User/Cabang/Perusahaan semua admin-only (sinkron sama RoleRoute
+  // yang dulu dipasang di App.tsx waktu keduanya masih halaman sendiri,
+  // /karyawan & /cabang).
   const canViewTab = (tab: TabKey): boolean => {
     if (tab === 'inventory') return true;
     if (tab === 'karyawan' || tab === 'cabang' || tab === 'perusahaan') return isAdmin;

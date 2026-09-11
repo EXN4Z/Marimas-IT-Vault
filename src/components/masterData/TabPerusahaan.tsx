@@ -9,15 +9,17 @@ import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../share
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 import { downloadStyledExcel } from '../../utils/excelReport';
 
-const STAFF_ROLES = ['admin', 'hr'];
-
 // Mirror dari TabCabang.tsx -- sepola sama tab "Cabang" di Master Data,
 // tapi TANPA badge jumlah pegawai & TANPA warning "masih ada karyawan/
 // inventaris tertaut" saat hapus, karena Perusahaan sengaja belum
 // dikaitkan ke tabel lain (lihat api/perusahaan.ts).
+// Admin-only, sinkron sama backend (routes/api.php: apiResource('perusahaan')
+// ada di dalam grup 'role:admin' murni). Semua role selain admin (hr
+// termasuk) disamakan persis seperti karyawan -- yaitu TIDAK punya akses,
+// jadi di sini gak ada lagi STAFF_ROLES yang ngasih hr pengecualian.
 export default function TabPerusahaan() {
   const { user } = useAuth();
-  const isStaff = !!user && STAFF_ROLES.includes(user.role);
+  const isStaff = user?.role === 'admin';
 
   const [perusahaanList, setPerusahaanList] = useState<Perusahaan[]>([]);
   const [loading, setLoading] = useState(true);
