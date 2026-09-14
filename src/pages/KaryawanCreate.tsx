@@ -232,7 +232,7 @@ export default function CreateKaryawanPage() {
                         onChange={(v) => handleRoleChange(v)}
                         error={!!errors.role_id}
                         placeholder="Pilih posisi"
-                        options={roleList.map((r) => ({ value: String(r.id), label: r.label || r.nama }))}
+                        options={roleList.map((r) => ({ value: String(r.id), label: r.nama }))}
                     />
                 </Field>
 

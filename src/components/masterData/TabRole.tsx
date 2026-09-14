@@ -10,12 +10,17 @@ import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../shared/FormCont
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 import { downloadStyledExcel } from '../../utils/excelReport';
 
-// Tab "Role" di Master Data -- CRUD data referensi role (nama, label
-// tampilan, level hak akses) yang dipakai App\Models\User::hasRoleAtLeast()
-// di backend (lihat routes/api.php & User.php). Admin-only, sama pola
-// dengan TabCabang.tsx/TabPerusahaan.tsx, tapi paginated SERVER-SIDE
-// (bukan client-side kayak tabConfig generik di MasterData.tsx) karena
-// ada search & jumlah baris berpotensi tumbuh -- lihat RoleController::index().
+// Tab "Role" di Master Data -- CRUD data referensi role (nama) yang
+// dipakai App\Models\User::isAdmin() di backend (lihat routes/api.php &
+// User.php). Admin-only, sama pola dengan TabCabang.tsx/TabPerusahaan.tsx,
+// tapi paginated SERVER-SIDE (bukan client-side kayak tabConfig generik
+// di MasterData.tsx) karena ada search & jumlah baris berpotensi tumbuh
+// -- lihat RoleController::index().
+//
+// REVISI (hapus level & label): dulu role punya kolom `label` (nama
+// tampilan) & `level` (hak akses lintas role). Keduanya dihapus -- hak
+// akses sekarang cuma 2 tingkat: 'admin' (akses semua) vs role lain
+// (semuanya setara persis kayak 'karyawan').
 export default function TabRole() {
   const { user } = useAuth();
   const isStaff = user?.role === 'admin';
@@ -33,8 +38,6 @@ export default function TabRole() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<RoleItem | null>(null);
   const [formNama, setFormNama] = useState('');
-  const [formLabel, setFormLabel] = useState('');
-  const [formLevel, setFormLevel] = useState('1');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -121,8 +124,8 @@ export default function TabRole() {
         {
           title: 'Data Role',
           subtitle: `${res.data.length} role per ${today}`,
-          headers: ['Nama', 'Label', 'Level', 'Jumlah User'],
-          rows: res.data.map((item) => [item.nama, item.label || '', item.level, item.users_count]),
+          headers: ['Nama', 'Jumlah User'],
+          rows: res.data.map((item) => [item.nama, item.users_count]),
           sheetName: 'Data Role',
         },
         `Data Role - ${today}.xlsx`
@@ -139,8 +142,6 @@ export default function TabRole() {
   const openCreateModal = () => {
     setEditing(null);
     setFormNama('');
-    setFormLabel('');
-    setFormLevel('1');
     setFormErrors({});
     setModalOpen(true);
   };
@@ -148,8 +149,6 @@ export default function TabRole() {
   const openEditModal = (item: RoleItem) => {
     setEditing(item);
     setFormNama(item.nama);
-    setFormLabel(item.label || '');
-    setFormLevel(String(item.level));
     setFormErrors({});
     setModalOpen(true);
   };
@@ -176,7 +175,6 @@ export default function TabRole() {
     else if (!/^[a-zA-Z0-9_-]+$/.test(formNama.trim())) {
       clientErrors.nama = 'Cuma boleh huruf, angka, strip, dan underscore (tanpa spasi) -- ini yang bakal dipakai di kolom role user.';
     }
-    if (formLevel.trim() === '' || Number.isNaN(Number(formLevel))) clientErrors.level = 'Level wajib diisi dan harus berupa angka.';
     if (Object.keys(clientErrors).length > 0) {
       setFormErrors(clientErrors);
       toast.error('Mohon lengkapi semua kolom yang wajib diisi.');
@@ -188,8 +186,6 @@ export default function TabRole() {
     try {
       const payload = {
         nama: formNama.trim().toLowerCase(),
-        label: formLabel.trim() || undefined,
-        level: Number(formLevel),
       };
       if (editing) {
         await updateRole(editing.id, payload);
@@ -205,9 +201,7 @@ export default function TabRole() {
         const apiErrors = err.response.data?.errors ?? {};
         setFormErrors({
           nama: apiErrors.nama?.[0],
-          label: apiErrors.label?.[0],
-          level: apiErrors.level?.[0],
-          _general: !apiErrors.nama && !apiErrors.label && !apiErrors.level ? err.response.data?.message : undefined,
+          _general: !apiErrors.nama ? err.response.data?.message : undefined,
         });
       } else {
         setFormErrors({ _general: err.response?.data?.message || 'Gagal menyimpan role.' });
@@ -248,7 +242,7 @@ export default function TabRole() {
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <p className="text-sm text-slate-500">
-          Kelola role & level hak aksesnya -- dipakai buat menentukan hak akses tiap role selain admin (semua disamakan level 1, persis seperti karyawan).
+          Kelola role yang bisa diassign ke user -- hak aksesnya cuma 2 tingkat: admin (akses semua) atau role lain (semuanya setara, persis seperti karyawan).
         </p>
         <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
           <button
@@ -290,7 +284,7 @@ export default function TabRole() {
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           type="text"
-          placeholder="Cari nama atau label role..."
+          placeholder="Cari nama role..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
@@ -302,7 +296,7 @@ export default function TabRole() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[560px]">
               <tbody>
-                <SkeletonTable columns={5} rows={5} />
+                <SkeletonTable columns={3} rows={5} />
               </tbody>
             </table>
           </div>
@@ -324,8 +318,6 @@ export default function TabRole() {
                 <thead>
                   <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
                     <th className="px-6 py-3 font-medium">Nama</th>
-                    <th className="px-6 py-3 font-medium">Label</th>
-                    <th className="px-6 py-3 font-medium">Level</th>
                     <th className="px-6 py-3 font-medium">Jumlah User</th>
                     <th className="px-6 py-3 font-medium text-right">Aksi</th>
                   </tr>
@@ -334,12 +326,6 @@ export default function TabRole() {
                   {roleList.map((item) => (
                     <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                       <td className="px-6 py-3 text-slate-800 font-medium">{item.nama}</td>
-                      <td className="px-6 py-3 text-slate-600">{item.label || '-'}</td>
-                      <td className="px-6 py-3">
-                        <span className="inline-flex items-center justify-center min-w-[1.75rem] px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-700 rounded-full">
-                          {item.level}
-                        </span>
-                      </td>
                       <td className="px-6 py-3 text-slate-600">
                         <span className="inline-flex items-center gap-1.5">
                           <Users size={13} className="text-slate-400" />
@@ -415,34 +401,6 @@ export default function TabRole() {
                 placeholder="Contoh: supervisor"
                 error={!!formErrors.nama}
                 autoFocus
-              />
-            </Field>
-
-            <Field label="Label Tampilan" error={formErrors.label} hint="Opsional, nama yang ditampilkan di UI (kalau kosong pakai Nama Role)">
-              <TextInput
-                value={formLabel}
-                onChange={(val) => {
-                  setFormLabel(val);
-                  clearFieldError('label');
-                }}
-                placeholder="Contoh: Supervisor"
-              />
-            </Field>
-
-            <Field
-              label="Level"
-              error={formErrors.level}
-              required
-              hint="Menentukan hak akses lintas role -- admin level 5, role lain sengaja disamakan level 1 (persis seperti karyawan)."
-            >
-              <TextInput
-                value={formLevel}
-                onChange={(val) => {
-                  setFormLevel(val.replace(/[^0-9]/g, ''));
-                  clearFieldError('level');
-                }}
-                placeholder="1"
-                error={!!formErrors.level}
               />
             </Field>
 

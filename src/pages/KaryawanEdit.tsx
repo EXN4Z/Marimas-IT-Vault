@@ -278,7 +278,7 @@ export default function EditKaryawanPage() {
                             onChange={(v) => handleRoleChange(v)}
                             error={!!errors.role_id}
                             placeholder="Pilih role"
-                            options={roleList.map((r) => ({ value: String(r.id), label: r.label || r.nama }))}
+                            options={roleList.map((r) => ({ value: String(r.id), label: r.nama }))}
                         />
                     </Field>
 
