@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, X, Tags, AlertCircle } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Tags, AlertCircle, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { SkeletonTable } from '../shared/skeleton';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 import Pagination from '../shared/Pagination';
 import { useBackdropClose } from '../../hooks/useBackdropClose';
+import KategoriExportModal from '../laporan/KategoriExportModal';
 import {
   getKategori,
   createKategori,
@@ -44,6 +45,7 @@ export default function TabKategori() {
   const [deleteError, setDeleteError] = useState('');
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -156,14 +158,24 @@ export default function TabKategori() {
           Kategori adalah label jenis barang (mis. Laptop, Charger, Speaker) buat mengelompokkan
           data Inventory. Nama bebas apa saja -- gak menentukan field atau alur mana pun.
         </p>
-        <button
-          onClick={openCreateModal}
-          disabled={loading || !!error}
-          className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
-        >
-          <Plus size={16} />
-          Tambah Kategori
-        </button>
+        <div className="flex items-center gap-2.5 flex-shrink-0">
+          <button
+            onClick={() => setShowExportModal(true)}
+            disabled={loading || !!error}
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            <Download size={16} />
+            Export
+          </button>
+          <button
+            onClick={openCreateModal}
+            disabled={loading || !!error}
+            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            <Plus size={16} />
+            Tambah Kategori
+          </button>
+        </div>
       </div>
 
       {loading && (
@@ -329,6 +341,13 @@ export default function TabKategori() {
           setDeleteError('');
         }}
         onConfirm={handleDelete}
+      />
+
+      {/* MODAL EXPORT */}
+      <KategoriExportModal
+        open={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        data={items}
       />
     </div>
   );

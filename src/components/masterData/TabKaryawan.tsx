@@ -7,6 +7,8 @@ import ScrollableTabBar from '../shared/ScrollableTabBar';
 import Pagination from '../shared/Pagination';
 import { Skeleton, SkeletonCircle } from '../shared/skeleton';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
+import KaryawanExportModal from '../laporan/KaryawanExportModal';
+import { type Karyawan } from '../../api/karyawan';
 
 // BARU: dulu union type tetap (5 role), sekarang plain string -- role
 // baru bisa dibuat bebas lewat Master Data > Role, jadi daftar user di
@@ -15,21 +17,11 @@ import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 type Role = string;
 type TabKey = 'semua' | 'karyawan' | 'hr_manajer' | 'admin' | 'cabang';
 
-interface User {
-    id: number;
-    name: string;
-    email: string;
-    role: Role;
-    nik: string | null;
-    // phone/lokasi_kantor/tanggal_masuk sebenarnya selalu ikut kekirim dari
-    // endpoint /karyawan (lihat UserController::index di backend), cuma
-    // dulu gak dimasukin ke interface ini karena belum kepake di tabel.
-    // Sekarang dipakai buat export (lihat KaryawanExportModal).
-    phone?: string | null;
-    departemen: { nama: string } | null;
-    lokasi_kantor?: { nama: string } | null;
-    tanggal_masuk?: string | null;
-}
+// Sama shape persis dengan tipe Karyawan di api/karyawan.ts (dipakai bareng
+// KaryawanExportModal, lihat tombol Export di bawah) -- dulu didefinisikan
+// ulang di sini secara terpisah, sekarang di-alias langsung biar gak
+// nyimpang dan export-nya gak perlu mapping/cast apapun.
+type User = Karyawan;
 
 const roleStyles: Record<string, string> = {
     admin: 'bg-red-50 text-red-700',
@@ -132,8 +124,10 @@ export default function TabKaryawan() {
     const [importSuccessMsg, setImportSuccessMsg] = useState<string>('');
     const [showImportModal, setShowImportModal] = useState<boolean>(false);
 
-    // BARU: state untuk modal export (Excel/PDF) — komponennya sudah ada &
-    // dipakai di halaman Laporan, di sini tinggal dipasang ulang.
+    // Modal export (Excel/PDF) -- komponennya sudah ada & dipakai di halaman
+    // Laporan, di sini dipasang ulang biar bisa export langsung dari tab
+    // "Data User" tanpa pindah halaman.
+    const [showExportModal, setShowExportModal] = useState<boolean>(false);
 
     function loadUsers() {
         setLoading(true);
@@ -265,6 +259,12 @@ export default function TabKaryawan() {
                         </div>
                             {isAdmin && (
                                 <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setShowExportModal(true)}
+                                        className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 whitespace-nowrap"
+                                    >
+                                        Export
+                                    </button>
                                     {/* BARU: tombol Import Excel */}
                                     <button
                                         onClick={() => setShowImportModal(true)}
@@ -362,9 +362,14 @@ export default function TabKaryawan() {
                     }}
                 />
             )}
-            {/* BARU: modal export Excel/PDF — data yang dikirim udah sesuai
-                filter tab & pencarian yang lagi aktif di tabel (bukan cuma
-                halaman yang lagi ditampilin, tapi SEMUA hasil filter). */}
+            {/* Modal export Excel/PDF — data yang dikirim udah sesuai filter
+                tab & pencarian yang lagi aktif di tabel (bukan cuma halaman
+                yang lagi ditampilin, tapi SEMUA hasil filter). */}
+            <KaryawanExportModal
+                open={showExportModal}
+                onClose={() => setShowExportModal(false)}
+                data={filtered}
+            />
         </>
     );
 }

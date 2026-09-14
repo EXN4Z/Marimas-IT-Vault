@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Boxes, Users, ClipboardList, Loader2, Download, FileSpreadsheet, Images, History, Tags, Building2 } from 'lucide-react';
+import { Boxes, Users, ClipboardList, Loader2, Download, FileSpreadsheet, Images, History, Tags, Building2, Landmark, Shield, Truck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getInventory, type Inventory } from '../api/masterData/inventory';
 import { karyawanApi, type Karyawan } from '../api/karyawan';
@@ -15,6 +15,11 @@ import { getKategori, type Kategori } from '../api/masterData/kategori';
 import KategoriExportModal from '../components/laporan/KategoriExportModal';
 import { getDepartemen, type Departemen } from '../api/masterData/departemen';
 import DepartemenExportModal from '../components/laporan/DepartemenExportModal';
+import { getCabang, type Cabang } from '../api/cabang';
+import { getPerusahaan, type Perusahaan } from '../api/perusahaan';
+import { getRole, type RoleItem } from '../api/masterData/role';
+import { getSupplier, type Supplier } from '../api/masterData/supplier';
+import SimpleExportModal from '../components/laporan/SimpleExportModal';
 
 // Admin-only. Semua role selain admin (hr/manajer/cabang termasuk)
 // disamakan persis seperti karyawan -- yaitu TIDAK punya akses ke halaman
@@ -107,6 +112,24 @@ export default function Laporan() {
   const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
   const [departemenLoading, setDepartemenLoading] = useState(true);
   const [exportDepartemenOpen, setExportDepartemenOpen] = useState(false);
+  // BARU: cabang, perusahaan, role, supplier -- sebelumnya cuma bisa
+  // diexport dari tab masing-masing di Master Data, sekarang dilengkapi
+  // di sini juga biar semua master data punya kartu export di 1 tempat.
+  const [cabangList, setCabangList] = useState<Cabang[]>([]);
+  const [cabangLoading, setCabangLoading] = useState(true);
+  const [exportCabangOpen, setExportCabangOpen] = useState(false);
+
+  const [perusahaanList, setPerusahaanList] = useState<Perusahaan[]>([]);
+  const [perusahaanLoading, setPerusahaanLoading] = useState(true);
+  const [exportPerusahaanOpen, setExportPerusahaanOpen] = useState(false);
+
+  const [roleList, setRoleList] = useState<RoleItem[]>([]);
+  const [roleLoading, setRoleLoading] = useState(true);
+  const [exportRoleOpen, setExportRoleOpen] = useState(false);
+
+  const [supplierList, setSupplierList] = useState<Supplier[]>([]);
+  const [supplierLoading, setSupplierLoading] = useState(true);
+  const [exportSupplierOpen, setExportSupplierOpen] = useState(false);
 
   useEffect(() => {
     if (!isStaff) return;
@@ -130,6 +153,29 @@ export default function Laporan() {
       .then((res) => setKaryawanList(res.data))
       .catch(console.error)
       .finally(() => setKaryawanLoading(false));
+
+    getCabang()
+      .then(setCabangList)
+      .catch(console.error)
+      .finally(() => setCabangLoading(false));
+
+    getPerusahaan()
+      .then(setPerusahaanList)
+      .catch(console.error)
+      .finally(() => setPerusahaanLoading(false));
+
+    // role paginated server-side (lihat api/masterData/role.ts) -- narik
+    // per_page besar biar dapet semua baris buat export, sama pola kayak
+    // handleExport() di TabRole.tsx.
+    getRole(1, '', 1000)
+      .then((res) => setRoleList(res.data))
+      .catch(console.error)
+      .finally(() => setRoleLoading(false));
+
+    getSupplier()
+      .then(setSupplierList)
+      .catch(console.error)
+      .finally(() => setSupplierLoading(false));
   }, [isStaff]);
 
   useEffect(() => {
@@ -251,6 +297,90 @@ export default function Laporan() {
             </div>
           </div>
 
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
+            <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+              <Landmark size={18} />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Cabang</h3>
+            <p className="text-xs text-slate-500 leading-relaxed flex-1">
+              Export seluruh data cabang (nama, alamat, telepon, link lokasi) sebagai Excel atau PDF.
+            </p>
+
+            <div className="mt-4">
+              <button
+                onClick={() => setExportCabangOpen(true)}
+                disabled={cabangLoading}
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
+              >
+                {cabangLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+                {cabangLoading ? 'Memuat data...' : 'Export'}
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
+            <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+              <Building2 size={18} />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Perusahaan</h3>
+            <p className="text-xs text-slate-500 leading-relaxed flex-1">
+              Export seluruh data perusahaan (nama, alamat, telepon, link) sebagai Excel atau PDF.
+            </p>
+
+            <div className="mt-4">
+              <button
+                onClick={() => setExportPerusahaanOpen(true)}
+                disabled={perusahaanLoading}
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
+              >
+                {perusahaanLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+                {perusahaanLoading ? 'Memuat data...' : 'Export'}
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
+            <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+              <Shield size={18} />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Role</h3>
+            <p className="text-xs text-slate-500 leading-relaxed flex-1">
+              Export seluruh data role beserta jumlah user yang memakainya sebagai Excel atau PDF.
+            </p>
+
+            <div className="mt-4">
+              <button
+                onClick={() => setExportRoleOpen(true)}
+                disabled={roleLoading}
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
+              >
+                {roleLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+                {roleLoading ? 'Memuat data...' : 'Export'}
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
+            <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+              <Truck size={18} />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Supplier</h3>
+            <p className="text-xs text-slate-500 leading-relaxed flex-1">
+              Export seluruh data supplier (nama, alamat, telepon) sebagai Excel atau PDF.
+            </p>
+
+            <div className="mt-4">
+              <button
+                onClick={() => setExportSupplierOpen(true)}
+                disabled={supplierLoading}
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
+              >
+                {supplierLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+                {supplierLoading ? 'Memuat data...' : 'Export'}
+              </button>
+            </div>
+          </div>
+
           {isAdmin && (
             <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
               <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
@@ -284,6 +414,42 @@ export default function Laporan() {
       <KaryawanExportModal open={exportKaryawanOpen} onClose={() => setExportKaryawanOpen(false)} data={karyawanList} />
       <KategoriExportModal open={exportKategoriOpen} onClose={() => setExportKategoriOpen(false)} data={kategoriList} />
       <DepartemenExportModal open={exportDepartemenOpen} onClose={() => setExportDepartemenOpen(false)} data={departemenList} />
+      <SimpleExportModal
+        open={exportCabangOpen}
+        onClose={() => setExportCabangOpen(false)}
+        data={cabangList}
+        title="Data Cabang"
+        itemLabel="cabang"
+        headers={['Nama', 'Alamat', 'Telepon', 'Link']}
+        toRow={(c) => [c.nama, c.alamat || '-', c.telepon || '-', c.link || '-']}
+      />
+      <SimpleExportModal
+        open={exportPerusahaanOpen}
+        onClose={() => setExportPerusahaanOpen(false)}
+        data={perusahaanList}
+        title="Data Perusahaan"
+        itemLabel="perusahaan"
+        headers={['Nama', 'Alamat', 'Telepon', 'Link']}
+        toRow={(p) => [p.nama, p.alamat || '-', p.telepon || '-', p.link || '-']}
+      />
+      <SimpleExportModal
+        open={exportRoleOpen}
+        onClose={() => setExportRoleOpen(false)}
+        data={roleList}
+        title="Data Role"
+        itemLabel="role"
+        headers={['Nama', 'Jumlah User']}
+        toRow={(r) => [r.nama, r.users_count]}
+      />
+      <SimpleExportModal
+        open={exportSupplierOpen}
+        onClose={() => setExportSupplierOpen(false)}
+        data={supplierList}
+        title="Data Supplier"
+        itemLabel="supplier"
+        headers={['Nama', 'Alamat', 'Telepon']}
+        toRow={(s) => [s.nama, s.alamat || '-', s.telepon || '-']}
+      />
       {isAdmin && (
         <InventoryPemakaiExportModal open={exportPemakaiOpen} onClose={() => setExportPemakaiOpen(false)} data={pemakaiList} />
         
