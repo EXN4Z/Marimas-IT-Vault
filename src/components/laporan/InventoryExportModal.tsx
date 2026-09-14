@@ -32,6 +32,8 @@ interface ExportColumn {
 const EXPORT_COLUMNS: ExportColumn[] = [
   { key: 'kode_inventory', label: 'Kode Inventory', defaultChecked: true, get: (a) => a.kode_inventory },
   { key: 'nama', label: 'Nama', defaultChecked: true, get: (a) => a.nama || '-' },
+  { key: 'merk', label: 'Merk', defaultChecked: false, get: (a) => a.merk || '-' },
+  { key: 'type', label: 'Type', defaultChecked: false, get: (a) => a.type || '-' },
   { key: 'kategori_id', label: 'Kategori', defaultChecked: true, get: (a) => a.kategori?.nama || '-' },
   { key: 'warna', label: 'Warna', defaultChecked: false, get: (a) => a.warna || '-' },
   { key: 'serial_number', label: 'Serial Number', defaultChecked: true, get: (a) => a.serial_number || '-' },
@@ -53,6 +55,12 @@ const EXPORT_COLUMNS: ExportColumn[] = [
     label: 'Tanggal Pembelian',
     defaultChecked: true,
     get: (a) => formatTanggalId(a.tanggal_invoice),
+  },
+  {
+    key: 'tanggal_input',
+    label: 'Tanggal Input',
+    defaultChecked: true,
+    get: (a) => formatTanggalId(a.tanggal_input),
   },
   { key: 'keterangan', label: 'Keterangan', defaultChecked: false, get: (a) => a.keterangan || '-' },
 ];
