@@ -649,7 +649,20 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
   // lagi -- dia dispatch ke renderAksiInventory yang sama kaya Barang Utama
   // (lihat renderAksi di bawah).
   const renderAksiKelengkapan = (a: Inventory) => {
-    if (!isAdmin) return null;
+    // Detail (Eye) selalu tampil buat item yang menempel ke induk, apapun
+    // statusnya dan apapun rolenya (admin/non-admin) -- biar user tetep bisa
+    // lihat riwayat/spesifikasi item anak walau lagi tersedia/dipakai/dst.
+    if (!isAdmin) {
+      return (
+        <button
+          onClick={() => openDetail(a.id)}
+          title="Detail"
+          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+        >
+          <Eye size={15} />
+        </button>
+      );
+    }
     return (
       <>
         <button
@@ -1505,6 +1518,16 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                               >
                                 {STATUS_LABEL[k.status] || k.status}
                               </StatusBadge>
+                              {/* Detail (Eye) child -- selalu tampil apapun status
+                                  & role, biar bisa drill-down ke detail item anak
+                                  langsung dari panel Kelengkapan induk. */}
+                              <button
+                                onClick={() => openDetail(k.id)}
+                                title="Detail"
+                                className="p-1.5 rounded-md text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition"
+                              >
+                                <Eye size={14} />
+                              </button>
                               {/* BARU (3B): Tombol Lepas per baris child — admin only */}
                               {isAdmin && (
                                 <button
