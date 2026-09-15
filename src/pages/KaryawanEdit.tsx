@@ -117,7 +117,7 @@ export default function EditKaryawanPage() {
     // REVISI: role sekarang dropdown 3 pilihan tetap (admin/user/cabang),
     // bisa diganti bebas ke/dari cabang langsung dari sini.
     const ROLE_OPTIONS = [
-        { value: 'user', label: 'User (Karyawan)' },
+        { value: 'user', label: 'User' },
         { value: 'admin', label: 'Admin' },
         { value: 'cabang', label: 'Cabang' },
     ];

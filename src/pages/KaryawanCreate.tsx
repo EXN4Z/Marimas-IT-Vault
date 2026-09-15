@@ -77,7 +77,7 @@ export default function CreateKaryawanPage() {
     // lihat migration simplify_roles_table) -- gak perlu fetch daftar role
     // dari API, cukup daftar statis di sini.
     const ROLE_OPTIONS = [
-        { value: 'user', label: 'User (Karyawan)' },
+        { value: 'user', label: 'User' },
         { value: 'admin', label: 'Admin' },
         { value: 'cabang', label: 'Cabang' },
     ];
