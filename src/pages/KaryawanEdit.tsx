@@ -114,17 +114,16 @@ export default function EditKaryawanPage() {
         }
     }
 
-    // REVISI: role sekarang cuma di-toggle admin/user lewat checkbox
-    // "Jadikan admin?" -- gak ada lagi dropdown "Role" yang fetch/pilih
-    // dari Master Data > Role (endpoint itu udah dihapus). Pilihan role
-    // 'cabang' SENGAJA di-skip dari form ini buat sekarang (ditunda, lihat
-    // catatan migrasi Cabang) -- logic isCabang/field Cabang di bawah
-    // dibiarkan apa adanya, cuma jadi gak ke-reach lewat toggle ini. Kalau
-    // user yang lagi diedit KEBETULAN sudah berrole 'cabang' (dibuat lewat
-    // jalur lama), toggle disembunyikan (lihat JSX) biar gak ketimpa jadi
-    // 'user' cuma gara-gara admin nyimpen form tanpa sengaja.
-    function handleAdminToggle(checked: boolean) {
-        setForm((prev) => ({ ...prev, role: checked ? 'admin' : 'user' }));
+    // REVISI: role sekarang dropdown 3 pilihan tetap (admin/user/cabang),
+    // bisa diganti bebas ke/dari cabang langsung dari sini.
+    const ROLE_OPTIONS = [
+        { value: 'user', label: 'User (Karyawan)' },
+        { value: 'admin', label: 'Admin' },
+        { value: 'cabang', label: 'Cabang' },
+    ];
+
+    function handleRoleChange(value: string) {
+        setForm((prev) => ({ ...prev, role: value }));
         setErrors((prev) => {
             const next = { ...prev };
             delete next.role;
@@ -255,25 +254,15 @@ export default function EditKaryawanPage() {
                         />
                     </Field>
 
-                    {isCabang ? (
-                        <Field label="Hak Akses">
-                            <p className="text-sm text-gray-500 italic">
-                                Role Cabang -- dikelola lewat tab Cabang, belum bisa diubah dari sini.
-                            </p>
-                        </Field>
-                    ) : (
-                        <Field label="Hak Akses">
-                            <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                                <input
-                                    type="checkbox"
-                                    checked={form.role === 'admin'}
-                                    onChange={(e) => handleAdminToggle(e.target.checked)}
-                                    className="w-4 h-4 rounded border-gray-300 text-slate-900 focus:ring-slate-500"
-                                />
-                                <span className="text-sm text-gray-700">Jadikan admin?</span>
-                            </label>
-                        </Field>
-                    )}
+                    <Field label="Role" error={errors.role?.[0]} required>
+                        <Select
+                            value={form.role}
+                            onChange={handleRoleChange}
+                            placeholder="Pilih role"
+                            error={!!errors.role}
+                            options={ROLE_OPTIONS}
+                        />
+                    </Field>
 
                     {!isCabang && (
                         <Field label="NIK" error={errors.nik?.[0]} required>
