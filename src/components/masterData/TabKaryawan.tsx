@@ -183,6 +183,13 @@ export default function TabKaryawan() {
     }
 
     // BARU: handler saat user pilih file dari <input type="file">
+    // FIX: loadUsers() sekarang SELALU dipanggil setelah proses import
+    // selesai (baik result.success true maupun false), bukan cuma di
+    // jalur success. Soalnya backend (KaryawanImport) tetap menyimpan
+    // baris-baris yang valid walau ada baris lain yang di-skip karena
+    // duplikat -- response "success: false" bukan berarti TIDAK ADA
+    // data yang berhasil ditambahkan. Tanpa ini, data baru yang sukses
+    // masuk baru kelihatan setelah user refresh manual (tidak realtime).
     async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -195,10 +202,10 @@ export default function TabKaryawan() {
             const result = await importKaryawan(file);
             if (result.success) {
                 setImportSuccessMsg(result.message || 'Import berhasil.');
-                loadUsers(); // refresh daftar karyawan setelah import sukses
             } else {
                 setImportErrors(result.errors || [result.message || 'Import gagal.']);
             }
+            loadUsers(); // refresh daftar karyawan -- selalu jalan, apapun hasilnya
         } catch (err: any) {
             const data = err.response?.data;
             if (data?.errors) {
@@ -206,6 +213,7 @@ export default function TabKaryawan() {
             } else {
                 setImportErrors([data?.message || 'Gagal import file. Coba lagi.']);
             }
+            loadUsers(); // jaga-jaga: tetap refresh kalau ada baris yang sempat tersimpan
         } finally {
             setImporting(false);
             // reset value biar bisa pilih file yang sama lagi kalau perlu re-upload
