@@ -62,12 +62,12 @@ const navItems: NavItem[] = [
     path: null,
     matchPrefix: '/penanganan-inventory',
     children: [
-      // BARU: dibuka buat karyawan/manajer/hr juga (dulu admin-only) --
-      // sinkron sama role yang diizinin backend (routes/api.php,
-      // GET /inventory-penanganan sekarang role:karyawan,manajer,hr,admin).
-      // Data yang tampil sudah discoping ke laporan milik sendiri buat
-      // non-admin/hr di InventoryPenangananController::index().
-      { label: 'Penanganan Inventory', icon: Wrench, path: '/penanganan-inventory', roles: ['karyawan', 'cabang', 'manajer', 'hr', 'admin'] },
+      // BARU: dibuka buat non-admin juga (dulu admin-only) -- sinkron sama
+      // role yang diizinin backend (routes/api.php, POST /inventory-penanganan
+      // sekarang auth:sanctum polos buat semua yang login). Data yang tampil
+      // sudah discoping ke laporan milik sendiri buat non-admin di
+      // InventoryPenangananController::index().
+      { label: 'Penanganan Inventory', icon: Wrench, path: '/penanganan-inventory', roles: ['user', 'cabang', 'admin'] },
     ],
   },
   {
@@ -212,10 +212,12 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
 
   // roles yang backend izinin buka GET /inventory (routes/api.php) --
   // dipakai buat nentuin siapa yang masih boleh liat menu "Master Data"
-  // sama sekali (isi tab Inventory-nya), meski cuma admin/hr yang boleh
+  // sama sekali (isi tab Inventory-nya), meski cuma admin yang boleh
   // liat tab Kategori/Departemen/Supplier di dalamnya (dibatasi lewat
-  // `roles` di masing-masing child di atas).
-  const INVENTORY_ROLES = ['karyawan', 'cabang', 'manajer', 'hr', 'admin'];
+  // `roles` di masing-masing child di atas). REVISI (simplify_roles_table):
+  // dulu ['karyawan', 'cabang', 'manajer', 'hr', 'admin'] -- karyawan/manajer/hr
+  // udah di-merge jadi satu role 'user'.
+  const INVENTORY_ROLES = ['user', 'cabang', 'admin'];
 
   const roleFilter = (item: NavItem) => {
     // Fitur yang masih belum lengkap -- sembunyikan dari sidebar dulu (lihat flag `hidden` di navItems).

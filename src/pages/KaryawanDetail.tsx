@@ -5,7 +5,7 @@ import api from '../api/axios';
 import RouteModal from '../components/shared/RouteModal';
 import { Skeleton } from '../components/shared/skeleton';
 
-type Role = 'admin' | 'hr' | 'manajer' | 'karyawan' | 'guest' | 'cabang';
+type Role = 'admin' | 'user' | 'cabang'; // REVISI (simplify_roles_table): dulu 'hr' | 'manajer' | 'karyawan' | 'guest' | 'cabang', ketinggalan pas migration role di-merge
 
 interface User {
     id: number;
@@ -22,19 +22,13 @@ interface User {
 
 const roleLabels: Record<Role, string> = {
     admin: 'Admin',
-    hr: 'HR',
-    manajer: 'Manajer',
-    karyawan: 'Karyawan',
-    guest: 'Guest',
+    user: 'User',
     cabang: 'Cabang',
 };
 
 const roleStyles: Record<Role, string> = {
     admin: 'bg-red-50 text-red-700',
-    hr: 'bg-pink-50 text-pink-700',
-    manajer: 'bg-purple-50 text-purple-700',
-    karyawan: 'bg-teal-50 text-teal-700',
-    guest: 'bg-gray-50 text-gray-700',
+    user: 'bg-teal-50 text-teal-700',
     cabang: 'bg-blue-50 text-blue-700',
 };
 

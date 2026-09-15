@@ -149,9 +149,7 @@ function SectionHeader({
 
 const GREETING_ROLE_LABEL: Record<string, string> = {
   admin: 'Administrator',
-  hr: 'HR & Kepegawaian',
-  manajer: 'Manajer Operasional',
-  karyawan: 'Staff / Karyawan',
+  user: 'Staff / Karyawan', // REVISI (simplify_roles_table): dulu 'hr'/'manajer'/'karyawan' 3 entry beda-beda, sekarang cukup 1 karena udah di-merge jadi 'user'
   cabang: 'Staff Cabang',
 };
 

@@ -6,10 +6,8 @@ import { usePushNotifications } from '../hooks/usePushNotifications';
 
 const roleLabels: Record<string, string> = {
   admin: 'Admin',
-  hr: 'HR',
-  manajer: 'Manajer',
-  manager: 'Manajer',
-  karyawan: 'Karyawan',
+  user: 'User', // REVISI (simplify_roles_table): dulu 'hr'/'manajer'/'manager'/'karyawan' 4 entry beda-beda, sekarang cukup 1 karena udah di-merge jadi 'user'
+  cabang: 'Cabang',
 };
 
 function initials(name?: string): string {

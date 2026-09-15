@@ -8,11 +8,8 @@ import { downloadStyledExcel } from '../../utils/excelReport';
 import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 
 const ROLE_LABEL: Record<string, string> = {
-  guest: 'Guest',
-  karyawan: 'Karyawan',
+  user: 'User',
   cabang: 'Cabang',
-  manajer: 'Manajer',
-  hr: 'HR',
   admin: 'Admin',
 };
 

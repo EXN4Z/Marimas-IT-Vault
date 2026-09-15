@@ -4,7 +4,16 @@ import DashboardAdmin from './DashboardAdmin';
 import { DashboardSkeleton } from './Shared';
 
 // Role yang dapet DashboardAdmin (full analytics + inventaris).
-const REVIEWER_ROLES = ['admin', 'hr', 'manajer', 'manager'];
+// REVISI (simplify_roles_table): dulu ['admin', 'hr', 'manajer', 'manager']
+// -- 'hr'/'manajer' udah di-merge jadi 'user' yang sama kayak 'karyawan'
+// (yang DULU gak dapet DashboardAdmin). Migration-nya sendiri yang
+// ngehapus bedanya di level data, jadi gak ada cara aman buat nebak siapa
+// di antara 'user' yang eks-hr/manajer vs eks-karyawan. Diputus ke opsi
+// paling aman (gak privilege-escalation): cuma 'admin' yang dapet
+// DashboardAdmin sekarang, SEMUA 'user' (eks apapun) & 'cabang' dapet
+// DashboardUser. Kalau ternyata eks-hr/manajer emang harus tetap dapet
+// analytics ini, itu keputusan produk -- kasih tau gue, gampang balikin.
+const REVIEWER_ROLES = ['admin'];
 
 // Entry point /dashboard. File ini sengaja dinamai index.tsx supaya
 // `import Dashboard from './pages/Dashboard'` di App.tsx (dan file lain)
