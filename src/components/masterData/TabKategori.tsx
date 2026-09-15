@@ -174,7 +174,7 @@ export default function TabKategori() {
             className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
           >
             <Plus size={16} />
-            + Tambah Kategori
+            Tambah Kategori
           </button>
         </div>
       </div>

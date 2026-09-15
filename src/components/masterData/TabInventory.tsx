@@ -891,7 +891,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
               className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs"
             >
               <Plus size={16} />
-              + Tambah Inventory
+              Tambah Inventory
             </button>
           )}
         </div>
