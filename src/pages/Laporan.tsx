@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Boxes, Users, ClipboardList, Loader2, Download, FileSpreadsheet, Images, History, Tags, Building2, Landmark, Shield, Truck } from 'lucide-react';
+import { Boxes, Users, ClipboardList, Loader2, Download, FileSpreadsheet, Images, History, Tags, Building2, Landmark, Truck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getInventory, type Inventory } from '../api/masterData/inventory';
 import { karyawanApi, type Karyawan } from '../api/karyawan';
@@ -17,7 +17,6 @@ import { getDepartemen, type Departemen } from '../api/masterData/departemen';
 import DepartemenExportModal from '../components/laporan/DepartemenExportModal';
 import { getCabang, type Cabang } from '../api/cabang';
 import { getPerusahaan, type Perusahaan } from '../api/perusahaan';
-import { getRole, type RoleItem } from '../api/masterData/role';
 import { getSupplier, type Supplier } from '../api/masterData/supplier';
 import SimpleExportModal from '../components/laporan/SimpleExportModal';
 
@@ -123,10 +122,6 @@ export default function Laporan() {
   const [perusahaanLoading, setPerusahaanLoading] = useState(true);
   const [exportPerusahaanOpen, setExportPerusahaanOpen] = useState(false);
 
-  const [roleList, setRoleList] = useState<RoleItem[]>([]);
-  const [roleLoading, setRoleLoading] = useState(true);
-  const [exportRoleOpen, setExportRoleOpen] = useState(false);
-
   const [supplierList, setSupplierList] = useState<Supplier[]>([]);
   const [supplierLoading, setSupplierLoading] = useState(true);
   const [exportSupplierOpen, setExportSupplierOpen] = useState(false);
@@ -163,14 +158,6 @@ export default function Laporan() {
       .then(setPerusahaanList)
       .catch(console.error)
       .finally(() => setPerusahaanLoading(false));
-
-    // role paginated server-side (lihat api/masterData/role.ts) -- narik
-    // per_page besar biar dapet semua baris buat export, sama pola kayak
-    // handleExport() di TabRole.tsx.
-    getRole(1, '', 1000)
-      .then((res) => setRoleList(res.data))
-      .catch(console.error)
-      .finally(() => setRoleLoading(false));
 
     getSupplier()
       .then(setSupplierList)
@@ -341,27 +328,6 @@ export default function Laporan() {
 
           <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
             <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
-              <Shield size={18} />
-            </div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Role</h3>
-            <p className="text-xs text-slate-500 leading-relaxed flex-1">
-              Export seluruh data role beserta jumlah user yang memakainya sebagai Excel atau PDF.
-            </p>
-
-            <div className="mt-4">
-              <button
-                onClick={() => setExportRoleOpen(true)}
-                disabled={roleLoading}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
-              >
-                {roleLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-                {roleLoading ? 'Memuat data...' : 'Export'}
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
-            <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
               <Truck size={18} />
             </div>
             <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Supplier</h3>
@@ -431,15 +397,6 @@ export default function Laporan() {
         itemLabel="perusahaan"
         headers={['Nama', 'Alamat', 'Telepon', 'Link']}
         toRow={(p) => [p.nama, p.alamat || '-', p.telepon || '-', p.link || '-']}
-      />
-      <SimpleExportModal
-        open={exportRoleOpen}
-        onClose={() => setExportRoleOpen(false)}
-        data={roleList}
-        title="Data Role"
-        itemLabel="role"
-        headers={['Nama', 'Jumlah User']}
-        toRow={(r) => [r.nama, r.users_count]}
       />
       <SimpleExportModal
         open={exportSupplierOpen}

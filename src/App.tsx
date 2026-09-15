@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, type Location } fr
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 import AdminRoute from './components/shared/AdminRoute';
-import RoleRoute from './components/shared/RoleRoute';
 import AppLayout from './components/shared/AppLayout';
 import Login from './pages/Login';
 import VerifyOtp from './pages/VerifyOtp';
@@ -64,15 +63,16 @@ function AppRoutes() {
           <Route path="/dashboard-analytics" element={<Navigate to="/dashboard?tab=analytics" replace />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/audit-log" element={<AuditLog />} />
-          {/* /laporan cuma boleh diakses staff (admin/hr/manajer/cabang) --
-              karyawan biasa di-redirect balik ke /dashboard, bukan cuma
-              ditampilin pesan "tidak punya akses" di dalam halamannya. */}
+          {/* /laporan admin-only (sinkron sama backend, role hr/manajer udah
+              dihapus -- lihat migration simplify_roles_table) -- non-admin
+              di-redirect balik ke /dashboard, bukan cuma ditampilin pesan
+              "tidak punya akses" di dalam halamannya. */}
           <Route
             path="/laporan"
             element={
-              <RoleRoute roles={['admin', 'hr']}>
+              <AdminRoute>
                 <Laporan />
-              </RoleRoute>
+              </AdminRoute>
             }
           />
           <Route path="/master-data" element={<MasterData />} />

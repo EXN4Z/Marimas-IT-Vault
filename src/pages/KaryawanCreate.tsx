@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
@@ -7,21 +7,24 @@ import Select from '../components/shared/Select';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
 import { getDepartemen, type Departemen } from '../api/masterData/departemen';
 import { getCabang, type Cabang } from '../api/cabang';
-import { getRole, type RoleItem } from '../api/masterData/role';
 import SearchableSelect from '../components/shared/SearchableSelect';
 
-// BARU: dulu form nyimpen `role` (nama role sebagai string, union type
-// tetap). Sekarang backend pakai relasi `role_id` (foreign key ke tabel
-// roles), jadi form ini nyimpen ID-nya, bukan namanya -- lihat
-// `roleList`/`selectedRole` di bawah buat nentuin field kepegawaian mana
-// yang disembunyikan/wajib berdasarkan NAMA role dari id yang dipilih.
+// REVISI: role sekarang cuma 3 pilihan tetap (admin/user/cabang, lihat
+// migration simplify_roles_table) -- form gak perlu lagi fetch daftar role
+// dari Master Data > Role (endpoint itu udah dihapus), cukup kirim NAMA
+// role-nya langsung ('role' string, bukan 'role_id' integer lagi).
+const ROLE_OPTIONS = [
+    { value: 'user', label: 'User' },
+    { value: 'cabang', label: 'Cabang' },
+    { value: 'admin', label: 'Admin' },
+];
 
 interface FormState {
     name: string;
     email: string;
     phone: string;
     password: string;
-    role_id: string; // BARU: ganti dari `role: Role` (nama) ke id
+    role: string; // REVISI: balik jadi nama role tetap ('admin'|'user'|'cabang'), bukan role_id
     nik: string;
     departemen_id: string;
     lokasi_kantor_id: string;
@@ -37,7 +40,7 @@ const initialForm: FormState = {
     email: '',
     phone: '',
     password: '',
-    role_id: '', // BARU: kosong dulu, di-set setelah roleList kefetch (lihat useEffect)
+    role: 'user', // REVISI: default langsung 'user', gak perlu nunggu fetch role list lagi
     nik: '',
     departemen_id: '',
     lokasi_kantor_id: '',
@@ -50,8 +53,6 @@ export default function CreateKaryawanPage() {
     const [form, setForm] = useState<FormState>(initialForm);
     const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
     const [cabangList, setCabangList] = useState<Cabang[]>([]);
-    // Daftar role buat dropdown "Posisi" -- ditarik dari Master Data > Role.
-    const [roleList, setRoleList] = useState<RoleItem[]>([]);
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
     const [generalError, setGeneralError] = useState('');
@@ -59,31 +60,9 @@ export default function CreateKaryawanPage() {
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
         getCabang().then(setCabangList).catch(() => {});
-        // per_page besar biar semua role kebawa sekaligus (dropdown, bukan
-        // tabel paginated) -- sama pola dengan handleExport di TabRole.tsx.
-        getRole(1, '', 100)
-            .then((res) => {
-                setRoleList(res.data);
-                // BARU: prefill ke role "karyawan" kalau ketemu (dulu default
-                // form.role = 'karyawan' langsung di initialForm; sekarang
-                // harus nunggu roleList kefetch dulu buat tau id-nya).
-                const defaultRole = res.data.find((r) => r.nama === 'karyawan');
-                if (defaultRole) {
-                    setForm((prev) => ({ ...prev, role_id: String(defaultRole.id) }));
-                }
-            })
-            .catch(() => {});
     }, []);
 
-    // BARU: cari objek role yang sedang dipilih berdasarkan role_id,
-    // dipakai buat nentuin isCabang (dulu langsung cek form.role === 'cabang'
-    // karena form.role isinya nama; sekarang form.role_id isinya angka jadi
-    // harus di-lookup dulu ke roleList).
-    const selectedRole = useMemo(
-        () => roleList.find((r) => String(r.id) === form.role_id),
-        [roleList, form.role_id]
-    );
-    const isCabang = selectedRole?.nama === 'cabang';
+    const isCabang = form.role === 'cabang';
 
     function closeModal() {
         if (window.history.state && window.history.state.idx > 0) {
@@ -104,16 +83,12 @@ export default function CreateKaryawanPage() {
         }
     }
 
-    // BARU: parameter sekarang string id (value dari <Select>), bukan nama
-    // role. Cek "cabang" dilakukan lewat lookup ke roleList, bukan
-    // perbandingan string langsung ke value.
     function handleRoleChange(value: string) {
-        const role = roleList.find((r) => String(r.id) === value);
-        const goingToCabang = role?.nama === 'cabang';
+        const goingToCabang = value === 'cabang';
 
         setForm((prev) => ({
             ...prev,
-            role_id: value,
+            role: value,
             // bersihkan field kepegawaian kalau role diganti ke cabang
             ...(goingToCabang
                 ? { nik: '', departemen_id: '', tanggal_masuk: '' }
@@ -121,7 +96,7 @@ export default function CreateKaryawanPage() {
         }));
         setErrors((prev) => {
             const next = { ...prev };
-            delete next.role_id;
+            delete next.role;
             if (goingToCabang) {
                 delete next.nik;
                 delete next.departemen_id;
@@ -138,7 +113,6 @@ export default function CreateKaryawanPage() {
         const newErrors: FieldErrors = {};
         if (!form.name.trim()) newErrors.name = ['Nama lengkap wajib diisi.'];
         if (!form.password.trim()) newErrors.password = ['Password awal wajib diisi.'];
-        if (!form.role_id) newErrors.role_id = ['Role wajib dipilih.'];
         if (!isCabang && !form.nik.trim()) newErrors.nik = ['NIK karyawan wajib diisi.'];
         if (isCabang && !form.lokasi_kantor_id) newErrors.lokasi_kantor_id = ['Cabang penempatan wajib dipilih.'];
 
@@ -154,7 +128,6 @@ export default function CreateKaryawanPage() {
         try {
             const payload = {
                 ...form,
-                role_id: Number(form.role_id), // BARU: kirim sebagai integer, bukan string
                 nik: isCabang ? null : form.nik,
                 departemen_id: isCabang ? null : form.departemen_id || null,
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
@@ -226,13 +199,12 @@ export default function CreateKaryawanPage() {
                     />
                 </Field>
 
-                <Field label="Posisi" error={errors.role_id?.[0]} required>
+                <Field label="Posisi" required>
                     <Select
-                        value={form.role_id}
+                        value={form.role}
                         onChange={(v) => handleRoleChange(v)}
-                        error={!!errors.role_id}
                         placeholder="Pilih posisi"
-                        options={roleList.map((r) => ({ value: String(r.id), label: r.nama }))}
+                        options={ROLE_OPTIONS}
                     />
                 </Field>
 
