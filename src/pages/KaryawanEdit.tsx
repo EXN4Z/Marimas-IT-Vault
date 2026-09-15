@@ -14,15 +14,6 @@ import { Skeleton } from '../components/shared/skeleton';
 import ConfirmDeleteModal from '../components/shared/ConfirmDeleteModal';
 import { KeyRound, X } from 'lucide-react';
 
-// REVISI: role sekarang cuma 3 pilihan tetap (admin/user/cabang, lihat
-// migration simplify_roles_table) -- form gak perlu lagi fetch daftar role
-// dari Master Data > Role (endpoint itu udah dihapus).
-const ROLE_OPTIONS = [
-    { value: 'user', label: 'User' },
-    { value: 'cabang', label: 'Cabang' },
-    { value: 'admin', label: 'Admin' },
-];
-
 interface User {
     id: number;
     name: string;
@@ -123,24 +114,20 @@ export default function EditKaryawanPage() {
         }
     }
 
-    function handleRoleChange(value: string) {
-        const goingToCabang = value === 'cabang';
-
-        setForm((prev) => ({
-            ...prev,
-            role: value,
-            ...(goingToCabang
-                ? { nik: '', departemen_id: '', tanggal_masuk: '' }
-                : {}),
-        }));
+    // REVISI: role sekarang cuma di-toggle admin/user lewat checkbox
+    // "Jadikan admin?" -- gak ada lagi dropdown "Role" yang fetch/pilih
+    // dari Master Data > Role (endpoint itu udah dihapus). Pilihan role
+    // 'cabang' SENGAJA di-skip dari form ini buat sekarang (ditunda, lihat
+    // catatan migrasi Cabang) -- logic isCabang/field Cabang di bawah
+    // dibiarkan apa adanya, cuma jadi gak ke-reach lewat toggle ini. Kalau
+    // user yang lagi diedit KEBETULAN sudah berrole 'cabang' (dibuat lewat
+    // jalur lama), toggle disembunyikan (lihat JSX) biar gak ketimpa jadi
+    // 'user' cuma gara-gara admin nyimpen form tanpa sengaja.
+    function handleAdminToggle(checked: boolean) {
+        setForm((prev) => ({ ...prev, role: checked ? 'admin' : 'user' }));
         setErrors((prev) => {
             const next = { ...prev };
             delete next.role;
-            if (goingToCabang) {
-                delete next.nik;
-                delete next.departemen_id;
-                delete next.tanggal_masuk;
-            }
             return next;
         });
     }
@@ -268,14 +255,25 @@ export default function EditKaryawanPage() {
                         />
                     </Field>
 
-                    <Field label="Role" required>
-                        <Select
-                            value={form.role}
-                            onChange={(v) => handleRoleChange(v)}
-                            placeholder="Pilih role"
-                            options={ROLE_OPTIONS}
-                        />
-                    </Field>
+                    {isCabang ? (
+                        <Field label="Hak Akses">
+                            <p className="text-sm text-gray-500 italic">
+                                Role Cabang -- dikelola lewat tab Cabang, belum bisa diubah dari sini.
+                            </p>
+                        </Field>
+                    ) : (
+                        <Field label="Hak Akses">
+                            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={form.role === 'admin'}
+                                    onChange={(e) => handleAdminToggle(e.target.checked)}
+                                    className="w-4 h-4 rounded border-gray-300 text-slate-900 focus:ring-slate-500"
+                                />
+                                <span className="text-sm text-gray-700">Jadikan admin?</span>
+                            </label>
+                        </Field>
+                    )}
 
                     {!isCabang && (
                         <Field label="NIK" error={errors.nik?.[0]} required>

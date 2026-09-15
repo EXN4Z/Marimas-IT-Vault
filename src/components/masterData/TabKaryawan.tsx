@@ -10,12 +10,13 @@ import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 import KaryawanExportModal from '../laporan/KaryawanExportModal';
 import { type Karyawan } from '../../api/karyawan';
 
-// BARU: dulu union type tetap (5 role), sekarang plain string -- role
-// baru bisa dibuat bebas lewat Master Data > Role, jadi daftar user di
-// sini juga harus bisa nampilin role apapun (lihat roleStyles/roleLabels
-// fallback di bawah), gak cuma 5 role bawaan.
+// REVISI: role sekarang cuma 3 value tetap (admin/user/cabang, lihat
+// migration simplify_roles_table -- 'karyawan'/'manajer'/'hr'/'guest'
+// udah digabung jadi 'user'). Tab & badge di bawah ikut disederhanain:
+// 'karyawan' & 'hr_manajer' yang dulu 2 tab beda-beda sekarang cukup 1
+// tab "Non-Admin" (role === 'user'), karena emang gak ada lagi bedanya.
 type Role = string;
-type TabKey = 'semua' | 'karyawan' | 'hr_manajer' | 'admin' | 'cabang';
+type TabKey = 'semua' | 'user' | 'admin' | 'cabang';
 
 // Sama shape persis dengan tipe Karyawan di api/karyawan.ts (dipakai bareng
 // KaryawanExportModal, lihat tombol Export di bawah) -- dulu didefinisikan
@@ -25,20 +26,17 @@ type User = Karyawan;
 
 const roleStyles: Record<string, string> = {
     admin: 'bg-red-50 text-red-700',
-    hr: 'bg-pink-50 text-pink-700',
-    manajer: 'bg-purple-50 text-purple-700',
-    karyawan: 'bg-teal-50 text-teal-700',
+    user: 'bg-teal-50 text-teal-700',
     cabang: 'bg-blue-50 text-blue-700',
 };
-// role baru di luar 5 role bawaan (dibuat lewat Master Data > Role) belum
-// punya warna sendiri -- fallback ke abu-abu netral daripada blank/error.
+// fallback buat role di luar 3 value di atas (seharusnya gak pernah
+// kejadian lagi sejak migration simplify_roles_table, tapi tetap
+// dijaga daripada blank/error kalau ada data nyasar).
 const defaultRoleStyle = 'bg-slate-50 text-slate-700';
 
 const roleLabels: Record<string, string> = {
     admin: 'Admin',
-    hr: 'HR',
-    manajer: 'Manajer',
-    karyawan: 'Karyawan',
+    user: 'User',
     cabang: 'Cabang',
 };
 
@@ -53,20 +51,11 @@ const tabs: { key: TabKey; label: string; icon: JSX.Element }[] = [
         ),
     },
     {
-        key: 'karyawan',
-        label: 'Karyawan',
+        key: 'user',
+        label: 'Non-Admin',
         icon: (
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-        ),
-    },
-    {
-        key: 'hr_manajer',
-        label: 'HR / Manajer',
-        icon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m-3 14h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
         ),
     },
@@ -155,9 +144,7 @@ export default function TabKaryawan() {
         const q = search.toLowerCase().trim();
         return users.filter((u) => {
             const matchSearch = u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
-            const matchTab =
-                activeTab === 'semua' ||
-                (activeTab === 'hr_manajer' ? u.role === 'hr' || u.role === 'manajer' : u.role === activeTab);
+            const matchTab = activeTab === 'semua' || u.role === activeTab;
             return matchSearch && matchTab;
         });
     }, [users, search, activeTab]);
