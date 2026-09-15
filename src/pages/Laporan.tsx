@@ -199,6 +199,16 @@ export default function Laporan() {
           .map((t) => ({ key: t.key, label: t.label, icon: t.icon }))}
       />
 
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <p className="text-sm text-slate-500">
+          {activeTab === 'export_data'
+            ? 'Pilih modul data yang ingin diexport ke format Excel (.xlsx) atau dokumen PDF.'
+            : activeTab === 'foto_inventory'
+              ? 'Kelola dan unduh dokumentasi foto aset inventory perusahaan.'
+              : 'Pantau dan unduh seluruh riwayat pergerakan aset dan serah terima inventory.'}
+        </p>
+      </div>
+
       {activeTab === 'export_data' ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
@@ -212,12 +222,13 @@ export default function Laporan() {
 
             <div className="mt-4">
               <button
+                type="button"
                 onClick={() => setExportInventoryOpen(true)}
                 disabled={inventoryLoading}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs disabled:opacity-40"
               >
-                {inventoryLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-                {inventoryLoading ? 'Memuat data...' : 'Export'}
+                {inventoryLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                {inventoryLoading ? 'Memuat data...' : 'Export Excel'}
               </button>
             </div>
           </div>
@@ -233,12 +244,13 @@ export default function Laporan() {
 
             <div className="mt-4">
               <button
+                type="button"
                 onClick={() => setExportKaryawanOpen(true)}
                 disabled={karyawanLoading}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs disabled:opacity-40"
               >
-                {karyawanLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-                {karyawanLoading ? 'Memuat data...' : 'Export'}
+                {karyawanLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                {karyawanLoading ? 'Memuat data...' : 'Export Excel'}
               </button>
             </div>
           </div>
@@ -254,12 +266,13 @@ export default function Laporan() {
 
             <div className="mt-4">
               <button
+                type="button"
                 onClick={() => setExportKategoriOpen(true)}
                 disabled={kategoriLoading}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs disabled:opacity-40"
               >
-                {kategoriLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-                {kategoriLoading ? 'Memuat data...' : 'Export'}
+                {kategoriLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                {kategoriLoading ? 'Memuat data...' : 'Export Excel'}
               </button>
             </div>
           </div>
@@ -274,12 +287,13 @@ export default function Laporan() {
 
             <div className="mt-4">
               <button
+                type="button"
                 onClick={() => setExportDepartemenOpen(true)}
                 disabled={departemenLoading}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs disabled:opacity-40"
               >
-                {departemenLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-                {departemenLoading ? 'Memuat data...' : 'Export'}
+                {departemenLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                {departemenLoading ? 'Memuat data...' : 'Export Excel'}
               </button>
             </div>
           </div>
@@ -295,12 +309,13 @@ export default function Laporan() {
 
             <div className="mt-4">
               <button
+                type="button"
                 onClick={() => setExportCabangOpen(true)}
                 disabled={cabangLoading}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs disabled:opacity-40"
               >
-                {cabangLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-                {cabangLoading ? 'Memuat data...' : 'Export'}
+                {cabangLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                {cabangLoading ? 'Memuat data...' : 'Export Excel'}
               </button>
             </div>
           </div>
@@ -316,12 +331,13 @@ export default function Laporan() {
 
             <div className="mt-4">
               <button
+                type="button"
                 onClick={() => setExportPerusahaanOpen(true)}
                 disabled={perusahaanLoading}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs disabled:opacity-40"
               >
-                {perusahaanLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-                {perusahaanLoading ? 'Memuat data...' : 'Export'}
+                {perusahaanLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                {perusahaanLoading ? 'Memuat data...' : 'Export Excel'}
               </button>
             </div>
           </div>
@@ -337,12 +353,13 @@ export default function Laporan() {
 
             <div className="mt-4">
               <button
+                type="button"
                 onClick={() => setExportSupplierOpen(true)}
                 disabled={supplierLoading}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs disabled:opacity-40"
               >
-                {supplierLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-                {supplierLoading ? 'Memuat data...' : 'Export'}
+                {supplierLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                {supplierLoading ? 'Memuat data...' : 'Export Excel'}
               </button>
             </div>
           </div>
@@ -359,12 +376,13 @@ export default function Laporan() {
 
               <div className="mt-4">
                 <button
+                  type="button"
                   onClick={() => setExportPemakaiOpen(true)}
                   disabled={pemakaiLoading}
-                  className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition disabled:opacity-40"
+                  className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs disabled:opacity-40"
                 >
-                  {pemakaiLoading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-                  {pemakaiLoading ? 'Memuat data...' : 'Export'}
+                  {pemakaiLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                  {pemakaiLoading ? 'Memuat data...' : 'Export Excel'}
                 </button>
               </div>
             </div>

@@ -283,21 +283,52 @@ export default function PenangananInventory({ onCount }: Props) {
   );
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-      <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
-        <div>
-          <h3 className="text-base font-semibold text-slate-900 mb-1">Forum Penanganan Inventory</h3>
-          <p className="text-sm text-slate-500">
-            {isAdmin
-              ? 'Laporan kerusakan dari peminjam yang belum/sudah ditangani.'
-              : 'Status laporan kerusakan inventory yang pernah/sedang kamu pakai.'}
-          </p>
-        </div>
+    <>
+      <div className="mb-4">
+        <h3 className="text-base font-semibold text-slate-900 mb-1">Forum Penanganan Inventory</h3>
+        <p className="text-sm text-slate-500">
+          {isAdmin
+            ? 'Laporan kerusakan dari peminjam yang belum/sudah ditangani.'
+            : 'Status laporan kerusakan inventory yang pernah/sedang kamu pakai.'}
+        </p>
+      </div>
+
+      <ScrollableTabBar
+        className="mb-6"
+        activeTab={activeTab}
+        onChange={handleTabChange}
+        tabs={tabs.map((t) => ({
+          key: t.key,
+          label: t.label,
+          badge: t.list.length,
+          badgeClassName: activeTab === t.key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
+        }))}
+      />
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <p className="text-sm text-slate-500">
+          {activeTab === 'menunggu'
+            ? 'Laporan kerusakan yang menunggu verifikasi dan persetujuan penanganan teknisi.'
+            : activeTab === 'diperbaiki'
+              ? 'Laporan inventaris yang saat ini sedang dalam proses perbaikan teknisi.'
+              : activeTab === 'diperbaiki_selesai'
+                ? 'Daftar riwayat penanganan aset yang telah selesai diperbaiki.'
+                : 'Daftar inventaris yang dinyatakan rusak berat dan tidak dapat diperbaiki lagi.'}
+        </p>
 
         {/* Import & Export -- cuma tampil di tab "Berhasil Diperbaiki" &
             "Rusak Berat" (lihat catatan di deklarasi canImportExport). */}
         {canImportExport && (
-          <div className="flex items-center gap-2.5 flex-shrink-0">
+          <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setExportModalOpen(true)}
+              className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 transition shadow-xs"
+            >
+              <Download size={16} />
+              Export Excel
+            </button>
+
             <input
               ref={fileInputRef}
               type="file"
@@ -306,26 +337,20 @@ export default function PenangananInventory({ onCount }: Props) {
               className="hidden"
             />
             <button
+              type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={importLoading}
-              className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
             >
               {importLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-              {importLoading ? 'Mengimport...' : 'Import Excel'}
-            </button>
-            <button
-              onClick={() => setExportModalOpen(true)}
-              className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition"
-            >
-              <Download size={16} />
-              Export
+              Import Excel
             </button>
           </div>
         )}
       </div>
 
       {importMessage && (
-        <p className={`text-sm mb-4 -mt-2 ${importMessage.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+        <p className={`text-sm mb-4 ${importMessage.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
           {importMessage.text}
         </p>
       )}
@@ -336,17 +361,7 @@ export default function PenangananInventory({ onCount }: Props) {
         </div>
       )}
 
-      <ScrollableTabBar
-        className="mb-4"
-        activeTab={activeTab}
-        onChange={handleTabChange}
-        tabs={tabs.map((t) => ({
-          key: t.key,
-          label: t.label,
-          badge: t.list.length,
-          badgeClassName: activeTab === t.key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
-        }))}
-      />
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
 
       {(activeTab === 'diperbaiki_selesai' || activeTab === 'rusak_berat') && (
         <SearchInput
@@ -535,6 +550,7 @@ export default function PenangananInventory({ onCount }: Props) {
         />
       )}
     </div>
+    </>
   );
 }
 

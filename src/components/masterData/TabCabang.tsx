@@ -227,9 +227,10 @@ export default function TabCabang() {
         </p>
         <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
           <button
+            type="button"
             onClick={handleExport}
             disabled={exporting}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
           >
             {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
             {exporting ? 'Mengexport...' : 'Export Excel'}
@@ -243,20 +244,22 @@ export default function TabCabang() {
             className="hidden"
           />
           <button
+            type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={importLoading}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
           >
             {importLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
             {importLoading ? 'Mengimport...' : 'Import Excel'}
           </button>
 
           <button
+            type="button"
             onClick={openCreateModal}
-            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition flex-shrink-0"
+            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs flex-shrink-0"
           >
             <Plus size={16} />
-            Tambah Cabang
+            + Tambah Cabang
           </button>
         </div>
       </div>

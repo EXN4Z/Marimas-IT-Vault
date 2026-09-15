@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { Download, Upload, Plus } from 'lucide-react';
 import api from '../../api/axios';
 import { importKaryawan } from '../../api/auth';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
@@ -216,8 +217,42 @@ export default function TabKaryawan() {
 
     return (
         <>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                <p className="text-sm text-slate-500">
+                    Kelola data user dan karyawan sistem, akun login, departemen, dan hak akses.
+                </p>
+                {isAdmin && (
+                    <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => setShowExportModal(true)}
+                            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 transition shadow-xs"
+                        >
+                            <Download size={16} />
+                            Export Excel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setShowImportModal(true)}
+                            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 transition shadow-xs"
+                        >
+                            <Upload size={16} />
+                            Import Excel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/karyawan/create', { state: { backgroundLocation: location } })}
+                            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs"
+                        >
+                            <Plus size={16} />
+                            + Tambah User
+                        </button>
+                    </div>
+                )}
+            </div>
+
             <div>
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
                     {/* Tab navigation menggantikan dropdown filter role */}
                     <ScrollableTabBar
                         className="mb-4"
@@ -226,47 +261,22 @@ export default function TabKaryawan() {
                         tabs={tabs}
                     />
 
-                    <div className="flex flex-col sm:flex-row gap-2 mb-4">
-                        <div className="relative flex-1">
-                            <svg
-                                className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
-                            </svg>
-                            <input
-                                type="text"
-                                placeholder="Cari nama atau email..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none"
-                            />
-                        </div>
-                            {isAdmin && (
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => setShowExportModal(true)}
-                                        className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 whitespace-nowrap"
-                                    >
-                                        Export
-                                    </button>
-                                    {/* BARU: tombol Import Excel */}
-                                    <button
-                                        onClick={() => setShowImportModal(true)}
-                                        className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 whitespace-nowrap"
-                                    >
-                                        Import Excel
-                                    </button>
-                                    <button
-                                        onClick={() => navigate('/karyawan/create', { state: { backgroundLocation: location } })}
-                                        className="flex items-center justify-center gap-2 bg-black text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800 whitespace-nowrap"
-                                    >
-                                        + Tambah User
-                                    </button>
-                                </div>
-                            )}
+                    <div className="relative mb-4">
+                        <svg
+                            className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+                        </svg>
+                        <input
+                            type="text"
+                            placeholder="Cari nama atau email..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none"
+                        />
                     </div>
 
                     <p className="text-sm text-gray-500 mb-4">

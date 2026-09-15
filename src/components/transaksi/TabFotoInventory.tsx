@@ -21,8 +21,6 @@ const TABS: ScrollableTabItem<FotoTab>[] = [
   { key: 'rusak', label: 'Rusak', icon: Wrench },
 ];
 
-interface Props {}
-
 // State generik yang sama bentuknya buat ketiga tab (entries beda tipe,
 // tapi search/page/lastPage/total/loading semuanya sama pola), jadi
 // masing-masing tab punya pagination & pencarian sendiri-sendiri --
@@ -50,7 +48,7 @@ const initialTabState = <T,>(): TabState<T> => ({
   total: 0,
 });
 
-export default function TabFotoInventory({}: Props) {
+export default function TabFotoInventory() {
   const [activeTab, setActiveTab] = useState<FotoTab>('inventory');
 
   const [inventory, setInventoryState] = useState<TabState<Inventory>>(initialTabState);

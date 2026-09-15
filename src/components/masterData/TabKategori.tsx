@@ -152,31 +152,34 @@ export default function TabKategori() {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div className="flex items-center justify-between gap-3 px-6 pt-5 pb-1 flex-wrap">
-        <p className="text-xs text-slate-400 max-w-md">
-          Kategori adalah label jenis barang (mis. Laptop, Charger, Speaker) buat mengelompokkan
-          data Inventory. Nama bebas apa saja -- gak menentukan field atau alur mana pun.
+    <>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <p className="text-sm text-slate-500">
+          Kelola kategori aset dan inventory untuk pengelompokan jenis barang di seluruh sistem.
         </p>
-        <div className="flex items-center gap-2.5 flex-shrink-0">
+        <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
           <button
+            type="button"
             onClick={() => setShowExportModal(true)}
             disabled={loading || !!error}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
           >
             <Download size={16} />
-            Export
+            Export Excel
           </button>
           <button
+            type="button"
             onClick={openCreateModal}
             disabled={loading || !!error}
-            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
           >
             <Plus size={16} />
-            Tambah Kategori
+            + Tambah Kategori
           </button>
         </div>
       </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
 
       {loading && (
         <div className="overflow-x-auto mt-3">
@@ -350,5 +353,6 @@ export default function TabKategori() {
         data={items}
       />
     </div>
+    </>
   );
 }
