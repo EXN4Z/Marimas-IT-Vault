@@ -7,6 +7,7 @@ import Select from '../components/shared/Select';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
 import { getDepartemen, type Departemen } from '../api/masterData/departemen';
 import { getCabang, type Cabang } from '../api/cabang';
+import { getRoles, type Role } from '../api/masterData/role'; // sesuaikan path, buat kalau belum ada
 import SearchableSelect from '../components/shared/SearchableSelect';
 
 interface FormState {
@@ -14,7 +15,7 @@ interface FormState {
     email: string;
     phone: string;
     password: string;
-    role: string; // REVISI: balik jadi nama role tetap ('admin'|'user'|'cabang'), bukan role_id
+    role_id: number | ''; // '' = belum dipilih
     nik: string;
     departemen_id: string;
     lokasi_kantor_id: string;
@@ -30,7 +31,7 @@ const initialForm: FormState = {
     email: '',
     phone: '',
     password: '',
-    role: 'user', // REVISI: default langsung 'user', gak perlu nunggu fetch role list lagi
+    role_id: '', // kosong dulu, wajib dipilih dari dropdown hasil fetch
     nik: '',
     departemen_id: '',
     lokasi_kantor_id: '',
@@ -43,6 +44,7 @@ export default function CreateKaryawanPage() {
     const [form, setForm] = useState<FormState>(initialForm);
     const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
     const [cabangList, setCabangList] = useState<Cabang[]>([]);
+    const [roleList, setRoleList] = useState<Role[]>([]);
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
     const [generalError, setGeneralError] = useState('');
@@ -50,9 +52,15 @@ export default function CreateKaryawanPage() {
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
         getCabang().then(setCabangList).catch(() => {});
+        getRoles().then(setRoleList).catch(() => {
+            toast.error('Gagal memuat daftar role.');
+        });
     }, []);
 
-    const isCabang = form.role === 'cabang';
+    // GANTI: cari role_id yang namanya 'cabang' secara dinamis dari hasil
+    // fetch, bukan compare langsung ke string atau hardcode angka.
+    const cabangRoleId = roleList.find((r) => r.nama === 'cabang')?.id;
+    const isCabang = form.role_id !== '' && form.role_id === cabangRoleId;
 
     function closeModal() {
         if (window.history.state && window.history.state.idx > 0) {
@@ -73,20 +81,12 @@ export default function CreateKaryawanPage() {
         }
     }
 
-    // REVISI: role sekarang dropdown 3 pilihan tetap (admin/user/cabang,
-    // lihat migration simplify_roles_table) -- gak perlu fetch daftar role
-    // dari API, cukup daftar statis di sini.
-    const ROLE_OPTIONS = [
-        { value: 'user', label: 'User' },
-        { value: 'admin', label: 'Admin' },
-        { value: 'cabang', label: 'Cabang' },
-    ];
-
+    // GANTI: set role_id (number), bukan role (string)
     function handleRoleChange(value: string) {
-        setForm((prev) => ({ ...prev, role: value }));
+        setForm((prev) => ({ ...prev, role_id: value === '' ? '' : Number(value) }));
         setErrors((prev) => {
             const next = { ...prev };
-            delete next.role;
+            delete next.role_id;
             return next;
         });
     }
@@ -98,6 +98,7 @@ export default function CreateKaryawanPage() {
         const newErrors: FieldErrors = {};
         if (!form.name.trim()) newErrors.name = ['Nama lengkap wajib diisi.'];
         if (!form.password.trim()) newErrors.password = ['Password awal wajib diisi.'];
+        if (form.role_id === '') newErrors.role_id = ['Role wajib dipilih.'];
         if (!isCabang && !form.nik.trim()) newErrors.nik = ['NIK karyawan wajib diisi.'];
         if (isCabang && !form.lokasi_kantor_id) newErrors.lokasi_kantor_id = ['Cabang penempatan wajib dipilih.'];
 
@@ -113,6 +114,7 @@ export default function CreateKaryawanPage() {
         try {
             const payload = {
                 ...form,
+                role_id: form.role_id as number, // udah divalidasi bukan '' di atas
                 nik: isCabang ? null : form.nik,
                 departemen_id: isCabang ? null : form.departemen_id || null,
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
@@ -150,57 +152,34 @@ export default function CreateKaryawanPage() {
                 )}
 
                 <Field label="Nama" error={errors.name?.[0]} required>
-                    <TextInput
-                        value={form.name}
-                        onChange={(v) => handleChange('name', v)}
-                        error={!!errors.name}
-                        autoFocus
-                    />
+                    <TextInput value={form.name} onChange={(v) => handleChange('name', v)} error={!!errors.name} autoFocus />
                 </Field>
 
                 <Field label="Email" error={errors.email?.[0]}>
-                    <TextInput
-                        type="email"
-                        value={form.email}
-                        onChange={(v) => handleChange('email', v)}
-                        error={!!errors.email}
-                    />
+                    <TextInput type="email" value={form.email} onChange={(v) => handleChange('email', v)} error={!!errors.email} />
                 </Field>
 
                 <Field label="Nomor Telepon" error={errors.phone?.[0]}>
-                    <TextInput
-                        value={form.phone}
-                        onChange={(v) => handleChange('phone', v)}
-                        error={!!errors.phone}
-                    />
+                    <TextInput value={form.phone} onChange={(v) => handleChange('phone', v)} error={!!errors.phone} />
                 </Field>
 
                 <Field label="Password" error={errors.password?.[0]} required>
-                    <TextInput
-                        type="password"
-                        value={form.password}
-                        onChange={(v) => handleChange('password', v)}
-                        error={!!errors.password}
-                    />
+                    <TextInput type="password" value={form.password} onChange={(v) => handleChange('password', v)} error={!!errors.password} />
                 </Field>
 
-                <Field label="Role" error={errors.role?.[0]} required>
+                <Field label="Role" error={errors.role_id?.[0]} required>
                     <Select
-                        value={form.role}
+                        value={form.role_id === '' ? '' : String(form.role_id)}
                         onChange={handleRoleChange}
                         placeholder="Pilih role"
-                        error={!!errors.role}
-                        options={ROLE_OPTIONS}
+                        error={!!errors.role_id}
+                        options={roleList.map((r) => ({ value: String(r.id), label: r.nama }))}
                     />
                 </Field>
 
                 {!isCabang && (
                     <Field label="NIK" error={errors.nik?.[0]} required>
-                        <TextInput
-                            value={form.nik}
-                            onChange={(v) => handleChange('nik', v)}
-                            error={!!errors.nik}
-                        />
+                        <TextInput value={form.nik} onChange={(v) => handleChange('nik', v)} error={!!errors.nik} />
                     </Field>
                 )}
 
@@ -230,12 +209,7 @@ export default function CreateKaryawanPage() {
 
                 {!isCabang && (
                     <Field label="Tanggal Masuk" error={errors.tanggal_masuk?.[0]}>
-                        <TextInput
-                            type="date"
-                            value={form.tanggal_masuk}
-                            onChange={(v) => handleChange('tanggal_masuk', v)}
-                            error={!!errors.tanggal_masuk}
-                        />
+                        <TextInput type="date" value={form.tanggal_masuk} onChange={(v) => handleChange('tanggal_masuk', v)} error={!!errors.tanggal_masuk} />
                     </Field>
                 )}
 

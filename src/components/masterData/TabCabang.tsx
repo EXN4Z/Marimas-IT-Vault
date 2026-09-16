@@ -31,6 +31,7 @@ export default function TabCabang() {
   const [formLink, setFormLink] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [formEmail, setFormEmail] = useState('');
 
   const [deleteTarget, setDeleteTarget] = useState<Cabang | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -117,6 +118,7 @@ export default function TabCabang() {
     setFormNama('');
     setFormAlamat('');
     setFormTelepon('');
+    setFormEmail('');
     setFormLink('');
     setFormErrors({});
     setModalOpen(true);
@@ -128,6 +130,7 @@ export default function TabCabang() {
     setFormAlamat(item.alamat || '');
     setFormTelepon(item.telepon || '');
     setFormLink(item.link || '');
+    setFormEmail(item.email || '');
     setFormErrors({});
     setModalOpen(true);
   };
@@ -154,6 +157,7 @@ export default function TabCabang() {
     if (!formAlamat.trim()) clientErrors.alamat = 'Alamat cabang wajib diisi.';
     if (!formTelepon.trim()) clientErrors.telepon = 'Nomor telepon cabang wajib diisi.';
     if (!formLink.trim()) clientErrors.link = 'Link lokasi Google Maps wajib diisi.';
+    if (!formEmail.trim()) clientErrors.email = 'Email akun cabang wajib diisi.';
     if (Object.keys(clientErrors).length > 0) {
       setFormErrors(clientErrors);
       toast.error('Mohon lengkapi semua kolom yang wajib diisi.');
@@ -168,6 +172,7 @@ export default function TabCabang() {
         alamat: formAlamat.trim(),
         telepon: formTelepon.trim(),
         link: formLink.trim(),
+        email: formEmail.trim(),
       };
       if (editing) {
         await updateCabang(editing.id, payload);
@@ -186,6 +191,7 @@ export default function TabCabang() {
           alamat: apiErrors.alamat?.[0],
           telepon: apiErrors.telepon?.[0],
           link: apiErrors.link?.[0],
+          email: apiErrors.email?.[0],
         });
       } else {
         setFormErrors({ _general: err.response?.data?.message || 'Gagal menyimpan cabang.' });
@@ -412,6 +418,20 @@ export default function TabCabang() {
                 placeholder="Contoh: 031-7345678 / 0812-3344-5566"
                 error={!!formErrors.telepon}
                 type="tel"
+              />
+            </Field>
+
+            <Field label="Email Akun Cabang" error={formErrors.email} required hint="Dipakai untuk login user cabang ini">
+              <TextInput
+                value={formEmail}
+                onChange={(val) => {
+                  setFormEmail(val);
+                  clearFieldError('email');
+                }}
+                placeholder="cabang.surabaya@domain.com"
+                error={!!formErrors.email}
+                type="email"
+                disabled={!!editing} // opsional, lihat catatan di bawah
               />
             </Field>
 

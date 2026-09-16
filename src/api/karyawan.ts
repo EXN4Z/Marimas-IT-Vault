@@ -20,7 +20,7 @@ export interface Karyawan {
   departemen: Departemen | null
   lokasi_kantor: LokasiKantor | null
   tanggal_masuk: string
-  role: string
+  role_id: number
   created_at?: string
   updated_at?: string
 }

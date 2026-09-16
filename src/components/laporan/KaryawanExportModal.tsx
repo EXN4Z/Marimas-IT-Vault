@@ -7,10 +7,10 @@ import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
 import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 
-const ROLE_LABEL: Record<string, string> = {
-  user: 'User',
-  cabang: 'Cabang',
-  admin: 'Admin',
+const ROLE_LABEL: Record<string | number, string> = {
+  1: 'User',
+  2: 'Cabang',
+  3: 'Admin',
 };
 
 // Sama pola dengan AsetExportModal — daftar kolom yang bisa diexport,
@@ -35,7 +35,9 @@ const EXPORT_COLUMNS: ExportColumn[] = [
     defaultChecked: true,
     get: (k) => (k.tanggal_masuk ? formatTanggalId(k.tanggal_masuk) : '-'),
     },
-  { key: 'role', label: 'Role', defaultChecked: true, get: (k) => ROLE_LABEL[k.role] || k.role },
+  { key: 'role_id', label: 'Role', defaultChecked: true, get: (k) => ROLE_LABEL[k.role_id] ?? String(k.role_id ?? '-'),
+    
+  }
 ];
 
 type FileType = 'excel' | 'pdf';
