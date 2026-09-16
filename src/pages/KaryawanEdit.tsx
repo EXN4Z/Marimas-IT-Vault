@@ -14,12 +14,17 @@ import { Skeleton } from '../components/shared/skeleton';
 import ConfirmDeleteModal from '../components/shared/ConfirmDeleteModal';
 import { KeyRound, X } from 'lucide-react';
 
+interface RoleOption {
+    id: number;
+    nama: string;
+}
+
 interface User {
     id: number;
     name: string;
     email: string | null;
     phone: string | null;
-    role: string; // REVISI: balik jadi nama role tetap (accessor $user->role), bukan role_id
+    role_id: number; // GANTI: dulu `role` (string dari accessor), sekarang FK ke tabel roles
     nik: string | null;
     departemen_id?: number | null;
     lokasi_kantor_id?: number | null;
@@ -30,7 +35,7 @@ interface FormState {
     name: string;
     email: string;
     phone: string;
-    role: string;
+    role_id: string; // disimpan sebagai string karena dipakai langsung sebagai value <Select>
     nik: string;
     departemen_id: string;
     lokasi_kantor_id: string;
@@ -45,12 +50,25 @@ const initialForm: FormState = {
     name: '',
     email: '',
     phone: '',
-    role: 'user',
+    role_id: '',
     nik: '',
     departemen_id: '',
     lokasi_kantor_id: '',
     tanggal_masuk: '',
 };
+
+// Label tampilan buat tiap role. Kalau ada role baru yang namanya gak ada
+// di sini, fallback ke nama aslinya (lihat roleLabel() di bawah) -- jadi
+// gak akan hilang, cuma huruf besar/kecilnya ngikut apa adanya dari DB.
+const ROLE_DISPLAY_LABEL: Record<string, string> = {
+    admin: 'Admin',
+    user: 'User',
+    cabang: 'Cabang',
+};
+
+function roleLabel(nama: string): string {
+    return ROLE_DISPLAY_LABEL[nama] ?? nama.charAt(0).toUpperCase() + nama.slice(1);
+}
 
 export default function EditKaryawanPage() {
     const { id } = useParams<{ id: string }>();
@@ -59,6 +77,9 @@ export default function EditKaryawanPage() {
     const [form, setForm] = useState<FormState>(initialForm);
     const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
     const [cabangList, setCabangList] = useState<Cabang[]>([]);
+    // BARU: daftar role diambil dari API (GET /role), bukan hardcode --
+    // biar konsisten sama sumber kebenaran id role di database.
+    const [roleList, setRoleList] = useState<RoleOption[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [saving, setSaving] = useState<boolean>(false);
     const [errors, setErrors] = useState<FieldErrors>({});
@@ -68,11 +89,19 @@ export default function EditKaryawanPage() {
     const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
     const [deleting, setDeleting] = useState<boolean>(false);
 
-    const isCabang = form.role === 'cabang';
+    // isCabang sekarang dicari dari NAMA role yang lagi dipilih (dicocokkan
+    // lewat roleList hasil fetch), bukan bandingin string 'cabang' langsung
+    // ke form.role_id (yang isinya angka, jadi gak akan pernah cocok).
+    const selectedRole = roleList.find((r) => String(r.id) === form.role_id);
+    const isCabang = selectedRole?.nama === 'cabang';
 
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
         getCabang().then(setCabangList).catch(() => {});
+        api
+            .get<RoleOption[]>('/roles')
+            .then((res) => setRoleList(res.data))
+            .catch(() => toast.error('Gagal memuat daftar role.'));
 
         api
             .get<User>(`/karyawan/${id}`)
@@ -82,7 +111,7 @@ export default function EditKaryawanPage() {
                     name: u.name,
                     email: u.email ?? '',
                     phone: u.phone ?? '',
-                    role: u.role,
+                    role_id: u.role_id != null ? String(u.role_id) : '',
                     nik: u.nik ?? '',
                     departemen_id: u.departemen_id ? String(u.departemen_id) : '',
                     lokasi_kantor_id: u.lokasi_kantor_id ? String(u.lokasi_kantor_id) : '',
@@ -114,19 +143,13 @@ export default function EditKaryawanPage() {
         }
     }
 
-    // REVISI: role sekarang dropdown 3 pilihan tetap (admin/user/cabang),
-    // bisa diganti bebas ke/dari cabang langsung dari sini.
-    const ROLE_OPTIONS = [
-        { value: 'user', label: 'User' },
-        { value: 'admin', label: 'Admin' },
-        { value: 'cabang', label: 'Cabang' },
-    ];
+    const ROLE_OPTIONS = roleList.map((r) => ({ value: String(r.id), label: roleLabel(r.nama) }));
 
     function handleRoleChange(value: string) {
-        setForm((prev) => ({ ...prev, role: value }));
+        setForm((prev) => ({ ...prev, role_id: value }));
         setErrors((prev) => {
             const next = { ...prev };
-            delete next.role;
+            delete next.role_id;
             return next;
         });
     }
@@ -137,6 +160,7 @@ export default function EditKaryawanPage() {
 
         const newErrors: FieldErrors = {};
         if (!form.name.trim()) newErrors.name = ['Nama lengkap wajib diisi.'];
+        if (!form.role_id) newErrors.role_id = ['Role wajib dipilih.'];
         if (!isCabang && !form.nik.trim()) newErrors.nik = ['NIK karyawan wajib diisi.'];
         if (isCabang && !form.lokasi_kantor_id) newErrors.lokasi_kantor_id = ['Cabang penempatan wajib dipilih.'];
 
@@ -150,8 +174,14 @@ export default function EditKaryawanPage() {
         setErrors({});
 
         try {
+            // GANTI: kirim role_id sebagai number, bukan lagi field `role`
+            // string -- backend (UserController@update) sudah expect
+            // role_id integer, bukan nama role.
             const payload = {
-                ...form,
+                name: form.name,
+                email: form.email || null,
+                phone: form.phone || null,
+                role_id: Number(form.role_id),
                 nik: isCabang ? null : form.nik,
                 departemen_id: isCabang ? null : form.departemen_id || null,
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
@@ -254,12 +284,12 @@ export default function EditKaryawanPage() {
                         />
                     </Field>
 
-                    <Field label="Role" error={errors.role?.[0]} required>
+                    <Field label="Role" error={errors.role_id?.[0]} required>
                         <Select
-                            value={form.role}
+                            value={form.role_id}
                             onChange={handleRoleChange}
                             placeholder="Pilih role"
-                            error={!!errors.role}
+                            error={!!errors.role_id}
                             options={ROLE_OPTIONS}
                         />
                     </Field>
