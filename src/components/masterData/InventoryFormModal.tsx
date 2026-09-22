@@ -5,7 +5,6 @@ import {
   getInventory,
   getInventoryById,
   updateInventory,
-  pasangPenggantiKelengkapanInventory,
   type Inventory,
   type InventoryFormValues,
   type InventoryStatus,
@@ -13,7 +12,6 @@ import {
 import { getKategori, type Kategori } from '../../api/masterData/kategori';
 import { getSupplier, type Supplier } from '../../api/masterData/supplier';
 import { getPerusahaan, type Perusahaan } from '../../api/perusahaan';
-import InventoryKelengkapanPicker, { type StagedKelengkapan } from './InventoryKelengkapanPicker';
 import { ButtonCancel, ButtonSubmit, Field, SelectField, inputClass, inputErrorClass } from '../shared/FormControls';
 
 const KETERANGAN_MAX = 255;
@@ -35,10 +33,9 @@ const ACCEPTED_FOTO_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp
 // Form ini nangani status secara lokal aja -- InventoryFormValues (create/update)
 // TIDAK punya field status, karena perubahan status dilakuin lewat endpoint aksi
 // khusus (pinjam/kembalikan/lapor rusak/dst), bukan lewat create/update langsung.
-// 'status' di sini cuma dipakai buat UI (badge read-only pas edit) & mode staged
-// (dibawa ke pemanggil di InventoryKelengkapanPicker), DIBUANG sebelum dikirim
-// ke createInventory/updateInventory.
-export type KelengkapanFormValues = InventoryFormValues & { status: InventoryStatus };
+// 'status' di sini cuma dipakai buat UI (badge read-only pas edit), DIBUANG
+// sebelum dikirim ke createInventory/updateInventory.
+type KelengkapanFormValues = InventoryFormValues & { status: InventoryStatus };
 
 const STATUS_OPTIONS: { value: InventoryStatus; label: string; dot: string; ring: string }[] = [
   { value: 'tersedia', label: 'Tersedia', dot: 'bg-emerald-500', ring: 'ring-emerald-100 border-emerald-400 bg-emerald-50/60' },
@@ -48,31 +45,11 @@ const STATUS_OPTIONS: { value: InventoryStatus; label: string; dot: string; ring
 interface InventoryFormModalProps {
   inventory: Inventory | null; // null = mode tambah
   // Dipakai kalau pemanggil sudah punya daftar supplier ter-load (mis.
-  // TabInventory) -- biar gak fetch dobel. Kalau dikosongin ('[]', dipakai
-  // satu-satunya oleh InventoryKelengkapanPicker), form fetch sendiri lewat
-  // getSupplier().
+  // TabInventory) -- biar gak fetch dobel. Kalau dikosongin, form fetch
+  // sendiri lewat getSupplier().
   supplierOptions: Supplier[];
   onClose: () => void;
   onSaved: (inventory: Inventory, warning?: string) => void;
-  // --- Prop di bawah ini dipakai InventoryKelengkapanPicker (dari section
-  // "Kelengkapan" di form inventory lain) buat nambah item baru yang
-  // langsung nempel ke inventory tertentu ---
-  // Kalau diisi, field "Inventory Induk" dikunci ke inventory ini (gak bisa diubah manual).
-  presetInventoryId?: number;
-  presetInventoryLabel?: string; // label tampilan, mis. "AST-0012 — Dell Latitude"
-  // Paksa tampilan field "Inventory Induk" ke mode terkunci (pakai
-  // presetInventoryLabel) walau presetInventoryId belum keisi angka beneran -- dipakai
-  // pas inventory induknya baru dalam proses dibuat (mode create) jadi belum
-  // punya id sama sekali. parent_id yang beneran akan ditimpa pemanggil
-  // setelah inventory induknya kesimpen (lihat InventoryKelengkapanPicker).
-  lockInventoryField?: boolean;
-  // Mode staged: dipakai kalau form ini dibuka DI DALAM form inventory induk yang
-  // belum tentu punya id (mis. lagi mode create). Kalau diisi, submit TIDAK
-  // langsung panggil API create/update -- cuma validasi lalu balikin form
-  // values ke pemanggil buat ditahan (staged) dan diproses belakangan
-  // setelah inventory induknya kesimpen. onSaved tidak dipanggil sama sekali di
-  // mode ini, cuma onStage lalu onClose.
-  onStage?: (values: KelengkapanFormValues) => void;
 }
 
 // State form lokal -- superset dari KelengkapanFormValues, cuma `jumlah`
@@ -107,10 +84,6 @@ export default function InventoryFormModal({
   supplierOptions,
   onClose,
   onSaved,
-  presetInventoryId,
-  presetInventoryLabel,
-  lockInventoryField,
-  onStage,
 }: InventoryFormModalProps) {
   // ================= Referensi: kategori, supplier, perusahaan, inventory induk, lokasi =================
   const [daftarKategori, setDaftarKategori] = useState<Kategori[]>([]);
@@ -200,13 +173,10 @@ export default function InventoryFormModal({
           no_good_receive: inventory.no_good_receive || '',
           status: inventory.status,
         }
-      : presetInventoryId
-        ? { ...EMPTY_FORM, parent_id: presetInventoryId }
-        : EMPTY_FORM
+      : EMPTY_FORM
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
-  const [stagedKelengkapan, setStagedKelengkapan] = useState<StagedKelengkapan[]>([]);
   const [existingKelengkapan, setExistingKelengkapan] = useState<Inventory[]>([]);
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -215,8 +185,8 @@ export default function InventoryFormModal({
   }
 
   // Mode edit: fetch ulang detail inventory (list row yang dilempar ke form
-  // belum tentu bawa relasi children) biar section Kelengkapan nunjukin apa
-  // yang udah beneran nempel ke item ini.
+  // belum tentu bawa relasi children) buat tau apakah item ini udah punya
+  // children -- dipakai validasi sudahPunyaChildren di bawah.
   useEffect(() => {
     if (!inventory) return;
     getInventoryById(inventory.id)
@@ -279,18 +249,6 @@ export default function InventoryFormModal({
       [a.kode_inventory, a.nama].filter(Boolean).join(' ').toLowerCase().includes(q)
     );
   }, [inventoryOptions, inventorySearch]);
-
-  // Kelengkapan (children) cuma bisa dipasang kalau item ini SEDANG jadi
-  // induk (belum/gak nempel ke apapun) & jumlahnya 1 (barang serialized) --
-  // item non-serialized (jumlah > 1) gak punya identitas fisik tunggal buat
-  // ditempeli barang lain, dan item yang sendiri nempel ke induk lain gak
-  // boleh punya children-nya sendiri (hierarki 1 level: induk <-> menempel).
-  const jumlahValid = form.jumlah === '' || Number(form.jumlah) === 1;
-  const bisaPunyaKelengkapan = !form.parent_id && jumlahValid;
-  useEffect(() => {
-    if (!bisaPunyaKelengkapan && stagedKelengkapan.length > 0) setStagedKelengkapan([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bisaPunyaKelengkapan]);
 
   // ================= Foto (drag & drop + preview) =================
   const [fotoPreview, setFotoPreview] = useState<string | null>(
@@ -398,43 +356,9 @@ export default function InventoryFormModal({
       hapus_foto: fotoDihapus,
     };
 
-    // Mode staged: gak ada inventory induk beneran di backend buat nempelin
-    // item ini (mis. lagi create inventory induknya juga baru), jadi cuma
-    // balikin form values ke pemanggil -- gak ada API yang dipanggil di sini.
-    if (onStage) {
-      onStage({ ...payload, status: form.status } as KelengkapanFormValues);
-      onClose();
-      return;
-    }
-
     setSubmitting(true);
     try {
       const saved = inventory ? await updateInventory(inventory.id, payload) : await createInventory(payload);
-
-      if (stagedKelengkapan.length > 0) {
-        try {
-          for (const item of stagedKelengkapan) {
-            if (item.type === 'stok') {
-              await pasangPenggantiKelengkapanInventory(item.item.id, saved.id);
-            } else {
-              await createInventory({ ...item.values, parent_id: saved.id });
-            }
-          }
-        } catch (kelengkapanErr: any) {
-          // Inventory-nya sendiri udah kesimpen -- jangan diulang, cuma kasih
-          // tau kalau ada kelengkapan yang gagal nempel (modal ini bakal
-          // ditutup sama pemanggil begitu onSaved dipanggil, jadi warning-nya
-          // dilempar ke atas buat ditampilin di sana, mis. lewat toast).
-          onSaved(
-            saved,
-            kelengkapanErr.response?.data?.message ||
-              'Inventory berhasil disimpan, tapi ada kelengkapan yang gagal ditambahkan. Coba lagi lewat edit inventory ini.'
-          );
-          setSubmitting(false);
-          return;
-        }
-      }
-
       onSaved(saved);
     } catch (err: any) {
       const apiErrors = err?.response?.data?.errors;
@@ -628,16 +552,7 @@ export default function InventoryFormModal({
           >
             <div className="sm:col-span-2" ref={inventoryFieldRef}>
               <Field label="Pasang ke Induk" error={errors.parent_id}>
-                {presetInventoryId || lockInventoryField ? (
-                  <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0 text-slate-400">
-                      <rect x="2" y="3" width="12" height="9" rx="1.4" stroke="currentColor" strokeWidth="1.4" />
-                      <path d="M5.5 14.5h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                    </svg>
-                    <span className="font-medium">{presetInventoryLabel || (presetInventoryId ? `Inventory #${presetInventoryId}` : 'Inventory ini')}</span>
-                    <span className="ml-auto text-xs text-slate-400">Nempel ke inventory ini</span>
-                  </div>
-                ) : sudahPunyaChildren ? (
+                {sudahPunyaChildren ? (
                   <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0">
                       <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.4" />
@@ -720,9 +635,7 @@ export default function InventoryFormModal({
                   </div>
                 )}
                 <p className="mt-1 text-xs text-slate-400">
-                  {presetInventoryId || lockInventoryField
-                    ? 'Otomatis terisi dari inventory yang lagi diedit/dibuat — item baru ini akan langsung nempel ke inventory tersebut.'
-                    : 'Opsional — pilih kalau item ini menempel ke inventory tertentu (mis. mouse ini punya laptop yang mana). Boleh diisi walau statusnya masih Tersedia; begitu induknya dipinjamkan, ini bakal ikut otomatis.'}
+                  Opsional — pilih kalau item ini menempel ke inventory tertentu (mis. mouse ini punya laptop yang mana). Boleh diisi walau statusnya masih Tersedia; begitu induknya dipinjamkan, ini bakal ikut otomatis.
                 </p>
               </Field>
             </div>
@@ -866,35 +779,6 @@ export default function InventoryFormModal({
                 <p className="mt-1 text-xs text-amber-600 animate-[fadeIn_120ms_ease-out]">
                   Foto akan dihapus saat perubahan disimpan.
                 </p>
-              )}
-            </div>
-          </Section>
-
-          {/* Section: Kelengkapan (children) -- cuma relevan buat item yang
-              SEDANG jadi induk (parent_id null) & serialized (jumlah 1).
-              Item yang lagi dipasang ke induk lain gak boleh punya
-              children-nya sendiri. */}
-          <Section
-            index={4}
-            title="Kelengkapan"
-            subtitle="Aksesoris yang menempel ke barang ini"
-            icon={
-              <path d="M3 6.5L8 3l5 3.5v5L8 15l-5-3.5v-5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-            }
-          >
-            <div className="sm:col-span-2">
-              {bisaPunyaKelengkapan ? (
-                <InventoryKelengkapanPicker
-                  staged={stagedKelengkapan}
-                  onChange={setStagedKelengkapan}
-                  existing={existingKelengkapan}
-                  inventoryLabel={form.nama || undefined}
-                  presetInventoryId={inventory?.id}
-                />
-              ) : form.parent_id ? (
-                <p className="text-xs text-slate-400">Item yang menempel ke induk lain gak bisa punya kelengkapannya sendiri.</p>
-              ) : (
-                <p className="text-xs text-slate-400">Kelengkapan cuma bisa dipasang kalau Jumlah = 1 (barang serialized).</p>
               )}
             </div>
           </Section>
