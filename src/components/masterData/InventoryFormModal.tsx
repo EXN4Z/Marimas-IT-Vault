@@ -441,7 +441,6 @@ export default function InventoryFormModal({
                     <span className="font-medium">
                       {daftarKategori.find((k) => k.id === form.kategori_id)?.nama ?? (loadingKategori ? 'Memuat…' : '-')}
                     </span>
-                    <span className="ml-auto text-xs text-slate-400">Kategori gak bisa diganti dari sini</span>
                   </div>
                 ) : (
                   <SelectField
@@ -495,7 +494,6 @@ export default function InventoryFormModal({
                       <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
                         <span className={`h-1.5 w-1.5 rounded-full ${s?.dot || 'bg-slate-400'}`} />
                         <span className="font-medium">{s?.label || form.status}</span>
-                        <span className="ml-auto text-xs text-slate-400">Ubah lewat pinjam/kembalikan/lapor rusak</span>
                       </div>
                     );
                   })()}
