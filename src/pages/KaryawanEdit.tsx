@@ -63,7 +63,6 @@ const initialForm: FormState = {
 const ROLE_DISPLAY_LABEL: Record<string, string> = {
     admin: 'Admin',
     user: 'User',
-    cabang: 'Cabang',
 };
 
 function roleLabel(nama: string): string {
@@ -89,11 +88,7 @@ export default function EditKaryawanPage() {
     const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
     const [deleting, setDeleting] = useState<boolean>(false);
 
-    // isCabang sekarang dicari dari NAMA role yang lagi dipilih (dicocokkan
-    // lewat roleList hasil fetch), bukan bandingin string 'cabang' langsung
-    // ke form.role_id (yang isinya angka, jadi gak akan pernah cocok).
-    const selectedRole = roleList.find((r) => String(r.id) === form.role_id);
-    const isCabang = selectedRole?.nama === 'cabang';
+    const selectableRoles = roleList.filter((r) => r.nama !== 'cabang');
 
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
@@ -143,7 +138,7 @@ export default function EditKaryawanPage() {
         }
     }
 
-    const ROLE_OPTIONS = roleList.map((r) => ({ value: String(r.id), label: roleLabel(r.nama) }));
+    const ROLE_OPTIONS = selectableRoles.map((r) => ({ value: String(r.id), label: roleLabel(r.nama) }));
 
     function handleRoleChange(value: string) {
         setForm((prev) => ({ ...prev, role_id: value }));
@@ -161,8 +156,7 @@ export default function EditKaryawanPage() {
         const newErrors: FieldErrors = {};
         if (!form.name.trim()) newErrors.name = ['Nama lengkap wajib diisi.'];
         if (!form.role_id) newErrors.role_id = ['Role wajib dipilih.'];
-        if (!isCabang && !form.nik.trim()) newErrors.nik = ['NIK karyawan wajib diisi.'];
-        if (isCabang && !form.lokasi_kantor_id) newErrors.lokasi_kantor_id = ['Cabang penempatan wajib dipilih.'];
+        if (!form.nik.trim()) newErrors.nik = ['NIK karyawan wajib diisi.'];
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -182,10 +176,10 @@ export default function EditKaryawanPage() {
                 email: form.email || null,
                 phone: form.phone || null,
                 role_id: Number(form.role_id),
-                nik: isCabang ? null : form.nik,
-                departemen_id: isCabang ? null : form.departemen_id || null,
+                nik: form.nik,
+                departemen_id: form.departemen_id || null,
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
-                tanggal_masuk: isCabang ? null : form.tanggal_masuk || null,
+                tanggal_masuk: form.tanggal_masuk || null,
             };
             await api.put(`/karyawan/${id}`, payload);
             toast.success('Perubahan berhasil disimpan.');
@@ -294,29 +288,25 @@ export default function EditKaryawanPage() {
                         />
                     </Field>
 
-                    {!isCabang && (
-                        <Field label="NIK" error={errors.nik?.[0]} required>
-                            <TextInput
-                                value={form.nik}
-                                onChange={(v) => handleChange('nik', v)}
-                                error={!!errors.nik}
-                            />
-                        </Field>
-                    )}
+                    <Field label="NIK" error={errors.nik?.[0]} required>
+                        <TextInput
+                            value={form.nik}
+                            onChange={(v) => handleChange('nik', v)}
+                            error={!!errors.nik}
+                        />
+                    </Field>
 
-                    {!isCabang && (
-                        <Field label="Departemen" error={errors.departemen_id?.[0]}>
-                            <Select
-                                value={form.departemen_id}
-                                onChange={(v) => handleChange('departemen_id', v)}
-                                placeholder="Pilih departemen"
-                                error={!!errors.departemen_id}
-                                options={departemenList.map((d) => ({ value: String(d.id), label: d.nama }))}
-                            />
-                        </Field>
-                    )}
+                    <Field label="Departemen" error={errors.departemen_id?.[0]}>
+                        <Select
+                            value={form.departemen_id}
+                            onChange={(v) => handleChange('departemen_id', v)}
+                            placeholder="Pilih departemen"
+                            error={!!errors.departemen_id}
+                            options={departemenList.map((d) => ({ value: String(d.id), label: d.nama }))}
+                        />
+                    </Field>
 
-                    <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]} required={isCabang}>
+                    <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]}>
                         <Select
                             value={form.lokasi_kantor_id}
                             onChange={(v) => handleChange('lokasi_kantor_id', v)}
@@ -326,16 +316,14 @@ export default function EditKaryawanPage() {
                         />
                     </Field>
 
-                    {!isCabang && (
-                        <Field label="Tanggal Masuk" error={errors.tanggal_masuk?.[0]}>
-                            <TextInput
-                                type="date"
-                                value={form.tanggal_masuk}
-                                onChange={(v) => handleChange('tanggal_masuk', v)}
-                                error={!!errors.tanggal_masuk}
-                            />
-                        </Field>
-                    )}
+                    <Field label="Tanggal Masuk" error={errors.tanggal_masuk?.[0]}>
+                        <TextInput
+                            type="date"
+                            value={form.tanggal_masuk}
+                            onChange={(v) => handleChange('tanggal_masuk', v)}
+                            error={!!errors.tanggal_masuk}
+                        />
+                    </Field>
 
                     <div className="flex items-center justify-between pt-2">
                         <div className="flex items-center gap-3">
