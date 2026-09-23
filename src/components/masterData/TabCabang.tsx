@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Building2, MapPin, Phone, Users, Map, Plus, Pencil, Trash2, Upload, Download, Loader2 } from 'lucide-react';
+import { Building2, MapPin, Phone, Map, Plus, Pencil, Trash2, Upload, Download, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { getCabang, createCabang, updateCabang, deleteCabang, importCabang, type Cabang } from '../../api/cabang';
@@ -31,7 +31,6 @@ export default function TabCabang() {
   const [formLink, setFormLink] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
-  const [formEmail, setFormEmail] = useState('');
 
   const [deleteTarget, setDeleteTarget] = useState<Cabang | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -118,7 +117,6 @@ export default function TabCabang() {
     setFormNama('');
     setFormAlamat('');
     setFormTelepon('');
-    setFormEmail('');
     setFormLink('');
     setFormErrors({});
     setModalOpen(true);
@@ -130,7 +128,6 @@ export default function TabCabang() {
     setFormAlamat(item.alamat || '');
     setFormTelepon(item.telepon || '');
     setFormLink(item.link || '');
-    setFormEmail(item.email || '');
     setFormErrors({});
     setModalOpen(true);
   };
@@ -157,7 +154,6 @@ export default function TabCabang() {
     if (!formAlamat.trim()) clientErrors.alamat = 'Alamat cabang wajib diisi.';
     if (!formTelepon.trim()) clientErrors.telepon = 'Nomor telepon cabang wajib diisi.';
     if (!formLink.trim()) clientErrors.link = 'Link lokasi Google Maps wajib diisi.';
-    if (!formEmail.trim()) clientErrors.email = 'Email akun cabang wajib diisi.';
     if (Object.keys(clientErrors).length > 0) {
       setFormErrors(clientErrors);
       toast.error('Mohon lengkapi semua kolom yang wajib diisi.');
@@ -172,7 +168,6 @@ export default function TabCabang() {
         alamat: formAlamat.trim(),
         telepon: formTelepon.trim(),
         link: formLink.trim(),
-        email: formEmail.trim(),
       };
       if (editing) {
         await updateCabang(editing.id, payload);
@@ -191,7 +186,6 @@ export default function TabCabang() {
           alamat: apiErrors.alamat?.[0],
           telepon: apiErrors.telepon?.[0],
           link: apiErrors.link?.[0],
-          email: apiErrors.email?.[0],
         });
       } else {
         setFormErrors({ _general: err.response?.data?.message || 'Gagal menyimpan cabang.' });
@@ -229,7 +223,7 @@ export default function TabCabang() {
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <p className="text-sm text-slate-500">
-          Kelola data cabang / kantor perusahaan beserta lokasi dan jumlah pegawainya.
+          Kelola data cabang / kantor perusahaan beserta lokasi.
         </p>
         <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
           <button
@@ -283,7 +277,7 @@ export default function TabCabang() {
                 <Skeleton className="h-3 w-1/2 rounded" />
               </div>
               <div className="pt-3 border-t border-slate-100">
-                <Skeleton className="h-5 w-24 rounded-full" />
+                <Skeleton className="h-5 w-20 rounded" />
               </div>
             </div>
           ))}
@@ -345,13 +339,8 @@ export default function TabCabang() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-50 px-2.5 py-1 rounded-full">
-                  <Users size={12} />
-                  {item.pekerja_count} Pegawai
-                </span>
-
-                {item.link && (
+              {item.link && (
+                <div className="flex items-center justify-end pt-3 border-t border-slate-100">
                   <a
                     href={item.link}
                     target="_blank"
@@ -361,8 +350,8 @@ export default function TabCabang() {
                     <Map size={13} />
                     Lihat Lokasi
                   </a>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -418,20 +407,6 @@ export default function TabCabang() {
                 placeholder="Contoh: 031-7345678 / 0812-3344-5566"
                 error={!!formErrors.telepon}
                 type="tel"
-              />
-            </Field>
-
-            <Field label="Email Akun Cabang" error={formErrors.email} required hint="Dipakai untuk login user cabang ini">
-              <TextInput
-                value={formEmail}
-                onChange={(val) => {
-                  setFormEmail(val);
-                  clearFieldError('email');
-                }}
-                placeholder="cabang.surabaya@domain.com"
-                error={!!formErrors.email}
-                type="email"
-                disabled={!!editing} // opsional, lihat catatan di bawah
               />
             </Field>
 
