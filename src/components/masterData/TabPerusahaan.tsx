@@ -31,7 +31,6 @@ export default function TabPerusahaan() {
   const [copyFormAlamat, setCopyFormAlamat] = useState('');
   const [copyFormTelepon, setCopyFormTelepon] = useState('');
   const [copyFormLink, setCopyFormLink] = useState('');
-  const [copyFormEmail, setCopyFormEmail] = useState('');
   const [copyFormErrors, setCopyFormErrors] = useState<Record<string, string>>({});
   const [copySubmitting, setCopySubmitting] = useState(false);
 
@@ -85,7 +84,6 @@ export default function TabPerusahaan() {
     setCopyFormAlamat(item.alamat || '');
     setCopyFormTelepon(item.telepon || '');
     setCopyFormLink(item.link || '');
-    setCopyFormEmail(''); // baru — user isi manual
     setCopyFormErrors({});
     setCopyModalOpen(true);
   };
@@ -101,7 +99,6 @@ const handleCopySubmit = async () => {
   if (!copyFormAlamat.trim()) clientErrors.alamat = 'Alamat cabang wajib diisi.';
   if (!copyFormTelepon.trim()) clientErrors.telepon = 'Nomor telepon cabang wajib diisi.';
   if (!copyFormLink.trim()) clientErrors.link = 'Link lokasi Google Maps wajib diisi.';
-  if (!copyFormEmail.trim()) clientErrors.email = 'Email akun cabang wajib diisi.'; // baru
   if (Object.keys(clientErrors).length > 0) {
     setCopyFormErrors(clientErrors);
     toast.error('Mohon lengkapi semua kolom yang wajib diisi.');
@@ -116,7 +113,6 @@ const handleCopySubmit = async () => {
       alamat: copyFormAlamat.trim(),
       telepon: copyFormTelepon.trim(),
       link: copyFormLink.trim(),
-      email: copyFormEmail.trim(), // baru
     });
     toast.success('Berhasil disalin ke Cabang.');
     setCopyModalOpen(false);
@@ -128,7 +124,6 @@ const handleCopySubmit = async () => {
         alamat: apiErrors.alamat?.[0],
         telepon: apiErrors.telepon?.[0],
         link: apiErrors.link?.[0],
-        email: apiErrors.email?.[0], // baru
       });
     } else {
       setCopyFormErrors({ _general: err.response?.data?.message || 'Gagal menyalin ke cabang.' });
@@ -455,9 +450,6 @@ const handleCopySubmit = async () => {
             </Field>
             <Field label="Nomor Telepon" error={copyFormErrors.telepon} required>
               <TextInput value={copyFormTelepon} onChange={setCopyFormTelepon} error={!!copyFormErrors.telepon} type="tel" />
-            </Field>
-            <Field label="Email Akun Cabang" error={copyFormErrors.email} required hint="Dipakai untuk login user cabang ini">
-              <TextInput value={copyFormEmail} onChange={setCopyFormEmail} error={!!copyFormErrors.email} type="email" />
             </Field>
             <Field label="Link Lokasi Peta (Google Maps)" error={copyFormErrors.link} required>
               <TextInput value={copyFormLink} onChange={setCopyFormLink} error={!!copyFormErrors.link} />
