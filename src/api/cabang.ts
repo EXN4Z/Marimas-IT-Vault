@@ -6,7 +6,6 @@ export interface Cabang {
     alamat: string | null;
     telepon: string | null;
     link: string | null;
-    email?: string
     pekerja_count: number;
 }
 
@@ -20,7 +19,6 @@ export async function createCabang(payload: {
     alamat?: string;
     telepon?: string;
     link: string;
-    email: string;
 }): Promise<Cabang> {
     const res = await api.post('/cabang', payload);
     return res.data;
@@ -38,6 +36,7 @@ export async function deleteCabang(id: number): Promise<{ message: string }> {
     const res = await api.delete(`/cabang/${id}`);
     return res.data;
 }
+
 
 // POST /cabang/import — import massal dari file Excel (.xlsx/.xls),
 // dibatasi backend ke role admin. Format kolom: Nama | Alamat | Telepon | Link.

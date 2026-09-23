@@ -4,9 +4,11 @@ import toast from 'react-hot-toast';
 import api from '../api/axios';
 import RouteModal from '../components/shared/RouteModal';
 import Select from '../components/shared/Select';
+import SearchableSelect from '../components/shared/SearchableSelect';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
 import { getDepartemen } from '../api/masterData/departemen';
 import { getCabang, type Cabang } from '../api/cabang';
+import { getPerusahaan, type Perusahaan } from '../api/perusahaan'; // sesuaikan path
 import { setKaryawanPassword } from '../api/auth';
 import type { Departemen } from '../api/masterData/departemen';
 import { createPortal } from 'react-dom';
@@ -28,6 +30,7 @@ interface User {
     nik: string | null;
     departemen_id?: number | null;
     lokasi_kantor_id?: number | null;
+    perusahaan_id?: number | null;
     tanggal_masuk: string | null;
 }
 
@@ -39,6 +42,7 @@ interface FormState {
     nik: string;
     departemen_id: string;
     lokasi_kantor_id: string;
+    perusahaan_id: string;
     tanggal_masuk: string;
 }
 
@@ -54,6 +58,7 @@ const initialForm: FormState = {
     nik: '',
     departemen_id: '',
     lokasi_kantor_id: '',
+    perusahaan_id: '',
     tanggal_masuk: '',
 };
 
@@ -77,6 +82,7 @@ export default function EditKaryawanPage() {
     const [form, setForm] = useState<FormState>(initialForm);
     const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
     const [cabangList, setCabangList] = useState<Cabang[]>([]);
+    const [perusahaanList, setPerusahaanList] = useState<Perusahaan[]>([]);
     // BARU: daftar role diambil dari API (GET /role), bukan hardcode --
     // biar konsisten sama sumber kebenaran id role di database.
     const [roleList, setRoleList] = useState<RoleOption[]>([]);
@@ -98,6 +104,7 @@ export default function EditKaryawanPage() {
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
         getCabang().then(setCabangList).catch(() => {});
+        getPerusahaan().then(setPerusahaanList).catch(() => {});
         api
             .get<RoleOption[]>('/roles')
             .then((res) => setRoleList(res.data))
@@ -115,6 +122,7 @@ export default function EditKaryawanPage() {
                     nik: u.nik ?? '',
                     departemen_id: u.departemen_id ? String(u.departemen_id) : '',
                     lokasi_kantor_id: u.lokasi_kantor_id ? String(u.lokasi_kantor_id) : '',
+                    perusahaan_id: u.perusahaan_id ? String(u.perusahaan_id) : '',
                     tanggal_masuk: u.tanggal_masuk ?? '',
                 });
             })
@@ -184,6 +192,7 @@ export default function EditKaryawanPage() {
                 role_id: Number(form.role_id),
                 nik: isCabang ? null : form.nik,
                 departemen_id: isCabang ? null : form.departemen_id || null,
+                perusahaan_id: form.perusahaan_id || null,
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
                 tanggal_masuk: isCabang ? null : form.tanggal_masuk || null,
             };
@@ -306,7 +315,7 @@ export default function EditKaryawanPage() {
 
                     {!isCabang && (
                         <Field label="Departemen" error={errors.departemen_id?.[0]}>
-                            <Select
+                            <SearchableSelect
                                 value={form.departemen_id}
                                 onChange={(v) => handleChange('departemen_id', v)}
                                 placeholder="Pilih departemen"
@@ -317,12 +326,22 @@ export default function EditKaryawanPage() {
                     )}
 
                     <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]} required={isCabang}>
-                        <Select
+                        <SearchableSelect
                             value={form.lokasi_kantor_id}
                             onChange={(v) => handleChange('lokasi_kantor_id', v)}
                             placeholder="Pilih cabang"
                             error={!!errors.lokasi_kantor_id}
                             options={cabangList.map((c) => ({ value: String(c.id), label: c.nama }))}
+                        />
+                    </Field>
+
+                    <Field label="Perusahaan" error={errors.perusahaan_id?.[0]}>
+                        <SearchableSelect
+                            value={form.perusahaan_id}
+                            onChange={(v) => handleChange('perusahaan_id', v)}
+                            placeholder="Pilih perusahaan"
+                            error={!!errors.perusahaan_id}
+                            options={perusahaanList.map((p) => ({ value: String(p.id), label: p.nama }))}
                         />
                     </Field>
 

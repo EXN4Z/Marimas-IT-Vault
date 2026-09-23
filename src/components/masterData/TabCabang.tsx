@@ -33,6 +33,7 @@ export default function TabCabang() {
   const [submitting, setSubmitting] = useState(false);
   const [formEmail, setFormEmail] = useState('');
 
+
   const [deleteTarget, setDeleteTarget] = useState<Cabang | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
@@ -85,6 +86,7 @@ export default function TabCabang() {
     }
   };
 
+
   const handleExport = async () => {
     if (cabangList.length === 0) {
       toast.error('Gak ada data cabang buat diexport.');
@@ -130,7 +132,6 @@ export default function TabCabang() {
     setFormAlamat(item.alamat || '');
     setFormTelepon(item.telepon || '');
     setFormLink(item.link || '');
-    setFormEmail(item.email || '');
     setFormErrors({});
     setModalOpen(true);
   };
@@ -311,7 +312,9 @@ export default function TabCabang() {
                   <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
                     <Building2 size={16} className="text-slate-600" />
                   </div>
-                  <h3 className="text-sm font-semibold text-slate-900 truncate">{item.nama}</h3>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-slate-900 truncate">{item.nama}</h3>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
@@ -418,20 +421,6 @@ export default function TabCabang() {
                 placeholder="Contoh: 031-7345678 / 0812-3344-5566"
                 error={!!formErrors.telepon}
                 type="tel"
-              />
-            </Field>
-
-            <Field label="Email Akun Cabang" error={formErrors.email} required hint="Dipakai untuk login user cabang ini">
-              <TextInput
-                value={formEmail}
-                onChange={(val) => {
-                  setFormEmail(val);
-                  clearFieldError('email');
-                }}
-                placeholder="cabang.surabaya@domain.com"
-                error={!!formErrors.email}
-                type="email"
-                disabled={!!editing} // opsional, lihat catatan di bawah
               />
             </Field>
 

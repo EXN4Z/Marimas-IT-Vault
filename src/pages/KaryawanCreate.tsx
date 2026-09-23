@@ -6,6 +6,7 @@ import RouteModal from '../components/shared/RouteModal';
 import Select from '../components/shared/Select';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
 import { getDepartemen, type Departemen } from '../api/masterData/departemen';
+import { getPerusahaan, type Perusahaan } from '../api/perusahaan'; // sesuaikan path
 import { getCabang, type Cabang } from '../api/cabang';
 import { getRoles, type Role } from '../api/masterData/role'; // sesuaikan path, buat kalau belum ada
 import SearchableSelect from '../components/shared/SearchableSelect';
@@ -18,6 +19,7 @@ interface FormState {
     role_id: number | ''; // '' = belum dipilih
     nik: string;
     departemen_id: string;
+    perusahaan_id: string;
     lokasi_kantor_id: string;
     tanggal_masuk: string;
 }
@@ -34,6 +36,7 @@ const initialForm: FormState = {
     role_id: '', // kosong dulu, wajib dipilih dari dropdown hasil fetch
     nik: '',
     departemen_id: '',
+    perusahaan_id: '',
     lokasi_kantor_id: '',
     tanggal_masuk: '',
 };
@@ -46,12 +49,16 @@ export default function CreateKaryawanPage() {
     const [cabangList, setCabangList] = useState<Cabang[]>([]);
     const [roleList, setRoleList] = useState<Role[]>([]);
     const [saving, setSaving] = useState<boolean>(false);
+    const [perusahaanList, setPerusahaanList] = useState<Perusahaan[]>([]);
     const [errors, setErrors] = useState<FieldErrors>({});
     const [generalError, setGeneralError] = useState('');
 
     useEffect(() => {
         getDepartemen().then(setDepartemenList).catch(() => {});
         getCabang().then(setCabangList).catch(() => {});
+        getPerusahaan().then(setPerusahaanList).catch(() => {
+            toast.error('Gagal memuat daftar perusahaan.');
+        }); // BARU
         getRoles().then(setRoleList).catch(() => {
             toast.error('Gagal memuat daftar role.');
         });
@@ -114,9 +121,10 @@ export default function CreateKaryawanPage() {
         try {
             const payload = {
                 ...form,
-                role_id: form.role_id as number, // udah divalidasi bukan '' di atas
+                role_id: form.role_id as number,
                 nik: isCabang ? null : form.nik,
                 departemen_id: isCabang ? null : form.departemen_id || null,
+                perusahaan_id: form.perusahaan_id || null, // BARU
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
                 tanggal_masuk: isCabang ? null : form.tanggal_masuk || null,
             };
@@ -203,6 +211,15 @@ export default function CreateKaryawanPage() {
                             placeholder="Pilih cabang"
                             error={!!errors.lokasi_kantor_id}
                             options={cabangList.map((c) => ({ value: String(c.id), label: c.nama }))}
+                        />
+                    </Field>
+                    <Field label="Perusahaan" error={errors.perusahaan_id?.[0]} className="sm:col-span-2">
+                        <SearchableSelect
+                            value={form.perusahaan_id}
+                            onChange={(v) => handleChange('perusahaan_id', v)}
+                            placeholder="Cari perusahaan..."
+                            error={!!errors.perusahaan_id}
+                            options={perusahaanList.map((p) => ({ value: String(p.id), label: p.nama }))}
                         />
                     </Field>
                 </div>

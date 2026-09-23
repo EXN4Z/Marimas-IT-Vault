@@ -73,6 +73,15 @@ export const updateProfile = async (payload: {
   return res.data;
 };
 
+export async function updatePassword(payload: {
+  current_password: string;
+  password: string;
+  password_confirmation: string;
+}): Promise<{ message: string }> {
+  const res = await api.put('/profile/password', payload);
+  return res.data;
+}
+
 export const changePassword = async (payload: {
   current_password: string;
   password: string;

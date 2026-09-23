@@ -16,6 +16,7 @@ interface User {
     nik: string | null;
     departemen: { id: number; nama: string } | null;
     lokasi_kantor: { id: number; nama: string } | null;
+    perusahaan: { id: number; nama: string } | null;
     tanggal_masuk: string | null;
     created_at?: string | null;
 }
@@ -145,6 +146,7 @@ export default function KaryawanDetailPage() {
                         <DetailItem label="Departemen" value={user.departemen?.nama || '-'} />
                     )}
                     <DetailItem label="Cabang" value={user.lokasi_kantor?.nama || '-'} />
+                    <DetailItem label="Perusahaan" value={user.perusahaan?.nama || '-'} />
                     {user.role !== 'cabang' && (
                         <DetailItem label="Tanggal Masuk" value={formatTanggal(user.tanggal_masuk)} />
                     )}

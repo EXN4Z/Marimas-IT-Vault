@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Building2, MapPin, Phone, Map, Plus, Pencil, Trash2, Upload, Download, Loader2, Copy } from 'lucide-react';
+import { Building2, MapPin, Phone, Map, Plus, Pencil, Trash2, Upload, Download, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { createCabang } from '../../api/cabang';
 import { useAuth } from '../../context/AuthContext';
 import { getPerusahaan, createPerusahaan, updatePerusahaan, deletePerusahaan, importPerusahaan, type Perusahaan } from '../../api/perusahaan';
 import RouteModal from '../shared/RouteModal';
@@ -25,15 +24,6 @@ export default function TabPerusahaan() {
   const [perusahaanList, setPerusahaanList] = useState<Perusahaan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
-  const [copyModalOpen, setCopyModalOpen] = useState(false);
-  const [copyFormNama, setCopyFormNama] = useState('');
-  const [copyFormAlamat, setCopyFormAlamat] = useState('');
-  const [copyFormTelepon, setCopyFormTelepon] = useState('');
-  const [copyFormLink, setCopyFormLink] = useState('');
-  const [copyFormEmail, setCopyFormEmail] = useState('');
-  const [copyFormErrors, setCopyFormErrors] = useState<Record<string, string>>({});
-  const [copySubmitting, setCopySubmitting] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Perusahaan | null>(null);
@@ -80,64 +70,6 @@ export default function TabPerusahaan() {
 
 
   //salin data ke cabang
-  const openCopyToCabangModal = (item: Perusahaan) => {
-    setCopyFormNama(item.nama);
-    setCopyFormAlamat(item.alamat || '');
-    setCopyFormTelepon(item.telepon || '');
-    setCopyFormLink(item.link || '');
-    setCopyFormEmail(''); // baru — user isi manual
-    setCopyFormErrors({});
-    setCopyModalOpen(true);
-  };
-
-  const closeCopyModal = () => {
-    if (copySubmitting) return;
-    setCopyModalOpen(false);
-  };
-
-const handleCopySubmit = async () => {
-  const clientErrors: Record<string, string> = {};
-  if (!copyFormNama.trim()) clientErrors.nama = 'Nama cabang wajib diisi.';
-  if (!copyFormAlamat.trim()) clientErrors.alamat = 'Alamat cabang wajib diisi.';
-  if (!copyFormTelepon.trim()) clientErrors.telepon = 'Nomor telepon cabang wajib diisi.';
-  if (!copyFormLink.trim()) clientErrors.link = 'Link lokasi Google Maps wajib diisi.';
-  if (!copyFormEmail.trim()) clientErrors.email = 'Email akun cabang wajib diisi.'; // baru
-  if (Object.keys(clientErrors).length > 0) {
-    setCopyFormErrors(clientErrors);
-    toast.error('Mohon lengkapi semua kolom yang wajib diisi.');
-    return;
-  }
-
-  setCopySubmitting(true);
-  setCopyFormErrors({});
-  try {
-    await createCabang({
-      nama: copyFormNama.trim(),
-      alamat: copyFormAlamat.trim(),
-      telepon: copyFormTelepon.trim(),
-      link: copyFormLink.trim(),
-      email: copyFormEmail.trim(), // baru
-    });
-    toast.success('Berhasil disalin ke Cabang.');
-    setCopyModalOpen(false);
-  } catch (err: any) {
-    if (err.response?.status === 422) {
-      const apiErrors = err.response.data?.errors ?? {};
-      setCopyFormErrors({
-        nama: apiErrors.nama?.[0],
-        alamat: apiErrors.alamat?.[0],
-        telepon: apiErrors.telepon?.[0],
-        link: apiErrors.link?.[0],
-        email: apiErrors.email?.[0], // baru
-      });
-    } else {
-      setCopyFormErrors({ _general: err.response?.data?.message || 'Gagal menyalin ke cabang.' });
-    }
-  } finally {
-    setCopySubmitting(false);
-  }
-};
-
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -399,13 +331,6 @@ const handleCopySubmit = async () => {
                   >
                     <Trash2 size={14} />
                   </button>
-                  <button
-                    onClick={() => openCopyToCabangModal(item)}
-                    title="Salin ke Cabang"
-                    className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition"
-                  >
-                    <Copy size={14} />
-                  </button>
                 </div>
               </div>
 
@@ -438,43 +363,8 @@ const handleCopySubmit = async () => {
         </div>
       )}
 
-      {/* MODAL SALIN KE CABANG */}
-      {copyModalOpen && (
-        <RouteModal title="Salin ke Cabang" onClose={closeCopyModal} maxWidthClassName="max-w-md">
-          <div className="flex flex-col gap-4">
-            {copyFormErrors._general && (
-              <p className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2.5" role="alert">
-                {copyFormErrors._general}
-              </p>
-            )}
-            <Field label="Nama Cabang" error={copyFormErrors.nama} required>
-              <TextInput value={copyFormNama} onChange={setCopyFormNama} error={!!copyFormErrors.nama} autoFocus />
-            </Field>
-            <Field label="Alamat Lengkap" error={copyFormErrors.alamat} required>
-              <Textarea value={copyFormAlamat} onChange={setCopyFormAlamat} rows={2} error={!!copyFormErrors.alamat} />
-            </Field>
-            <Field label="Nomor Telepon" error={copyFormErrors.telepon} required>
-              <TextInput value={copyFormTelepon} onChange={setCopyFormTelepon} error={!!copyFormErrors.telepon} type="tel" />
-            </Field>
-            <Field label="Email Akun Cabang" error={copyFormErrors.email} required hint="Dipakai untuk login user cabang ini">
-              <TextInput value={copyFormEmail} onChange={setCopyFormEmail} error={!!copyFormErrors.email} type="email" />
-            </Field>
-            <Field label="Link Lokasi Peta (Google Maps)" error={copyFormErrors.link} required>
-              <TextInput value={copyFormLink} onChange={setCopyFormLink} error={!!copyFormErrors.link} />
-            </Field>
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-              <ButtonCancel onClick={closeCopyModal} disabled={copySubmitting} />
-              <ButtonSubmit onClick={handleCopySubmit} loading={copySubmitting} loadingLabel="Menyalin...">
-                Simpan ke Cabang
-              </ButtonSubmit>
-            </div>
-          </div>
-        </RouteModal>
-      )}
-
-
-
       {/* MODAL TAMBAH / EDIT */}
+
       {modalOpen && (
         <RouteModal
           title={editing ? 'Edit Perusahaan' : 'Tambah Perusahaan'}

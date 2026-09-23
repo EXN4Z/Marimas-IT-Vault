@@ -3,8 +3,10 @@ import ReactSelect, {
     type GroupBase,
     type DropdownIndicatorProps,
     type ClearIndicatorProps,
+    type OptionProps,
     components,
 } from 'react-select';
+import { Check, ChevronDown } from 'lucide-react';
 
 interface Option {
     value: string;
@@ -21,9 +23,9 @@ interface SearchableSelectProps {
     isClearable?: boolean;
 }
 
-// react-select tidak baca class Tailwind langsung (dia pakai inline style/emotion),
-// jadi kita override lewat prop `styles` biar tampilannya konsisten sama
-// TextInput/Select yang sudah ada (border, radius, warna focus, state error).
+// Warna & radius disamakan manual sama komponen `Select` (native replacement):
+// border slate-300 default, slate-400 hover, slate-900 fokus, red-400 error,
+// shadow-sm konstan (bukan ring saat fokus), text-sm, rounded-lg.
 function buildStyles(error: boolean): StylesConfig<Option, false, GroupBase<Option>> {
     return {
         control: (base, state) => ({
@@ -31,103 +33,90 @@ function buildStyles(error: boolean): StylesConfig<Option, false, GroupBase<Opti
             minHeight: '38px',
             borderRadius: '0.5rem', // rounded-lg
             borderColor: error
-                ? '#fca5a5' // border-red-300
+                ? '#f87171' // border-red-400
                 : state.isFocused
-                ? '#08090a'
-                : '#000000',
-            boxShadow: state.isFocused
-                ? error
-                    ? '0 0 0 3px rgba(12, 10, 10, 0.06)'
-                    : '0 0 0 3px rgba(6, 6, 7, 0.2)'
-                : 'none',
+                ? '#0f172a' // border-slate-900
+                : '#cbd5e1', // border-slate-300
+            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)', // shadow-sm, sama kayak Select (bukan ring)
+            transition: 'border-color 150ms, box-shadow 150ms',
             '&:hover': {
-                borderColor: error ? '#fca5a5' : '#000000',
+                borderColor: error ? '#f87171' : state.isFocused ? '#0f172a' : '#94a3b8', // slate-400
             },
             fontSize: '0.875rem', // text-sm
+            cursor: 'pointer',
         }),
         placeholder: (base) => ({
             ...base,
-            color: '#9ca3af', // text-gray-400
+            color: '#94a3b8', // text-slate-400
         }),
         menu: (base) => ({
             ...base,
-            borderRadius: '0.5rem',
+            marginTop: '0.375rem', // mt-1.5
+            borderRadius: '0.5rem', // rounded-lg
+            border: '1px solid #e2e8f0', // border-slate-200
             overflow: 'hidden',
             boxShadow:
-                '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)',
+                '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)', // shadow-lg
             zIndex: 20,
+        }),
+        menuList: (base) => ({
+            ...base,
+            padding: '0.25rem', // p-1
         }),
         option: (base, state) => ({
             ...base,
             fontSize: '0.875rem',
-            backgroundColor: state.isSelected
-                ? '#eff6ff'
-                : state.isFocused
-                ? '#eff6ff'
-                : 'white',
-            color: state.isSelected ? '#1d4ed8' : '#111827',
+            borderRadius: '0.375rem', // rounded-md
+            padding: '0.5rem 0.625rem', // py-2 px-2.5
+            backgroundColor: state.isFocused ? '#f1f5f9' : 'white', // slate-100 on hover/active
+            color: state.isSelected ? '#0f172a' : '#334155', // slate-900 : slate-700
             fontWeight: state.isSelected ? 500 : 400,
-            cursor: 'pointer',
+            cursor: state.isDisabled ? 'not-allowed' : 'pointer',
         }),
         singleValue: (base) => ({
             ...base,
-            color: '#111827',
+            color: '#1e293b', // text-slate-800
         }),
         input: (base) => ({
             ...base,
             fontSize: '0.875rem',
+            color: '#1e293b',
         }),
         indicatorSeparator: () => ({ display: 'none' }),
         dropdownIndicator: (base) => ({
             ...base,
-            color: '#6b7280', // text-gray-500
+            color: '#94a3b8', // text-slate-400
             padding: '0 8px',
             '&:hover': {
-                color: '#374151', // text-gray-700
+                color: '#94a3b8',
             },
         }),
         clearIndicator: (base) => ({
             ...base,
-            color: '#6b7280', // text-gray-500
+            color: '#94a3b8',
             padding: '0 4px',
             '&:hover': {
-                color: '#374151', // text-gray-700
+                color: '#334155', // text-slate-700
             },
         }),
     };
 }
 
-// custom panah dropdown: rotate 180deg pas menu kebuka, balik lagi pas ditutup.
-// `state.selectProps.menuIsOpen` otomatis ke-update oleh react-select tiap
-// dropdown dibuka/ditutup, jadi transform-nya ngikutin itu.
+// Pakai ChevronDown dari lucide-react biar ikon sama persis kayak `Select`
+// (bukan svg custom lagi), rotate 180deg pas menu kebuka.
 function DropdownIndicator(props: DropdownIndicatorProps<Option, false>) {
     const { selectProps } = props;
     return (
         <components.DropdownIndicator {...props}>
-            <svg
-                width="16"
-                height="16"
-                viewBox="0 0 20 20"
-                fill="none"
-                style={{
-                    transform: selectProps.menuIsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 200ms ease',
-                }}
-            >
-                <path
-                    d="M5 7.5L10 12.5L15 7.5"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
-            </svg>
+            <ChevronDown
+                size={15}
+                className="shrink-0 transition-transform duration-200"
+                style={{ transform: selectProps.menuIsOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            />
         </components.DropdownIndicator>
     );
 }
 
-// custom tombol clear (x): pakai stroke tipis (1.5) biar konsisten sama
-// chevron di DropdownIndicator, bukan icon "x" tebal bawaan react-select.
 function ClearIndicator(props: ClearIndicatorProps<Option, false>) {
     return (
         <components.ClearIndicator {...props}>
@@ -141,6 +130,20 @@ function ClearIndicator(props: ClearIndicatorProps<Option, false>) {
                 />
             </svg>
         </components.ClearIndicator>
+    );
+}
+
+// Custom Option: tambahin icon Check di kanan waktu opsi lagi ke-select,
+// biar konsisten sama tampilan <li> di `Select` yang juga pakai Check.
+function CustomOption(props: OptionProps<Option, false>) {
+    const { data, isSelected } = props;
+    return (
+        <components.Option {...props}>
+            <div className="flex items-center justify-between gap-2">
+                <span className="truncate">{data.label}</span>
+                {isSelected && <Check size={14} className="shrink-0 text-slate-900" />}
+            </div>
+        </components.Option>
     );
 }
 
@@ -164,7 +167,7 @@ export default function SearchableSelect({
             isDisabled={disabled}
             isClearable={isClearable}
             styles={buildStyles(error)}
-            components={{ DropdownIndicator, ClearIndicator }}
+            components={{ DropdownIndicator, ClearIndicator, Option: CustomOption }}
             noOptionsMessage={() => 'Tidak ada hasil.'}
             isLoading={false}
         />
