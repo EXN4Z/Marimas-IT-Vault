@@ -11,19 +11,7 @@ import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 import KaryawanExportModal from '../laporan/KaryawanExportModal';
 import { type Karyawan } from '../../api/karyawan';
 
-// REVISI: role sekarang disimpan sebagai role_id (number, FK ke tabel
-// `roles`), bukan lagi string 'admin'/'user'/'cabang'. Id di bawah ini
-// HARUS sama persis dengan id di tabel roles -- cek lewat endpoint
-// GET /role (RoleController@index) kalau ragu.
-export const ROLE_USER = 1;
-export const ROLE_CABANG = 2;
-export const ROLE_ADMIN = 3;
-
-type Role = number;
-// ScrollableTabBar generic-nya dibatasi `T extends string`, jadi key tab di
-// sini tetap string (id role di-stringify), bukan number langsung. Konversi
-// balik ke number cuma dilakukan pas dibandingkan dengan u.role_id di bawah.
-type TabKey = 'semua' | string;
+type TabKey = 'semua' | 'user' | 'admin';
 
 // Sama shape persis dengan tipe Karyawan di api/karyawan.ts (dipakai bareng
 // KaryawanExportModal, lihat tombol Export di bawah) -- dulu didefinisikan
@@ -31,19 +19,15 @@ type TabKey = 'semua' | string;
 // nyimpang dan export-nya gak perlu mapping/cast apapun.
 type User = Karyawan;
 
-const roleStyles: Record<number, string> = {
-    [ROLE_ADMIN]: 'bg-red-50 text-red-700',
-    [ROLE_USER]: 'bg-teal-50 text-teal-700',
-    [ROLE_CABANG]: 'bg-blue-50 text-blue-700',
+const roleStyles: Record<string, string> = {
+    admin: 'bg-red-50 text-red-700',
+    user: 'bg-teal-50 text-teal-700',
 };
-// fallback buat role_id di luar 3 value di atas (seharusnya gak pernah
-// kejadian, tapi tetap dijaga daripada blank/error kalau ada data nyasar).
 const defaultRoleStyle = 'bg-slate-50 text-slate-700';
 
-const roleLabels: Record<number, string> = {
-    [ROLE_ADMIN]: 'Admin',
-    [ROLE_USER]: 'User',
-    [ROLE_CABANG]: 'Cabang',
+const roleLabels: Record<string, string> = {
+    admin: 'Admin',
+    user: 'User',
 };
 
 const tabs: { key: TabKey; label: string; icon: JSX.Element }[] = [
@@ -57,7 +41,7 @@ const tabs: { key: TabKey; label: string; icon: JSX.Element }[] = [
         ),
     },
     {
-        key: String(ROLE_USER),
+        key: 'user',
         label: 'User',
         icon: (
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,20 +50,11 @@ const tabs: { key: TabKey; label: string; icon: JSX.Element }[] = [
         ),
     },
     {
-        key: String(ROLE_ADMIN),
+        key: 'admin',
         label: 'Admin',
         icon: (
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-        ),
-    },
-    {
-        key: String(ROLE_CABANG),
-        label: 'Cabang',
-        icon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
         ),
     },
@@ -103,7 +78,7 @@ export default function TabKaryawan() {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [errorMsg, setErrorMsg] = useState<string>('');
-    const [currentRole, setCurrentRole] = useState<Role | null>(null); // BARU: untuk cek role user saat ini
+    const [currentRole, setCurrentRole] = useState<string | null>(null);
 
     const [search, setSearch] = useState<string>('');
     const [activeTab, setActiveTab] = useState<TabKey>('semua');
@@ -140,17 +115,17 @@ export default function TabKaryawan() {
     }
 
     useEffect(() => {
-        api.get<{ role_id: Role }>('/user').then((res) => setCurrentRole(res.data.role_id)).catch(() => {});
+        api.get<{ role: string }>('/user').then((res) => setCurrentRole(res.data.role)).catch(() => {});
         loadUsers();
     }, []);
 
-    const isAdmin = currentRole === ROLE_ADMIN;
+    const isAdmin = currentRole === 'admin';
 
     const filtered = useMemo<User[]>(() => {
         const q = search.toLowerCase().trim();
         return users.filter((u) => {
             const matchSearch = u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
-            const matchTab = activeTab === 'semua' || u.role_id === Number(activeTab);
+            const matchTab = activeTab === 'semua' || u.role === activeTab;
             return matchSearch && matchTab;
         });
     }, [users, search, activeTab]);
@@ -405,8 +380,8 @@ function UserRow({ user, isAdmin, onDelete, onEdit, onDetail }: UserRowProps) {
                 </div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
-                <span className={`text-xs px-3 py-1 rounded-full ${roleStyles[user.role_id] || defaultRoleStyle}`}>
-                    {roleLabels[user.role_id] || user.role_id}
+                <span className={`text-xs px-3 py-1 rounded-full ${roleStyles[user.role] || defaultRoleStyle}`}>
+                    {roleLabels[user.role] || user.role}
                 </span>
                 {user.departemen && (
                     <span className="text-xs text-gray-500">
