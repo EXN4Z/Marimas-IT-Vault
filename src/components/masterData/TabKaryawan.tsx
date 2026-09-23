@@ -380,8 +380,8 @@ function UserRow({ user, isAdmin, onDelete, onEdit, onDetail }: UserRowProps) {
                 </div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
-                <span className={`text-xs px-3 py-1 rounded-full ${roleStyles[user.role] || defaultRoleStyle}`}>
-                    {roleLabels[user.role] || user.role}
+                <span className={`text-xs px-3 py-1 rounded-full ${roleStyles[user.role ?? ''] || defaultRoleStyle}`}>
+                    {roleLabels[user.role ?? ''] || user.role || '-'}
                 </span>
                 {user.departemen && (
                     <span className="text-xs text-gray-500">
