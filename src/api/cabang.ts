@@ -6,8 +6,7 @@ export interface Cabang {
     alamat: string | null;
     telepon: string | null;
     link: string | null;
-    email?: string
-    pekerja_count: number;
+    pekerja_count?: number;
 }
 
 export async function getCabang(): Promise<Cabang[]> {
@@ -20,7 +19,6 @@ export async function createCabang(payload: {
     alamat?: string;
     telepon?: string;
     link: string;
-    email: string;
 }): Promise<Cabang> {
     const res = await api.post('/cabang', payload);
     return res.data;
@@ -28,7 +26,7 @@ export async function createCabang(payload: {
 
 export async function updateCabang(
     id: number,
-    payload: { nama: string; alamat?: string; telepon?: string; link: string; email: string }
+    payload: { nama: string; alamat?: string; telepon?: string; link: string }
 ): Promise<Cabang> {
     const res = await api.put(`/cabang/${id}`, payload);
     return res.data;
