@@ -155,7 +155,6 @@ export default function TabCabang() {
     if (!formNama.trim()) clientErrors.nama = 'Nama cabang wajib diisi.';
     if (!formAlamat.trim()) clientErrors.alamat = 'Alamat cabang wajib diisi.';
     if (!formTelepon.trim()) clientErrors.telepon = 'Nomor telepon cabang wajib diisi.';
-    if (!formLink.trim()) clientErrors.link = 'Link lokasi Google Maps wajib diisi.';
     if (Object.keys(clientErrors).length > 0) {
       setFormErrors(clientErrors);
       toast.error('Mohon lengkapi semua kolom yang wajib diisi.');
@@ -414,7 +413,7 @@ export default function TabCabang() {
               />
             </Field>
 
-            <Field label="Link Lokasi Peta (Google Maps)" error={formErrors.link} required hint="Tautan URL Google Maps atau koordinat GPS">
+            <Field label="Link Lokasi Peta (Google Maps)" error={formErrors.link} hint="Tautan URL Google Maps atau koordinat GPS (opsional)">
               <TextInput
                 value={formLink}
                 onChange={(val) => {
