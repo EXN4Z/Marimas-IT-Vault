@@ -5,7 +5,7 @@ import api from '../api/axios';
 import RouteModal from '../components/shared/RouteModal';
 import { Skeleton } from '../components/shared/skeleton';
 
-type Role = 'admin' | 'user' | 'cabang'; // REVISI (simplify_roles_table): dulu 'hr' | 'manajer' | 'karyawan' | 'guest' | 'cabang', ketinggalan pas migration role di-merge
+type Role = 'admin' | 'user';
 
 interface User {
     id: number;
@@ -23,13 +23,11 @@ interface User {
 const roleLabels: Record<Role, string> = {
     admin: 'Admin',
     user: 'User',
-    cabang: 'Cabang',
 };
 
 const roleStyles: Record<Role, string> = {
     admin: 'bg-red-50 text-red-700',
     user: 'bg-teal-50 text-teal-700',
-    cabang: 'bg-blue-50 text-blue-700',
 };
 
 function initials(name: string): string {
@@ -140,14 +138,10 @@ export default function KaryawanDetailPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <DetailItem label="Email" value={user.email || '-'} />
                     <DetailItem label="Nomor Telepon" value={user.phone || '-'} />
-                    {user.role !== 'cabang' && <DetailItem label="NIK" value={user.nik || '-'} />}
-                    {user.role !== 'cabang' && (
-                        <DetailItem label="Departemen" value={user.departemen?.nama || '-'} />
-                    )}
+                    <DetailItem label="NIK" value={user.nik || '-'} />
+                    <DetailItem label="Departemen" value={user.departemen?.nama || '-'} />
                     <DetailItem label="Cabang" value={user.lokasi_kantor?.nama || '-'} />
-                    {user.role !== 'cabang' && (
-                        <DetailItem label="Tanggal Masuk" value={formatTanggal(user.tanggal_masuk)} />
-                    )}
+                    <DetailItem label="Tanggal Masuk" value={formatTanggal(user.tanggal_masuk)} />
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
