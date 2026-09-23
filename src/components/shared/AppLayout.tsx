@@ -66,7 +66,7 @@ const navItems: NavItem[] = [
       // sekarang auth:sanctum polos buat semua yang login). Data yang tampil
       // sudah discoping ke laporan milik sendiri buat non-admin di
       // InventoryPenangananController::index().
-      { label: 'Penanganan Inventory', icon: Wrench, path: '/penanganan-inventory', roles: ['user', 'cabang', 'admin'] },
+      { label: 'Penanganan Inventory', icon: Wrench, path: '/penanganan-inventory', roles: ['user', 'admin'] },
     ],
   },
   {
@@ -213,7 +213,7 @@ export default function AppLayout({ title, children }: AppLayoutProps = {}) {
   // `roles` di masing-masing child di atas). REVISI (simplify_roles_table):
   // dulu ['karyawan', 'cabang', 'manajer', 'hr', 'admin'] -- karyawan/manajer/hr
   // udah di-merge jadi satu role 'user'.
-  const INVENTORY_ROLES = ['user', 'cabang', 'admin'];
+  const INVENTORY_ROLES = ['user', 'admin'];
 
   const roleFilter = (item: NavItem) => {
     // Fitur yang masih belum lengkap -- sembunyikan dari sidebar dulu (lihat flag `hidden` di navItems).

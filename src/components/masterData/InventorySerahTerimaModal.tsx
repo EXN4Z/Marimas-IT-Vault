@@ -14,14 +14,11 @@ interface InventorySerahTerimaModalProps {
   onSuccess: (results: { inventory: Inventory; pemakai: InventoryPemakai }[]) => void;
 }
 
-type PenerimaMode = 'karyawan' | 'cabang';
-
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
 export default function InventorySerahTerimaModal({ inventory, onClose, onSuccess }: InventorySerahTerimaModalProps) {
-  const [mode, setMode] = useState<PenerimaMode>('karyawan');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<KaryawanUser[]>([]);
   const [searching, setSearching] = useState(false);
@@ -42,16 +39,6 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
   // daftarnya sebagai info, tidak ada checklist/pilihan manual lagi.
   const kelengkapanTersedia = (inventory.children ?? []).filter((k) => k.status === 'tersedia');
 
-  function handleModeChange(next: PenerimaMode) {
-    setMode(next);
-    // reset pencarian tiap ganti mode biar nggak ketuker antara akun karyawan & cabang
-    setQuery('');
-    setResults([]);
-    setSelected(null);
-    setErrors((prev) => ({ ...prev, penerima: '' }));
-    setServerError('');
-  }
-
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!query.trim() || selected) {
@@ -61,7 +48,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const data = await searchKaryawan(query.trim(), mode === 'cabang' ? 'cabang' : undefined);
+        const data = await searchKaryawan(query.trim());
         setResults(Array.isArray(data) ? data : []);
       } catch {
         setResults([]);
@@ -72,7 +59,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [query, selected, mode]);
+  }, [query, selected]);
 
   const pick = (u: KaryawanUser) => {
     setSelected(u);
@@ -84,12 +71,10 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
   const handleSubmit = async () => {
     const newErrors: { penerima?: string; foto?: string } = {};
 
-    if (mode === 'karyawan' && !selected?.nik) {
+    if (!selected?.nik) {
       newErrors.penerima = selected
         ? 'Karyawan yang dipilih belum memiliki data NIK lengkap.'
         : 'Wajib memilih karyawan penerima unit.';
-    } else if (mode === 'cabang' && !selected?.id) {
-      newErrors.penerima = 'Wajib memilih akun cabang penerima unit.';
     }
 
     if (fotoPenerimaan.length !== 3) {
@@ -165,38 +150,8 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
 
         {/* Body */}
         <div className="px-6 py-5 overflow-y-auto space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-              Kategori Penerima <span className="text-red-500">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleModeChange('karyawan')}
-                className={`text-sm font-semibold py-2 px-3 rounded-xl border transition ${
-                  mode === 'karyawan'
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                Karyawan
-              </button>
-              <button
-                type="button"
-                onClick={() => handleModeChange('cabang')}
-                className={`text-sm font-semibold py-2 px-3 rounded-xl border transition ${
-                  mode === 'cabang'
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                Cabang
-              </button>
-            </div>
-          </div>
-
           <Field
-            label={mode === 'karyawan' ? 'Cari Karyawan Penerima' : 'Cari Akun Cabang Penerima'}
+            label="Cari Karyawan Penerima"
             error={errors.penerima}
             required
           >
@@ -210,7 +165,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
                   if (errors.penerima) setErrors((prev) => ({ ...prev, penerima: '' }));
                 }}
                 autoFocus
-                placeholder={mode === 'karyawan' ? 'Ketik nama / NIK karyawan...' : 'Ketik nama cabang...'}
+                placeholder="Ketik nama / NIK karyawan..."
                 className={`w-full pl-9 pr-8 py-2.5 border rounded-xl text-sm transition focus:outline-none focus:ring-2 ${
                   errors.penerima
                     ? 'border-red-300 bg-red-50/30 text-red-900 focus:ring-red-400 focus:border-red-400'
@@ -224,7 +179,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
                   {searching && <p className="text-xs text-slate-400 px-3.5 py-3">Mencari data...</p>}
                   {!searching &&
                     results.map((u) => {
-                      const disabled = mode === 'karyawan' && !u.nik;
+                      const disabled = !u.nik;
                       return (
                         <button
                           key={u.id}
@@ -243,7 +198,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
                     })}
                   {!searching && results.length === 0 && (
                     <p className="text-xs text-slate-400 px-3.5 py-3">
-                      {mode === 'karyawan' ? 'Karyawan tidak ditemukan.' : 'Cabang tidak ditemukan.'}
+                      Karyawan tidak ditemukan.
                     </p>
                   )}
                 </div>

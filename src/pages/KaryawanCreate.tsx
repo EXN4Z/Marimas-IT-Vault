@@ -64,10 +64,7 @@ export default function CreateKaryawanPage() {
         });
     }, []);
 
-    // GANTI: cari role_id yang namanya 'cabang' secara dinamis dari hasil
-    // fetch, bukan compare langsung ke string atau hardcode angka.
-    const cabangRoleId = roleList.find((r) => r.nama === 'cabang')?.id;
-    const isCabang = form.role_id !== '' && form.role_id === cabangRoleId;
+    const selectableRoles = roleList.filter((r) => r.nama !== 'cabang');
 
     function closeModal() {
         if (window.history.state && window.history.state.idx > 0) {
@@ -106,8 +103,7 @@ export default function CreateKaryawanPage() {
         if (!form.name.trim()) newErrors.name = ['Nama lengkap wajib diisi.'];
         if (!form.password.trim()) newErrors.password = ['Password awal wajib diisi.'];
         if (form.role_id === '') newErrors.role_id = ['Role wajib dipilih.'];
-        if (!isCabang && !form.nik.trim()) newErrors.nik = ['NIK karyawan wajib diisi.'];
-        if (isCabang && !form.lokasi_kantor_id) newErrors.lokasi_kantor_id = ['Cabang penempatan wajib dipilih.'];
+        if (!form.nik.trim()) newErrors.nik = ['NIK karyawan wajib diisi.'];
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -122,11 +118,11 @@ export default function CreateKaryawanPage() {
             const payload = {
                 ...form,
                 role_id: form.role_id as number,
-                nik: isCabang ? null : form.nik,
-                departemen_id: isCabang ? null : form.departemen_id || null,
-                perusahaan_id: form.perusahaan_id || null, // BARU
+                nik: form.nik,
+                departemen_id: form.departemen_id || null,
+                perusahaan_id: form.perusahaan_id || null,
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
-                tanggal_masuk: isCabang ? null : form.tanggal_masuk || null,
+                tanggal_masuk: form.tanggal_masuk || null,
             };
             await api.post('/karyawan', payload);
             toast.success('User berhasil dibuat.');
@@ -181,31 +177,27 @@ export default function CreateKaryawanPage() {
                         onChange={handleRoleChange}
                         placeholder="Pilih role"
                         error={!!errors.role_id}
-                        options={roleList.map((r) => ({ value: String(r.id), label: r.nama }))}
+                        options={selectableRoles.map((r) => ({ value: String(r.id), label: r.nama }))}
                     />
                 </Field>
 
-                {!isCabang && (
-                    <Field label="NIK" error={errors.nik?.[0]} required>
-                        <TextInput value={form.nik} onChange={(v) => handleChange('nik', v)} error={!!errors.nik} />
+                <Field label="NIK" error={errors.nik?.[0]} required>
+                    <TextInput value={form.nik} onChange={(v) => handleChange('nik', v)} error={!!errors.nik} />
+                </Field>
+
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                    <Field label="Departemen" error={errors.departemen_id?.[0]}>
+                        <SearchableSelect
+                            value={form.departemen_id}
+                            onChange={(v) => handleChange('departemen_id', v)}
+                            placeholder="Cari departemen..."
+                            error={!!errors.departemen_id}
+                            options={departemenList.map((d) => ({ value: String(d.id), label: d.nama }))}
+                        />
                     </Field>
-                )}
 
-                <div className={`grid gap-4 ${!isCabang ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
-                    {!isCabang && (
-                        <Field label="Departemen" error={errors.departemen_id?.[0]}>
-                            <SearchableSelect
-                                value={form.departemen_id}
-                                onChange={(v) => handleChange('departemen_id', v)}
-                                placeholder="Cari departemen..."
-                                error={!!errors.departemen_id}
-                                options={departemenList.map((d) => ({ value: String(d.id), label: d.nama }))}
-                            />
-                        </Field>
-                    )}
-
-                    <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]} required={isCabang}>
-                        <Select
+                    <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]}>
+                        <SearchableSelect
                             value={form.lokasi_kantor_id}
                             onChange={(v) => handleChange('lokasi_kantor_id', v)}
                             placeholder="Pilih cabang"
@@ -224,11 +216,9 @@ export default function CreateKaryawanPage() {
                     </Field>
                 </div>
 
-                {!isCabang && (
-                    <Field label="Tanggal Masuk" error={errors.tanggal_masuk?.[0]}>
-                        <TextInput type="date" value={form.tanggal_masuk} onChange={(v) => handleChange('tanggal_masuk', v)} error={!!errors.tanggal_masuk} />
-                    </Field>
-                )}
+                <Field label="Tanggal Masuk" error={errors.tanggal_masuk?.[0]}>
+                    <TextInput type="date" value={form.tanggal_masuk} onChange={(v) => handleChange('tanggal_masuk', v)} error={!!errors.tanggal_masuk} />
+                </Field>
 
                 <div className="flex items-center justify-end gap-3 pt-2">
                     <ButtonCancel onClick={closeModal} disabled={saving} />

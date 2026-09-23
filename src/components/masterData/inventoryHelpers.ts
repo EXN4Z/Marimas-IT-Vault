@@ -35,12 +35,6 @@ interface PemakaiLike {
   user?: { id: number; name: string; role?: string } | null;
 }
 
-// Sejak tabel pekerja dihapus, penerima (karyawan ATAUPUN akun cabang)
-// sama-sama nempel lewat relasi `user` -- bedanya cuma role. "Akun cabang"
-// dicek dari user.role === 'cabang', bukan lagi ada/tidaknya objek pekerja.
-export function isCabangPemakai(pemakai?: PemakaiLike | null): boolean {
-  return pemakai?.user?.role === 'cabang';
-}
 /**
  * Ambil nama penerima inventory -- karyawan maupun akun cabang, dua-duanya
  * lewat relasi `user` yang sama (tidak ada lagi objek `pekerja` terpisah).

@@ -21,7 +21,7 @@ import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 // kategori gak lagi nentuin bentuk export.
 import { useAuth } from '../../context/AuthContext';
 import { printStruk } from '../../utils/printStruk';
-import { namaPemakai, userIdPemakai, isCabangPemakai, formatJenisKerusakan } from './inventoryHelpers';
+import { namaPemakai, userIdPemakai, formatJenisKerusakan } from './inventoryHelpers';
 import {
   getInventory,
   getInventoryById,
@@ -1145,9 +1145,6 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                         <Tooltip content={a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
                           <p className="truncate">
                             {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini) || '-'}
-                            {a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && (
-                              <span className="ml-1.5 text-[11px] text-slate-400">(Cabang)</span>
-                            )}
                           </p>
                         </Tooltip>
                       </td>
@@ -1211,7 +1208,6 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                         Dipakai Oleh:{' '}
                         <span className="text-slate-700 font-medium">
                           {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini) || '-'}
-                          {a.status !== 'dijual' && isCabangPemakai(a.pemakai_saat_ini) && ' (Cabang)'}
                         </span>
                       </p>
                       <div className="flex items-center flex-wrap gap-1.5">
@@ -1429,7 +1425,6 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                     <p className="text-xs text-slate-400 mb-1">Dipinjam Oleh</p>
                     <p className="text-slate-800 font-medium">
                       {namaPemakai(detail.pemakai_saat_ini)}
-                      {isCabangPemakai(detail.pemakai_saat_ini) && ' (Cabang)'}
                     </p>
                     {detail.pemakai_saat_ini.user && (
                       <p className="text-xs text-slate-500 mt-0.5">

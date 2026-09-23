@@ -11,6 +11,11 @@ export interface LokasiKantor {
   nama: string
 }
 
+export interface Perusahaan {
+  id: number
+  nama: string
+}
+
 export interface Karyawan {
   id: number
   nik: string
@@ -19,8 +24,10 @@ export interface Karyawan {
   phone: string
   departemen: Departemen | null
   lokasi_kantor: LokasiKantor | null
+  perusahaan: Perusahaan | null
   tanggal_masuk: string
   role_id: number
+  role: string
   created_at?: string
   updated_at?: string
 }
