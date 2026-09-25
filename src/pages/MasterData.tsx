@@ -476,7 +476,8 @@ export default function MasterData() {
             )}
           </div>
 
-          <div className="mb-4">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-4 border-b border-slate-100">
             <SearchInput
               value={search}
               onChange={setSearch}
@@ -485,7 +486,6 @@ export default function MasterData() {
             />
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {loading && (
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[560px]">
