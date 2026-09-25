@@ -5,6 +5,7 @@ import { SkeletonTable } from '../shared/skeleton';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 import Pagination from '../shared/Pagination';
+import SearchInput from '../shared/SearchInput';
 import { useBackdropClose } from '../../hooks/useBackdropClose';
 import KategoriExportModal from '../laporan/KategoriExportModal';
 import {
@@ -46,6 +47,7 @@ export default function TabKategori() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [search, setSearch] = useState('');
 
   const loadData = async () => {
     setLoading(true);
@@ -68,14 +70,22 @@ export default function TabKategori() {
     loadData();
   }, []);
 
-  const totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
-  const paginatedItems = items.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const filteredItems = items.filter((item) => item.nama.toLowerCase().includes(search.toLowerCase().trim()));
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / ITEMS_PER_PAGE));
+  const paginatedItems = filteredItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   // kalau data berkurang (mis. abis hapus item terakhir di halaman
-  // terakhir), pastikan currentPage gak nyangkut di halaman kosong.
+  // terakhir, atau abis ngetik kata kunci search), pastikan currentPage
+  // gak nyangkut di halaman kosong.
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [totalPages, currentPage]);
+
+  // balik ke halaman 1 tiap kali kata kunci search berubah.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   const openCreateModal = () => {
     setEditing(null);
@@ -179,6 +189,15 @@ export default function TabKategori() {
         </div>
       </div>
 
+      <div className="mb-4">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Cari nama kategori..."
+          className="sm:max-w-xs"
+        />
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
 
       {loading && (
@@ -197,7 +216,11 @@ export default function TabKategori() {
         <p className="text-sm text-slate-400 text-center py-8">Belum ada data kategori.</p>
       )}
 
-      {!loading && !error && items.length > 0 && (
+      {!loading && !error && items.length > 0 && filteredItems.length === 0 && (
+        <p className="text-sm text-slate-400 text-center py-8">Kategori tidak ditemukan.</p>
+      )}
+
+      {!loading && !error && filteredItems.length > 0 && (
         <>
           <div className="overflow-x-auto mt-3">
             <table className="w-full text-sm min-w-[420px]">
@@ -250,7 +273,7 @@ export default function TabKategori() {
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={setCurrentPage}
-              totalItems={items.length}
+              totalItems={filteredItems.length}
               itemLabel="kategori"
             />
           </div>

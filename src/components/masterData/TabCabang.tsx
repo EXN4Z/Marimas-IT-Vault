@@ -7,7 +7,14 @@ import RouteModal from '../shared/RouteModal';
 import { Skeleton } from '../shared/skeleton';
 import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
+import Pagination from '../shared/Pagination';
+import SearchInput from '../shared/SearchInput';
 import { downloadStyledExcel } from '../../utils/excelReport';
+
+// pagination client-side -- data cabang dimuat penuh sekali lewat
+// getCabang(), tinggal dipotong per halaman di sini (sama pola yang
+// dipakai TabKategori.tsx / TabKaryawan.tsx).
+const ITEMS_PER_PAGE = 10;
 
 // Dipindah dari halaman /cabang (CabangPage.tsx) -- sekarang jadi tab
 // "Cabang" di dalam Master Data, sepola sama tab Inventory/Kategori/dst
@@ -37,6 +44,9 @@ export default function TabCabang() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [search, setSearch] = useState('');
+
   // Import Excel & export Excel -- sepola sama TabPerusahaan.tsx (yang
   // sebelumnya udah lebih dulu punya fitur ini, harusnya mirror persis
   // dari sini tapi kelewat waktu dibikin).
@@ -65,6 +75,31 @@ export default function TabCabang() {
     if (isStaff) loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const filteredCabang = cabangList.filter((item) => {
+    const q = search.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      item.nama.toLowerCase().includes(q) ||
+      (item.alamat || '').toLowerCase().includes(q) ||
+      (item.telepon || '').toLowerCase().includes(q)
+    );
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredCabang.length / ITEMS_PER_PAGE));
+  const paginatedCabang = filteredCabang.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  // kalau data berkurang (mis. abis hapus item terakhir di halaman
+  // terakhir, atau abis ngetik kata kunci search), pastikan currentPage
+  // gak nyangkut di halaman kosong.
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [totalPages, currentPage]);
+
+  // balik ke halaman 1 tiap kali kata kunci search berubah.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -154,7 +189,6 @@ export default function TabCabang() {
     const clientErrors: Record<string, string> = {};
     if (!formNama.trim()) clientErrors.nama = 'Nama cabang wajib diisi.';
     if (!formAlamat.trim()) clientErrors.alamat = 'Alamat cabang wajib diisi.';
-    if (!formTelepon.trim()) clientErrors.telepon = 'Nomor telepon cabang wajib diisi.';
     if (Object.keys(clientErrors).length > 0) {
       setFormErrors(clientErrors);
       toast.error('Mohon lengkapi semua kolom yang wajib diisi.');
@@ -176,6 +210,7 @@ export default function TabCabang() {
       } else {
         await createCabang(payload);
         toast.success('Cabang baru berhasil ditambahkan.');
+        setCurrentPage(1); // biar cabang baru langsung kelihatan
       }
       setModalOpen(false);
       loadData();
@@ -265,6 +300,15 @@ export default function TabCabang() {
         </div>
       </div>
 
+      <div className="mb-4">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Cari nama, alamat, atau telepon cabang..."
+          className="sm:max-w-xs"
+        />
+      </div>
+
       {loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -294,9 +338,17 @@ export default function TabCabang() {
         </div>
       )}
 
-      {!loading && !error && cabangList.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {cabangList.map((item) => (
+      {!loading && !error && cabangList.length > 0 && filteredCabang.length === 0 && (
+        <div className="bg-white rounded-xl p-12 shadow-sm border border-slate-200 text-center">
+          <Building2 size={32} className="mx-auto text-slate-300 mb-3" />
+          <p className="text-sm text-slate-400">Cabang tidak ditemukan.</p>
+        </div>
+      )}
+
+      {!loading && !error && filteredCabang.length > 0 && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {paginatedCabang.map((item) => (
             <div
               key={item.id}
               className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col gap-3"
@@ -356,8 +408,17 @@ export default function TabCabang() {
                 </div>
               )}
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredCabang.length}
+            itemLabel="cabang"
+          />
+        </>
       )}
 
       {/* MODAL TAMBAH / EDIT */}
@@ -400,7 +461,7 @@ export default function TabCabang() {
               />
             </Field>
 
-            <Field label="Nomor Telepon" error={formErrors.telepon} required hint="Nomor telepon aktif kantor / WhatsApp CS">
+            <Field label="Nomor Telepon" error={formErrors.telepon} hint="Nomor telepon aktif kantor / WhatsApp CS">
               <TextInput
                 value={formTelepon}
                 onChange={(val) => {

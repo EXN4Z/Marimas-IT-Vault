@@ -7,7 +7,14 @@ import RouteModal from '../shared/RouteModal';
 import { Skeleton } from '../shared/skeleton';
 import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
+import Pagination from '../shared/Pagination';
+import SearchInput from '../shared/SearchInput';
 import { downloadStyledExcel } from '../../utils/excelReport';
+
+// pagination client-side -- data perusahaan dimuat penuh sekali lewat
+// getPerusahaan(), tinggal dipotong per halaman di sini (sama pola yang
+// dipakai TabCabang.tsx / TabKategori.tsx).
+const ITEMS_PER_PAGE = 10;
 
 // Mirror dari TabCabang.tsx -- sepola sama tab "Cabang" di Master Data,
 // tapi TANPA badge jumlah pegawai & TANPA warning "masih ada karyawan/
@@ -38,6 +45,9 @@ export default function TabPerusahaan() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [search, setSearch] = useState('');
+
   // Import Excel & export Excel -- sepola sama tabConfig generik di
   // MasterData.tsx (Departemen/Supplier), tapi disematkan langsung di sini
   // karena Perusahaan adalah custom tab (dirender sendiri, bukan lewat
@@ -67,6 +77,31 @@ export default function TabPerusahaan() {
     if (isStaff) loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const filteredPerusahaan = perusahaanList.filter((item) => {
+    const q = search.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      item.nama.toLowerCase().includes(q) ||
+      (item.alamat || '').toLowerCase().includes(q) ||
+      (item.telepon || '').toLowerCase().includes(q)
+    );
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredPerusahaan.length / ITEMS_PER_PAGE));
+  const paginatedPerusahaan = filteredPerusahaan.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  // kalau data berkurang (mis. abis hapus item terakhir di halaman
+  // terakhir, atau abis ngetik kata kunci search), pastikan currentPage
+  // gak nyangkut di halaman kosong.
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [totalPages, currentPage]);
+
+  // balik ke halaman 1 tiap kali kata kunci search berubah.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
 
   //salin data ke cabang
@@ -181,6 +216,7 @@ export default function TabPerusahaan() {
       } else {
         await createPerusahaan(payload);
         toast.success('Perusahaan baru berhasil ditambahkan.');
+        setCurrentPage(1); // biar perusahaan baru langsung kelihatan
       }
       setModalOpen(false);
       loadData();
@@ -270,6 +306,15 @@ export default function TabPerusahaan() {
         </div>
       </div>
 
+      <div className="mb-4">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Cari nama, alamat, atau telepon perusahaan..."
+          className="sm:max-w-xs"
+        />
+      </div>
+
       {loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -299,9 +344,17 @@ export default function TabPerusahaan() {
         </div>
       )}
 
-      {!loading && !error && perusahaanList.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {perusahaanList.map((item) => (
+      {!loading && !error && perusahaanList.length > 0 && filteredPerusahaan.length === 0 && (
+        <div className="bg-white rounded-xl p-12 shadow-sm border border-slate-200 text-center">
+          <Building2 size={32} className="mx-auto text-slate-300 mb-3" />
+          <p className="text-sm text-slate-400">Perusahaan tidak ditemukan.</p>
+        </div>
+      )}
+
+      {!loading && !error && filteredPerusahaan.length > 0 && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {paginatedPerusahaan.map((item) => (
             <div
               key={item.id}
               className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col gap-3"
@@ -359,8 +412,17 @@ export default function TabPerusahaan() {
                 </div>
               )}
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredPerusahaan.length}
+            itemLabel="perusahaan"
+          />
+        </>
       )}
 
       {/* MODAL TAMBAH / EDIT */}

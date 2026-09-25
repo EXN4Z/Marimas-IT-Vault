@@ -13,6 +13,7 @@ import TabCabang from '../components/masterData/TabCabang';
 import TabPerusahaan from '../components/masterData/TabPerusahaan';
 import { SkeletonTable } from '../components/shared/skeleton';
 import Pagination from '../components/shared/Pagination';
+import SearchInput from '../components/shared/SearchInput';
 import { useAuth } from '../context/AuthContext';
 import { getDepartemen, createDepartemen, updateDepartemen, deleteDepartemen, importDepartemen } from '../api/masterData/departemen';
 import { getSupplier, createSupplier, updateSupplier, deleteSupplier, importSupplier } from '../api/masterData/supplier';
@@ -202,6 +203,7 @@ export default function MasterData() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [search, setSearch] = useState('');
 
   // null kalau tab aktifnya Aset/Kelengkapan Aset -- keduanya dirender lewat
   // komponen dedicated-nya sendiri, bukan lewat blok tabel generik di bawah.
@@ -227,16 +229,33 @@ export default function MasterData() {
   useEffect(() => {
     if (isGenericTab(activeTab)) loadData(activeTab);
     setCurrentPage(1); // reset halaman tiap pindah tab (Departemen <-> Supplier)
+    setSearch(''); // reset kata kunci search tiap pindah tab juga
   }, [activeTab]);
 
-  const totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
-  const paginatedItems = items.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const filteredItems = items.filter((item) => {
+    const q = search.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      item.nama.toLowerCase().includes(q) ||
+      (item.alamat || '').toLowerCase().includes(q) ||
+      (item.telepon || '').toLowerCase().includes(q)
+    );
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / ITEMS_PER_PAGE));
+  const paginatedItems = filteredItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   // kalau data berkurang (mis. abis hapus item terakhir di halaman
-  // terakhir), pastikan currentPage gak nyangkut di halaman kosong.
+  // terakhir, atau abis ngetik kata kunci search), pastikan currentPage
+  // gak nyangkut di halaman kosong.
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [totalPages, currentPage]);
+
+  // balik ke halaman 1 tiap kali kata kunci search berubah.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -457,6 +476,15 @@ export default function MasterData() {
             )}
           </div>
 
+          <div className="mb-4">
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              placeholder={`Cari nama${activeTab === 'supplier' ? ', alamat, atau telepon' : ''} ${cfg?.label.toLowerCase()}...`}
+              className="sm:max-w-xs"
+            />
+          </div>
+
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {loading && (
             <div className="overflow-x-auto">
@@ -486,7 +514,11 @@ export default function MasterData() {
             <p className="text-sm text-slate-400 text-center py-8">Belum ada data {cfg?.label.toLowerCase()}.</p>
           )}
 
-          {!loading && !error && items.length > 0 && cfg && (
+          {!loading && !error && items.length > 0 && filteredItems.length === 0 && (
+            <p className="text-sm text-slate-400 text-center py-8">{cfg?.label} tidak ditemukan.</p>
+          )}
+
+          {!loading && !error && filteredItems.length > 0 && cfg && (
           <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[560px]">
@@ -541,7 +573,7 @@ export default function MasterData() {
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}
-                totalItems={items.length}
+                totalItems={filteredItems.length}
                 itemLabel={cfg.label.toLowerCase()}
               />
             </div>
