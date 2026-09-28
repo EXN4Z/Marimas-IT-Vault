@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Select from '../../components/shared/Select';
+import { useTheme } from '../../context/ThemeContext';
 import type { User as UserType } from '../../types/user';
 import type {
   NotificationItem,
@@ -66,22 +67,22 @@ export const THEME = {
   ink: '#171633',
 };
 
-// DEGO card: white, big radius, soft shadow, no border
+// DEGO card: white, big radius, soft shadow, no border (with dark graphite styling)
 export const cardClass =
-  'bg-white rounded-2xl p-4 sm:p-5 shadow-[0_4px_24px_rgba(23,22,51,0.06)] hover:shadow-[0_8px_32px_rgba(23,22,51,0.10)] transition-shadow flex flex-col justify-between';
+  'bg-white dark:bg-[#18181b] dark:border dark:border-[#2c2c31] rounded-2xl p-4 sm:p-5 shadow-[0_4px_24px_rgba(23,22,51,0.06)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.6)] hover:shadow-[0_8px_32px_rgba(23,22,51,0.10)] transition-all flex flex-col justify-between';
 
 export const NOTIF_VISIBLE_COUNT = 3;
 
 export function LegendDot({ color, label, value, subvalue }: { color: string; label: string; value: number | string; subvalue?: string }) {
   return (
     <div className="flex items-center justify-between text-xs py-1">
-      <div className="flex items-center gap-2 text-[#666687] truncate min-w-0 pr-1">
+      <div className="flex items-center gap-2 text-[#666687] dark:text-zinc-300 truncate min-w-0 pr-1">
         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
         <span className="truncate font-medium">{label}</span>
       </div>
       <div className="flex items-center gap-1 flex-shrink-0">
-        <span className="font-bold text-[#171633] text-xs">{value}</span>
-        {subvalue && <span className="text-[10px] text-[#A9A9C6]">({subvalue})</span>}
+        <span className="font-bold text-[#171633] dark:text-white text-xs">{value}</span>
+        {subvalue && <span className="text-[10px] text-[#A9A9C6] dark:text-zinc-400">({subvalue})</span>}
       </div>
     </div>
   );
@@ -90,14 +91,14 @@ export function LegendDot({ color, label, value, subvalue }: { color: string; la
 // ==== DEGO-style icon: bigger, soft color square, bigger radius ====
 export function CardIcon({ icon: Icon, tone = 'violet' }: { icon: LucideIcon; tone?: 'violet' | 'orange' | 'emerald' | 'amber' | 'rose' | 'sky' | 'indigo' | 'slate' }) {
   const toneMap: Record<string, string> = {
-    orange: 'bg-[#FEF1E7] text-[#F2994A]',
-    emerald: 'bg-[#E7F6EC] text-[#34A853]',
-    amber: 'bg-[#FEF5E1] text-[#F5A623]',
-    rose: 'bg-[#FDECEB] text-[#F2453D]',
-    sky: 'bg-[#E8F1FD] text-[#2F80ED]',
-    indigo: 'bg-[#EFEAFF] text-[#5A32FA]',
-    slate: 'bg-[#F0F1F7] text-[#666687]',
-    violet: 'bg-[#EFEAFF] text-[#5A32FA]',
+    orange: 'bg-[#FEF1E7] text-[#F2994A] dark:bg-amber-950/40 dark:text-amber-300 dark:border dark:border-amber-700/30',
+    emerald: 'bg-[#E7F6EC] text-[#34A853] dark:bg-emerald-950/40 dark:text-emerald-300 dark:border dark:border-emerald-700/30',
+    amber: 'bg-[#FEF5E1] text-[#F5A623] dark:bg-amber-950/40 dark:text-amber-300 dark:border dark:border-amber-700/30',
+    rose: 'bg-[#FDECEB] text-[#F2453D] dark:bg-rose-950/40 dark:text-rose-300 dark:border dark:border-rose-700/30',
+    sky: 'bg-[#E8F1FD] text-[#2F80ED] dark:bg-sky-950/40 dark:text-sky-300 dark:border dark:border-sky-700/30',
+    indigo: 'bg-[#EFEAFF] text-[#5A32FA] dark:bg-indigo-950/40 dark:text-indigo-300 dark:border dark:border-indigo-700/30',
+    slate: 'bg-[#F0F1F7] text-[#666687] dark:bg-zinc-800 dark:text-zinc-300 dark:border dark:border-zinc-700/40',
+    violet: 'bg-[#EFEAFF] text-[#5A32FA] dark:bg-indigo-950/40 dark:text-indigo-300 dark:border dark:border-indigo-700/30',
   };
   const toneClass = toneMap[tone] || toneMap.violet;
   return (
@@ -109,14 +110,14 @@ export function CardIcon({ icon: Icon, tone = 'violet' }: { icon: LucideIcon; to
 
 // Badge tone -> bg/text classes, shared by KPI delta chips & table status pills
 const BADGE_TONE: Record<string, string> = {
-  violet: 'bg-[#EFEAFF] text-[#5A32FA]',
-  orange: 'bg-[#FEF1E7] text-[#F2994A]',
-  emerald: 'bg-[#E7F6EC] text-[#34A853]',
-  amber: 'bg-[#FEF5E1] text-[#F5A623]',
-  rose: 'bg-[#FDECEB] text-[#F2453D]',
-  sky: 'bg-[#E8F1FD] text-[#2F80ED]',
-  indigo: 'bg-[#EFEAFF] text-[#5A32FA]',
-  slate: 'bg-[#F0F1F7] text-[#666687]',
+  violet: 'bg-[#EFEAFF] text-[#5A32FA] dark:bg-indigo-950/50 dark:text-indigo-300 dark:border dark:border-indigo-700/30',
+  orange: 'bg-[#FEF1E7] text-[#F2994A] dark:bg-amber-950/50 dark:text-amber-300 dark:border dark:border-amber-700/30',
+  emerald: 'bg-[#E7F6EC] text-[#34A853] dark:bg-emerald-950/50 dark:text-emerald-300 dark:border dark:border-emerald-700/30',
+  amber: 'bg-[#FEF5E1] text-[#F5A623] dark:bg-amber-950/50 dark:text-amber-300 dark:border dark:border-amber-700/30',
+  rose: 'bg-[#FDECEB] text-[#F2453D] dark:bg-rose-950/50 dark:text-rose-300 dark:border dark:border-rose-700/30',
+  sky: 'bg-[#E8F1FD] text-[#2F80ED] dark:bg-sky-950/50 dark:text-sky-300 dark:border dark:border-sky-700/30',
+  indigo: 'bg-[#EFEAFF] text-[#5A32FA] dark:bg-indigo-950/50 dark:text-indigo-300 dark:border dark:border-indigo-700/30',
+  slate: 'bg-[#F0F1F7] text-[#666687] dark:bg-zinc-800 dark:text-zinc-300 dark:border dark:border-zinc-700/40',
 };
 
 // Reusable DEGO-style card header block
@@ -138,8 +139,8 @@ function SectionHeader({
       <div className="flex items-center gap-3">
         <CardIcon icon={icon} tone={tone} />
         <div>
-          <h3 className="text-sm font-bold text-[#171633] leading-tight">{title}</h3>
-          {subtitle && <p className="text-xs text-[#A9A9C6] mt-0.5">{subtitle}</p>}
+          <h3 className="text-sm font-bold text-[#171633] dark:text-white leading-tight">{title}</h3>
+          {subtitle && <p className="text-xs text-[#A9A9C6] dark:text-zinc-400 mt-0.5">{subtitle}</p>}
         </div>
       </div>
       {right}
@@ -191,25 +192,25 @@ export function WelcomeHeader({ user, action }: { user?: UserType | null; action
     <div className="flex flex-col gap-3 mb-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-[#171633] leading-tight">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-[#171633] dark:text-white leading-tight">
             {greetingWord()}, {firstName}!
           </h2>
-          <p className="text-xs text-[#A9A9C6] font-medium capitalize mt-1">{today}</p>
+          <p className="text-xs text-[#A9A9C6] dark:text-zinc-400 font-medium capitalize mt-1">{today}</p>
         </div>
         {action && <div className="flex-shrink-0">{action}</div>}
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[11px] font-semibold text-white bg-[#171633] px-3 py-1.5 rounded-lg whitespace-nowrap">
+        <span className="text-[11px] font-semibold text-white bg-[#171633] dark:bg-zinc-800 dark:border dark:border-zinc-700 px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xs">
           {GREETING_ROLE_LABEL[user.role] ?? user.role}
         </span>
         {user.departemen?.nama && (
-          <span className="text-[11px] font-medium text-[#666687] bg-white px-3 py-1.5 rounded-lg whitespace-nowrap shadow-[0_2px_8px_rgba(23,22,51,0.06)]">
+          <span className="text-[11px] font-medium text-[#666687] bg-white dark:bg-zinc-800/90 dark:text-zinc-200 dark:border dark:border-zinc-700 px-3 py-1.5 rounded-lg whitespace-nowrap shadow-[0_2px_8px_rgba(23,22,51,0.06)] dark:shadow-none">
             {user.departemen.nama}
           </span>
         )}
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#34A853] bg-[#E7F6EC] px-3 py-1.5 rounded-lg">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#34A853] animate-pulse" />
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#34A853] bg-[#E7F6EC] dark:bg-emerald-950/60 dark:text-emerald-300 dark:border dark:border-emerald-700/50 px-3 py-1.5 rounded-lg shadow-2xs">
+          <span className="w-2 h-2 rounded-full bg-[#22c55e] dark:bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.9)] animate-pulse shrink-0" />
           Online
         </span>
       </div>
@@ -307,12 +308,42 @@ export function DashboardSkeleton({ variant = 'simple' }: { variant?: 'simple' |
 
 // ==== DEGO KPI card: icon left, small uppercase label, BIG value, trend badge, footer link ====
 const KPI_CONFIG = {
-  default: { accent: '#5A32FA', bg: 'bg-[#EFEAFF]', text: 'text-[#5A32FA]' },
-  emerald: { accent: '#34A853', bg: 'bg-[#E7F6EC]', text: 'text-[#34A853]' },
-  amber: { accent: '#F5A623', bg: 'bg-[#FEF5E1]', text: 'text-[#F5A623]' },
-  rose: { accent: '#F2453D', bg: 'bg-[#FDECEB]', text: 'text-[#F2453D]' },
-  sky: { accent: '#2F80ED', bg: 'bg-[#E8F1FD]', text: 'text-[#2F80ED]' },
-  orange: { accent: '#F2994A', bg: 'bg-[#FEF1E7]', text: 'text-[#F2994A]' },
+  default: {
+    accent: '#5A32FA',
+    bg: 'bg-[#EFEAFF] dark:bg-indigo-950/40 dark:border dark:border-indigo-700/30',
+    text: 'text-[#5A32FA] dark:text-indigo-300',
+    badge: 'dark:bg-indigo-400/20 dark:text-indigo-200 dark:border dark:border-indigo-400/30',
+  },
+  emerald: {
+    accent: '#34A853',
+    bg: 'bg-[#E7F6EC] dark:bg-emerald-950/40 dark:border dark:border-emerald-700/30',
+    text: 'text-[#34A853] dark:text-emerald-300',
+    badge: 'dark:bg-emerald-400/20 dark:text-emerald-200 dark:border dark:border-emerald-400/30',
+  },
+  amber: {
+    accent: '#F5A623',
+    bg: 'bg-[#FEF5E1] dark:bg-amber-950/40 dark:border dark:border-amber-700/30',
+    text: 'text-[#F5A623] dark:text-amber-300',
+    badge: 'dark:bg-amber-400/20 dark:text-amber-200 dark:border dark:border-amber-400/30',
+  },
+  rose: {
+    accent: '#F2453D',
+    bg: 'bg-[#FDECEB] dark:bg-rose-950/40 dark:border dark:border-rose-700/30',
+    text: 'text-[#F2453D] dark:text-rose-300',
+    badge: 'dark:bg-rose-400/20 dark:text-rose-200 dark:border dark:border-rose-400/30',
+  },
+  sky: {
+    accent: '#2F80ED',
+    bg: 'bg-[#E8F1FD] dark:bg-sky-950/40 dark:border dark:border-sky-700/30',
+    text: 'text-[#2F80ED] dark:text-sky-300',
+    badge: 'dark:bg-sky-400/20 dark:text-sky-200 dark:border dark:border-sky-400/30',
+  },
+  orange: {
+    accent: '#F2994A',
+    bg: 'bg-[#FEF1E7] dark:bg-amber-950/40 dark:border dark:border-amber-700/30',
+    text: 'text-[#F2994A] dark:text-amber-300',
+    badge: 'dark:bg-amber-400/20 dark:text-amber-200 dark:border dark:border-amber-400/30',
+  },
 };
 
 export function KpiCard({
@@ -341,7 +372,7 @@ export function KpiCard({
   const cfg = KPI_CONFIG[tone] || KPI_CONFIG.default;
   return (
     <div
-      className={`bg-white rounded-lg p-4 shadow-[0_4px_24px_rgba(23,22,51,0.06)] hover:shadow-[0_8px_32px_rgba(23,22,51,0.10)] transition-all flex flex-col gap-3 ${className}`}
+      className={`bg-white dark:bg-[#18181b] dark:border dark:border-[#2c2c31] rounded-2xl p-4 shadow-[0_4px_24px_rgba(23,22,51,0.06)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.6)] hover:shadow-[0_8px_32px_rgba(23,22,51,0.10)] transition-all flex flex-col gap-3 ${className}`}
     >
       <div className="flex items-center gap-3">
         {/* DEGO-style icon square */}
@@ -349,13 +380,13 @@ export function KpiCard({
           <Icon size={20} strokeWidth={2.2} />
         </div>
         <div className="min-w-0">
-          <p className="text-[11px] font-bold text-[#A9A9C6] uppercase tracking-wider truncate" title={label}>
+          <p className="text-[11px] font-bold text-[#A9A9C6] dark:text-zinc-400 uppercase tracking-wider truncate" title={label}>
             {label}
           </p>
           <div className="flex items-baseline gap-2 mt-0.5">
-            <span className="text-2xl font-extrabold text-[#171633] tracking-tight leading-none">{value}</span>
+            <span className="text-2xl font-extrabold text-[#171633] dark:text-white tracking-tight leading-none">{value}</span>
             {badge && (
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${cfg.bg} ${cfg.text} leading-none`}>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${cfg.bg} ${cfg.text} ${cfg.badge} leading-none`}>
                 {badge}
               </span>
             )}
@@ -365,7 +396,7 @@ export function KpiCard({
 
       {/* DEGO-style slim progress */}
       {progress !== undefined && (
-        <div className="w-full bg-[#F0F1F7] h-1.5 rounded-full overflow-hidden">
+        <div className="w-full bg-[#F0F1F7] dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{ width: `${Math.min(100, Math.max(0, progress))}%`, background: cfg.accent }}
@@ -373,8 +404,7 @@ export function KpiCard({
         </div>
       )}
 
-      {/* Footer: clickable "Lihat detail" link (DEGO "View net income >" pattern) when onClick given,
-          otherwise a plain hint line. */}
+      {/* Footer: clickable "Lihat detail" link when onClick given, otherwise a plain hint line */}
       {onClick ? (
         <button
           onClick={onClick}
@@ -385,7 +415,7 @@ export function KpiCard({
         </button>
       ) : (
         progress === undefined && hint && (
-          <p className="text-[11px] text-[#A9A9C6] font-medium truncate">{hint}</p>
+          <p className="text-[11px] text-[#A9A9C6] dark:text-zinc-400 font-medium truncate">{hint}</p>
         )
       )}
     </div>
@@ -443,7 +473,7 @@ export function RingkasanInventoryCard({
         </div>
 
         {/* Multi-segment progress */}
-        <div className="flex w-full h-2 rounded-full overflow-hidden bg-[#F0F1F7] my-2">
+        <div className="flex w-full h-2 rounded-full overflow-hidden bg-[#F0F1F7] dark:bg-[#222226] border border-transparent dark:border-[#383842] my-2">
           {inventoryTotal > 0 ? (
             <>
               <div style={{ width: `${tersediaPct}%`, background: THEME.emerald }} title={`Tersedia: ${inventoryTersedia}`} />
@@ -452,7 +482,7 @@ export function RingkasanInventoryCard({
               <div style={{ width: `${dijualPct}%`, background: '#A9A9C6' }} title={`Dijual: ${inventoryDijual}`} />
             </>
           ) : (
-            <div className="w-full h-full bg-[#F0F1F7]" />
+            <div className="w-full h-full bg-[#F0F1F7] dark:bg-[#222226]" />
           )}
         </div>
       </div>
@@ -516,6 +546,8 @@ export function HeroTrenPembelianInventoryChart({
     return <circle key={`dot-${index}`} cx={cx} cy={cy} r={4.5} fill="#fff" stroke={THEME.violet} strokeWidth={2.5} />;
   };
 
+  const { isDark } = useTheme();
+
   return (
     <div className={`${cardClass} ${className}`}>
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -527,15 +559,15 @@ export function HeroTrenPembelianInventoryChart({
         />
       </div>
 
-      <div className="flex items-center justify-between bg-[#F7F8FC] rounded-xl px-3.5 py-2.5 mb-2">
+      <div className="flex items-center justify-between bg-[#F7F8FC] dark:bg-[#1e1e22] dark:border dark:border-[#2c2c31] rounded-xl px-3.5 py-2.5 mb-2">
         <div className="flex items-baseline gap-1.5">
-          <span className="text-2xl font-extrabold text-[#171633]">{totalTahunIni}</span>
-          <span className="text-xs font-semibold text-[#A9A9C6]">unit total</span>
+          <span className="text-2xl font-extrabold text-[#171633] dark:text-white">{totalTahunIni}</span>
+          <span className="text-xs font-semibold text-[#A9A9C6] dark:text-zinc-400">unit total</span>
         </div>
         {delta !== null && delta !== 0 && (
           <span
             className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg ${
-              delta > 0 ? 'text-[#34A853] bg-[#E7F6EC]' : 'text-[#F2453D] bg-[#FDECEB]'
+              delta > 0 ? 'text-[#34A853] bg-[#E7F6EC] dark:bg-emerald-950/50 dark:text-emerald-300' : 'text-[#F2453D] bg-[#FDECEB] dark:bg-rose-950/50 dark:text-rose-300'
             }`}
           >
             {delta > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
@@ -549,48 +581,48 @@ export function HeroTrenPembelianInventoryChart({
           <AreaChart data={trenPembelianInventory} margin={{ top: 25, right: 6, left: -18, bottom: 0 }}>
             <defs>
               <linearGradient id="trenPembelianGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={THEME.violet} stopOpacity={0.25} />
-                <stop offset="100%" stopColor={THEME.violet} stopOpacity={0} />
+                <stop offset="0%" stopColor={isDark ? '#818cf8' : THEME.violet} stopOpacity={isDark ? 0.35 : 0.25} />
+                <stop offset="100%" stopColor={isDark ? '#818cf8' : THEME.violet} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid vertical={false} strokeDasharray="4 4" stroke={THEME.grid} />
+            <CartesianGrid vertical={false} strokeDasharray="4 4" stroke={isDark ? '#27272a' : THEME.grid} />
             <XAxis
               dataKey="bulan"
-              tick={{ fontSize: 11, fill: THEME.axis }}
+              tick={{ fontSize: 11, fill: isDark ? '#a1a1aa' : THEME.axis }}
               axisLine={false}
               tickLine={false}
               padding={{ left: 32, right: 16 }}
             />
             <YAxis hide domain={[0, (dataMax: number) => Math.max(dataMax * 1.35, 4)]} />
             {maxJumlah > 0 && (
-              <ReferenceLine y={avgJumlah} stroke={THEME.violet} strokeDasharray="3 3" strokeOpacity={0.35} />
+              <ReferenceLine y={avgJumlah} stroke={isDark ? '#818cf8' : THEME.violet} strokeDasharray="3 3" strokeOpacity={0.35} />
             )}
             <Tooltip
-              cursor={{ stroke: THEME.violet, strokeWidth: 1, strokeDasharray: '3 3' }}
-              contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 24px rgba(23,22,51,0.12)', fontSize: 11, padding: '8px 12px' }}
+              cursor={{ stroke: isDark ? '#818cf8' : THEME.violet, strokeWidth: 1, strokeDasharray: '3 3' }}
+              contentStyle={isDark ? { backgroundColor: '#18181b', color: '#f4f4f5', borderRadius: 12, border: '1px solid #2c2c31', boxShadow: '0 8px 30px rgba(0,0,0,0.8)', fontSize: 11, padding: '8px 12px' } : { borderRadius: 12, border: 'none', boxShadow: '0 4px 24px rgba(23,22,51,0.12)', fontSize: 11, padding: '8px 12px' }}
             />
             <Area
               type="linear"
               dataKey="jumlah"
               name="Pengadaan Unit"
-              stroke={THEME.violet}
+              stroke={isDark ? '#818cf8' : THEME.violet}
               strokeWidth={3}
               fill="url(#trenPembelianGradient)"
               dot={renderDot}
-              activeDot={{ r: 7, fill: '#fff', stroke: THEME.violet, strokeWidth: 3 }}
+              activeDot={{ r: 7, fill: '#fff', stroke: isDark ? '#818cf8' : THEME.violet, strokeWidth: 3 }}
             />
           </AreaChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-[#A9A9C6] pt-3 border-t border-[#F0F1F7] mt-2">
+      <div className="flex items-center justify-between text-[11px] text-[#A9A9C6] dark:text-zinc-400 pt-3 border-t border-[#F0F1F7] dark:border-[#2c2c31] mt-2">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full" style={{ background: THEME.violet }} />
+            <span className="w-2 h-2 rounded-full" style={{ background: isDark ? '#818cf8' : THEME.violet }} />
             Jumlah Unit
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-0 border-t border-dashed" style={{ borderColor: THEME.violet }} />
+            <span className="w-3 h-0 border-t border-dashed" style={{ borderColor: isDark ? '#818cf8' : THEME.violet }} />
             Rata-rata: {Math.round(avgJumlah * 10) / 10} / bln
           </span>
         </div>
@@ -617,6 +649,7 @@ export function StatusInventoryDonutCard({
   statusInventoryDistribusi?: StatusInventoryDistribusi[];
   className?: string;
 }) {
+  const { isDark } = useTheme();
   const safeData = Array.isArray(statusInventoryDistribusi) ? statusInventoryDistribusi : [];
   const total = safeData.reduce((sum, d) => sum + (d?.jumlah || 0), 0);
 
@@ -628,14 +661,14 @@ export function StatusInventoryDonutCard({
         title="Status"
         subtitle="Detail kondisi seluruh item"
         right={
-          <span className="text-xs font-bold text-[#171633] bg-[#F7F8FC] px-3 py-1.5 rounded-lg">
+          <span className="text-xs font-bold text-[#171633] bg-[#F7F8FC] dark:bg-[#27272a] dark:text-zinc-200 dark:border dark:border-[#3f3f46] px-3 py-1.5 rounded-lg">
             {total} Total
           </span>
         }
       />
 
       {total === 0 ? (
-        <p className="text-xs text-[#A9A9C6] py-6 text-center">Belum ada data inventory</p>
+        <p className="text-xs text-[#A9A9C6] dark:text-zinc-400 py-6 text-center">Belum ada data inventory</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-12 items-center gap-3 my-auto">
           <div className="sm:col-span-5 h-40 relative">
@@ -654,12 +687,12 @@ export function StatusInventoryDonutCard({
                     <Cell key={entry.status} fill={STATUS_ASET_COLOR[entry.status] ?? THEME.axis} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 24px rgba(23,22,51,0.12)', fontSize: 11, padding: '8px 12px' }} />
+                <Tooltip contentStyle={isDark ? { backgroundColor: '#18181b', color: '#f4f4f5', borderRadius: 12, border: '1px solid #2c2c31', boxShadow: '0 8px 30px rgba(0,0,0,0.8)', fontSize: 11, padding: '8px 12px' } : { borderRadius: 12, border: 'none', boxShadow: '0 4px 24px rgba(23,22,51,0.12)', fontSize: 11, padding: '8px 12px' }} />
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-2xl font-extrabold text-[#171633] leading-none">{total}</span>
-              <span className="text-[9px] uppercase font-bold text-[#A9A9C6] mt-1">Unit</span>
+              <span className="text-2xl font-extrabold text-[#171633] dark:text-white leading-none">{total}</span>
+              <span className="text-[9px] uppercase font-bold text-[#A9A9C6] dark:text-zinc-400 mt-1">Unit</span>
             </div>
           </div>
 
@@ -680,7 +713,7 @@ export function StatusInventoryDonutCard({
         </div>
       )}
 
-      <div className="pt-3 border-t border-[#F0F1F7] flex items-center justify-between text-[10px] text-[#A9A9C6]">
+      <div className="pt-3 border-t border-[#F0F1F7] dark:border-[#2c2c31] flex items-center justify-between text-[10px] text-[#A9A9C6] dark:text-zinc-400">
         <span>6 kategori status sistem</span>
         <span>Realtime sync</span>
       </div>
@@ -802,18 +835,18 @@ export function TopInventoryCard({
               <div key={item.nama}>
                 <div className="flex items-center justify-between text-xs mb-1.5">
                   <div className="flex items-center gap-2 truncate max-w-[80%]">
-                    <span className="w-5 h-5 rounded-full bg-[#EFEAFF] text-[10px] font-bold text-[#5A32FA] flex items-center justify-center flex-shrink-0">
+                    <span className="w-5 h-5 rounded-full bg-[#EFEAFF] dark:bg-indigo-950/60 dark:text-indigo-300 dark:border dark:border-indigo-800/40 text-[10px] font-bold text-[#5A32FA] flex items-center justify-center flex-shrink-0">
                       {idx + 1}
                     </span>
-                    <span className="font-semibold text-[#171633] truncate" title={item.nama}>
+                    <span className="font-semibold text-[#171633] dark:text-zinc-200 truncate" title={item.nama}>
                       {item.nama}
                     </span>
                   </div>
-                  <span className="font-extrabold text-[#171633] text-xs">{item.jumlah} <span className="text-[10px] font-normal text-[#A9A9C6]">unit</span></span>
+                  <span className="font-extrabold text-[#171633] dark:text-zinc-100 text-xs">{item.jumlah} <span className="text-[10px] font-normal text-[#A9A9C6] dark:text-zinc-400">unit</span></span>
                 </div>
-                <div className="w-full bg-[#F0F1F7] h-2 rounded-full overflow-hidden">
+                <div className="w-full bg-[#F0F1F7] dark:bg-[#222226] border border-transparent dark:border-[#383842] h-2 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#5A32FA] rounded-full transition-all"
+                    className="h-full bg-[#5A32FA] dark:bg-[#818cf8] rounded-full transition-all"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -866,13 +899,13 @@ export function DepartemenDistribusiCard({
             return (
               <div key={dept.departemen} className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-[#171633] truncate">{dept.departemen}</span>
-                  <span className="font-bold text-[#171633] text-xs">
-                    {dept.jumlah} <span className="text-[10px] text-[#A9A9C6]">({pct}%)</span>
+                  <span className="font-semibold text-[#171633] dark:text-zinc-200 truncate">{dept.departemen}</span>
+                  <span className="font-bold text-[#171633] dark:text-zinc-100 text-xs">
+                    {dept.jumlah} <span className="text-[10px] text-[#A9A9C6] dark:text-zinc-400">({pct}%)</span>
                   </span>
                 </div>
-                <div className="w-full bg-[#F0F1F7] h-2 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#34A853] rounded-full" style={{ width: `${pct}%` }} />
+                <div className="w-full bg-[#F0F1F7] dark:bg-[#222226] border border-transparent dark:border-[#383842] h-2 rounded-full overflow-hidden">
+                  <div className="h-full bg-[#34A853] dark:bg-emerald-500 rounded-full" style={{ width: `${pct}%` }} />
                 </div>
               </div>
             );

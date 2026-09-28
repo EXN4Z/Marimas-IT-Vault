@@ -1,0 +1,8 @@
+{
+  "name": "Marimas - One",
+  "description": "Internal inventory and employee management application for Marimas One.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

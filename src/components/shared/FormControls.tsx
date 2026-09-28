@@ -3,14 +3,14 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import Select, { type SelectOption } from './Select';
 
 export const inputClass =
-  'w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 shadow-sm outline-none transition-all duration-200 hover:border-slate-400 focus:border-slate-900 focus:ring-4 focus:ring-slate-900/[0.08]';
+  'w-full rounded-xl border border-slate-300 dark:border-[#383842] bg-white dark:bg-[#222226] px-3.5 py-2.5 text-sm text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 shadow-sm outline-none transition-all duration-200 hover:border-slate-400 dark:hover:border-zinc-500 focus:border-slate-900 dark:focus:border-zinc-400 focus:ring-4 focus:ring-slate-900/[0.08] dark:focus:ring-zinc-600/20';
 
 // `!` (important) dipakai di border-nya karena class ini SELALU digabung
 // bareng inputClass yang udah punya border-slate-300 unprefixed duluan.
 // Tanpa `!`, menang-kalahnya cuma soal urutan compile Tailwind (bukan urutan
 // class di JSX), jadi bordernya bisa kalah dan gak kelihatan merah.
 export const inputErrorClass =
-  '!border-red-400 bg-red-50/20 text-slate-900 placeholder:text-red-300 focus:!border-red-500 focus:ring-4 focus:ring-red-500/15';
+  '!border-red-400 bg-red-50/20 dark:bg-red-950/20 text-slate-900 dark:text-zinc-100 placeholder:text-red-300 focus:!border-red-500 focus:ring-4 focus:ring-red-500/15';
 
 export const textareaClass = `${inputClass} resize-none`;
 

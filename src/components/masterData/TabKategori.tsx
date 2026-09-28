@@ -189,96 +189,131 @@ export default function TabKategori() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-
-      <div className="p-4 border-b border-slate-100">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Cari nama kategori..."
-          className="sm:max-w-xs"
-        />
-      </div>
-
-      {loading && (
-        <div className="overflow-x-auto mt-3">
-          <table className="w-full text-sm min-w-[420px]">
-            <tbody>
-              <SkeletonTable columns={2} rows={2} />
-            </tbody>
-          </table>
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Cari nama kategori..."
+            className="flex-1"
+          />
         </div>
-      )}
 
-      {!loading && error && <p className="text-sm text-red-500 text-center py-8">{error}</p>}
+        <div className="border border-slate-200 rounded-lg overflow-hidden">
+          {loading && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <tbody>
+                  <SkeletonTable columns={2} rows={5} />
+                </tbody>
+              </table>
+            </div>
+          )}
 
-      {!loading && !error && items.length === 0 && (
-        <p className="text-sm text-slate-400 text-center py-8">Belum ada data kategori.</p>
-      )}
+          {!loading && error && <p className="text-sm text-red-500 text-center py-8">{error}</p>}
 
-      {!loading && !error && items.length > 0 && filteredItems.length === 0 && (
-        <p className="text-sm text-slate-400 text-center py-8">Kategori tidak ditemukan.</p>
-      )}
+          {!loading && !error && items.length === 0 && (
+            <p className="text-sm text-slate-400 text-center py-8">Belum ada data kategori.</p>
+          )}
 
-      {!loading && !error && filteredItems.length > 0 && (
-        <>
-          <div className="overflow-x-auto mt-3">
-            <table className="w-full text-sm min-w-[420px]">
-              <thead>
-                <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide">
-                  <th className="px-6 py-3 font-medium">Nama</th>
-                  <th className="px-6 py-3 font-medium text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
+          {!loading && !error && items.length > 0 && filteredItems.length === 0 && (
+            <p className="text-sm text-slate-400 text-center py-8">Kategori tidak ditemukan.</p>
+          )}
+
+          {!loading && !error && filteredItems.length > 0 && (
+            <>
+              {/* Desktop Table */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
+                      <th className="px-6 py-3.5 font-medium">Nama Kategori</th>
+                      <th className="px-6 py-3.5 font-medium text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedItems.map((item) => (
+                      <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
+                        <td className="px-6 py-3.5 text-slate-800 font-medium">
+                          {item.nama}
+                        </td>
+                        <td className="px-6 py-3.5">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(item)}
+                              title="Edit"
+                              className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDeleteError('');
+                                setDeleteTarget(item);
+                              }}
+                              title="Hapus"
+                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="sm:hidden flex flex-col divide-y divide-slate-100">
                 {paginatedItems.map((item) => (
-                  <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                    <td className="px-6 py-3 text-slate-800">
-                      <div className="flex items-center gap-2">
-                        <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 text-slate-500">
-                          <Tags size={14} />
-                        </span>
-                        {item.nama}
-                      </div>
-                    </td>
-                    <td className="px-6 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => openEditModal(item)}
-                          title="Edit"
-                          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setDeleteError('');
-                            setDeleteTarget(item);
-                          }}
-                          title="Hapus"
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                  <div key={item.id} className="p-4 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-900 truncate">{item.nama}</p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(item)}
+                        title="Edit"
+                        className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeleteError('');
+                          setDeleteTarget(item);
+                        }}
+                        title="Hapus"
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
 
-          <div className="px-6 pb-5">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-              totalItems={filteredItems.length}
-              itemLabel="kategori"
-            />
-          </div>
-        </>
-      )}
+              {totalPages > 1 && (
+                <div className="px-6 py-3 border-t border-slate-100">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    totalItems={filteredItems.length}
+                    itemLabel="kategori"
+                    className="pt-0 mt-0 border-t-0"
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
 
       {/* MODAL TAMBAH / EDIT */}
       {modalOpen && (
@@ -375,7 +410,6 @@ export default function TabKategori() {
         onClose={() => setShowExportModal(false)}
         data={items}
       />
-    </div>
     </>
   );
 }

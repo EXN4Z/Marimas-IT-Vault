@@ -82,10 +82,10 @@ export default function ScrollableTabBar<T extends string>({
   return (
     <nav className={`relative ${className}`}>
       {canScrollLeft && (
-        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent z-10" />
+        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white dark:from-[#18181b] to-transparent z-10" />
       )}
       {canScrollRight && (
-        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent z-10" />
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-[#18181b] to-transparent z-10" />
       )}
 
       {canScrollLeft && (
@@ -93,7 +93,7 @@ export default function ScrollableTabBar<T extends string>({
           type="button"
           onClick={() => scrollByAmount('left')}
           aria-label="Geser tab ke kiri"
-          className="absolute -left-1 top-1/2 -translate-y-1/2 -mt-1.5 z-20 w-6 h-6 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition"
+          className="absolute -left-1 top-1/2 -translate-y-1/2 -mt-1.5 z-20 w-6 h-6 rounded-full bg-white dark:bg-[#222226] border border-slate-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-700 transition"
         >
           <ChevronLeft size={14} />
         </button>
@@ -103,7 +103,7 @@ export default function ScrollableTabBar<T extends string>({
           type="button"
           onClick={() => scrollByAmount('right')}
           aria-label="Geser tab ke kanan"
-          className="absolute -right-1 top-1/2 -translate-y-1/2 -mt-1.5 z-20 w-6 h-6 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition"
+          className="absolute -right-1 top-1/2 -translate-y-1/2 -mt-1.5 z-20 w-6 h-6 rounded-full bg-white dark:bg-[#222226] border border-slate-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-700 transition"
         >
           <ChevronRight size={14} />
         </button>

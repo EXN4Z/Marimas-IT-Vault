@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Download, Upload, Plus } from 'lucide-react';
+import { Download, Upload, Plus, Eye, Pencil, Trash2 } from 'lucide-react';
 import api from '../../api/axios';
 import { importKaryawan } from '../../api/auth';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import Pagination from '../shared/Pagination';
-import { Skeleton, SkeletonCircle } from '../shared/skeleton';
+import SearchInput from '../shared/SearchInput';
+import { SkeletonTable } from '../shared/skeleton';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 import KaryawanExportModal from '../laporan/KaryawanExportModal';
 import { type Karyawan } from '../../api/karyawan';
@@ -241,7 +242,7 @@ export default function TabKaryawan() {
 
             <div>
                 <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                    {/* Tab navigation menggantikan dropdown filter role */}
+                    {/* Tab navigation role */}
                     <ScrollableTabBar
                         className="mb-4"
                         activeTab={activeTab}
@@ -249,75 +250,188 @@ export default function TabKaryawan() {
                         tabs={tabs}
                     />
 
-                    <div className="relative mb-4">
-                        <svg
-                            className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
-                        </svg>
-                        <input
-                            type="text"
-                            placeholder="Cari nama atau email..."
+                    <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                        <SearchInput
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none"
+                            onChange={setSearch}
+                            placeholder="Cari nama, email, atau NIK user..."
+                            className="flex-1"
                         />
                     </div>
 
-                    <p className="text-sm text-gray-500 mb-4">
-                        Total {activeTabLabel} ada <span className="font-semibold text-gray-900">{filtered.length}</span>
+                    <p className="text-xs text-slate-500 mb-4">
+                        Total {activeTabLabel}: <span className="font-semibold text-slate-900">{filtered.length}</span> user
                     </p>
 
-                    {loading && (
-                        <div className="divide-y divide-gray-100">
-                            {Array.from({ length: 6 }).map((_, i) => (
-                                <div key={i} className="flex items-center justify-between py-3 gap-3">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <SkeletonCircle size={36} />
-                                        <div className="min-w-0 space-y-1.5">
-                                            <Skeleton className="h-3.5 w-32 rounded" />
-                                            <Skeleton className="h-3 w-24 rounded" />
-                                        </div>
-                                    </div>
-                                    <Skeleton className="h-5 w-20 rounded-full shrink-0" />
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {!loading && errorMsg && <p className="text-center text-sm text-gray-400 py-8">{errorMsg}</p>}
-
-                    {!loading && !errorMsg && filtered.length === 0 && (
-                        <p className="text-center text-sm text-gray-400 py-8">Tidak ada user yang cocok dengan filter ini.</p>
-                    )}
-
-                    {!loading && !errorMsg && filtered.length > 0 && (
-                        <>
-                            <div className="divide-y divide-gray-100">
-                                {paginated.map((user) => (
-                                    <UserRow
-                                        key={user.id}
-                                        user={user}
-                                        isAdmin={isAdmin}
-                                        onDelete={() => setUserToDelete(user)}
-                                        onEdit={() => navigate(`/karyawan/${user.id}/edit`, { state: { backgroundLocation: location } })}
-                                        onDetail={() => navigate(`/karyawan/${user.id}`, { state: { backgroundLocation: location } })}
-                                    />
-                                ))}
+                    <div className="border border-slate-200 rounded-lg overflow-hidden">
+                        {loading && (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <tbody>
+                                        <SkeletonTable columns={5} rows={6} />
+                                    </tbody>
+                                </table>
                             </div>
+                        )}
 
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPageChange={setCurrentPage}
-                                totalItems={filtered.length}
-                                itemLabel="user"
-                            />
-                        </>
-                    )}
+                        {!loading && errorMsg && <p className="text-center text-sm text-red-500 py-8">{errorMsg}</p>}
+
+                        {!loading && !errorMsg && filtered.length === 0 && (
+                            <p className="text-center text-sm text-slate-400 py-8">Tidak ada user yang cocok dengan pencarian / filter ini.</p>
+                        )}
+
+                        {!loading && !errorMsg && filtered.length > 0 && (
+                            <>
+                                {/* Desktop Table */}
+                                <div className="hidden sm:block overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
+                                                <th className="px-6 py-3.5 font-medium">Nama Karyawan</th>
+                                                <th className="px-6 py-3.5 font-medium">Email & Kontak</th>
+                                                <th className="px-6 py-3.5 font-medium">Departemen</th>
+                                                <th className="px-6 py-3.5 font-medium">Role</th>
+                                                <th className="px-6 py-3.5 font-medium text-right">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {paginated.map((user) => (
+                                                <tr key={user.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
+                                                    <td className="px-6 py-3.5 text-slate-800">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-700 shrink-0">
+                                                                {initials(user.name)}
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <p className="font-semibold text-slate-900 truncate">{user.name}</p>
+                                                                <p className="text-xs text-slate-400 truncate">{user.nik || 'NIK belum diatur'}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-3.5 text-slate-600">
+                                                        <p className="truncate text-slate-700">{user.email || '-'}</p>
+                                                        {user.phone && <p className="text-xs text-slate-400">{user.phone}</p>}
+                                                    </td>
+                                                    <td className="px-6 py-3.5 text-slate-600">
+                                                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700">
+                                                            {user.departemen?.nama || 'Belum diatur'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-3.5">
+                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${roleStyles[user.role ?? ''] || defaultRoleStyle}`}>
+                                                            {roleLabels[user.role ?? ''] || user.role || '-'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-3.5">
+                                                        <div className="flex items-center justify-end gap-1">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => navigate(`/karyawan/${user.id}`, { state: { backgroundLocation: location } })}
+                                                                title="Detail User"
+                                                                className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                                                            >
+                                                                <Eye size={15} />
+                                                            </button>
+                                                            {isAdmin && (
+                                                                <>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => navigate(`/karyawan/${user.id}/edit`, { state: { backgroundLocation: location } })}
+                                                                        title="Edit User"
+                                                                        className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                                                                    >
+                                                                        <Pencil size={15} />
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setUserToDelete(user)}
+                                                                        title="Hapus User"
+                                                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                                                                    >
+                                                                        <Trash2 size={15} />
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Mobile List View */}
+                                <div className="sm:hidden flex flex-col divide-y divide-slate-100">
+                                    {paginated.map((user) => (
+                                        <div key={user.id} className="p-4 flex flex-col gap-2.5">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-700 shrink-0">
+                                                        {initials(user.name)}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-semibold text-slate-900 truncate">{user.name}</p>
+                                                        <p className="text-xs text-slate-400 truncate">{user.nik || user.email || '-'}</p>
+                                                    </div>
+                                                </div>
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${roleStyles[user.role ?? ''] || defaultRoleStyle}`}>
+                                                    {roleLabels[user.role ?? ''] || user.role || '-'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between pt-1">
+                                                <span className="text-xs text-slate-500">
+                                                    {user.departemen?.nama || 'Departemen belum diatur'}
+                                                </span>
+                                                <div className="flex items-center gap-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => navigate(`/karyawan/${user.id}`, { state: { backgroundLocation: location } })}
+                                                        title="Detail"
+                                                        className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                                                    >
+                                                        <Eye size={15} />
+                                                    </button>
+                                                    {isAdmin && (
+                                                        <>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => navigate(`/karyawan/${user.id}/edit`, { state: { backgroundLocation: location } })}
+                                                                title="Edit"
+                                                                className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                                                            >
+                                                                <Pencil size={15} />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setUserToDelete(user)}
+                                                                title="Hapus"
+                                                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                                                            >
+                                                                <Trash2 size={15} />
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {totalPages > 1 && (
+                                    <div className="px-6 py-3 border-t border-slate-100">
+                                        <Pagination
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            onPageChange={setCurrentPage}
+                                            totalItems={filtered.length}
+                                            itemLabel="user"
+                                            className="pt-0 mt-0 border-t-0"
+                                        />
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -356,53 +470,6 @@ export default function TabKaryawan() {
                 data={filtered}
             />
         </>
-    );
-}
-
-interface UserRowProps {
-    user: User;
-    isAdmin: boolean;
-    onDelete: () => void;
-    onEdit: () => void;
-    onDetail: () => void;
-}
-
-function UserRow({ user, isAdmin, onDelete, onEdit, onDetail }: UserRowProps) {
-    return (
-        <div className="flex items-center justify-between py-3 gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-700 flex-shrink-0">
-                    {initials(user.name)}
-                </div>
-                <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{user.nik || user.email || '-'}</p>
-                </div>
-            </div>
-            <div className="flex items-center gap-3 flex-shrink-0">
-                <span className={`text-xs px-3 py-1 rounded-full ${roleStyles[user.role ?? ''] || defaultRoleStyle}`}>
-                    {roleLabels[user.role ?? ''] || user.role || '-'}
-                </span>
-                {user.departemen && (
-                    <span className="text-xs text-gray-500">
-                        {user.departemen?.nama || 'Departemen tidak ditentukan'}
-                    </span>
-                )}
-                <button onClick={onDetail} className="text-xs text-gray-500 hover:text-black">
-                    Detail
-                </button>
-                {isAdmin && (
-                    <>
-                        <button onClick={onEdit} className="text-xs text-gray-500 hover:text-black">
-                            Edit
-                        </button>
-                        <button onClick={onDelete} className="text-xs text-red-600 hover:text-red-700">
-                            Hapus
-                        </button>
-                    </>
-                )}
-            </div>
-        </div>
     );
 }
 

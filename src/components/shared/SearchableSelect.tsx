@@ -7,6 +7,7 @@ import ReactSelect, {
     components,
 } from 'react-select';
 import { Check, ChevronDown } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 interface Option {
     value: string;
@@ -26,77 +27,109 @@ interface SearchableSelectProps {
 // Warna & radius disamakan manual sama komponen `Select` (native replacement):
 // border slate-300 default, slate-400 hover, slate-900 fokus, red-400 error,
 // shadow-sm konstan (bukan ring saat fokus), text-sm, rounded-lg.
-function buildStyles(error: boolean): StylesConfig<Option, false, GroupBase<Option>> {
+// Mode gelap memakai latar abu-abu gelap terangkat (#222226), border #383842.
+function buildStyles(error: boolean, isDark: boolean): StylesConfig<Option, false, GroupBase<Option>> {
     return {
         control: (base, state) => ({
             ...base,
             minHeight: '38px',
             borderRadius: '0.5rem', // rounded-lg
+            backgroundColor: isDark ? '#222226' : '#ffffff',
             borderColor: error
                 ? '#f87171' // border-red-400
                 : state.isFocused
-                ? '#0f172a' // border-slate-900
-                : '#cbd5e1', // border-slate-300
-            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)', // shadow-sm, sama kayak Select (bukan ring)
-            transition: 'border-color 150ms, box-shadow 150ms',
+                ? isDark
+                    ? '#5c5c68'
+                    : '#0f172a'
+                : isDark
+                ? '#383842'
+                : '#cbd5e1',
+            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+            transition: 'border-color 150ms, box-shadow 150ms, background-color 150ms',
             '&:hover': {
-                borderColor: error ? '#f87171' : state.isFocused ? '#0f172a' : '#94a3b8', // slate-400
+                borderColor: error
+                    ? '#f87171'
+                    : state.isFocused
+                    ? isDark
+                        ? '#5c5c68'
+                        : '#0f172a'
+                    : isDark
+                    ? '#4b4b55'
+                    : '#94a3b8',
             },
             fontSize: '0.875rem', // text-sm
             cursor: 'pointer',
         }),
         placeholder: (base) => ({
             ...base,
-            color: '#94a3b8', // text-slate-400
+            color: isDark ? '#71717a' : '#94a3b8',
         }),
         menu: (base) => ({
             ...base,
-            marginTop: '0.375rem', // mt-1.5
-            borderRadius: '0.5rem', // rounded-lg
-            border: '1px solid #e2e8f0', // border-slate-200
+            marginTop: '0.375rem',
+            borderRadius: '0.5rem',
+            border: isDark ? '1px solid #383842' : '1px solid #e2e8f0',
+            backgroundColor: isDark ? '#1e1e22' : '#ffffff',
             overflow: 'hidden',
-            boxShadow:
-                '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)', // shadow-lg
+            boxShadow: isDark
+                ? '0 10px 25px -5px rgba(0,0,0,0.5)'
+                : '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)',
             zIndex: 20,
         }),
         menuList: (base) => ({
             ...base,
-            padding: '0.25rem', // p-1
+            padding: '0.25rem',
+            backgroundColor: isDark ? '#1e1e22' : '#ffffff',
         }),
         option: (base, state) => ({
             ...base,
             fontSize: '0.875rem',
-            borderRadius: '0.375rem', // rounded-md
-            padding: '0.5rem 0.625rem', // py-2 px-2.5
-            backgroundColor: state.isFocused ? '#f1f5f9' : 'white', // slate-100 on hover/active
-            color: state.isSelected ? '#0f172a' : '#334155', // slate-900 : slate-700
+            borderRadius: '0.375rem',
+            padding: '0.5rem 0.625rem',
+            backgroundColor: state.isFocused
+                ? isDark
+                    ? '#2a2a30'
+                    : '#f1f5f9'
+                : isDark
+                ? '#1e1e22'
+                : '#ffffff',
+            color: state.isSelected
+                ? isDark
+                    ? '#ffffff'
+                    : '#0f172a'
+                : isDark
+                ? '#e4e4e7'
+                : '#334155',
             fontWeight: state.isSelected ? 500 : 400,
             cursor: state.isDisabled ? 'not-allowed' : 'pointer',
+            '&:active': {
+                backgroundColor: isDark ? '#32323a' : '#e2e8f0',
+            },
         }),
         singleValue: (base) => ({
             ...base,
-            color: '#1e293b', // text-slate-800
+            color: isDark ? '#f4f4f5' : '#1e293b',
         }),
         input: (base) => ({
             ...base,
             fontSize: '0.875rem',
-            color: '#1e293b',
+            color: isDark ? '#f4f4f5' : '#1e293b',
         }),
         indicatorSeparator: () => ({ display: 'none' }),
         dropdownIndicator: (base) => ({
             ...base,
-            color: '#94a3b8', // text-slate-400
+            color: isDark ? '#71717a' : '#94a3b8',
             padding: '0 8px',
             '&:hover': {
-                color: '#94a3b8',
+                color: isDark ? '#a1a1aa' : '#94a3b8',
             },
         }),
         clearIndicator: (base) => ({
             ...base,
-            color: '#94a3b8',
+            color: isDark ? '#71717a' : '#94a3b8',
             padding: '0 4px',
             '&:hover': {
-                color: '#334155', // text-slate-700
+                color: isDark ? '#f4f4f5' : '#334155',
             },
         }),
     };
@@ -141,7 +174,7 @@ function CustomOption(props: OptionProps<Option, false>) {
         <components.Option {...props}>
             <div className="flex items-center justify-between gap-2">
                 <span className="truncate">{data.label}</span>
-                {isSelected && <Check size={14} className="shrink-0 text-slate-900" />}
+                {isSelected && <Check size={14} className="shrink-0 text-slate-900 dark:text-white" />}
             </div>
         </components.Option>
     );
@@ -156,6 +189,7 @@ export default function SearchableSelect({
     disabled = false,
     isClearable = true,
 }: SearchableSelectProps) {
+    const { isDark } = useTheme();
     const selected = options.find((o) => o.value === value) ?? null;
 
     return (
@@ -166,7 +200,7 @@ export default function SearchableSelect({
             placeholder={placeholder}
             isDisabled={disabled}
             isClearable={isClearable}
-            styles={buildStyles(error)}
+            styles={buildStyles(error, isDark)}
             components={{ DropdownIndicator, ClearIndicator, Option: CustomOption }}
             noOptionsMessage={() => 'Tidak ada hasil.'}
             isLoading={false}

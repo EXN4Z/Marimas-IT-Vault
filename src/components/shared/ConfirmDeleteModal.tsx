@@ -48,20 +48,20 @@ export default function ConfirmDeleteModal({
       aria-modal="true"
       aria-labelledby="confirm-delete-title"
     >
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md overflow-hidden transform transition-all animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
+      <div className="bg-white dark:bg-[#18181b] rounded-2xl shadow-2xl border border-slate-200/80 dark:border-[#2c2c31] w-full max-w-md overflow-hidden transform transition-all animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
         {/* Header with Icon badge and Close */}
         <div className="flex items-start justify-between p-6 pb-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-red-600 shadow-sm shrink-0">
-              <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
-                <Trash2 size={20} className="text-red-600" />
+            <div className="w-12 h-12 rounded-xl bg-red-50 dark:bg-rose-950/40 border border-red-100 dark:border-rose-900/40 flex items-center justify-center text-red-600 dark:text-rose-400 shadow-sm shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-red-500/10 dark:bg-rose-500/20 flex items-center justify-center">
+                <Trash2 size={20} className="text-red-600 dark:text-rose-400" />
               </div>
             </div>
             <div>
-              <h3 id="confirm-delete-title" className="text-lg font-semibold text-slate-900 leading-tight">
+              <h3 id="confirm-delete-title" className="text-lg font-semibold text-slate-900 dark:text-white leading-tight">
                 {modalTitle}
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">Konfirmasi tindakan penghapusan</p>
+              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">Konfirmasi tindakan penghapusan</p>
             </div>
           </div>
           <button
@@ -69,7 +69,7 @@ export default function ConfirmDeleteModal({
             onClick={onClose}
             disabled={loading}
             aria-label="Tutup modal"
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-40"
+            className="text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-zinc-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition disabled:opacity-40"
           >
             <X size={18} />
           </button>
@@ -78,25 +78,25 @@ export default function ConfirmDeleteModal({
         {/* Content Body */}
         <div className="px-6 py-2 space-y-4">
           {/* Target Card Highlight */}
-          <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3.5">
-            <div className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
+          <div className="bg-slate-50/80 dark:bg-[#222226] border border-slate-200/80 dark:border-[#2f2f35] rounded-xl p-3.5">
+            <div className="text-xs font-medium text-slate-400 dark:text-zinc-400 uppercase tracking-wider mb-1">
               Target yang akan dihapus
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm font-bold text-slate-900 break-words">{itemName}</span>
+              <span className="text-sm font-bold text-slate-900 dark:text-white break-words">{itemName}</span>
               {itemCode && (
-                <span className="font-mono text-xs font-semibold px-2 py-0.5 bg-slate-200/70 text-slate-700 rounded-md shrink-0">
+                <span className="font-mono text-xs font-semibold px-2 py-0.5 bg-slate-200/70 dark:bg-[#2e2e34] text-slate-700 dark:text-zinc-300 rounded-md shrink-0">
                   {itemCode}
                 </span>
               )}
             </div>
           </div>
 
-          <p className="text-sm text-slate-600 leading-relaxed">
+          <p className="text-sm text-slate-600 dark:text-zinc-300 leading-relaxed">
             {description || (
               <>
                 Apakah Anda yakin ingin menghapus data ini? Tindakan ini bersifat{' '}
-                <span className="font-semibold text-red-600">permanen</span> dan data yang telah dihapus tidak dapat
+                <span className="font-semibold text-red-600 dark:text-rose-400">permanen</span> dan data yang telah dihapus tidak dapat
                 dipulihkan kembali.
               </>
             )}
@@ -104,16 +104,16 @@ export default function ConfirmDeleteModal({
 
           {/* Warning Banner */}
           {warningMessage && (
-            <div className="flex items-start gap-2.5 p-3 bg-amber-50 border border-amber-200/80 rounded-xl text-xs text-amber-800">
-              <AlertTriangle size={16} className="shrink-0 mt-0.5 text-amber-600" />
+            <div className="flex items-start gap-2.5 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/50 rounded-xl text-xs text-amber-800 dark:text-amber-200">
+              <AlertTriangle size={16} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
               <div className="leading-snug">{warningMessage}</div>
             </div>
           )}
 
           {/* Error Banner */}
           {errorMessage && (
-            <div className="flex items-start gap-2.5 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 animate-[fadeIn_150ms_ease-out]">
-              <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-600" />
+            <div className="flex items-start gap-2.5 p-3 bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-900/50 rounded-xl text-xs text-red-700 dark:text-rose-300 animate-[fadeIn_150ms_ease-out]">
+              <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-600 dark:text-rose-400" />
               <div className="leading-snug">{errorMessage}</div>
             </div>
           )}
@@ -122,7 +122,7 @@ export default function ConfirmDeleteModal({
         </div>
 
         {/* Action Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 bg-slate-50/60 border-t border-slate-100 mt-4">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 bg-slate-50/60 dark:bg-[#141416] border-t border-slate-100 dark:border-zinc-800 mt-4">
           <ButtonCancel onClick={onClose} disabled={loading}>
             Batal
           </ButtonCancel>

@@ -19,8 +19,11 @@ import {
   Images,
   History,
   Tags,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import NotificationDropdown from './NotificationDropDown';
 
 interface NavChild {
@@ -192,6 +195,7 @@ interface AppLayoutProps {
 
 export default function AppLayout({ title, children }: AppLayoutProps = {}) {
   const { user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Override manual buat tiap dropdown: true = dipaksa kebuka, false = dipaksa
   // ketutup, gak ada entry = ikutin default (isParentActive). Sebelumnya ini
@@ -493,7 +497,7 @@ const handleLogout = async () => {
                       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
                         parentActive
                           ? 'bg-slate-900 text-white'
-                          : 'text-slate-600 hover:bg-slate-100'
+                          : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-200'
                       }`}
                     >
                       <Icon size={18} />
@@ -505,7 +509,7 @@ const handleLogout = async () => {
                     </button>
 
                     {open && (
-                      <div className="mt-1 ml-4 pl-3 border-l border-slate-200 flex flex-col gap-1">
+                      <div className="mt-1 ml-4 pl-3 border-l border-slate-200 dark:border-zinc-800 flex flex-col gap-1">
                         {visibleChildren.map((child, idx) => {
                           const ChildIcon = child.icon;
                           const active = isChildActive(child, idx === 0);
@@ -515,8 +519,8 @@ const handleLogout = async () => {
                               onClick={() => handleChildClick(child.path)}
                               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition ${
                                 active
-                                  ? 'bg-slate-100 text-slate-900 font-medium'
-                                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                                  ? 'bg-slate-100 text-slate-900 font-medium dark:bg-zinc-800 dark:text-white'
+                                  : 'text-slate-500 dark:text-zinc-400 hover:bg-slate-50 hover:text-slate-700 dark:hover:bg-zinc-800/40 dark:hover:text-zinc-200'
                               }`}
                             >
                               <ChildIcon size={15} />
@@ -547,8 +551,8 @@ const handleLogout = async () => {
                     isActive
                       ? 'bg-slate-900 text-white'
                       : isDisabled
-                      ? 'text-slate-300 cursor-not-allowed'
-                      : 'text-slate-600 hover:bg-slate-100'
+                      ? 'text-slate-300 dark:text-zinc-600 cursor-not-allowed'
+                      : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-200'
                   }`}
                 >
                   <Icon size={18} />
@@ -559,10 +563,10 @@ const handleLogout = async () => {
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-100">
+        <div className="p-4 border-t border-slate-100 dark:border-zinc-800">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 dark:hover:text-red-300 transition"
           >
             <LogOut size={18} />
             Sign Out
@@ -600,7 +604,7 @@ const handleLogout = async () => {
               onClick={() => setSearchOpen(true)}
               onFocus={() => setSearchOpen(true)}
               placeholder="Cari sesuatu..."
-              className="w-full pl-9 pr-4 py-2 bg-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+              className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-[#202024] border border-slate-200 dark:border-[#383842] rounded-lg text-sm transition focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-zinc-600 dark:focus:border-[#5c5c68]"
             />
 
             {searchOpen && (
@@ -631,7 +635,22 @@ const handleLogout = async () => {
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Tombol Toggle Mode Gelap / Terang */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              title={isDark ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'}
+              aria-label="Toggle Mode Gelap"
+              className="p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors flex items-center justify-center cursor-pointer"
+            >
+              {isDark ? (
+                <Sun size={20} className="text-amber-400 hover:rotate-45 transition-transform" />
+              ) : (
+                <Moon size={20} className="text-slate-600 hover:-rotate-12 transition-transform" />
+              )}
+            </button>
+
             <NotificationDropdown />
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center">

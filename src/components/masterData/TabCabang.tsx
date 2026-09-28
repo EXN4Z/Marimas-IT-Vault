@@ -300,126 +300,139 @@ export default function TabCabang() {
         </div>
       </div>
 
-      <div className="mb-4">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Cari nama, alamat, atau telepon cabang..."
-          className="sm:max-w-xs"
-        />
-      </div>
-
-      {loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col gap-3">
-              <div className="flex items-center gap-2.5">
-                <Skeleton className="w-9 h-9 rounded-lg shrink-0" />
-                <Skeleton className="h-4 w-2/3 rounded" />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Skeleton className="h-3 w-full rounded" />
-                <Skeleton className="h-3 w-1/2 rounded" />
-              </div>
-              <div className="pt-3 border-t border-slate-100">
-                <Skeleton className="h-5 w-20 rounded" />
-              </div>
-            </div>
-          ))}
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+        <div className="mb-6">
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Cari nama, alamat, atau telepon cabang..."
+            className="w-full"
+          />
         </div>
-      )}
 
-      {!loading && error && <p className="text-sm text-red-500 text-center py-12">{error}</p>}
-
-      {!loading && !error && cabangList.length === 0 && (
-        <div className="bg-white rounded-xl p-12 shadow-sm border border-slate-200 text-center">
-          <Building2 size={32} className="mx-auto text-slate-300 mb-3" />
-          <p className="text-sm text-slate-400">Belum ada data cabang.</p>
-        </div>
-      )}
-
-      {!loading && !error && cabangList.length > 0 && filteredCabang.length === 0 && (
-        <div className="bg-white rounded-xl p-12 shadow-sm border border-slate-200 text-center">
-          <Building2 size={32} className="mx-auto text-slate-300 mb-3" />
-          <p className="text-sm text-slate-400">Cabang tidak ditemukan.</p>
-        </div>
-      )}
-
-      {!loading && !error && filteredCabang.length > 0 && (
-        <>
+        {loading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {paginatedCabang.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col gap-3"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
-                    <Building2 size={16} className="text-slate-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-semibold text-slate-900 truncate">{item.nama}</h3>
-                  </div>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-slate-50/50 rounded-xl p-5 border border-slate-200 flex flex-col gap-3">
+                <div className="flex items-center gap-2.5">
+                  <Skeleton className="w-9 h-9 rounded-lg shrink-0" />
+                  <Skeleton className="h-4 w-2/3 rounded" />
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
-                    onClick={() => openEditModal(item)}
-                    title="Edit"
-                    className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDeleteTarget(item);
-                      setDeleteError('');
-                    }}
-                    title="Hapus"
-                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                <div className="flex flex-col gap-2">
+                  <Skeleton className="h-3 w-full rounded" />
+                  <Skeleton className="h-3 w-1/2 rounded" />
+                </div>
+                <div className="pt-3 border-t border-slate-200">
+                  <Skeleton className="h-5 w-20 rounded" />
                 </div>
               </div>
-
-              <div className="flex flex-col gap-2 text-xs text-slate-500">
-                <div className="flex items-start gap-2">
-                  <MapPin size={13} className="flex-shrink-0 mt-0.5 text-slate-400" />
-                  <span>{item.alamat || 'Alamat belum diisi'}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone size={13} className="flex-shrink-0 text-slate-400" />
-                  <span>{item.telepon || '-'}</span>
-                </div>
-              </div>
-
-              {item.link && (
-                <div className="flex items-center justify-end pt-3 border-t border-slate-100">
-                  <a
-                    href={item.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-sky-600 hover:text-sky-700"
-                  >
-                    <Map size={13} />
-                    Lihat Lokasi
-                  </a>
-                </div>
-              )}
-            </div>
             ))}
           </div>
+        )}
 
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            totalItems={filteredCabang.length}
-            itemLabel="cabang"
-          />
-        </>
-      )}
+        {!loading && error && <p className="text-sm text-red-500 text-center py-12">{error}</p>}
+
+        {!loading && !error && cabangList.length === 0 && (
+          <div className="rounded-xl p-12 text-center bg-slate-50 border border-dashed border-slate-200">
+            <Building2 size={32} className="mx-auto text-slate-300 mb-3" />
+            <p className="text-sm text-slate-400">Belum ada data cabang.</p>
+          </div>
+        )}
+
+        {!loading && !error && cabangList.length > 0 && filteredCabang.length === 0 && (
+          <div className="rounded-xl p-12 text-center bg-slate-50 border border-dashed border-slate-200">
+            <Building2 size={32} className="mx-auto text-slate-300 mb-3" />
+            <p className="text-sm text-slate-400">Cabang tidak ditemukan.</p>
+          </div>
+        )}
+
+        {!loading && !error && filteredCabang.length > 0 && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paginatedCabang.map((item) => (
+              <div
+                key={item.id}
+                className="bg-slate-50/60 rounded-xl p-5 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition flex flex-col gap-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center flex-shrink-0">
+                      <Building2 size={16} className="text-slate-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-semibold text-slate-900 truncate">{item.nama}</h3>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(item)}
+                      title="Edit"
+                      className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-white rounded-lg transition"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteTarget(item);
+                        setDeleteError('');
+                      }}
+                      title="Hapus"
+                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 text-xs text-slate-500">
+                  <div className="flex items-start gap-2">
+                    <MapPin size={13} className="flex-shrink-0 mt-0.5 text-slate-400" />
+                    <span>{item.alamat || 'Alamat belum diisi'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone size={13} className="flex-shrink-0 text-slate-400" />
+                    <span>{item.telepon || '-'}</span>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-200 mt-auto flex items-center justify-between gap-2">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-700">
+                    {item.pekerja_count ?? 0} Pegawai
+                  </span>
+
+                  {item.link && (
+                    <a
+                      href={item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-sky-600 hover:text-sky-700"
+                    >
+                      <Map size={13} />
+                      Lihat Lokasi
+                    </a>
+                  )}
+                </div>
+              </div>
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="mt-6 pt-4 border-t border-slate-100">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  totalItems={filteredCabang.length}
+                  itemLabel="cabang"
+                  className="pt-0 mt-0 border-t-0"
+                />
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {/* MODAL TAMBAH / EDIT */}
       {modalOpen && (

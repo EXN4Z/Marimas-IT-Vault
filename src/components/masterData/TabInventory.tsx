@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Download, Link2, Unlink, MapPin,} from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Download, Link2, Unlink, MapPin, RotateCcw } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
@@ -1073,6 +1073,18 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
             </div>
           )}
         </div>
+
+        {selectedKategoriIds.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setSelectedKategoriIds([])}
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 text-sm font-medium transition shadow-2xs shrink-0"
+            title="Reset filter kategori"
+          >
+            <RotateCcw size={14} />
+            <span>Reset Filter</span>
+          </button>
+        )}
       </div>
 
       <div className="border border-slate-200 rounded-lg overflow-hidden">
