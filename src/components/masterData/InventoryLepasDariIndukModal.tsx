@@ -71,7 +71,7 @@ export default function InventoryLepasDariIndukModal({ inventory, onClose, onSuc
         {/* Body */}
         <div className="px-6 py-5 overflow-y-auto space-y-4">
           {/* Info induk */}
-          <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl p-3.5 text-xs text-amber-900 leading-relaxed">
+          <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/50 rounded-xl p-3.5 text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
             Kelengkapan ini akan dilepas dari relasi <span className="font-semibold">{indukLabel}</span>. Setelah dilepas, item ini akan menjadi kelengkapan independen (tersedia).
           </div>
 
