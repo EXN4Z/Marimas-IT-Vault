@@ -84,7 +84,7 @@ const navItems: NavItem[] = [
     matchPrefix: '/laporan',
     restricted: true,
     children: [
-      { label: 'Export Data', icon: FileSpreadsheet, path: '/laporan' },
+      { label: 'Export Data', icon: FileSpreadsheet, path: '/laporan?tab=export_data' },
       { label: 'Foto Inventory', icon: Images, path: '/laporan?tab=foto_inventory', roles: ['admin'] },
       { label: 'Riwayat Inventory', icon: History, path: '/laporan?tab=riwayat_inventory' },
     ],
