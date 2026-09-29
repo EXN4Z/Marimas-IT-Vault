@@ -26,6 +26,22 @@ const roleStyles: Record<string, string> = {
 };
 const defaultRoleStyle = 'bg-slate-50 text-slate-700';
 
+// status kosong (data lama / belum ke-load) dianggap aktif, sama seperti
+// default di database.
+function StatusBadge({ status, small = false }: { status?: string; small?: boolean }) {
+    const nonaktif = status === 'nonaktif';
+    return (
+        <span
+            className={`inline-flex items-center gap-1.5 rounded-full font-semibold ${
+                small ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs'
+            } ${nonaktif ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700'}`}
+        >
+            <span className={`w-1.5 h-1.5 rounded-full ${nonaktif ? 'bg-slate-400' : 'bg-emerald-500'}`} />
+            {nonaktif ? 'Nonaktif' : 'Aktif'}
+        </span>
+    );
+}
+
 const roleLabels: Record<string, string> = {
     admin: 'Admin',
     user: 'User',
@@ -268,7 +284,7 @@ export default function TabKaryawan() {
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <tbody>
-                                        <SkeletonTable columns={5} rows={6} />
+                                        <SkeletonTable columns={6} rows={6} />
                                     </tbody>
                                 </table>
                             </div>
@@ -291,6 +307,7 @@ export default function TabKaryawan() {
                                                 <th className="px-6 py-3.5 font-medium">Email & Kontak</th>
                                                 <th className="px-6 py-3.5 font-medium">Departemen</th>
                                                 <th className="px-6 py-3.5 font-medium">Role</th>
+                                                <th className="px-6 py-3.5 font-medium">Status</th>
                                                 <th className="px-6 py-3.5 font-medium text-right">Aksi</th>
                                             </tr>
                                         </thead>
@@ -303,14 +320,7 @@ export default function TabKaryawan() {
                                                                 {initials(user.name)}
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <p className="font-semibold text-slate-900 truncate">
-                                                                    {user.name}
-                                                                    {user.status === 'nonaktif' && (
-                                                                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200 text-slate-600 align-middle">
-                                                                            Nonaktif
-                                                                        </span>
-                                                                    )}
-                                                                </p>
+                                                                <p className="font-semibold text-slate-900 truncate">{user.name}</p>
                                                                 <p className="text-xs text-slate-400 truncate">{user.nik || 'NIK belum diatur'}</p>
                                                             </div>
                                                         </div>
@@ -328,6 +338,9 @@ export default function TabKaryawan() {
                                                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${roleStyles[user.role ?? ''] || defaultRoleStyle}`}>
                                                             {roleLabels[user.role ?? ''] || user.role || '-'}
                                                         </span>
+                                                    </td>
+                                                    <td className="px-6 py-3.5">
+                                                        <StatusBadge status={user.status} />
                                                     </td>
                                                     <td className="px-6 py-3.5">
                                                         <div className="flex items-center justify-end gap-1">
@@ -377,14 +390,7 @@ export default function TabKaryawan() {
                                                         {initials(user.name)}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <p className="text-sm font-semibold text-slate-900 truncate">
-                                                            {user.name}
-                                                            {user.status === 'nonaktif' && (
-                                                                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200 text-slate-600 align-middle">
-                                                                    Nonaktif
-                                                                </span>
-                                                            )}
-                                                        </p>
+                                                        <p className="text-sm font-semibold text-slate-900 truncate">{user.name}</p>
                                                         <p className="text-xs text-slate-400 truncate">{user.nik || user.email || '-'}</p>
                                                     </div>
                                                 </div>
@@ -393,9 +399,12 @@ export default function TabKaryawan() {
                                                 </span>
                                             </div>
                                             <div className="flex items-center justify-between pt-1">
-                                                <span className="text-xs text-slate-500">
-                                                    {user.departemen?.nama || 'Departemen belum diatur'}
-                                                </span>
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <StatusBadge status={user.status} small />
+                                                    <span className="text-xs text-slate-500 truncate">
+                                                        {user.departemen?.nama || 'Departemen belum diatur'}
+                                                    </span>
+                                                </div>
                                                 <div className="flex items-center gap-1">
                                                     <button
                                                         type="button"
