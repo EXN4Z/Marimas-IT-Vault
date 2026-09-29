@@ -13,6 +13,11 @@ const ROLE_LABEL: Record<string | number, string> = {
   3: 'Admin',
 };
 
+const STATUS_LABEL: Record<string, string> = {
+  aktif: 'Aktif',
+  nonaktif: 'Nonaktif',
+};
+
 // Sama pola dengan AsetExportModal — daftar kolom yang bisa diexport,
 // urutan di sini = urutan checkbox & urutan kolom di file hasil export.
 interface ExportColumn {
@@ -29,15 +34,19 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { key: 'phone', label: 'Telepon', defaultChecked: false, get: (k) => k.phone || '-' },
   { key: 'departemen', label: 'Departemen', defaultChecked: true, get: (k) => k.departemen?.nama || '-' },
   { key: 'lokasi_kantor', label: 'Lokasi Kantor', defaultChecked: false, get: (k) => k.lokasi_kantor?.nama || '-' },
-    {
+  {
     key: 'tanggal_masuk',
     label: 'Tanggal Masuk',
     defaultChecked: true,
     get: (k) => (k.tanggal_masuk ? formatTanggalId(k.tanggal_masuk) : '-'),
-    },
-  { key: 'role_id', label: 'Role', defaultChecked: true, get: (k) => ROLE_LABEL[k.role_id] ?? String(k.role_id ?? '-'),
-    
-  }
+  },
+  { key: 'role_id', label: 'Role', defaultChecked: true, get: (k) => ROLE_LABEL[k.role_id] ?? String(k.role_id ?? '-') },
+  {
+    key: 'status',
+    label: 'Status',
+    defaultChecked: true,
+    get: (k) => (k.status ? STATUS_LABEL[k.status] ?? k.status : '-'),
+  },
 ];
 
 type FileType = 'excel' | 'pdf';
