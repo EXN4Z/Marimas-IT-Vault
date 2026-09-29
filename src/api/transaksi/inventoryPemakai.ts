@@ -9,6 +9,7 @@ export interface KaryawanUser {
   role?: string;
   nik?: string | null;
   departemen?: { id: number; nama: string } | null;
+  status?: 'aktif' | 'nonaktif';
 }
 
 export interface InventoryPemakai {

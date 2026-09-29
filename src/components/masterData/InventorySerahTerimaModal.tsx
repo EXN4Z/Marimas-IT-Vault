@@ -74,10 +74,13 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
   const handleSubmit = async () => {
     const newErrors: { penerima?: string; foto?: string } = {};
 
-    if (!selected?.nik) {
-      newErrors.penerima = selected
-        ? 'Karyawan yang dipilih belum memiliki data NIK lengkap.'
-        : 'Wajib memilih karyawan penerima unit.';
+    // Karyawan nonaktif tidak boleh meminjam inventory
+    if (!selected) {
+      newErrors.penerima = 'Wajib memilih karyawan penerima unit.';
+    } else if (selected.status === 'nonaktif') {
+      newErrors.penerima = 'Karyawan nonaktif tidak dapat meminjam inventory.';
+    } else if (!selected.nik) {
+      newErrors.penerima = 'Karyawan yang dipilih belum memiliki data NIK lengkap.';
     }
 
     if (fotoPenerimaan.length < MIN_FOTO) {
@@ -109,6 +112,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
       onSuccess([{ inventory, pemakai }]);
     } catch (err: any) {
       const msg =
+        err.response?.data?.errors?.user_id?.[0] ||
         err.response?.data?.errors?.foto_penerimaan?.[0] ||
         err.response?.data?.message ||
         'Gagal mencatat serah-terima. Coba lagi.';
@@ -182,7 +186,9 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
                   {searching && <p className="text-xs text-slate-400 px-3.5 py-3">Mencari data...</p>}
                   {!searching &&
                     results.map((u) => {
-                      const disabled = !u.nik;
+                      const noNik = !u.nik;
+                      const inactive = u.status === 'nonaktif';
+                      const disabled = noNik || inactive;
                       return (
                         <button
                           key={u.id}
@@ -195,7 +201,11 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
                             <p className="font-medium text-slate-900">{u.name}</p>
                             {u.nik && <p className="text-xs text-slate-500 font-mono">NIK: {u.nik}</p>}
                           </div>
-                          {disabled && <span className="text-xs text-amber-600 font-medium">Belum ada NIK</span>}
+                          {inactive ? (
+                            <span className="text-xs text-red-600 font-medium">Nonaktif</span>
+                          ) : noNik ? (
+                            <span className="text-xs text-amber-600 font-medium">Belum ada NIK</span>
+                          ) : null}
                         </button>
                       );
                     })}
