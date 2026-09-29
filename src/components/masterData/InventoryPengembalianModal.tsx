@@ -19,6 +19,9 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// minimal foto bukti; batas maksimalnya sengaja disamakan dengan minimal
+const MIN_FOTO = 3;
+
 export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin, onClose, onSuccess }: InventoryPengembalianModalProps) {
   const [kodeStruk, setKodeStruk] = useState('');
   const [tanggalPengembalian, setTanggalPengembalian] = useState(todayIso());
@@ -33,8 +36,8 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
     if (!kodeStruk.trim()) {
       newErrors.kodeStruk = 'Kode struk penerimaan fisik wajib diisi sebagai bukti sah.';
     }
-    if (fotoPengembalian.length !== 3) {
-      newErrors.foto = `Wajib melampirkan tepat 3 foto kondisi unit saat ini (saat ini: ${fotoPengembalian.length} foto).`;
+    if (fotoPengembalian.length < MIN_FOTO) {
+      newErrors.foto = `Wajib melampirkan minimal ${MIN_FOTO} foto kondisi unit saat ini (saat ini: ${fotoPengembalian.length} foto).`;
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -157,8 +160,9 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
                 setFotoPengembalian(files);
                 if (errors.foto) setErrors((prev) => ({ ...prev, foto: '' }));
               }}
-              max={3}
-              label="Foto Bukti Kondisi Inventory (Wajib 3 Foto)"
+              min={MIN_FOTO}
+              max={MIN_FOTO}
+              label="Foto Bukti Kondisi Inventory"
             />
             {errors.foto && (
               <p className="mt-1.5 text-xs text-red-600 font-medium">{errors.foto}</p>
