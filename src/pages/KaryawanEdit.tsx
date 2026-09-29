@@ -32,6 +32,7 @@ interface User {
     lokasi_kantor_id?: number | null;
     perusahaan_id?: number | null;
     tanggal_masuk: string | null;
+    status?: 'aktif' | 'nonaktif';
 }
 
 interface FormState {
@@ -44,6 +45,7 @@ interface FormState {
     lokasi_kantor_id: string;
     perusahaan_id: string;
     tanggal_masuk: string;
+    status: 'aktif' | 'nonaktif';
 }
 
 interface FieldErrors {
@@ -60,11 +62,17 @@ const initialForm: FormState = {
     lokasi_kantor_id: '',
     perusahaan_id: '',
     tanggal_masuk: '',
+    status: 'aktif',
 };
 
 // Label tampilan buat tiap role. Kalau ada role baru yang namanya gak ada
 // di sini, fallback ke nama aslinya (lihat roleLabel() di bawah) -- jadi
 // gak akan hilang, cuma huruf besar/kecilnya ngikut apa adanya dari DB.
+const STATUS_OPTIONS = [
+    { value: 'aktif', label: 'Aktif' },
+    { value: 'nonaktif', label: 'Nonaktif' },
+];
+
 const ROLE_DISPLAY_LABEL: Record<string, string> = {
     admin: 'Admin',
     user: 'User',
@@ -119,6 +127,7 @@ export default function EditKaryawanPage() {
                     lokasi_kantor_id: u.lokasi_kantor_id ? String(u.lokasi_kantor_id) : '',
                     perusahaan_id: u.perusahaan_id ? String(u.perusahaan_id) : '',
                     tanggal_masuk: u.tanggal_masuk ?? '',
+                    status: u.status === 'nonaktif' ? 'nonaktif' : 'aktif',
                 });
             })
             .catch(() => {
@@ -189,6 +198,7 @@ export default function EditKaryawanPage() {
                 perusahaan_id: form.perusahaan_id || null,
                 lokasi_kantor_id: form.lokasi_kantor_id || null,
                 tanggal_masuk: form.tanggal_masuk || null,
+                status: form.status,
             };
             await api.put(`/karyawan/${id}`, payload);
             toast.success('Perubahan berhasil disimpan.');
@@ -341,6 +351,15 @@ export default function EditKaryawanPage() {
                             value={form.tanggal_masuk}
                             onChange={(v) => handleChange('tanggal_masuk', v)}
                             error={!!errors.tanggal_masuk}
+                        />
+                    </Field>
+
+                    <Field label="Status Akun" error={errors.status?.[0]}>
+                        <Select
+                            value={form.status}
+                            onChange={(v) => handleChange('status', v as FormState['status'])}
+                            error={!!errors.status}
+                            options={STATUS_OPTIONS}
                         />
                     </Field>
 

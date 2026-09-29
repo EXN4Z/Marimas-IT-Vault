@@ -303,7 +303,14 @@ export default function TabKaryawan() {
                                                                 {initials(user.name)}
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <p className="font-semibold text-slate-900 truncate">{user.name}</p>
+                                                                <p className="font-semibold text-slate-900 truncate">
+                                                                    {user.name}
+                                                                    {user.status === 'nonaktif' && (
+                                                                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200 text-slate-600 align-middle">
+                                                                            Nonaktif
+                                                                        </span>
+                                                                    )}
+                                                                </p>
                                                                 <p className="text-xs text-slate-400 truncate">{user.nik || 'NIK belum diatur'}</p>
                                                             </div>
                                                         </div>
@@ -370,7 +377,14 @@ export default function TabKaryawan() {
                                                         {initials(user.name)}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <p className="text-sm font-semibold text-slate-900 truncate">{user.name}</p>
+                                                        <p className="text-sm font-semibold text-slate-900 truncate">
+                                                            {user.name}
+                                                            {user.status === 'nonaktif' && (
+                                                                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200 text-slate-600 align-middle">
+                                                                    Nonaktif
+                                                                </span>
+                                                            )}
+                                                        </p>
                                                         <p className="text-xs text-slate-400 truncate">{user.nik || user.email || '-'}</p>
                                                     </div>
                                                 </div>

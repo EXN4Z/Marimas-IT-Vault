@@ -28,6 +28,7 @@ export interface Karyawan {
   tanggal_masuk: string
   role_id: number
   role: string
+  status?: 'aktif' | 'nonaktif'
   created_at?: string
   updated_at?: string
 }
