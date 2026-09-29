@@ -36,7 +36,11 @@ function StatusBadge({ status, small = false }: { status?: string; small?: boole
                 small ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs'
             } ${nonaktif ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700'}`}
         >
-            <span className={`w-1.5 h-1.5 rounded-full ${nonaktif ? 'bg-slate-400' : 'bg-emerald-500'}`} />
+            {/* Ukuran titik nonaktif sengaja w-[7px] h-[7px], BUKAN w-1.5 h-1.5:
+                di index.css ada rule dark mode yang maksa semua .w-1.5.h-1.5.rounded-full
+                jadi hijau (!important) buat indikator "online", jadi titik nonaktif
+                ikut ke-hijau-in kalau pakai ukuran itu. */}
+            <span className={nonaktif ? 'w-[7px] h-[7px] rounded-full bg-red-500' : 'w-1.5 h-1.5 rounded-full bg-emerald-500'} />
             {nonaktif ? 'Nonaktif' : 'Aktif'}
         </span>
     );
