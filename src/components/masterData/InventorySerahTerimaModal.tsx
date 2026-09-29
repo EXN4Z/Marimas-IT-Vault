@@ -14,6 +14,9 @@ interface InventorySerahTerimaModalProps {
   onSuccess: (results: { inventory: Inventory; pemakai: InventoryPemakai }[]) => void;
 }
 
+// minimal foto bukti; batas maksimalnya sengaja disamakan dengan minimal
+const MIN_FOTO = 3;
+
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -77,8 +80,8 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
         : 'Wajib memilih karyawan penerima unit.';
     }
 
-    if (fotoPenerimaan.length !== 3) {
-      newErrors.foto = `Wajib melampirkan tepat 3 foto bukti serah terima (saat ini: ${fotoPenerimaan.length} foto).`;
+    if (fotoPenerimaan.length < MIN_FOTO) {
+      newErrors.foto = `Wajib melampirkan minimal ${MIN_FOTO} foto bukti serah terima (saat ini: ${fotoPenerimaan.length} foto).`;
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -251,8 +254,9 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
                 setFotoPenerimaan(files);
                 if (errors.foto) setErrors((prev) => ({ ...prev, foto: '' }));
               }}
-              max={3}
-              label="Foto Bukti Serah Terima (Wajib 3 Foto)"
+              min={MIN_FOTO}
+              max={MIN_FOTO}
+              label="Foto Bukti Serah Terima"
             />
             {errors.foto && (
               <p className="mt-1.5 text-xs text-red-600 font-medium">{errors.foto}</p>

@@ -5,10 +5,12 @@ interface InventoryFotoUploadProps {
   files: File[];
   onChange: (files: File[]) => void;
   max?: number;
+  // kalau diisi, hint jadi "(minimal N foto)" dan bukan "(maks. N foto)"
+  min?: number;
   label?: string;
 }
 
-export default function InventoryFotoUpload({ files, onChange, max = 3, label = 'Foto Bukti' }: InventoryFotoUploadProps) {
+export default function InventoryFotoUpload({ files, onChange, max = 3, min, label = 'Foto Bukti' }: InventoryFotoUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   // preview URL dibuat sekali per file (bukan tiap render), dan di-revoke
@@ -33,7 +35,9 @@ export default function InventoryFotoUpload({ files, onChange, max = 3, label = 
     <div>
       <label className="block text-sm font-medium text-slate-700 mb-1">
         {label} <span className="text-red-500">*</span>
-        <span className="text-xs text-slate-400 font-normal"> (maks. {max} foto)</span>
+        <span className="text-xs text-slate-400 font-normal">
+          {min !== undefined ? ` (minimal ${min} foto)` : ` (maks. ${max} foto)`}
+        </span>
       </label>
       <div className="flex flex-wrap gap-2">
         {files.map((_, idx) => (
