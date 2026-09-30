@@ -36,8 +36,8 @@ export interface InventoryPenanganan {
   catatan: string | null;
   total_biaya?: number;
   durasi_hari?: number | null;
-  // total durasi lapor -> selesai dalam jam; format tampilan pakai formatDurasiJam()
-  durasi_jam?: number | null;
+  // total durasi lapor -> selesai dalam detik; format tampilan pakai formatDurasi()
+  durasi_detik?: number | null;
   inventory?: Inventory;
   pemakai?: PenangananPemakai | null;
   // siapa yang BENERAN submit laporan (bisa admin lapor saat audit gudang,

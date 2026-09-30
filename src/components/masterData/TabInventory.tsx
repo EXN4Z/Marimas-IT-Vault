@@ -21,7 +21,7 @@ import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 // kategori gak lagi nentuin bentuk export.
 import { useAuth } from '../../context/AuthContext';
 import { printStruk } from '../../utils/printStruk';
-import { namaPemakai, namaPelaporPenanganan, userIdPemakai, formatJenisKerusakan, formatDurasiJam } from './inventoryHelpers';
+import { namaPemakai, namaPelaporPenanganan, userIdPemakai, formatJenisKerusakan, formatDurasi } from './inventoryHelpers';
 import {
   getInventory,
   getInventoryById,
@@ -410,7 +410,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         tanggal: formatTanggalId(p.tanggal_selesai),
         rows: [
           { label: 'Hasil', value: 'Rusak Berat (tidak bisa diperbaiki)' },
-          { label: 'Durasi', value: formatDurasiJam(p.durasi_jam) },
+          { label: 'Durasi', value: formatDurasi(p.durasi_detik) },
         ],
         catatan: p.catatan,
       });
@@ -428,7 +428,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         { label: 'Keluhan', value: p.keluhan },
         { label: 'Hasil', value: p.hasil || '-' },
         { label: 'Tanggal Lapor', value: formatTanggalId(p.tanggal_lapor) },
-        { label: 'Durasi', value: formatDurasiJam(p.durasi_jam) },
+        { label: 'Durasi', value: formatDurasi(p.durasi_detik) },
         { label: 'Biaya Komponen', value: formatRupiah(p.biaya_komponen) },
         { label: 'Biaya Jasa', value: formatRupiah(p.harga_jasa) },
       ],
@@ -1911,7 +1911,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                                       Lapor {formatTanggalId(p.tanggal_lapor)}
                                       {p.tanggal_diterima ? ` · Diterima ${formatTanggalId(p.tanggal_diterima)}` : ''}
                                       {p.tanggal_selesai ? ` · Selesai ${formatTanggalId(p.tanggal_selesai)}` : ''}
-                                      {p.durasi_jam != null ? ` · ${formatDurasiJam(p.durasi_jam)} pengerjaan` : ''}
+                                      {p.durasi_detik != null ? ` · ${formatDurasi(p.durasi_detik)} pengerjaan` : ''}
                                     </p>
                                     {(p.harga_jasa != null || p.biaya_komponen != null) && (
                                       <p>

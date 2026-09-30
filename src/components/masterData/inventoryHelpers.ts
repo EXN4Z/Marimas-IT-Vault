@@ -98,17 +98,23 @@ export function formatJenisKerusakan(value: string | null | undefined): string {
   return JENIS_KERUSAKAN_LABEL_MAP[value] || value;
 }
 /**
- * Format durasi penanganan dari total jam jadi "1d 2h".
- * - < 1 jam      -> "< 1h"
- * - < 24 jam     -> "5h"
- * - >= 24 jam    -> "1d 2h" (atau "2d" kalau pas kelipatan 24 jam)
- * `jam` null/undefined -> "-" (belum selesai).
+ * Format durasi penanganan dari total detik, pakai 2 satuan terbesar:
+ * - < 60 detik   -> "45 detik"
+ * - < 1 jam      -> "12 menit" / "12 menit 30 detik"
+ * - < 1 hari     -> "3 jam" / "3 jam 20 menit"
+ * - >= 1 hari    -> "2 hari" / "1 hari 2 jam"
+ * Satuan kedua disembunyikan kalau 0. `detik` null/undefined -> "-".
  */
-export function formatDurasiJam(jam: number | null | undefined): string {
-  if (jam == null) return '-';
-  if (jam < 1) return '< 1h';
-  const hari = Math.floor(jam / 24);
-  const sisaJam = jam % 24;
-  if (hari === 0) return `${sisaJam}h`;
-  return sisaJam === 0 ? `${hari}d` : `${hari}d ${sisaJam}h`;
+export function formatDurasi(detik: number | null | undefined): string {
+  if (detik == null) return '-';
+  const total = Math.max(0, Math.floor(detik));
+  const d = Math.floor(total / 86400);
+  const h = Math.floor((total % 86400) / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const gabung = (a: string, b: string) => (b ? `${a} ${b}` : a);
+  if (d > 0) return gabung(`${d} hari`, h ? `${h} jam` : '');
+  if (h > 0) return gabung(`${h} jam`, m ? `${m} menit` : '');
+  if (m > 0) return gabung(`${m} menit`, s ? `${s} detik` : '');
+  return `${s} detik`;
 }
