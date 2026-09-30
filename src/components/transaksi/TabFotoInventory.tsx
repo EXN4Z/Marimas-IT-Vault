@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Images, X, ChevronLeft, ChevronRight, HandCoins, Undo2, Wrench, Eye, Package } from 'lucide-react';
+import { Images, X, ChevronLeft, ChevronRight, HandCoins, Undo2, Wrench, Eye, Package, ImageOff } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import ScrollableTabBar, { type ScrollableTabItem } from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
+import Tooltip from '../shared/Tooltip';
 import { getFotoDasarInventory, type Inventory } from '../../api/masterData/inventory';
 import { getFotoPemakaiInventory, type FotoPemakaiEntry } from '../../api/transaksi/inventoryPemakai';
 import { getFotoKerusakanInventory, type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
@@ -11,6 +12,19 @@ import { SkeletonTable } from '../shared/skeleton';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 const PER_PAGE = 10;
+
+interface DetailRow {
+  label: string;
+  // null/undefined/'' = baris disembunyikan (mis. merk belum diisi)
+  value: string | null | undefined;
+}
+
+interface FotoDetail {
+  judul: string;
+  subjudul: string;
+  photos: string[];
+  rows: DetailRow[];
+}
 
 type FotoTab = 'inventory' | 'peminjaman' | 'pengembalian' | 'rusak';
 
@@ -56,7 +70,7 @@ export default function TabFotoInventory() {
   const [pengembalian, setPengembalian] = useState<TabState<FotoPemakaiEntry>>(initialTabState);
   const [rusak, setRusak] = useState<TabState<InventoryPenanganan>>(initialTabState);
 
-  const [modalPhotos, setModalPhotos] = useState<{ photos: string[]; index: number } | null>(null);
+  const [detail, setDetail] = useState<FotoDetail | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -153,20 +167,22 @@ export default function TabFotoInventory() {
     }
   };
 
-  const openModal = (photos: string[], index = 0) => setModalPhotos({ photos, index });
-  const closeModal = () => setModalPhotos(null);
-  const nextPhoto = () =>
-    setModalPhotos((m) => (m ? { ...m, index: (m.index + 1) % m.photos.length } : m));
-  const prevPhoto = () =>
-    setModalPhotos((m) => (m ? { ...m, index: (m.index - 1 + m.photos.length) % m.photos.length } : m));
+  const bukaDetail = (d: FotoDetail) => setDetail(d);
 
-  const inventoryLabel = (inventory?: { kode_inventory: string; nama: string | null } | null) => (
-    <>
-      <p className="font-medium text-slate-800">{inventory?.kode_inventory || '-'}</p>
-      <p className="text-xs text-slate-400 truncate max-w-[160px]">
-        {inventory?.nama || '-'}
-      </p>
-    </>
+  const tombolDetail = (onClick: () => void) => (
+    <button
+      onClick={onClick}
+      title="Detail"
+      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+    >
+      <Eye size={14} />
+      Detail
+    </button>
+  );
+
+  // 1 baris: kode saja. Nama unit, merk, dll dipindah ke modal Detail.
+  const inventoryLabel = (inventory?: { kode_inventory: string } | null) => (
+    <p className="font-medium text-slate-800">{inventory?.kode_inventory || '-'}</p>
   );
 
   const renderTable = () => {
@@ -218,17 +234,22 @@ export default function TabFotoInventory() {
                     <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(null, item.tanggal_input)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end">
-                        {item.foto ? (
-                          <button
-                            onClick={() => openModal([item.foto as string], 0)}
-                            title="Lihat Foto"
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                          >
-                            <Eye size={14} />
-                            Lihat Foto
-                          </button>
-                        ) : (
-                          <span className="text-xs text-slate-300">-</span>
+                        {tombolDetail(() =>
+                          bukaDetail({
+                            judul: item.kode_inventory,
+                            subjudul: 'Foto Inventory',
+                            photos: item.foto ? [item.foto] : [],
+                            rows: [
+                              { label: 'Nama', value: item.nama || '-' },
+                              { label: 'Kategori', value: item.kategori?.nama },
+                              { label: 'Merk', value: item.merk },
+                              { label: 'Type', value: item.type },
+                              { label: 'Warna', value: item.warna },
+                              { label: 'Serial Number', value: item.serial_number },
+                              { label: 'Tgl Input', value: formatTanggalWaktuId(null, item.tanggal_input) },
+                              { label: 'Keterangan', value: item.keterangan },
+                            ],
+                          })
                         )}
                       </div>
                     </td>
@@ -294,26 +315,31 @@ export default function TabFotoInventory() {
                   return (
                     <tr key={e.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                       <td className="px-4 py-3 whitespace-nowrap">{inventoryLabel(e.inventory)}</td>
-                      <td className="px-4 py-3 text-slate-600 max-w-[160px]">
-                        <p className="truncate" title={namaPemakai({ user: e.user })}>
-                          {namaPemakai({ user: e.user })}
-                        </p>
+                      <td className="px-4 py-3 text-slate-600">
+                        <div className="max-w-[160px]">
+                          <Tooltip content={namaPemakai({ user: e.user })}>
+                            <p className="truncate">{namaPemakai({ user: e.user })}</p>
+                          </Tooltip>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(waktuAkurat, tanggal)}</td>
                       <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{foto?.length ?? 0} foto</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end">
-                          {foto && foto.length > 0 ? (
-                            <button
-                              onClick={() => openModal(foto, 0)}
-                              title="Lihat Foto"
-                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                            >
-                              <Eye size={14} />
-                              Lihat Foto
-                            </button>
-                          ) : (
-                            <span className="text-xs text-slate-300">-</span>
+                          {tombolDetail(() =>
+                            bukaDetail({
+                              judul: e.inventory?.kode_inventory || '-',
+                              subjudul: activeTab === 'peminjaman' ? 'Foto Peminjaman' : 'Foto Pengembalian',
+                              photos: foto ?? [],
+                              rows: [
+                                { label: 'Nama', value: e.inventory?.nama || '-' },
+                                { label: 'Merk', value: e.inventory?.merk },
+                                { label: 'Type', value: e.inventory?.type },
+                                { label: 'Pemakai', value: namaPemakai({ user: e.user }) },
+                                { label: tanggalLabel, value: formatTanggalWaktuId(waktuAkurat, tanggal) },
+                                { label: 'Jumlah Foto', value: `${foto?.length ?? 0} foto` },
+                              ],
+                            })
                           )}
                         </div>
                       </td>
@@ -370,27 +396,34 @@ export default function TabFotoInventory() {
               {rusak.entries.map((p) => (
                 <tr key={p.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                   <td className="px-4 py-3 whitespace-nowrap">{inventoryLabel(p.inventory)}</td>
-                  <td className="px-4 py-3 text-slate-600 max-w-[160px]">
-                    <p className="truncate" title={namaPelaporPenanganan(p)}>{namaPelaporPenanganan(p)}</p>
+                  <td className="px-4 py-3 text-slate-600">
+                    <div className="max-w-[160px]">
+                      <Tooltip content={namaPelaporPenanganan(p)}>
+                        <p className="truncate">{namaPelaporPenanganan(p)}</p>
+                      </Tooltip>
+                    </div>
                   </td>
-                  <td className="px-4 py-3 text-slate-600 max-w-[200px]">
-                    <p className="font-medium text-slate-800 truncate">{formatJenisKerusakan(p.jenis_kerusakan)}</p>
-                    <p className="text-xs text-slate-400 truncate">{p.keluhan}</p>
+                  <td className="px-4 py-3 text-slate-800 font-medium whitespace-nowrap">
+                    {formatJenisKerusakan(p.jenis_kerusakan)}
                   </td>
                   <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(p.lapor_at, p.tanggal_lapor)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end">
-                      {p.foto ? (
-                        <button
-                          onClick={() => openModal([p.foto as string], 0)}
-                          title="Lihat Foto"
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                        >
-                          <Eye size={14} />
-                          Lihat Foto
-                        </button>
-                      ) : (
-                        <span className="text-xs text-slate-300">-</span>
+                      {tombolDetail(() =>
+                        bukaDetail({
+                          judul: p.inventory?.kode_inventory || '-',
+                          subjudul: 'Foto Kerusakan',
+                          photos: p.foto ? [p.foto] : [],
+                          rows: [
+                            { label: 'Nama', value: p.inventory?.nama || '-' },
+                            { label: 'Merk', value: p.inventory?.merk },
+                            { label: 'Type', value: p.inventory?.type },
+                            { label: 'Pelapor', value: namaPelaporPenanganan(p) },
+                            { label: 'Kerusakan', value: formatJenisKerusakan(p.jenis_kerusakan) },
+                            { label: 'Keluhan', value: p.keluhan },
+                            { label: 'Tgl Lapor', value: formatTanggalWaktuId(p.lapor_at, p.tanggal_lapor) },
+                          ],
+                        })
                       )}
                     </div>
                   </td>
@@ -436,35 +469,116 @@ export default function TabFotoInventory() {
         />
       )}
 
-      {/* ==== Modal lihat foto — fixed di tengah layar, terpisah dari
-           halaman list di belakangnya ==== */}
-      {modalPhotos && (
-        <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center px-4">
-          <button onClick={closeModal} className="absolute top-5 right-5 text-white/70 hover:text-white">
-            <X size={24} />
+      {detail && <FotoDetailModal detail={detail} onClose={() => setDetail(null)} />}
+    </div>
+  );
+}
+
+// Modal detail: slider foto (panah kiri/kanan + titik indikator + counter)
+// di atas, keterangan lengkap di bawah. Keyboard: Esc tutup, panah geser foto.
+function FotoDetailModal({ detail, onClose }: { detail: FotoDetail; onClose: () => void }) {
+  const [index, setIndex] = useState(0);
+  const total = detail.photos.length;
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      else if (total > 1 && e.key === 'ArrowLeft') setIndex((i) => (i - 1 + total) % total);
+      else if (total > 1 && e.key === 'ArrowRight') setIndex((i) => (i + 1) % total);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [total, onClose]);
+
+  const rows = detail.rows.filter((r) => r.value != null && String(r.value).trim() !== '');
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-white dark:bg-[#18181b] rounded-2xl shadow-2xl border border-slate-200/80 dark:border-zinc-800 w-full max-w-lg max-h-[92vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
+          <div className="min-w-0">
+            <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100 truncate">{detail.judul}</h3>
+            <p className="text-xs text-slate-400 dark:text-zinc-500">{detail.subjudul}</p>
+          </div>
+          <button
+            onClick={onClose}
+            title="Tutup"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-zinc-800 transition shrink-0"
+          >
+            <X size={18} />
           </button>
-          {modalPhotos.photos.length > 1 && (
-            <button onClick={prevPhoto} className="absolute left-4 text-white/70 hover:text-white p-2">
-              <ChevronLeft size={28} />
-            </button>
+        </div>
+
+        {/* Slider foto */}
+        <div className="relative bg-slate-100 dark:bg-zinc-900 h-64 sm:h-80 flex items-center justify-center">
+          {total > 0 ? (
+            <img
+              key={detail.photos[index]}
+              src={STORAGE_BASE_URL + detail.photos[index]}
+              alt={`Foto ${index + 1}`}
+              className="max-h-full max-w-full object-contain"
+            />
+          ) : (
+            <div className="flex flex-col items-center text-slate-400 dark:text-zinc-500">
+              <ImageOff size={28} className="mb-1.5" />
+              <p className="text-xs">Tidak ada foto</p>
+            </div>
           )}
-          <img
-            src={STORAGE_BASE_URL + modalPhotos.photos[modalPhotos.index]}
-            alt=""
-            className="max-h-[85vh] max-w-[85vw] object-contain rounded-lg"
-          />
-          {modalPhotos.photos.length > 1 && (
-            <button onClick={nextPhoto} className="absolute right-4 text-white/70 hover:text-white p-2">
-              <ChevronRight size={28} />
-            </button>
-          )}
-          {modalPhotos.photos.length > 1 && (
-            <p className="absolute bottom-6 text-white/70 text-xs">
-              {modalPhotos.index + 1} / {modalPhotos.photos.length}
-            </p>
+
+          {total > 1 && (
+            <>
+              <button
+                onClick={() => setIndex((i) => (i - 1 + total) % total)}
+                title="Foto sebelumnya"
+                className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/40 hover:bg-black/60 text-white transition"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={() => setIndex((i) => (i + 1) % total)}
+                title="Foto berikutnya"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/40 hover:bg-black/60 text-white transition"
+              >
+                <ChevronRight size={20} />
+              </button>
+              <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/50 text-white text-[11px]">
+                {index + 1} / {total}
+              </span>
+            </>
           )}
         </div>
-      )}
+
+        {/* Titik indikator */}
+        {total > 1 && (
+          <div className="flex items-center justify-center gap-1.5 py-3">
+            {detail.photos.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setIndex(i)}
+                aria-label={`Foto ke-${i + 1}`}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === index
+                    ? 'w-4 bg-slate-800 dark:bg-zinc-100'
+                    : 'w-1.5 bg-slate-300 dark:bg-zinc-600 hover:bg-slate-400 dark:hover:bg-zinc-500'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Keterangan */}
+        <dl className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-2 px-5 py-4 text-sm">
+          {rows.map((r) => (
+            <div key={r.label} className="contents">
+              <dt className="text-xs text-slate-400 dark:text-zinc-500 pt-0.5">{r.label}</dt>
+              <dd className="font-medium text-slate-800 dark:text-zinc-200 break-words">{r.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
     </div>
   );
 }

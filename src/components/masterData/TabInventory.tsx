@@ -1907,12 +1907,16 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                                     <p>
                                       Pelapor: <span className="font-semibold text-slate-700 dark:text-zinc-300">{namaPelapor}</span>
                                     </p>
-                                    <p>
-                                      Lapor {formatTanggalId(p.tanggal_lapor)}
-                                      {p.tanggal_diterima ? ` · Diterima ${formatTanggalId(p.tanggal_diterima)}` : ''}
-                                      {p.tanggal_selesai ? ` · Selesai ${formatTanggalId(p.tanggal_selesai)}` : ''}
-                                      {p.durasi_detik != null ? ` · ${formatDurasi(p.durasi_detik)} pengerjaan` : ''}
-                                    </p>
+                                    <p>Lapor: <span className="font-semibold text-slate-700 dark:text-zinc-300">{formatTanggalId(p.tanggal_lapor)}</span></p>
+                                    {p.tanggal_diterima && (
+                                      <p>Diterima: <span className="font-semibold text-slate-700 dark:text-zinc-300">{formatTanggalId(p.tanggal_diterima)}</span></p>
+                                    )}
+                                    {p.tanggal_selesai && (
+                                      <p>Selesai: <span className="font-semibold text-slate-700 dark:text-zinc-300">{formatTanggalId(p.tanggal_selesai)}</span></p>
+                                    )}
+                                    {p.durasi_detik != null && (
+                                      <p>Durasi: <span className="font-semibold text-slate-700 dark:text-zinc-300">{formatDurasi(p.durasi_detik)}</span></p>
+                                    )}
                                     {(p.harga_jasa != null || p.biaya_komponen != null) && (
                                       <p>
                                         Biaya: Komponen {formatRupiah(p.biaya_komponen)} + Jasa {formatRupiah(p.harga_jasa)} = <span className="font-bold text-slate-800 dark:text-zinc-200">{formatRupiah(totalBiaya)}</span>

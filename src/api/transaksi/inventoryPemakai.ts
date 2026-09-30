@@ -35,7 +35,7 @@ export interface InventoryPemakai {
 export interface FotoPemakaiEntry {
   id: number;
   inventory_id: number;
-  inventory?: { id: number; kode_inventory: string; nama: string | null } | null;
+  inventory?: { id: number; kode_inventory: string; nama: string | null; merk?: string | null; type?: string | null } | null;
   user_id: number | null;
   user?: { id: number; name: string } | null;
   tanggal_penerimaan: string | null;

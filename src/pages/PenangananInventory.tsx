@@ -637,8 +637,8 @@ export default function PenangananInventory({ onCount }: Props) {
                 <thead>
                   <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
                     <th className="px-6 py-3.5 font-medium whitespace-nowrap">Inventory</th>
-                    <th className="px-6 py-3.5 font-medium whitespace-nowrap">Kerusakan & Keluhan</th>
-                    <th className="px-6 py-3.5 font-medium whitespace-nowrap">Pelapor & Tanggal</th>
+                    <th className="px-6 py-3.5 font-medium whitespace-nowrap">Kerusakan</th>
+                    <th className="px-6 py-3.5 font-medium whitespace-nowrap">Pelapor</th>
                     <th className="px-6 py-3.5 font-medium whitespace-nowrap">Tanggal Selesai</th>
                     <th className="px-6 py-3.5 font-medium whitespace-nowrap">Biaya Penanganan</th>
                     <th className="px-6 py-3.5 font-medium whitespace-nowrap">Hasil</th>
@@ -652,33 +652,20 @@ export default function PenangananInventory({ onCount }: Props) {
 
                     return (
                       <tr key={p.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                        <td className="px-6 py-3.5 text-slate-800 font-medium">
-                          <p className="font-semibold text-slate-900 whitespace-nowrap">{p.inventory?.kode_inventory || '-'}</p>
-                          <div className="max-w-[180px]">
-                            <Tooltip content={p.inventory?.nama || 'Unit Aset'}>
-                              <p className="text-xs text-slate-400 truncate">{p.inventory?.nama || 'Unit Aset'}</p>
-                            </Tooltip>
-                          </div>
+                        <td className="px-6 py-3.5 text-slate-800 font-medium whitespace-nowrap">
+                          <span className="font-semibold text-slate-900">{p.inventory?.kode_inventory || '-'}</span>
                         </td>
 
-                        <td className="px-6 py-3.5 text-slate-600">
-                          <p className="font-medium text-slate-800 text-xs whitespace-nowrap">
-                            {formatJenisKerusakan(p.jenis_kerusakan)}
-                          </p>
-                          <div className="max-w-[220px]">
-                            <Tooltip content={p.keluhan}>
-                              <p className="text-xs text-slate-500 truncate">{p.keluhan}</p>
-                            </Tooltip>
-                          </div>
+                        <td className="px-6 py-3.5 text-slate-800 font-medium text-xs whitespace-nowrap">
+                          {formatJenisKerusakan(p.jenis_kerusakan)}
                         </td>
 
-                        <td className="px-6 py-3.5 text-slate-600">
+                        <td className="px-6 py-3.5 text-slate-800 font-medium text-xs">
                           <div className="max-w-[150px]">
                             <Tooltip content={namaPelaporPenanganan(p)}>
-                              <p className="font-medium text-slate-800 text-xs truncate">{namaPelaporPenanganan(p)}</p>
+                              <p className="truncate">{namaPelaporPenanganan(p)}</p>
                             </Tooltip>
                           </div>
-                          <p className="text-xs text-slate-400 whitespace-nowrap">{formatTanggalId(p.tanggal_lapor)}</p>
                         </td>
 
                         <td className="px-6 py-3.5 text-slate-600 whitespace-nowrap">

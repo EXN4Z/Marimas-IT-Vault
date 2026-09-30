@@ -6,6 +6,7 @@ import api from '../../api/axios';
 import { importKaryawan } from '../../api/auth';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import Pagination from '../shared/Pagination';
+import Tooltip from '../shared/Tooltip';
 import SearchInput from '../shared/SearchInput';
 import { SkeletonTable } from '../shared/skeleton';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
@@ -308,7 +309,7 @@ export default function TabKaryawan() {
                                         <thead>
                                             <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
                                                 <th className="px-6 py-3.5 font-medium">Nama Karyawan</th>
-                                                <th className="px-6 py-3.5 font-medium">Email & Kontak</th>
+                                                <th className="px-6 py-3.5 font-medium">Email</th>
                                                 <th className="px-6 py-3.5 font-medium">Departemen</th>
                                                 <th className="px-6 py-3.5 font-medium">Role</th>
                                                 <th className="px-6 py-3.5 font-medium">Status</th>
@@ -323,15 +324,19 @@ export default function TabKaryawan() {
                                                             <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-700 shrink-0">
                                                                 {initials(user.name)}
                                                             </div>
-                                                            <div className="min-w-0">
-                                                                <p className="font-semibold text-slate-900 truncate">{user.name}</p>
-                                                                <p className="text-xs text-slate-400 truncate">{user.nik || 'NIK belum diatur'}</p>
+                                                            <div className="min-w-0 max-w-[200px]">
+                                                                <Tooltip content={user.name}>
+                                                                    <p className="font-semibold text-slate-900 truncate">{user.name}</p>
+                                                                </Tooltip>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-3.5 text-slate-600">
-                                                        <p className="truncate text-slate-700">{user.email || '-'}</p>
-                                                        {user.phone && <p className="text-xs text-slate-400">{user.phone}</p>}
+                                                        <div className="max-w-[220px]">
+                                                            <Tooltip content={user.email || '-'}>
+                                                                <p className="truncate text-slate-700">{user.email || '-'}</p>
+                                                            </Tooltip>
+                                                        </div>
                                                     </td>
                                                     <td className="px-6 py-3.5 text-slate-600">
                                                         <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700">
