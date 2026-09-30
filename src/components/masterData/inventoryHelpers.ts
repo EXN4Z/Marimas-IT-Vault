@@ -97,3 +97,18 @@ export function formatJenisKerusakan(value: string | null | undefined): string {
   if (!value) return '-';
   return JENIS_KERUSAKAN_LABEL_MAP[value] || value;
 }
+/**
+ * Format durasi penanganan dari total jam jadi "1d 2h".
+ * - < 1 jam      -> "< 1h"
+ * - < 24 jam     -> "5h"
+ * - >= 24 jam    -> "1d 2h" (atau "2d" kalau pas kelipatan 24 jam)
+ * `jam` null/undefined -> "-" (belum selesai).
+ */
+export function formatDurasiJam(jam: number | null | undefined): string {
+  if (jam == null) return '-';
+  if (jam < 1) return '< 1h';
+  const hari = Math.floor(jam / 24);
+  const sisaJam = jam % 24;
+  if (hari === 0) return `${sisaJam}h`;
+  return sisaJam === 0 ? `${hari}d` : `${hari}d ${sisaJam}h`;
+}

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FileSpreadsheet, FileText, X, CheckSquare, Square, FileDown, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
-import { formatTanggalId, namaPelaporPenanganan, formatRupiah, formatJenisKerusakan } from '../masterData/inventoryHelpers';
+import { formatTanggalId, namaPelaporPenanganan, formatRupiah, formatJenisKerusakan, formatDurasiJam } from '../masterData/inventoryHelpers';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
 import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';
@@ -39,7 +39,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { key: 'tanggal_lapor', label: 'Tanggal Lapor', defaultChecked: true, get: (p) => formatTanggalId(p.tanggal_lapor) },
   { key: 'tanggal_diterima', label: 'Tanggal Diterima', defaultChecked: false, get: (p) => formatTanggalId(p.tanggal_diterima) },
   { key: 'tanggal_selesai', label: 'Tanggal Selesai', defaultChecked: true, get: (p) => formatTanggalId(p.tanggal_selesai) },
-  { key: 'durasi_hari', label: 'Durasi (hari)', defaultChecked: false, get: (p) => (p.durasi_hari != null ? String(p.durasi_hari) : '-') },
+  { key: 'durasi_hari', label: 'Durasi', defaultChecked: false, get: (p) => formatDurasiJam(p.durasi_jam) },
   { key: 'hasil', label: 'Hasil', defaultChecked: true, get: (p) => HASIL_LABEL[p.hasil || ''] || p.hasil || '-' },
   { key: 'biaya_komponen', label: 'Biaya Komponen', defaultChecked: false, get: (p) => formatRupiah(p.biaya_komponen) },
   { key: 'harga_jasa', label: 'Biaya Jasa', defaultChecked: false, get: (p) => formatRupiah(p.harga_jasa) },

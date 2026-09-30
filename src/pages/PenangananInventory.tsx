@@ -31,6 +31,7 @@ import {
   namaPelaporPenanganan,
   formatJenisKerusakan,
   JENIS_KERUSAKAN_OPTIONS,
+  formatDurasiJam,
 } from '../components/masterData/inventoryHelpers';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import SearchInput from '../components/shared/SearchInput';
@@ -200,7 +201,7 @@ export default function PenangananInventory({ onCount }: Props) {
         tanggal: formatTanggalId(p.tanggal_selesai),
         rows: [
           { label: 'Hasil', value: 'Rusak Berat (tidak bisa diperbaiki)' },
-          { label: 'Durasi', value: p.durasi_hari != null ? `${p.durasi_hari} hari` : '-' },
+          { label: 'Durasi', value: formatDurasiJam(p.durasi_jam) },
         ],
         catatan: p.catatan,
       });
@@ -218,7 +219,7 @@ export default function PenangananInventory({ onCount }: Props) {
         { label: 'Keluhan', value: p.keluhan },
         { label: 'Hasil', value: p.hasil || '-' },
         { label: 'Tanggal Lapor', value: formatTanggalId(p.tanggal_lapor) },
-        { label: 'Durasi', value: p.durasi_hari != null ? `${p.durasi_hari} hari` : '-' },
+        { label: 'Durasi', value: formatDurasiJam(p.durasi_jam) },
         { label: 'Biaya Komponen', value: formatRupiah(p.biaya_komponen) },
         { label: 'Biaya Jasa', value: formatRupiah(p.harga_jasa) },
       ],
@@ -672,7 +673,7 @@ export default function PenangananInventory({ onCount }: Props) {
                         <td className="px-6 py-3.5 text-slate-600 whitespace-nowrap">
                           <p className="text-xs text-slate-700 font-medium">{formatTanggalId(p.tanggal_selesai)}</p>
                           <p className="text-[11px] text-slate-400">
-                            {p.durasi_hari != null ? `${p.durasi_hari} hari penanganan` : '-'}
+                            {p.durasi_jam != null ? `${formatDurasiJam(p.durasi_jam)} penanganan` : '-'}
                           </p>
                         </td>
 
@@ -1008,10 +1009,10 @@ function DetailPenangananModal({
               </div>
             )}
 
-            {penanganan.durasi_hari != null && (
+            {penanganan.durasi_jam != null && (
               <div className="flex justify-between items-center py-0.5 border-b border-slate-200/50">
                 <span className="text-slate-500">Durasi Pengerjaan</span>
-                <span className="font-medium text-slate-800">{penanganan.durasi_hari} hari</span>
+                <span className="font-medium text-slate-800">{formatDurasiJam(penanganan.durasi_jam)}</span>
               </div>
             )}
 
