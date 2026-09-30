@@ -49,7 +49,10 @@ interface Props {
 }
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  // tanggal lokal (bukan toISOString yang UTC -- jam 00.00-07.00 WIB bisa mundur sehari)
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 function formatRupiah(n?: number | string | null) {
