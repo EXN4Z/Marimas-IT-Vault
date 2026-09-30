@@ -45,6 +45,18 @@ export function namaPemakai(pemakai?: PemakaiLike | null): string {
 }
 
 /**
+ * Nama pelapor kerusakan. Sumber utama: dilaporkan_oleh (yang beneran submit
+ * laporan). Fallback ke pemakai saat itu buat data lama yang belum punya
+ * dilaporkan_oleh_user_id. '-' kalau dua-duanya kosong.
+ */
+export function namaPelaporPenanganan(p?: {
+  dilaporkan_oleh?: { name: string } | null;
+  pemakai?: PemakaiLike | null;
+} | null): string {
+  return p?.dilaporkan_oleh?.name || p?.pemakai?.user?.name || '-';
+}
+
+/**
  * Ambil user id penerima inventory, dipakai buat cek "apakah aku peminjamnya".
  */
 export function userIdPemakai(pemakai?: PemakaiLike | null): number | undefined {

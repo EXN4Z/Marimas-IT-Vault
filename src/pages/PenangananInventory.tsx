@@ -27,6 +27,8 @@ import {
 } from '../api/transaksi/inventoryPenanganan';
 import {
   formatTanggalId,
+  formatTanggalWaktuId,
+  namaPelaporPenanganan,
   namaPemakai,
   formatJenisKerusakan,
   JENIS_KERUSAKAN_OPTIONS,
@@ -868,11 +870,11 @@ function TerimaLaporanModal({
             </div>
             <div className="flex justify-between items-center py-0.5 border-b border-slate-200/50">
               <span className="text-slate-500">Dilaporkan Oleh</span>
-              <span className="font-medium text-slate-800">{namaPemakai(penanganan.pemakai)}</span>
+              <span className="font-medium text-slate-800">{namaPelaporPenanganan(penanganan)}</span>
             </div>
             <div className="flex justify-between items-center py-0.5 border-b border-slate-200/50">
               <span className="text-slate-500">Tanggal Lapor</span>
-              <span className="font-medium text-slate-800">{formatTanggalId(penanganan.tanggal_lapor)}</span>
+              <span className="font-medium text-slate-800">{formatTanggalWaktuId(penanganan.lapor_at, penanganan.tanggal_lapor)}</span>
             </div>
             <div className="pt-1">
               <span className="text-slate-500 block mb-1">Rincian Keluhan:</span>
@@ -986,24 +988,24 @@ function DetailPenangananModal({
             </div>
             <div className="flex justify-between items-center py-0.5 border-b border-slate-200/50">
               <span className="text-slate-500">Pelapor</span>
-              <span className="font-medium text-slate-800">{namaPemakai(penanganan.pemakai)}</span>
+              <span className="font-medium text-slate-800">{namaPelaporPenanganan(penanganan)}</span>
             </div>
             <div className="flex justify-between items-center py-0.5 border-b border-slate-200/50">
               <span className="text-slate-500">Tanggal Lapor</span>
-              <span className="font-medium text-slate-800">{formatTanggalId(penanganan.tanggal_lapor)}</span>
+              <span className="font-medium text-slate-800">{formatTanggalWaktuId(penanganan.lapor_at, penanganan.tanggal_lapor)}</span>
             </div>
 
             {penanganan.tanggal_diterima && (
               <div className="flex justify-between items-center py-0.5 border-b border-slate-200/50">
                 <span className="text-slate-500">Diterima Teknisi</span>
-                <span className="font-medium text-slate-800">{formatTanggalId(penanganan.tanggal_diterima)}</span>
+                <span className="font-medium text-slate-800">{formatTanggalWaktuId(penanganan.diterima_at ?? null, penanganan.tanggal_diterima)}</span>
               </div>
             )}
 
             {penanganan.tanggal_selesai && (
               <div className="flex justify-between items-center py-0.5 border-b border-slate-200/50">
                 <span className="text-slate-500">Tanggal Selesai</span>
-                <span className="font-medium text-slate-800">{formatTanggalId(penanganan.tanggal_selesai)}</span>
+                <span className="font-medium text-slate-800">{formatTanggalWaktuId(penanganan.selesai_at ?? null, penanganan.tanggal_selesai)}</span>
               </div>
             )}
 

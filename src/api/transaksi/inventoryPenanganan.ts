@@ -25,7 +25,10 @@ export interface InventoryPenanganan {
   lapor_at: string | null;
   foto: string | null;
   tanggal_diterima: string | null;
+  // waktu akurat (dengan jam) -- kolom tanggal_* cuma nyimpen tanggal.
+  diterima_at?: string | null;
   tanggal_selesai: string | null;
+  selesai_at?: string | null;
   harga_jasa: number | null;
   biaya_komponen: number | null;
   hasil: string | null;
@@ -35,6 +38,9 @@ export interface InventoryPenanganan {
   durasi_hari?: number | null;
   inventory?: Inventory;
   pemakai?: PenangananPemakai | null;
+  // siapa yang BENERAN submit laporan (bisa admin lapor saat audit gudang,
+  // jadi pemakai bisa kosong). Sumber kebenaran buat "Pelapor".
+  dilaporkan_oleh?: { id: number; name: string } | null;
 }
 
 export interface PaginatedInventoryPenanganan {
