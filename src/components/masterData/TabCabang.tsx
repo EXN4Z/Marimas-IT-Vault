@@ -398,10 +398,6 @@ export default function TabCabang() {
                 </div>
 
                 <div className="pt-3 border-t border-slate-200 mt-auto flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-700">
-                    {item.pekerja_count ?? 0} Pegawai
-                  </span>
-
                   {item.link && (
                     <a
                       href={item.link}
