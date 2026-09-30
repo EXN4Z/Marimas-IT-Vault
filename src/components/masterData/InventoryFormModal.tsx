@@ -410,7 +410,7 @@ export default function InventoryFormModal({
         </div>
 
         {/* Body */}
-        <form id="inventory-form" onSubmit={handleSubmit} className="px-6 py-5 space-y-7 overflow-y-auto">
+        <form id="inventory-form" onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto">
           {errors._general && (
             <p className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2.5 animate-[fadeIn_150ms_ease-out]" role="alert">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
@@ -467,17 +467,16 @@ export default function InventoryFormModal({
                   className={`${inputClass} ${errors.nama ? inputErrorClass : ''}`}
                   value={form.nama}
                   onChange={(e) => setField('nama', e.target.value)}
-                  placeholder="cth. Laptop Lenovo ThinkPad E14, Charger Dell 65W"
+                  placeholder="Laptop Lenovo ThinkPad E14, Charger Dell 65W"
                 />
-                <p className="mt-1 text-xs text-slate-400">Sertakan merek/tipe di dalam nama, mis. "Laptop Lenovo".</p>
               </Field>
             </div>
             <Field label="Merk">
-              <input className={inputClass} value={form.merk} onChange={(e) => setField('merk', e.target.value)} placeholder="cth. Lenovo, HP, WD" />
+              <input className={inputClass} value={form.merk} onChange={(e) => setField('merk', e.target.value)} placeholder="Lenovo, HP, WD" />
             </Field>
 
             <Field label="Type">
-              <input className={inputClass} value={form.type} onChange={(e) => setField('type', e.target.value)} placeholder="cth. Ideapad 3 13ADA05" />
+              <input className={inputClass} value={form.type} onChange={(e) => setField('type', e.target.value)} placeholder="Ideapad 3 13ADA05" />
             </Field>
             {/* Status BUKAN field yang bisa diisi manual di sini -- perubahan
                 status (tersedia/dipakai/dst) selalu lewat transaksi
@@ -502,7 +501,7 @@ export default function InventoryFormModal({
             )}
 
             <Field label="Warna">
-              <input className={inputClass} value={form.warna} onChange={(e) => setField('warna', e.target.value)} placeholder="cth. Hitam" />
+              <input className={inputClass} value={form.warna} onChange={(e) => setField('warna', e.target.value)} placeholder="Hitam, Silver, Putih" />
             </Field>
 
             <Field label="Serial Number" error={errors.serial_number}>
@@ -510,7 +509,7 @@ export default function InventoryFormModal({
                 className={`${inputClass} font-mono text-[13px]`}
                 value={form.serial_number}
                 onChange={(e) => setField('serial_number', e.target.value)}
-                placeholder="Kosongkan kalau tidak ada"
+                placeholder="Nomor seri unit (S/N)"
               />
             </Field>
 
@@ -523,10 +522,6 @@ export default function InventoryFormModal({
                 onChange={(e) => setField('jumlah', e.target.value)}
                 placeholder="1"
               />
-              <p className="mt-1 text-xs text-slate-400">
-                Default 1. Isi lebih dari 1 kalau barang non-serialized (mis. kabel, adaptor) dicatat dalam 1 baris —
-                item non-serialized gak bisa dipasangi/dipasang jadi kelengkapan.
-              </p>
             </Field>
 
             <Field label="Tanggal Garansi" error={errors.tanggal_garansi}>
@@ -632,9 +627,6 @@ export default function InventoryFormModal({
                     )}
                   </div>
                 )}
-                <p className="mt-1 text-xs text-slate-400">
-                  Opsional — pilih kalau item ini menempel ke inventory tertentu (mis. mouse ini punya laptop yang mana). Boleh diisi walau statusnya masih Tersedia; begitu induknya dipinjamkan, ini bakal ikut otomatis.
-                </p>
               </Field>
             </div>
 
@@ -688,18 +680,22 @@ export default function InventoryFormModal({
             </Field>
 
             <Field label="No Surat Jalan">
-              <input className={`${inputClass} font-mono text-[13px]`} value={form.no_surat_jalan} onChange={(e) => setField('no_surat_jalan', e.target.value)} />
+              <input
+                className={`${inputClass} font-mono text-[13px]`}
+                value={form.no_surat_jalan}
+                onChange={(e) => setField('no_surat_jalan', e.target.value)}
+                placeholder="Nomor surat jalan (SJ-001)"
+              />
             </Field>
 
             <Field label="No Good Receive">
-              <input className={`${inputClass} font-mono text-[13px]`} value={form.no_good_receive} onChange={(e) => setField('no_good_receive', e.target.value)} />
+              <input
+                className={`${inputClass} font-mono text-[13px]`}
+                value={form.no_good_receive}
+                onChange={(e) => setField('no_good_receive', e.target.value)}
+                placeholder="Nomor good receive (GR-001)"
+              />
             </Field>
-
-            {!inventory && (
-              <div className="sm:col-span-2">
-                <p className="text-xs text-slate-400">Kode inventory (IT-tahun-nomor urut) akan dibuat otomatis oleh sistem.</p>
-              </div>
-            )}
           </Section>
 
           {/* Section: Detail Tambahan */}
@@ -719,7 +715,7 @@ export default function InventoryFormModal({
                     value={form.keterangan ?? ''}
                     maxLength={KETERANGAN_MAX}
                     onChange={(e) => setField('keterangan', e.target.value)}
-                    placeholder="cth. keadaan baik"
+                    placeholder="Kondisi baik, mulus"
                   />
                   <span className="pointer-events-none absolute bottom-2 right-2.5 text-[11px] text-slate-300">
                     {(form.keterangan ?? '').length}/{KETERANGAN_MAX}
@@ -816,23 +812,23 @@ function Section({
 }) {
   return (
     <div
-      className="animate-[fadeInUp_260ms_ease-out_backwards]"
+      className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 p-4 space-y-3.5 animate-[fadeInUp_260ms_ease-out_backwards]"
       style={{ animationDelay: `${(index ?? 0) * 50}ms` }}
     >
-      <div className="mb-3 flex items-center gap-2">
+      <div className="flex items-center gap-2.5 pb-2 border-b border-slate-200/60 dark:border-zinc-800/80">
         {icon && (
-          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-slate-100 text-slate-500">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-white dark:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700 text-slate-500 dark:text-zinc-400 shadow-xs">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
               {icon}
             </svg>
           </span>
         )}
         <div>
-          <h4 className="text-sm font-semibold text-slate-900">{title}</h4>
-          {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-200">{title}</h4>
+          {subtitle && <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-0.5">{subtitle}</p>}
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">{children}</div>
     </div>
   );
 }

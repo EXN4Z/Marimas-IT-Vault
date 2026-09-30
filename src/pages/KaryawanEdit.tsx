@@ -274,117 +274,146 @@ export default function EditKaryawanPage() {
                         </p>
                     )}
 
-                    <Field label="Nama" error={errors.name?.[0]} required>
-                        <TextInput
-                            value={form.name}
-                            onChange={(v) => handleChange('name', v)}
-                            error={!!errors.name}
-                            autoFocus
-                        />
-                    </Field>
+                    {/* Section 1: Identitas & Kontak */}
+                    <div className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 p-4 space-y-3.5">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                            1. Identitas & Kontak
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <Field label="Nama Lengkap" error={errors.name?.[0]} required>
+                                <TextInput
+                                    value={form.name}
+                                    onChange={(v) => handleChange('name', v)}
+                                    error={!!errors.name}
+                                    placeholder="Nama lengkap karyawan"
+                                    autoFocus
+                                />
+                            </Field>
 
-                    <Field label="Email" error={errors.email?.[0]}>
-                        <TextInput
-                            type="email"
-                            value={form.email}
-                            onChange={(v) => handleChange('email', v)}
-                            error={!!errors.email}
-                        />
-                    </Field>
+                            <Field label="NIK Karyawan" error={errors.nik?.[0]} required>
+                                <TextInput
+                                    value={form.nik}
+                                    onChange={(v) => handleChange('nik', v)}
+                                    error={!!errors.nik}
+                                    placeholder="Nomor induk karyawan (MPK-001)"
+                                />
+                            </Field>
 
-                    <Field label="Nomor Telepon" error={errors.phone?.[0]}>
-                        <TextInput
-                            value={form.phone}
-                            onChange={(v) => handleChange('phone', v)}
-                            error={!!errors.phone}
-                        />
-                    </Field>
+                            <Field label="Alamat Email" error={errors.email?.[0]}>
+                                <TextInput
+                                    type="email"
+                                    value={form.email}
+                                    onChange={(v) => handleChange('email', v)}
+                                    error={!!errors.email}
+                                    placeholder="nama@marimas.com"
+                                />
+                            </Field>
 
-                    <Field label="Role" error={errors.role_id?.[0]} required>
-                        <Select
-                            value={form.role_id}
-                            onChange={handleRoleChange}
-                            placeholder="Pilih role"
-                            error={!!errors.role_id}
-                            options={ROLE_OPTIONS}
-                        />
-                    </Field>
+                            <Field label="Nomor Telepon / WA" error={errors.phone?.[0]}>
+                                <TextInput
+                                    value={form.phone}
+                                    onChange={(v) => handleChange('phone', v)}
+                                    error={!!errors.phone}
+                                    placeholder="08xxxxxxxxxx"
+                                />
+                            </Field>
+                        </div>
+                    </div>
 
-                    <Field label="NIK" error={errors.nik?.[0]} required>
-                        <TextInput
-                            value={form.nik}
-                            onChange={(v) => handleChange('nik', v)}
-                            error={!!errors.nik}
-                        />
-                    </Field>
+                    {/* Section 2: Hak Akses & Penempatan */}
+                    <div className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 p-4 space-y-3.5">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                            2. Hak Akses & Penempatan
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <Field label="Role Akses" error={errors.role_id?.[0]} required>
+                                <Select
+                                    value={form.role_id}
+                                    onChange={handleRoleChange}
+                                    placeholder="Pilih role"
+                                    error={!!errors.role_id}
+                                    options={ROLE_OPTIONS}
+                                />
+                            </Field>
 
-                    <Field label="Departemen" error={errors.departemen_id?.[0]}>
-                        <SearchableSelect
-                            value={form.departemen_id}
-                            onChange={(v) => handleChange('departemen_id', v)}
-                            placeholder="Pilih departemen"
-                            error={!!errors.departemen_id}
-                            options={departemenList.map((d) => ({ value: String(d.id), label: d.nama }))}
-                        />
-                    </Field>
+                            <Field label="Departemen" error={errors.departemen_id?.[0]}>
+                                <SearchableSelect
+                                    value={form.departemen_id}
+                                    onChange={(v) => handleChange('departemen_id', v)}
+                                    placeholder="Pilih departemen"
+                                    error={!!errors.departemen_id}
+                                    options={departemenList.map((d) => ({ value: String(d.id), label: d.nama }))}
+                                />
+                            </Field>
 
+                            <Field label="Cabang / Lokasi Kantor" error={errors.lokasi_kantor_id?.[0]}>
+                                <SearchableSelect
+                                    value={form.lokasi_kantor_id}
+                                    onChange={(v) => handleChange('lokasi_kantor_id', v)}
+                                    placeholder="Pilih cabang"
+                                    error={!!errors.lokasi_kantor_id}
+                                    options={cabangList.map((c) => ({ value: String(c.id), label: c.nama }))}
+                                />
+                            </Field>
 
-                    <Field label="Cabang" error={errors.lokasi_kantor_id?.[0]}>
-                        <SearchableSelect
-                            value={form.lokasi_kantor_id}
-                            onChange={(v) => handleChange('lokasi_kantor_id', v)}
-                            placeholder="Pilih cabang"
-                            error={!!errors.lokasi_kantor_id}
-                            options={cabangList.map((c) => ({ value: String(c.id), label: c.nama }))}
-                        />
-                    </Field>
+                            <Field label="Perusahaan" error={errors.perusahaan_id?.[0]}>
+                                <SearchableSelect
+                                    value={form.perusahaan_id}
+                                    onChange={(v) => handleChange('perusahaan_id', v)}
+                                    placeholder="Pilih perusahaan"
+                                    error={!!errors.perusahaan_id}
+                                    options={perusahaanList.map((p) => ({ value: String(p.id), label: p.nama }))}
+                                />
+                            </Field>
+                        </div>
+                    </div>
 
-                    <Field label="Perusahaan" error={errors.perusahaan_id?.[0]}>
-                        <SearchableSelect
-                            value={form.perusahaan_id}
-                            onChange={(v) => handleChange('perusahaan_id', v)}
-                            placeholder="Pilih perusahaan"
-                            error={!!errors.perusahaan_id}
-                            options={perusahaanList.map((p) => ({ value: String(p.id), label: p.nama }))}
-                        />
-                    </Field>
-                    <Field label="Tanggal Masuk" error={errors.tanggal_masuk?.[0]}>
-                        <TextInput
-                            type="date"
-                            value={form.tanggal_masuk}
-                            onChange={(v) => handleChange('tanggal_masuk', v)}
-                            error={!!errors.tanggal_masuk}
-                        />
-                    </Field>
+                    {/* Section 3: Kepegawaian & Status */}
+                    <div className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 p-4 space-y-3.5">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                            3. Kepegawaian & Status Akun
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <Field label="Tanggal Masuk Kerja" error={errors.tanggal_masuk?.[0]}>
+                                <TextInput
+                                    type="date"
+                                    value={form.tanggal_masuk}
+                                    onChange={(v) => handleChange('tanggal_masuk', v)}
+                                    error={!!errors.tanggal_masuk}
+                                />
+                            </Field>
 
-                    <Field label="Status Akun" error={errors.status?.[0]}>
-                        <Select
-                            value={form.status}
-                            onChange={(v) => handleChange('status', v as FormState['status'])}
-                            error={!!errors.status}
-                            options={STATUS_OPTIONS}
-                        />
-                    </Field>
+                            <Field label="Status Akun Login" error={errors.status?.[0]}>
+                                <Select
+                                    value={form.status}
+                                    onChange={(v) => handleChange('status', v as FormState['status'])}
+                                    error={!!errors.status}
+                                    options={STATUS_OPTIONS}
+                                />
+                            </Field>
+                        </div>
+                    </div>
 
-                    <div className="flex items-center justify-between pt-2">
-                        <div className="flex items-center gap-3">
-                            <button
-                                type="button"
-                                onClick={handleDelete}
-                                className="text-sm text-red-600 hover:text-red-700"
-                            >
-                                Hapus user
-                            </button>
+                    <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800">
+                        <div className="flex items-center gap-2">
                             <button
                                 type="button"
                                 onClick={() => setShowSetPassword(true)}
-                                className="text-sm text-blue-600 hover:text-blue-700"
+                                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-blue-200 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition cursor-pointer"
                             >
-                                Ubah password
+                                <KeyRound size={14} />
+                                Ubah Password
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleDelete}
+                                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
+                            >
+                                Hapus User
                             </button>
                         </div>
 
-                        <div className="flex gap-3">
+                        <div className="flex items-center justify-end gap-2.5">
                             <ButtonCancel onClick={closeModal} disabled={saving} />
                             <ButtonSubmit type="submit" loading={saving} loadingLabel="Menyimpan...">
                                 Simpan Perubahan

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Download, Link2, Unlink, MapPin, RotateCcw } from 'lucide-react';
+import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Download, Link2, Unlink, RotateCcw } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
@@ -1351,48 +1351,65 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
             if (e.target === e.currentTarget) closeDetail();
           }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-lg max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
+          <div className="bg-white dark:bg-[#18181b] rounded-2xl shadow-2xl border border-slate-200/80 dark:border-zinc-800 w-full max-w-3xl max-h-[92vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)] overflow-hidden">
             {/* Header */}
-            <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100 shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
-                  <Boxes size={20} />
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-zinc-800 shrink-0 bg-slate-50/50 dark:bg-zinc-900/50">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="w-11 h-11 rounded-xl bg-slate-900 text-white dark:bg-blue-600 flex items-center justify-center shadow-sm shrink-0">
+                  <Boxes size={22} />
                 </div>
-                <div>
-                  <h3 className="text-base font-semibold text-slate-900 leading-tight">
-                    {detail?.kode_inventory || 'Memuat...'}
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">Detail Inventory</p>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100 leading-tight truncate">
+                      {detail?.nama || detail?.kode_inventory || 'Detail Inventory'}
+                    </h3>
+                    {detail?.status && (
+                      <StatusBadge colorClass={STATUS_STYLE[detail.status]}>
+                        {STATUS_LABEL[detail.status]}
+                      </StatusBadge>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 flex items-center gap-1.5 font-medium">
+                    <span className="font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-semibold text-[11px]">
+                      {detail?.kode_inventory || '-'}
+                    </span>
+                    {detail?.kategori?.nama && (
+                      <>
+                        <span className="text-slate-300 dark:text-zinc-600">·</span>
+                        <span className="text-slate-600 dark:text-zinc-400">{detail.kategori.nama}</span>
+                      </>
+                    )}
+                  </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={closeDetail}
                 aria-label="Tutup"
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition"
+                className="text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Body */}
-            <div className="px-6 py-5 overflow-y-auto">
+            <div className="px-6 py-5 overflow-y-auto space-y-6">
             {detailLoading && (
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-5 py-4">
                 <div className="flex gap-4">
-                  <Skeleton className="w-24 h-24 rounded-lg flex-shrink-0" />
+                  <Skeleton className="w-28 h-28 rounded-xl flex-shrink-0" />
                   <div className="flex-1 min-w-0 space-y-2">
-                    <Skeleton className="h-5 w-20 rounded-full" />
+                    <Skeleton className="h-5 w-24 rounded-full" />
                     <Skeleton className="h-4 w-3/4 rounded" />
                     <Skeleton className="h-3 w-1/2 rounded" />
                     <Skeleton className="h-3 w-2/3 rounded" />
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="space-y-1.5">
-                      <Skeleton className="h-3 w-24 rounded" />
-                      <Skeleton className="h-4 w-32 rounded" />
+                    <div key={i} className="p-3 rounded-xl border border-slate-100 dark:border-zinc-800 space-y-1.5">
+                      <Skeleton className="h-3 w-16 rounded" />
+                      <Skeleton className="h-4 w-24 rounded" />
                     </div>
                   ))}
                 </div>
@@ -1400,277 +1417,295 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
             )}
 
             {!detailLoading && detail && (
-              <div className="flex flex-col gap-5">
-                <div className="flex gap-4">
-                  <div className="w-24 h-24 rounded-lg bg-slate-100 flex-shrink-0 overflow-hidden flex items-center justify-center">
-                    {detail.foto ? (
-                      <img src={STORAGE_BASE_URL + detail.foto} alt={detail.kode_inventory} className="w-full h-full object-cover" />
-                    ) : (
-                      <ImageOff size={22} className="text-slate-300" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <StatusBadge colorClass={STATUS_STYLE[detail.status]} className="mb-2">
-                      {STATUS_LABEL[detail.status]}
-                    </StatusBadge>
-                    <p className="text-sm text-slate-800 font-medium">{detail.nama || '-'}</p>
-                    <p className="text-xs text-slate-400">{detail.warna || '-'}</p>
-                    <p className="text-xs text-slate-400">S/N: {detail.serial_number || '-'}</p>
-                    <p className="text-xs text-slate-400">Jumlah: {detail.jumlah ?? 1}</p>
-                  </div>
-                </div>
-
-                {/* BARU: indikator "Menempel ke ..." di panel detail -- sebelumnya
-                    cuma ada di badge baris tabel (lihat isChild di render tabel),
-                    sekarang ditampilkan juga di sini biar kelihatan langsung pas
-                    buka detail item kelengkapan yang masih nempel ke induk. */}
-                {detail.parent_id && detail.parent && (
-                  <div className="flex items-center gap-2 bg-sky-50 text-sky-700 rounded-lg px-3 py-2 text-xs font-medium">
-                    <Link2 size={13} className="shrink-0" />
-                    Menempel ke {detail.parent.kode_inventory}
-                    {detail.parent.nama ? ` — ${detail.parent.nama}` : ''}
-                  </div>
-                )}
-
-                {detail.status === 'dipakai' && detail.pemakai_saat_ini && (
-                  <div className="bg-slate-50 rounded-lg p-3 text-sm">
-                    <p className="text-xs text-slate-400 mb-1">Dipinjam Oleh</p>
-                    <p className="text-slate-800 font-medium">
-                      {namaPemakai(detail.pemakai_saat_ini)}
-                    </p>
-                    {detail.pemakai_saat_ini.user && (
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        NIK: {detail.pemakai_saat_ini.user.nik || '-'} · {detail.pemakai_saat_ini.user.departemen?.nama || '-'}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <p className="text-xs text-slate-400 flex items-center gap-1">
-                      <MapPin size={12} className="text-slate-400" />
-                      Perusahaan
-                    </p>
-                    <p className="text-slate-800">{detail.perusahaan?.nama || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400">Supplier</p>
-                    <p className="text-slate-800">{detail.supplier?.nama || '-'}</p>
-                  </div>
-                  {/* BARU: Merk & Type -- kolom hasil import Excel (procesBarisFlat),
-                      cuma keisi buat inventory hasil import format "Data Inventory".
-                      Item yang ditambah manual lewat form biasa kemungkinan null. */}
-                  <div>
-                    <p className="text-xs text-slate-400">Merk</p>
-                    <p className="text-slate-800">{detail.merk || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400">Type</p>
-                    <p className="text-slate-800">{detail.type || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400">No. Surat Jalan / GR</p>
-                    <p className="text-slate-800">{detail.no_surat_jalan || '-'} / {detail.no_good_receive || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400">Tanggal Garansi</p>
-                    <p className="text-slate-800">{formatTanggalId(detail.tanggal_garansi)}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs text-slate-400">Tanggal Pembelian</p>
-                    <p className="text-slate-800">{formatTanggalId(detail.tanggal_invoice)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400">Tanggal Input</p>
-                    <p className="text-slate-800">{formatTanggalId(detail.tanggal_input)}</p>
-                  </div>
-                </div>
-
-                {detail.keterangan && (
-                  <div>
-                    <p className="text-xs text-slate-400">Keterangan</p>
-                    <p className="text-sm text-slate-700">{detail.keterangan}</p>
-                  </div>
-                )}
-
-                {/* KELENGKAPAN — daftar aksesoris (tas, charger, dst) yang
-                    nempel ke inventory ini lewat children (parent_id). Read-only
-                    di sini; buat nambah/pasang kelengkapan baru, dilakuin
-                    lewat form Edit Inventory (section Kelengkapan). */}
-                {detail.children && detail.children.length > 0 && (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs text-slate-400">
-                        Kelengkapan ({detail.children?.length || 0})
-                      </p>
+              <div className="space-y-6">
+                {/* TOP HERO & SPECS */}
+                <div className="flex flex-col sm:flex-row gap-5 p-4 rounded-2xl bg-slate-50/70 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800">
+                  {/* Photo thumbnail */}
+                  <div className="w-full sm:w-36 flex-shrink-0 flex flex-col items-center">
+                    <div className="w-full aspect-square rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700/80 overflow-hidden flex items-center justify-center shadow-xs">
+                      {detail.foto ? (
+                        <img src={STORAGE_BASE_URL + detail.foto} alt={detail.kode_inventory} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center p-3 text-center">
+                          <ImageOff size={28} className="text-slate-300 dark:text-zinc-600 mb-1" />
+                          <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-medium">Tanpa Foto</span>
+                        </div>
+                      )}
                     </div>
-                    {detail.children && detail.children.length > 0 ? (
-                      <div className="flex flex-col gap-2">
-                        {detail.children.map((k: Inventory) => (
-                          <div
-                            key={k.id}
-                            className="flex items-center justify-between gap-3 bg-slate-50 rounded-lg px-3 py-2 text-sm"
-                          >
-                            <div className="min-w-0">
-                              <p className="text-slate-800 font-medium truncate">
-                                {k.nama || k.kode_inventory}
-                              </p>
-                              <p className="text-xs text-slate-400 truncate">
-                                {k.kode_inventory}
-                                {k.serial_number ? ` · S/N: ${k.serial_number}` : ''}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <StatusBadge
-                                colorClass={STATUS_STYLE[k.status] || 'bg-slate-100 text-slate-600'}
-                              >
-                                {STATUS_LABEL[k.status] || k.status}
-                              </StatusBadge>
-                              {/* Detail (Eye) child -- selalu tampil apapun status
-                                  & role, biar bisa drill-down ke detail item anak
-                                  langsung dari panel Kelengkapan induk. */}
-                              <button
-                                onClick={() => openDetail(k.id)}
-                                title="Detail"
-                                className="p-1.5 rounded-md text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition"
-                              >
-                                <Eye size={14} />
-                              </button>
-                              {/* BARU (3B): Tombol Lepas per baris child — admin only */}
-                              {isAdmin && (
-                                <button
-                                  onClick={() => setLepasTarget(k)}
-                                  title="Lepas dari Induk"
-                                  className="p-1.5 rounded-md text-amber-600 hover:bg-amber-100 transition"
-                                >
-                                  <Unlink size={14} />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+
+                    {detail.parent_id && detail.parent && (
+                      <div className="w-full mt-2 flex items-center gap-1.5 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 rounded-lg p-2 text-[11px] font-medium border border-sky-200 dark:border-sky-800/60">
+                        <Link2 size={13} className="shrink-0 text-sky-600 dark:text-sky-400" />
+                        <span className="truncate">Menempel ke: {detail.parent.kode_inventory}</span>
                       </div>
-                    ) : (
-                      <p className="text-xs text-slate-300 italic">Belum ada kelengkapan terpasang.</p>
                     )}
                   </div>
-                )}
 
-                {/* AKSI KONTEKSTUAL */}
-                {isAdmin && (
-                  <div className="flex flex-wrap gap-2">
-                    {detail.status === 'tersedia' && (
-                      <button
-                        onClick={() => setSerahTerimaInventory(detail)}
-                        className="flex items-center gap-1.5 bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-800 transition"
-                      >
-                        <HandCoins size={14} />
-                        Serahkan ke Karyawan
-                      </button>
-                    )}
+                  {/* Core specifications */}
+                  <div className="flex-1 min-w-0 space-y-3">
+                    <div className="grid grid-cols-2 gap-2.5 text-xs">
+                      <div className="p-2.5 rounded-xl bg-white dark:bg-zinc-800 border border-slate-100 dark:border-zinc-700/70 shadow-xs">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wide">Merk & Tipe</span>
+                        <p className="font-semibold text-slate-800 dark:text-zinc-100 mt-0.5 truncate">
+                          {detail.merk || '-'} {detail.type ? `· ${detail.type}` : ''}
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-white dark:bg-zinc-800 border border-slate-100 dark:border-zinc-700/70 shadow-xs">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wide">Serial Number (S/N)</span>
+                        <p className="font-mono font-medium text-slate-800 dark:text-zinc-100 mt-0.5 truncate">
+                          {detail.serial_number || '-'}
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-white dark:bg-zinc-800 border border-slate-100 dark:border-zinc-700/70 shadow-xs">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wide">Warna & Unit</span>
+                        <p className="font-semibold text-slate-800 dark:text-zinc-100 mt-0.5">
+                          {detail.warna || '-'} · {detail.jumlah ?? 1} Unit
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-white dark:bg-zinc-800 border border-slate-100 dark:border-zinc-700/70 shadow-xs">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wide">Garansi Resmi</span>
+                        <p className="font-semibold text-slate-800 dark:text-zinc-100 mt-0.5">
+                          {formatTanggalId(detail.tanggal_garansi)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Borrowed card banner */}
                     {detail.status === 'dipakai' && detail.pemakai_saat_ini && (
-                      <button
-                        onClick={() => setPengembalianTarget({ inventory: detail, pemakai: detail.pemakai_saat_ini! })}
-                        className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
-                      >
-                        <Undo2 size={14} />
-                        Terima Kembali
-                      </button>
+                      <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-amber-900 dark:text-amber-200">
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Sedang Dipinjam Oleh</p>
+                          <p className="font-semibold text-sm truncate mt-0.5">
+                            {namaPemakai(detail.pemakai_saat_ini)}
+                          </p>
+                          {detail.pemakai_saat_ini.user && (
+                            <p className="text-xs text-amber-700 dark:text-amber-300/80">
+                              NIK: {detail.pemakai_saat_ini.user.nik || '-'} · {detail.pemakai_saat_ini.user.departemen?.nama || '-'}
+                            </p>
+                          )}
+                        </div>
+                        <span className="px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 text-xs font-semibold shrink-0">
+                          {formatTanggalId(detail.pemakai_saat_ini.tanggal_penerimaan)}
+                        </span>
+                      </div>
                     )}
-                    {/* Lapor Kerusakan — admin bisa lapor untuk status tersedia atau dipakai */}
-                    {(detail.status === 'tersedia' || detail.status === 'dipakai') && (
-                      <button
-                        onClick={() => setPerbaikanInventoryTarget(detail)}
-                        className="flex items-center gap-1.5 bg-red-50 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-red-100 transition"
-                      >
-                        <Wrench size={14} />
-                        Lapor Kerusakan
-                      </button>
-                    )}
-                    {(detail.status === 'menunggu_perbaikan' || detail.status === 'diperbaiki' || detail.status === 'rusak_berat') && (
-                      <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg cursor-default">
-                        <Wrench size={14} />
-                        Sudah Lapor
-                      </span>
-                    )}
-                    {/* Item manapun yang berdiri sendiri (parent_id null) &
-                        tersedia bisa dipasang ke item lain sebagai child,
-                        termasuk dari panel detail. */}
-                    {!detail.parent_id && detail.status === 'tersedia' && (
-                      <button
-                        onClick={() => setPasangIndukTarget(detail)}
-                        className="flex items-center gap-1.5 bg-sky-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-sky-700 transition"
-                      >
-                        <Link2 size={14} />
-                        Pasang ke Induk
-                      </button>
-                    )}
-                    {/* Tombol Jual Inventory di panel detail (ikon mata) — muncul buat status
-                        tersedia ATAU rusak_berat. Sekarang ini SATU-SATUNYA tempat aksi
-                        jual bisa dipicu (nggak ada lagi tombol cepat di baris tabel). */}
-                    {(detail.status === 'tersedia' || detail.status === 'rusak_berat') && (() => {
-                      // BARU (3B): disable kalau masih ada relasi induk-child —
-                      // backend jual() sudah nolak juga (defensive), ini cuma
-                      // biar admin gak perlu buka modal dulu buat tau alasannya.
-                      const adaChild = (detail.children?.length ?? 0) > 0;
-                      const adaParent = !!detail.parent_id;
-                      const tidakBisaDijual = adaChild || adaParent;
-                      const tooltipJual = adaChild
-                        ? 'Lepas kelengkapan yang menempel dulu sebelum menjual item ini.'
-                        : adaParent
-                        ? 'Item ini masih menempel ke induk.'
-                        : undefined;
-
-                      return (
-                        <button
-                          onClick={() => !tidakBisaDijual && openJual(detail)}
-                          disabled={tidakBisaDijual}
-                          title={tooltipJual}
-                          className="flex items-center gap-1.5 bg-purple-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-purple-700 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-purple-600"
-                        >
-                          <Tag size={14} />
-                          Jual Inventory
-                        </button>
-                      );
-                    })()}
                   </div>
-                )}
+                </div>
 
-                {/* KARYAWAN/CABANG: lapor kerusakan kalau lagi dia pakai sendiri.
-                    (Ajukan pinjam sendiri sudah dicabut — inventory cuma boleh
-                    diserahkan admin lewat tombol "Serahkan".) */}
-                {!isAdmin && (() => {
-                  const akuPemakaiSaatIni = userIdPemakai(detail.pemakai_saat_ini) === user?.id;
-
-                  return (
+                {/* AKSI CEPAT / QUICK ACTIONS */}
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-2.5">
+                    Aksi Manajemen Unit
+                  </h4>
+                  {isAdmin ? (
                     <div className="flex flex-wrap items-center gap-2">
-                      {detail.status === 'dipakai' && akuPemakaiSaatIni && (
+                      {detail.status === 'tersedia' && (
                         <button
-                          onClick={() => setPengembalianTarget({ inventory: detail, pemakai: detail.pemakai_saat_ini! })}
-                          className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
+                          type="button"
+                          onClick={() => setSerahTerimaInventory(detail)}
+                          className="flex items-center gap-1.5 bg-slate-900 dark:bg-blue-600 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl hover:bg-slate-800 dark:hover:bg-blue-500 transition shadow-xs cursor-pointer active:scale-95"
                         >
-                          <Undo2 size={14} />
-                          Kembalikan
+                          <HandCoins size={14} />
+                          Serahkan ke Karyawan
                         </button>
                       )}
-                      {detail.status === 'dipakai' && akuPemakaiSaatIni && (
+
+                      {detail.status === 'dipakai' && detail.pemakai_saat_ini && (
                         <button
+                          type="button"
+                          onClick={() => setPengembalianTarget({ inventory: detail, pemakai: detail.pemakai_saat_ini! })}
+                          className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl hover:bg-emerald-700 transition shadow-xs cursor-pointer active:scale-95"
+                        >
+                          <Undo2 size={14} />
+                          Terima Kembali
+                        </button>
+                      )}
+
+                      {(detail.status === 'tersedia' || detail.status === 'dipakai') && (
+                        <button
+                          type="button"
                           onClick={() => setPerbaikanInventoryTarget(detail)}
-                          className="flex items-center gap-1.5 bg-red-50 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-red-100 transition"
+                          className="flex items-center gap-1.5 bg-red-50 dark:bg-rose-950/40 text-red-700 dark:text-rose-300 border border-red-200 dark:border-rose-900/60 text-xs font-semibold px-3.5 py-2.5 rounded-xl hover:bg-red-100 dark:hover:bg-rose-900/50 transition cursor-pointer active:scale-95"
                         >
                           <Wrench size={14} />
                           Lapor Kerusakan
                         </button>
                       )}
+
+                      {(detail.status === 'menunggu_perbaikan' || detail.status === 'diperbaiki' || detail.status === 'rusak_berat') && (
+                        <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-800 px-3.5 py-2.5 rounded-xl cursor-default">
+                          <Wrench size={14} />
+                          Laporan Kerusakan Terdaftar
+                        </span>
+                      )}
+
+                      {!detail.parent_id && detail.status === 'tersedia' && (
+                        <button
+                          type="button"
+                          onClick={() => setPasangIndukTarget(detail)}
+                          className="flex items-center gap-1.5 bg-sky-600 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl hover:bg-sky-700 transition shadow-xs cursor-pointer active:scale-95"
+                        >
+                          <Link2 size={14} />
+                          Pasang ke Induk
+                        </button>
+                      )}
+
+                      {(detail.status === 'tersedia' || detail.status === 'rusak_berat') && (() => {
+                        const adaChild = (detail.children?.length ?? 0) > 0;
+                        const adaParent = !!detail.parent_id;
+                        const tidakBisaDijual = adaChild || adaParent;
+                        const tooltipJual = adaChild
+                          ? 'Lepas kelengkapan yang menempel dulu sebelum menjual item ini.'
+                          : adaParent
+                          ? 'Item ini masih menempel ke induk.'
+                          : undefined;
+
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => !tidakBisaDijual && openJual(detail)}
+                            disabled={tidakBisaDijual}
+                            title={tooltipJual}
+                            className="flex items-center gap-1.5 bg-purple-600 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl hover:bg-purple-700 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-xs cursor-pointer active:scale-95"
+                          >
+                            <Tag size={14} />
+                            Jual Inventory
+                          </button>
+                        );
+                      })()}
                     </div>
-                  );
-                })()}
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {detail.status === 'dipakai' && userIdPemakai(detail.pemakai_saat_ini) === user?.id && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setPengembalianTarget({ inventory: detail, pemakai: detail.pemakai_saat_ini! })}
+                            className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl hover:bg-emerald-700 transition shadow-xs cursor-pointer active:scale-95"
+                          >
+                            <Undo2 size={14} />
+                            Kembalikan Barang
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPerbaikanInventoryTarget(detail)}
+                            className="flex items-center gap-1.5 bg-red-50 dark:bg-rose-950/40 text-red-700 dark:text-rose-300 border border-red-200 dark:border-rose-900/60 text-xs font-semibold px-3.5 py-2.5 rounded-xl hover:bg-red-100 transition cursor-pointer active:scale-95"
+                          >
+                            <Wrench size={14} />
+                            Lapor Kerusakan
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* DETAIL SPESIFIKASI & PENGADAAN */}
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-2.5">
+                    Informasi Pengadaan & Lokasi
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                    <div className="p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40">
+                      <p className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase">Perusahaan Pemilik</p>
+                      <p className="font-semibold text-slate-800 dark:text-zinc-200 mt-1">{detail.perusahaan?.nama || '-'}</p>
+                    </div>
+
+                    <div className="p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40">
+                      <p className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase">Supplier / Vendor</p>
+                      <p className="font-semibold text-slate-800 dark:text-zinc-200 mt-1">{detail.supplier?.nama || '-'}</p>
+                    </div>
+
+                    <div className="p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40">
+                      <p className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase">No. Surat Jalan / GR</p>
+                      <p className="font-semibold text-slate-800 dark:text-zinc-200 mt-1">
+                        {detail.no_surat_jalan || '-'} / {detail.no_good_receive || '-'}
+                      </p>
+                    </div>
+
+                    <div className="p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40">
+                      <p className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase">Tanggal Pembelian</p>
+                      <p className="font-semibold text-slate-800 dark:text-zinc-200 mt-1">{formatTanggalId(detail.tanggal_invoice)}</p>
+                    </div>
+
+                    <div className="p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40">
+                      <p className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase">Tanggal Input Sistem</p>
+                      <p className="font-semibold text-slate-800 dark:text-zinc-200 mt-1">{formatTanggalId(detail.tanggal_input)}</p>
+                    </div>
+
+                    <div className="p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40">
+                      <p className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase">Garansi Berakhir</p>
+                      <p className="font-semibold text-slate-800 dark:text-zinc-200 mt-1">{formatTanggalId(detail.tanggal_garansi)}</p>
+                    </div>
+                  </div>
+
+                  {detail.keterangan && (
+                    <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 text-xs">
+                      <p className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase mb-1">Catatan Tambahan</p>
+                      <p className="text-slate-700 dark:text-zinc-300 leading-relaxed">{detail.keterangan}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* KELENGKAPAN / CHILDREN */}
+                {detail.children && detail.children.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-2.5">
+                      Kelengkapan Terpasang ({detail.children.length})
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {detail.children.map((k: Inventory) => (
+                        <div
+                          key={k.id}
+                          className="flex items-center justify-between gap-3 bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-xl p-3 text-xs"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-slate-900 dark:text-zinc-100 font-semibold truncate">
+                              {k.nama || k.kode_inventory}
+                            </p>
+                            <p className="text-[11px] text-slate-400 dark:text-zinc-500 truncate font-mono mt-0.5">
+                              {k.kode_inventory} {k.serial_number ? `· S/N: ${k.serial_number}` : ''}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <StatusBadge colorClass={STATUS_STYLE[k.status] || 'bg-slate-100 text-slate-600'}>
+                              {STATUS_LABEL[k.status] || k.status}
+                            </StatusBadge>
+                            <button
+                              type="button"
+                              onClick={() => openDetail(k.id)}
+                              title="Lihat Detail"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                            >
+                              <Eye size={14} />
+                            </button>
+                            {isAdmin && (
+                              <button
+                                type="button"
+                                onClick={() => setLepasTarget(k)}
+                                title="Lepas dari Induk"
+                                className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition"
+                              >
+                                <Unlink size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* RIWAYAT PEMAKAI / PEMINJAMAN */}
-                <div>
-                  <p className="text-sm font-semibold text-slate-900 mb-2">Riwayat Pemakai (Peminjaman)</p>
+                <div className="border-t border-slate-100 dark:border-zinc-800 pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                      Riwayat Pemakai & Peminjaman
+                    </h4>
+                  </div>
                   {(() => {
                     const semuaPemakai = detail.pemakai || [];
                     const totalPemakaiPage = Math.max(1, Math.ceil(semuaPemakai.length / RIWAYAT_PEMAKAI_PER_PAGE));
@@ -1684,76 +1719,67 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                           {halamanPemakai.map((p) => {
                             const expanded = expandedPemakaiId === p.id;
                             return (
-                              <li key={p.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2">
-                                {/* Baris ringkas — nama & rentang tanggal doang */}
+                              <li key={p.id} className="text-xs bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/60 dark:border-zinc-800 rounded-xl p-3">
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="min-w-0">
-                                    <span className="font-medium text-slate-800">{namaPemakai(p)}</span>{' '}
-                                    <span className="text-slate-500">
+                                    <span className="font-semibold text-slate-900 dark:text-zinc-100">{namaPemakai(p)}</span>{' '}
+                                    <span className="text-slate-500 dark:text-zinc-400">
                                       — {formatTanggalId(p.tanggal_penerimaan)}
-                                      {p.tanggal_pengembalian ? ` s/d ${formatTanggalId(p.tanggal_pengembalian)}` : ' (masih dipakai)'}
+                                      {p.tanggal_pengembalian ? ` s/d ${formatTanggalId(p.tanggal_pengembalian)}` : ' (sedang digunakan)'}
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-1 flex-shrink-0">
                                     {isAdmin && p.no_struk_penerimaan && (
                                       <button
+                                        type="button"
                                         onClick={() => handlePrintSerahTerima([{ inventory: detail, pemakai: p }])}
                                         title="Cetak struk penerimaan"
-                                        className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 transition"
+                                        className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-800 transition"
                                       >
                                         <Printer size={13} />
                                       </button>
                                     )}
                                     {isAdmin && (
                                       <button
+                                        type="button"
                                         onClick={() => handleDeletePemakai(p.id)}
                                         disabled={deletingPemakaiId === p.id}
-                                        title="Hapus"
-                                        className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition disabled:opacity-50"
+                                        title="Hapus riwayat"
+                                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition disabled:opacity-50"
                                       >
-                                        <Trash2 size={14} />
+                                        <Trash2 size={13} />
                                       </button>
                                     )}
                                     <button
+                                      type="button"
                                       onClick={() => setExpandedPemakaiId(expanded ? null : p.id)}
                                       title={expanded ? 'Sembunyikan detail' : 'Lihat detail'}
-                                      className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 transition"
+                                      className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-800 transition"
                                     >
                                       {expanded ? <ChevronDown size={14} className="rotate-180 transition-transform" /> : <Eye size={14} />}
                                     </button>
                                   </div>
                                 </div>
 
-                                {/* Dropdown detail — expand di tempat, gak buka modal/halaman baru */}
                                 {expanded && (
-                                  <div className="mt-2 pt-2 border-t border-slate-200 flex flex-col gap-0.5">
+                                  <div className="mt-2.5 pt-2.5 border-t border-slate-200 dark:border-zinc-800 text-[11px] text-slate-500 dark:text-zinc-400 space-y-1">
                                     {p.user && (
-                                      <p className="text-slate-400">
-                                        NIK: {p.user.nik || '-'} · {p.user.departemen?.nama || '-'}
+                                      <p>
+                                        NIK: <span className="font-semibold text-slate-700 dark:text-zinc-300">{p.user.nik || '-'}</span> · Divisi:{' '}
+                                        <span className="font-semibold text-slate-700 dark:text-zinc-300">{p.user.departemen?.nama || '-'}</span>
                                       </p>
                                     )}
-                                    {p.catatan_penerimaan && (
-                                      <p className="text-slate-400">Terima: {p.catatan_penerimaan}</p>
-                                    )}
-                                    {p.catatan_pengembalian && (
-                                      <p className="text-slate-400">Kembali: {p.catatan_pengembalian}</p>
-                                    )}
-                                    {p.no_struk_penerimaan && (
-                                      <p className="text-slate-400">Struk terima: {p.no_struk_penerimaan}</p>
-                                    )}
-                                    {p.no_struk_pengembalian && (
-                                      <p className="text-slate-400">Struk kembali: {p.no_struk_pengembalian}</p>
-                                    )}
-                                    {!p.catatan_penerimaan && !p.catatan_pengembalian && !p.no_struk_penerimaan && !p.no_struk_pengembalian && (
-                                      <p className="text-slate-400">Tidak ada catatan tambahan.</p>
-                                    )}
+                                    {p.catatan_penerimaan && <p>Catatan terima: {p.catatan_penerimaan}</p>}
+                                    {p.catatan_pengembalian && <p>Catatan kembali: {p.catatan_pengembalian}</p>}
+                                    {p.no_struk_penerimaan && <p>Struk terima: {p.no_struk_penerimaan}</p>}
+                                    {p.no_struk_pengembalian && <p>Struk kembali: {p.no_struk_pengembalian}</p>}
                                   </div>
                                 )}
                               </li>
                             );
                           })}
                           {!semuaPemakai.length && (
-                            <p className="text-xs text-slate-400">Belum ada riwayat pemakai.</p>
+                            <p className="text-xs text-slate-400 dark:text-zinc-500 italic py-2">Belum ada riwayat pemakai.</p>
                           )}
                         </ul>
 
@@ -1775,14 +1801,18 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                 </div>
 
                 {historyActionError && (
-                  <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  <p className="text-xs text-red-600 bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-900/60 rounded-xl px-3 py-2">
                     {historyActionError}
                   </p>
                 )}
 
-                {/* RIWAYAT PERBAIKAN / PENANGANAN KERUSAKAN */}
-                <div className="border-t border-slate-100 pt-4">
-                  <p className="text-sm font-semibold text-slate-900 mb-2">Riwayat Perbaikan</p>
+                {/* RIWAYAT PERBAIKAN / PENANGANAN */}
+                <div className="border-t border-slate-100 dark:border-zinc-800 pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                      Riwayat Perbaikan & Kerusakan
+                    </h4>
+                  </div>
                   {(() => {
                     const semuaPenanganan = detail.penanganan || [];
                     const totalPenangananPage = Math.max(1, Math.ceil(semuaPenanganan.length / RIWAYAT_PERBAIKAN_PER_PAGE));
@@ -1799,100 +1829,104 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                             const diterima = !!p.tanggal_diterima;
                             const statusLabel = selesai ? 'Selesai' : diterima ? 'Sedang Diperbaiki' : 'Menunggu Diterima';
                             const statusStyle = selesai
-                              ? 'bg-emerald-50 text-emerald-700'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
                               : diterima
-                              ? 'bg-orange-50 text-orange-700'
-                              : 'bg-yellow-50 text-yellow-700';
+                              ? 'bg-orange-50 dark:bg-amber-950/40 text-orange-700 dark:text-amber-300'
+                              : 'bg-yellow-50 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300';
                             const namaPelapor = namaPemakai(p.pemakai);
                             const expanded = expandedPenangananId === p.id;
                             return (
-                              <li key={p.id} className="text-xs bg-slate-50 rounded-lg px-3 py-2">
-                                {/* Baris ringkas — sama gaya kayak Riwayat Pemakai */}
+                              <li key={p.id} className="text-xs bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/60 dark:border-zinc-800 rounded-xl p-3">
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="min-w-0">
                                     <StatusBadge colorClass={statusStyle} size="xs" className="mb-1">
                                       {statusLabel}
                                     </StatusBadge>{' '}
-                                    <span className="font-medium text-slate-800">{p.keluhan}</span>{' '}
-                                    <span className="text-slate-500">— {formatTanggalId(p.tanggal_lapor)}</span>
+                                    <span className="font-semibold text-slate-900 dark:text-zinc-100">{p.keluhan}</span>{' '}
+                                    <span className="text-slate-500 dark:text-zinc-400">— {formatTanggalId(p.tanggal_lapor)}</span>
                                   </div>
                                   <div className="flex items-center gap-1 flex-shrink-0">
                                     {isAdmin && !selesai && !diterima && (
                                       <button
+                                        type="button"
                                         onClick={() => handleTerimaPenanganan(p.id)}
                                         disabled={terimaLoadingId === p.id}
                                         title="Terima & mulai tangani laporan ini"
-                                        className="p-1.5 rounded-md text-amber-600 hover:bg-amber-100 transition disabled:opacity-50"
+                                        className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition disabled:opacity-50"
                                       >
                                         <PlayCircle size={14} />
                                       </button>
                                     )}
                                     {isAdmin && !selesai && diterima && (
                                       <button
+                                        type="button"
                                         onClick={() => setPenangananSelesaiTarget({ inventory: detail, penanganan: p })}
                                         title="Tandai selesai"
-                                        className="p-1.5 rounded-md text-emerald-600 hover:bg-emerald-100 transition"
+                                        className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition"
                                       >
                                         <CheckCircle2 size={14} />
                                       </button>
                                     )}
                                     {isAdmin && p.no_struk && (
                                       <button
+                                        type="button"
                                         onClick={() => handlePrintPenanganan(detail, p)}
                                         title="Cetak struk"
-                                        className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 transition"
+                                        className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-800 transition"
                                       >
                                         <Printer size={13} />
                                       </button>
                                     )}
                                     {isAdmin && (
                                       <button
+                                        type="button"
                                         onClick={() => handleDeletePenanganan(p.id)}
                                         title="Hapus"
-                                        className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition"
+                                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
                                       >
-                                        <Trash2 size={14} />
+                                        <Trash2 size={13} />
                                       </button>
                                     )}
                                     <button
+                                      type="button"
                                       onClick={() => setExpandedPenangananId(expanded ? null : p.id)}
                                       title={expanded ? 'Sembunyikan detail' : 'Lihat detail'}
-                                      className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 transition"
+                                      className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-800 transition"
                                     >
                                       {expanded ? <ChevronDown size={14} className="rotate-180 transition-transform" /> : <Eye size={14} />}
                                     </button>
                                   </div>
                                 </div>
 
-                                {/* Dropdown detail — expand di tempat, gak buka modal/halaman baru */}
                                 {expanded && (
-                                  <div className="mt-2 pt-2 border-t border-slate-200 flex flex-col gap-0.5">
-                                    <StatusBadge colorClass="bg-slate-200 text-slate-600" size="xs" className="mb-1 w-fit">
+                                  <div className="mt-2.5 pt-2.5 border-t border-slate-200 dark:border-zinc-800 text-[11px] text-slate-500 dark:text-zinc-400 space-y-1">
+                                    <StatusBadge colorClass="bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400" size="xs" className="mb-1 w-fit">
                                       {formatJenisKerusakan(p.jenis_kerusakan)}
                                     </StatusBadge>
-                                    {p.hasil && <p className="text-slate-500">Hasil: {p.hasil}</p>}
-                                    <p className="text-slate-400">
-                                      Dipinjam oleh: <span className="font-medium">{namaPelapor === '-' ? 'Tidak ada (audit gudang)' : namaPelapor}</span>
+                                    {p.hasil && <p>Hasil: <span className="font-semibold text-slate-700 dark:text-zinc-300">{p.hasil}</span></p>}
+                                    <p>
+                                      Pelapor: <span className="font-semibold text-slate-700 dark:text-zinc-300">{namaPelapor === '-' ? 'Audit Gudang' : namaPelapor}</span>
                                     </p>
-                                    <p className="text-slate-400">
+                                    <p>
                                       Lapor {formatTanggalId(p.tanggal_lapor)}
                                       {p.tanggal_diterima ? ` · Diterima ${formatTanggalId(p.tanggal_diterima)}` : ''}
                                       {p.tanggal_selesai ? ` · Selesai ${formatTanggalId(p.tanggal_selesai)}` : ''}
-                                      {p.durasi_hari != null ? ` · ${p.durasi_hari} hari` : ''}
+                                      {p.durasi_hari != null ? ` · ${p.durasi_hari} hari pengerjaan` : ''}
                                     </p>
                                     {(p.harga_jasa != null || p.biaya_komponen != null) && (
-                                      <p className="text-slate-400">
-                                        Komponen {formatRupiah(p.biaya_komponen)} + Jasa {formatRupiah(p.harga_jasa)} = <span className="font-medium text-slate-600">{formatRupiah(totalBiaya)}</span>
+                                      <p>
+                                        Biaya: Komponen {formatRupiah(p.biaya_komponen)} + Jasa {formatRupiah(p.harga_jasa)} = <span className="font-bold text-slate-800 dark:text-zinc-200">{formatRupiah(totalBiaya)}</span>
                                       </p>
                                     )}
-                                    {p.no_struk && <p className="text-slate-400">Struk: {p.no_struk}</p>}
+                                    {p.no_struk && <p>Struk: {p.no_struk}</p>}
+                                    {p.catatan && <p>Catatan: {p.catatan}</p>}
                                   </div>
                                 )}
                               </li>
                             );
                           })}
                           {!semuaPenanganan.length && (
-                            <p className="text-xs text-slate-400">Belum ada riwayat perbaikan.</p>
+                            <p className="text-xs text-slate-400 dark:text-zinc-500 italic py-2">Belum ada riwayat perbaikan.</p>
                           )}
                         </ul>
 
@@ -1914,6 +1948,17 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                 </div>
               </div>
             )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end px-6 py-3.5 border-t border-slate-100 dark:border-zinc-800 shrink-0 bg-slate-50/50 dark:bg-zinc-900/50">
+              <button
+                type="button"
+                onClick={closeDetail}
+                className="text-xs font-semibold px-5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-700 shadow-xs transition cursor-pointer"
+              >
+                Tutup
+              </button>
             </div>
           </div>
         </div>
