@@ -205,8 +205,11 @@ export default function EditKaryawanPage() {
             navigate('/karyawan');
         } catch (err: any) {
             if (err.response?.status === 422) {
-                setErrors(err.response.data.errors ?? {});
-                toast.error('Ada data yang belum sesuai dengan format server.');
+                const apiErrors = err.response.data.errors ?? {};
+                setErrors(apiErrors);
+                // Pesan spesifik dari backend (mis. masih ada pinjaman inventory)
+                // ditampilkan langsung, bukan toast generik.
+                toast.error(apiErrors.status?.[0] || 'Ada data yang belum sesuai dengan format server.');
             } else if (err.response?.status === 403) {
                 setGeneralError('Anda tidak punya akses untuk mengubah data ini.');
             } else {
