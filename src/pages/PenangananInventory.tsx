@@ -683,23 +683,13 @@ export default function PenangananInventory({ onCount }: Props) {
 
                         <td className="px-6 py-3.5 text-slate-600 whitespace-nowrap">
                           <p className="text-xs text-slate-700 font-medium">{formatTanggalId(p.tanggal_selesai)}</p>
-                          <p className="text-[11px] text-slate-400">
-                            {p.durasi_detik != null ? `${formatDurasi(p.durasi_detik)} penanganan` : '-'}
-                          </p>
                         </td>
 
                         <td className="px-6 py-3.5 whitespace-nowrap text-slate-700">
                           {rusakBerat ? (
                             <span className="text-xs text-slate-400">-</span>
                           ) : (
-                            <div>
-                              <p className="font-semibold text-xs text-slate-900">{formatRupiah(totalBiaya)}</p>
-                              {(p.harga_jasa || p.biaya_komponen) && (
-                                <p className="text-[10px] text-slate-400">
-                                  Jasa: {formatRupiah(p.harga_jasa)} · Part: {formatRupiah(p.biaya_komponen)}
-                                </p>
-                              )}
-                            </div>
+                            <p className="font-semibold text-xs text-slate-900">{formatRupiah(totalBiaya)}</p>
                           )}
                         </td>
 
