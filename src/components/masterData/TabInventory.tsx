@@ -21,7 +21,7 @@ import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 // kategori gak lagi nentuin bentuk export.
 import { useAuth } from '../../context/AuthContext';
 import { printStruk } from '../../utils/printStruk';
-import { namaPemakai, userIdPemakai, formatJenisKerusakan } from './inventoryHelpers';
+import { namaPemakai, namaPelaporPenanganan, userIdPemakai, formatJenisKerusakan } from './inventoryHelpers';
 import {
   getInventory,
   getInventoryById,
@@ -1833,7 +1833,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                               : diterima
                               ? 'bg-orange-50 dark:bg-amber-950/40 text-orange-700 dark:text-amber-300'
                               : 'bg-yellow-50 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300';
-                            const namaPelapor = namaPemakai(p.pemakai);
+                            const namaPelapor = namaPelaporPenanganan(p);
                             const expanded = expandedPenangananId === p.id;
                             return (
                               <li key={p.id} className="text-xs bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/60 dark:border-zinc-800 rounded-xl p-3">
@@ -1905,7 +1905,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
                                     </StatusBadge>
                                     {p.hasil && <p>Hasil: <span className="font-semibold text-slate-700 dark:text-zinc-300">{p.hasil}</span></p>}
                                     <p>
-                                      Pelapor: <span className="font-semibold text-slate-700 dark:text-zinc-300">{namaPelapor === '-' ? 'Audit Gudang' : namaPelapor}</span>
+                                      Pelapor: <span className="font-semibold text-slate-700 dark:text-zinc-300">{namaPelapor}</span>
                                     </p>
                                     <p>
                                       Lapor {formatTanggalId(p.tanggal_lapor)}

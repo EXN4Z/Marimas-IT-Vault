@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FileSpreadsheet, FileText, X, CheckSquare, Square, FileDown, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
-import { formatTanggalId, namaPemakai, formatRupiah, formatJenisKerusakan } from '../masterData/inventoryHelpers';
+import { formatTanggalId, namaPelaporPenanganan, formatRupiah, formatJenisKerusakan } from '../masterData/inventoryHelpers';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
 import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';
@@ -35,7 +35,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
     get: (p) => formatJenisKerusakan(p.jenis_kerusakan),
   },
   { key: 'keluhan', label: 'Keluhan', defaultChecked: true, get: (p) => p.keluhan || '-' },
-  { key: 'pelapor', label: 'Pelapor', defaultChecked: true, get: (p) => namaPemakai(p.pemakai) },
+  { key: 'pelapor', label: 'Pelapor', defaultChecked: true, get: (p) => namaPelaporPenanganan(p) },
   { key: 'tanggal_lapor', label: 'Tanggal Lapor', defaultChecked: true, get: (p) => formatTanggalId(p.tanggal_lapor) },
   { key: 'tanggal_diterima', label: 'Tanggal Diterima', defaultChecked: false, get: (p) => formatTanggalId(p.tanggal_diterima) },
   { key: 'tanggal_selesai', label: 'Tanggal Selesai', defaultChecked: true, get: (p) => formatTanggalId(p.tanggal_selesai) },

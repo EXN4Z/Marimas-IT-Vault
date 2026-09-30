@@ -29,7 +29,6 @@ import {
   formatTanggalId,
   formatTanggalWaktuId,
   namaPelaporPenanganan,
-  namaPemakai,
   formatJenisKerusakan,
   JENIS_KERUSAKAN_OPTIONS,
 } from '../components/masterData/inventoryHelpers';
@@ -279,7 +278,7 @@ export default function PenangananInventory({ onCount }: Props) {
         (p.inventory?.nama || '').toLowerCase().includes(q) ||
         (p.jenis_kerusakan || '').toLowerCase().includes(q) ||
         (p.keluhan || '').toLowerCase().includes(q) ||
-        namaPemakai(p.pemakai).toLowerCase().includes(q) ||
+        namaPelaporPenanganan(p).toLowerCase().includes(q) ||
         (p.catatan || '').toLowerCase().includes(q)
       );
     });
@@ -561,10 +560,10 @@ export default function PenangananInventory({ onCount }: Props) {
                         {/* Pelapor Info */}
                         <div className="flex items-center gap-2 text-xs text-slate-500 mb-3">
                           <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px] shrink-0">
-                            {initials(namaPemakai(p.pemakai))}
+                            {initials(namaPelaporPenanganan(p))}
                           </div>
                           <span>
-                            Oleh <strong className="font-semibold text-slate-700">{namaPemakai(p.pemakai)}</strong>
+                            Oleh <strong className="font-semibold text-slate-700">{namaPelaporPenanganan(p)}</strong>
                           </span>
                           <span>·</span>
                           <span>Lapor: {formatTanggalId(p.tanggal_lapor)}</span>
@@ -666,7 +665,7 @@ export default function PenangananInventory({ onCount }: Props) {
                         </td>
 
                         <td className="px-6 py-3.5 text-slate-600">
-                          <p className="font-medium text-slate-800 text-xs">{namaPemakai(p.pemakai)}</p>
+                          <p className="font-medium text-slate-800 text-xs">{namaPelaporPenanganan(p)}</p>
                           <p className="text-xs text-slate-400">{formatTanggalId(p.tanggal_lapor)}</p>
                         </td>
 
@@ -869,7 +868,7 @@ function TerimaLaporanModal({
               <span className="font-medium text-slate-800">{formatJenisKerusakan(penanganan.jenis_kerusakan)}</span>
             </div>
             <div className="flex justify-between items-center py-0.5 border-b border-slate-200/50">
-              <span className="text-slate-500">Dilaporkan Oleh</span>
+              <span className="text-slate-500">Pelapor</span>
               <span className="font-medium text-slate-800">{namaPelaporPenanganan(penanganan)}</span>
             </div>
             <div className="flex justify-between items-center py-0.5 border-b border-slate-200/50">

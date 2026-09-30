@@ -6,7 +6,7 @@ import SearchInput from '../shared/SearchInput';
 import { getFotoDasarInventory, type Inventory } from '../../api/masterData/inventory';
 import { getFotoPemakaiInventory, type FotoPemakaiEntry } from '../../api/transaksi/inventoryPemakai';
 import { getFotoKerusakanInventory, type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
-import { namaPemakai, formatTanggalWaktuId, formatJenisKerusakan } from '../masterData/inventoryHelpers';
+import { namaPemakai, namaPelaporPenanganan, formatTanggalWaktuId, formatJenisKerusakan } from '../masterData/inventoryHelpers';
 import { SkeletonTable } from '../shared/skeleton';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
@@ -371,7 +371,7 @@ export default function TabFotoInventory() {
                 <tr key={p.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                   <td className="px-4 py-3 whitespace-nowrap">{inventoryLabel(p.inventory)}</td>
                   <td className="px-4 py-3 text-slate-600 max-w-[160px]">
-                    <p className="truncate" title={namaPemakai(p.pemakai)}>{namaPemakai(p.pemakai)}</p>
+                    <p className="truncate" title={namaPelaporPenanganan(p)}>{namaPelaporPenanganan(p)}</p>
                   </td>
                   <td className="px-4 py-3 text-slate-600 max-w-[200px]">
                     <p className="font-medium text-slate-800 truncate">{formatJenisKerusakan(p.jenis_kerusakan)}</p>
