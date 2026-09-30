@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
+import Tooltip from '../components/shared/Tooltip';
 import {
   X,
   Wrench,
@@ -51,9 +52,11 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function formatRupiah(n?: number | null) {
+function formatRupiah(n?: number | string | null) {
   if (n == null) return '-';
-  return `Rp ${n.toLocaleString('id-ID')}`;
+  // harga_jasa/biaya_komponen dikirim backend sebagai string decimal
+  // ("50000.00"), jadi dinormalisasi ke number dulu biar kebaca "Rp 50.000".
+  return `Rp ${(Number(n) || 0).toLocaleString('id-ID')}`;
 }
 
 function initials(name?: string) {
@@ -633,12 +636,12 @@ export default function PenangananInventory({ onCount }: Props) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
-                    <th className="px-6 py-3.5 font-medium">Inventory</th>
-                    <th className="px-6 py-3.5 font-medium">Kerusakan & Keluhan</th>
-                    <th className="px-6 py-3.5 font-medium">Pelapor & Tanggal</th>
-                    <th className="px-6 py-3.5 font-medium">Tanggal Selesai</th>
-                    <th className="px-6 py-3.5 font-medium">Biaya Penanganan</th>
-                    <th className="px-6 py-3.5 font-medium">Hasil</th>
+                    <th className="px-6 py-3.5 font-medium whitespace-nowrap">Inventory</th>
+                    <th className="px-6 py-3.5 font-medium whitespace-nowrap">Kerusakan & Keluhan</th>
+                    <th className="px-6 py-3.5 font-medium whitespace-nowrap">Pelapor & Tanggal</th>
+                    <th className="px-6 py-3.5 font-medium whitespace-nowrap">Tanggal Selesai</th>
+                    <th className="px-6 py-3.5 font-medium whitespace-nowrap">Biaya Penanganan</th>
+                    <th className="px-6 py-3.5 font-medium whitespace-nowrap">Hasil</th>
                     <th className="px-6 py-3.5 font-medium text-right">Aksi</th>
                   </tr>
                 </thead>
@@ -650,24 +653,32 @@ export default function PenangananInventory({ onCount }: Props) {
                     return (
                       <tr key={p.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                         <td className="px-6 py-3.5 text-slate-800 font-medium">
-                          <p className="font-semibold text-slate-900">{p.inventory?.kode_inventory || '-'}</p>
-                          <p className="text-xs text-slate-400 truncate max-w-[180px]">
-                            {p.inventory?.nama || 'Unit Aset'}
-                          </p>
+                          <p className="font-semibold text-slate-900 whitespace-nowrap">{p.inventory?.kode_inventory || '-'}</p>
+                          <div className="max-w-[180px]">
+                            <Tooltip content={p.inventory?.nama || 'Unit Aset'}>
+                              <p className="text-xs text-slate-400 truncate">{p.inventory?.nama || 'Unit Aset'}</p>
+                            </Tooltip>
+                          </div>
                         </td>
 
                         <td className="px-6 py-3.5 text-slate-600">
-                          <p className="font-medium text-slate-800 text-xs">
+                          <p className="font-medium text-slate-800 text-xs whitespace-nowrap">
                             {formatJenisKerusakan(p.jenis_kerusakan)}
                           </p>
-                          <p className="text-xs text-slate-500 truncate max-w-[220px]" title={p.keluhan}>
-                            {p.keluhan}
-                          </p>
+                          <div className="max-w-[220px]">
+                            <Tooltip content={p.keluhan}>
+                              <p className="text-xs text-slate-500 truncate">{p.keluhan}</p>
+                            </Tooltip>
+                          </div>
                         </td>
 
                         <td className="px-6 py-3.5 text-slate-600">
-                          <p className="font-medium text-slate-800 text-xs">{namaPelaporPenanganan(p)}</p>
-                          <p className="text-xs text-slate-400">{formatTanggalId(p.tanggal_lapor)}</p>
+                          <div className="max-w-[150px]">
+                            <Tooltip content={namaPelaporPenanganan(p)}>
+                              <p className="font-medium text-slate-800 text-xs truncate">{namaPelaporPenanganan(p)}</p>
+                            </Tooltip>
+                          </div>
+                          <p className="text-xs text-slate-400 whitespace-nowrap">{formatTanggalId(p.tanggal_lapor)}</p>
                         </td>
 
                         <td className="px-6 py-3.5 text-slate-600 whitespace-nowrap">
