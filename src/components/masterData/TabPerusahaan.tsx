@@ -449,7 +449,7 @@ export default function TabPerusahaan() {
               </p>
             )}
 
-            <Field label="Nama Perusahaan" error={formErrors.nama} required hint="Nama identitas perusahaan">
+            <Field label="Nama Perusahaan" error={formErrors.nama} required hint="">
               <TextInput
                 value={formNama}
                 onChange={(val) => {
@@ -462,7 +462,7 @@ export default function TabPerusahaan() {
               />
             </Field>
 
-            <Field label="Alamat Lengkap" error={formErrors.alamat} required hint="Alamat fisik operasional perusahaan">
+            <Field label="Alamat Lengkap" error={formErrors.alamat} required hint="">
               <Textarea
                 value={formAlamat}
                 onChange={(val) => {
@@ -475,7 +475,7 @@ export default function TabPerusahaan() {
               />
             </Field>
 
-            <Field label="Nomor Telepon" error={formErrors.telepon} required hint="Nomor telepon aktif perusahaan / WhatsApp CS">
+            <Field label="Nomor Telepon" error={formErrors.telepon} required hint="">
               <TextInput
                 value={formTelepon}
                 onChange={(val) => {
@@ -488,7 +488,7 @@ export default function TabPerusahaan() {
               />
             </Field>
 
-            <Field label="Link Lokasi Peta (Google Maps)" error={formErrors.link} required hint="Tautan URL Google Maps atau koordinat GPS">
+            <Field label="Link Lokasi Peta (Google Maps)" error={formErrors.link} required hint="">
               <TextInput
                 value={formLink}
                 onChange={(val) => {
