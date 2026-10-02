@@ -444,7 +444,7 @@ export default function TabCabang() {
               </p>
             )}
 
-            <Field label="Nama Cabang" error={formErrors.nama} required hint="Nama identitas kantor cabang">
+            <Field label="Nama Cabang" error={formErrors.nama}>
               <TextInput
                 value={formNama}
                 onChange={(val) => {
@@ -457,7 +457,7 @@ export default function TabCabang() {
               />
             </Field>
 
-            <Field label="Alamat Lengkap" error={formErrors.alamat} required hint="Alamat fisik operasional kantor">
+            <Field label="Alamat Lengkap" error={formErrors.alamat} required>
               <Textarea
                 value={formAlamat}
                 onChange={(val) => {
@@ -470,7 +470,7 @@ export default function TabCabang() {
               />
             </Field>
 
-            <Field label="Nomor Telepon" error={formErrors.telepon} hint="Nomor telepon aktif kantor / WhatsApp CS">
+            <Field label="Nomor Telepon" error={formErrors.telepon}>
               <TextInput
                 value={formTelepon}
                 onChange={(val) => {
@@ -483,7 +483,7 @@ export default function TabCabang() {
               />
             </Field>
 
-            <Field label="Link Lokasi Peta (Google Maps)" error={formErrors.link} hint="Tautan URL Google Maps atau koordinat GPS (opsional)">
+            <Field label="Link Lokasi Peta (Google Maps)" error={formErrors.link}>
               <TextInput
                 value={formLink}
                 onChange={(val) => {
