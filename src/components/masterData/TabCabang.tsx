@@ -444,7 +444,7 @@ export default function TabCabang() {
               </p>
             )}
 
-            <Field label="Nama Cabang" error={formErrors.nama} required hint="Nama identitas kantor cabang">
+            <Field label="Nama Cabang" error={formErrors.nama} required hint="">
               <TextInput
                 value={formNama}
                 onChange={(val) => {
@@ -457,7 +457,7 @@ export default function TabCabang() {
               />
             </Field>
 
-            <Field label="Alamat Lengkap" error={formErrors.alamat} required hint="Alamat fisik operasional kantor">
+            <Field label="Alamat Lengkap" error={formErrors.alamat} required hint="">
               <Textarea
                 value={formAlamat}
                 onChange={(val) => {
