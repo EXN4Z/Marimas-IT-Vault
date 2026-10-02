@@ -4,17 +4,17 @@ import { ThemeProvider } from './context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
 import AdminRoute from './components/layout/AdminRoute';
 import AppLayout from './components/layout/AppLayout';
-import Login from './pages/Login';
-import VerifyOtp from './pages/VerifyOtp';
+import Login from './pages/auth/Login';
+import VerifyOtp from './pages/auth/VerifyOtp';
 import Dashboard from './pages/Dashboard';
-import KaryawanEdit from './pages/KaryawanEdit';
-import KaryawanCreate from './pages/KaryawanCreate';
-import KaryawanDetail from './pages/KaryawanDetail';
-import Settings from './pages/Settings';
-import AuditLog from './pages/AuditLog';
-import Laporan from './pages/Laporan';
-import MasterData from './pages/MasterData';
-import PenangananInventory from './pages/PenangananInventory';
+import KaryawanEdit from './pages/masterData/karyawan/KaryawanEdit';
+import KaryawanCreate from './pages/masterData/karyawan/KaryawanCreate';
+import KaryawanDetail from './pages/masterData/karyawan/KaryawanDetail';
+import Settings from './pages/settings/Settings';
+import AuditLog from './pages/auditLog/AuditLog';
+import Laporan from './pages/laporan/Laporan';
+import MasterData from './pages/masterData/MasterData';
+import PenangananInventory from './pages/transaksi/PenangananInventory';
 
 interface LocationState {
   backgroundLocation?: Location;

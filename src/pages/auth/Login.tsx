@@ -11,11 +11,11 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { login } from '../api/auth';
-import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import { Skeleton } from '../components/shared/skeleton';
-import '../index.css';
+import { login } from '../../api/auth';
+import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
+import { Skeleton } from '../../components/shared/skeleton';
+import '../../index.css';
 
 export default function Login() {
   const [loginId, setLoginId] = useState('');

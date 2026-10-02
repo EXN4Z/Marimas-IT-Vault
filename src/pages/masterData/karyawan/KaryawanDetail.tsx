@@ -6,9 +6,9 @@ import {
   CheckCircle2,
   User as UserIcon,
 } from 'lucide-react';
-import api from '../api/axios';
-import RouteModal from '../components/shared/RouteModal';
-import { Skeleton } from '../components/shared/skeleton';
+import api from '../../../api/axios';
+import RouteModal from '../../../components/shared/RouteModal';
+import { Skeleton } from '../../../components/shared/skeleton';
 
 type Role = 'admin' | 'user';
 

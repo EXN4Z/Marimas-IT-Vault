@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { User as UserIcon, Mail, Phone, Save, Bell, BellOff, Lock, KeyRound } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useAuth } from '../context/AuthContext';
-import { updateProfile, updatePassword } from '../api/auth';
-import { usePushNotifications } from '../hooks/usePushNotifications';
+import { useAuth } from '../../context/AuthContext';
+import { updateProfile, updatePassword } from '../../api/auth';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 
 const roleLabels: Record<string, string> = {
   admin: 'Admin',

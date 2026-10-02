@@ -1,19 +1,19 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import api from '../api/axios';
-import RouteModal from '../components/shared/RouteModal';
-import Select from '../components/shared/Select';
-import SearchableSelect from '../components/shared/SearchableSelect';
-import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
-import { getDepartemen } from '../api/masterData/departemen';
-import { getCabang, type Cabang } from '../api/masterData/cabang';
-import { getPerusahaan, type Perusahaan } from '../api/masterData/perusahaan'; // sesuaikan path
-import { setKaryawanPassword } from '../api/auth';
-import type { Departemen } from '../api/masterData/departemen';
+import api from '../../../api/axios';
+import RouteModal from '../../../components/shared/RouteModal';
+import Select from '../../../components/shared/Select';
+import SearchableSelect from '../../../components/shared/SearchableSelect';
+import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/shared/FormControls';
+import { getDepartemen } from '../../../api/masterData/departemen';
+import { getCabang, type Cabang } from '../../../api/masterData/cabang';
+import { getPerusahaan, type Perusahaan } from '../../../api/masterData/perusahaan'; // sesuaikan path
+import { setKaryawanPassword } from '../../../api/auth';
+import type { Departemen } from '../../../api/masterData/departemen';
 import { createPortal } from 'react-dom';
-import { Skeleton } from '../components/shared/skeleton';
-import ConfirmDeleteModal from '../components/shared/ConfirmDeleteModal';
+import { Skeleton } from '../../../components/shared/skeleton';
+import ConfirmDeleteModal from '../../../components/shared/ConfirmDeleteModal';
 import { KeyRound, X } from 'lucide-react';
 
 interface RoleOption {

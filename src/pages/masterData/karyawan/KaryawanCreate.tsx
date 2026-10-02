@@ -2,15 +2,15 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { User, Lock, Building2, Eye, EyeOff } from 'lucide-react';
-import api from '../api/axios';
-import RouteModal from '../components/shared/RouteModal';
-import Select from '../components/shared/Select';
-import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
-import { getDepartemen, type Departemen } from '../api/masterData/departemen';
-import { getPerusahaan, type Perusahaan } from '../api/masterData/perusahaan';
-import { getCabang, type Cabang } from '../api/masterData/cabang';
-import { getRoles, type Role } from '../api/masterData/role';
-import SearchableSelect from '../components/shared/SearchableSelect';
+import api from '../../../api/axios';
+import RouteModal from '../../../components/shared/RouteModal';
+import Select from '../../../components/shared/Select';
+import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/shared/FormControls';
+import { getDepartemen, type Departemen } from '../../../api/masterData/departemen';
+import { getPerusahaan, type Perusahaan } from '../../../api/masterData/perusahaan';
+import { getCabang, type Cabang } from '../../../api/masterData/cabang';
+import { getRoles, type Role } from '../../../api/masterData/role';
+import SearchableSelect from '../../../components/shared/SearchableSelect';
 
 interface FormState {
     name: string;

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import Tooltip from '../components/shared/Tooltip';
+import Tooltip from '../../components/shared/Tooltip';
 import {
   X,
   Wrench,
@@ -17,15 +17,15 @@ import {
   RotateCcw,
   Check,
 } from 'lucide-react';
-import Pagination from '../components/shared/Pagination';
-import Select from '../components/shared/Select';
-import api from '../api/axios';
+import Pagination from '../../components/shared/Pagination';
+import Select from '../../components/shared/Select';
+import api from '../../api/axios';
 import {
   terimaPenangananInventory,
   selesaikanPenangananInventory,
   getInventoryPenanganan,
   type InventoryPenanganan,
-} from '../api/transaksi/inventoryPenanganan';
+} from '../../api/transaksi/inventoryPenanganan';
 import {
   formatTanggalId,
   formatTanggalWaktuId,
@@ -33,14 +33,14 @@ import {
   formatJenisKerusakan,
   JENIS_KERUSAKAN_OPTIONS,
   formatDurasi,
-} from '../utils/inventoryHelpers';
-import ScrollableTabBar from '../components/shared/ScrollableTabBar';
-import SearchInput from '../components/shared/SearchInput';
-import StatusBadge from '../components/shared/StatusBadge';
-import { printStruk } from '../utils/printStruk';
-import InventoryPenangananExportModal from '../components/transaksi/InventoryPenangananExportModal';
-import { useAuth } from '../context/AuthContext';
-import { Skeleton, SkeletonListCard } from '../components/shared/skeleton';
+} from '../../utils/inventoryHelpers';
+import ScrollableTabBar from '../../components/shared/ScrollableTabBar';
+import SearchInput from '../../components/shared/SearchInput';
+import StatusBadge from '../../components/shared/StatusBadge';
+import { printStruk } from '../../utils/printStruk';
+import InventoryPenangananExportModal from '../../components/transaksi/InventoryPenangananExportModal';
+import { useAuth } from '../../context/AuthContext';
+import { Skeleton, SkeletonListCard } from '../../components/shared/skeleton';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
 
