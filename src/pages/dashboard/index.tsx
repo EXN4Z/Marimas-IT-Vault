@@ -16,7 +16,7 @@ import { DashboardSkeleton } from './widgets';
 const REVIEWER_ROLES = ['admin'];
 
 // Entry point /dashboard. File ini sengaja dinamai index.tsx supaya
-// `import Dashboard from './pages/Dashboard'` di App.tsx (dan file lain)
+// `import Dashboard from './pages/dashboard'` di App.tsx (dan file lain)
 // TETAP JALAN tanpa perlu diubah — cuma jadi "switch" yang milih salah satu
 // dari DashboardUser / DashboardAdmin sesuai role user yang login.
 //

@@ -6,7 +6,7 @@ import AdminRoute from './components/layout/AdminRoute';
 import AppLayout from './components/layout/AppLayout';
 import Login from './pages/auth/Login';
 import VerifyOtp from './pages/auth/VerifyOtp';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './pages/dashboard';
 import KaryawanEdit from './pages/masterData/karyawan/KaryawanEdit';
 import KaryawanCreate from './pages/masterData/karyawan/KaryawanCreate';
 import KaryawanDetail from './pages/masterData/karyawan/KaryawanDetail';
@@ -23,7 +23,7 @@ interface LocationState {
 function AppRoutes() {
   const location = useLocation();
   // Kalau route ini dibuka lewat state.backgroundLocation (lihat navigate() di
-  // Karyawan.tsx), <Routes> utama tetap merender halaman LAMA
+  // components/masterData/TabKaryawan.tsx), <Routes> utama tetap merender halaman LAMA
   // (backgroundLocation), jadi dia tidak pernah unmount/loading ulang. Route
   // create/edit-nya sendiri dirender terpisah di bawah sebagai layer overlay
   // absolute di atasnya (mirip ScanQrModal), lalu ditutup dengan navigate(-1).
@@ -46,17 +46,17 @@ function AppRoutes() {
             dropdown yang lagi kebuka, dll gak reset tiap ganti halaman. */}
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          {/* Inventaris.tsx udah dihapus -- Inventory & Kelengkapan Inventory pindah ke
-              Master Data, Foto Inventory & Riwayat Inventory pindah ke Laporan, dan
-              Penanganan Inventory punya halaman sendiri. Alias ini jaga-jaga buat
-              bookmark/link lama ke /inventaris. */}
+          {/* Halaman Inventaris sudah dihapus -- Inventory pindah ke Master Data, Foto
+              Inventory & Riwayat Inventory pindah ke Laporan, dan Penanganan Inventory
+              punya halaman sendiri. Alias ini jaga-jaga buat bookmark/link lama ke
+              /inventaris. */}
           <Route path="/inventaris" element={<Navigate to="/laporan" replace />} />
           {/* Inventory sekarang isinya di halaman Master Data (tab "inventory"), bukan
               lagi di Inventaris -- alias lama ini diarahin ke sana. */}
           <Route path="/inventory" element={<Navigate to="/master-data?tab=inventory" replace />} />
-          {/* Data User (Karyawan.tsx) & Cabang (CabangPage.tsx) sekarang jadi tab
-              di dalam Master Data (tab "karyawan" & "cabang"), bukan halaman
-              sendiri lagi -- alias ini jaga-jaga buat bookmark/link lama. */}
+          {/* Data User & Cabang sekarang jadi tab di dalam Master Data (tab "karyawan" &
+              "cabang"), bukan halaman sendiri lagi -- alias ini jaga-jaga buat
+              bookmark/link lama. */}
           <Route path="/karyawan" element={<Navigate to="/master-data?tab=karyawan" replace />} />
           <Route path="/cabang" element={<Navigate to="/master-data?tab=cabang" replace />} />
           {/* Dashboard Analytics sekarang jadi tab di dalam /dashboard, bukan halaman sendiri.
