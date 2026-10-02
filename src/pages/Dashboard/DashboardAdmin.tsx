@@ -14,7 +14,7 @@ import {
   CalendarCard,
   NotifikasiCard,
   DashboardSkeleton,
-} from './Shared';
+} from './widgets';
 
 export default function DashboardAdmin() {
   const navigate = useNavigate();

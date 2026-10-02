@@ -1,7 +1,7 @@
 import { useAuth } from '../../context/AuthContext';
 import DashboardUser from './DashboardUser';
 import DashboardAdmin from './DashboardAdmin';
-import { DashboardSkeleton } from './Shared';
+import { DashboardSkeleton } from './widgets';
 
 // Role yang dapet DashboardAdmin (full analytics + inventaris).
 // REVISI (simplify_roles_table): dulu ['admin', 'hr', 'manajer', 'manager']

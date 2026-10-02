@@ -12,7 +12,7 @@ import {
   CalendarCard,
   NotifikasiCard,
   DashboardSkeleton,
-} from './Shared';
+} from './widgets';
 
 // Dashboard user = halaman "home" personal -- cuma nampilin data milik si
 // user sendiri (inventory yang lagi dia pinjam, riwayat & kalender pemakaian
