@@ -27,7 +27,7 @@ import {
 
 // pagination client-side -- data kategori dimuat penuh sekali lewat
 // getKategori(), jadi tinggal dipotong per halaman di sini (sama pola
-// yang dipakai buat tab Departemen/Supplier di MasterData.tsx).
+// yang dipakai buat tab Departemen/Supplier di GenericMasterTab.tsx).
 const ITEMS_PER_PAGE = 10;
 
 export default function TabKategori() {
