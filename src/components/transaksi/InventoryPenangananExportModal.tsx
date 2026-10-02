@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FileSpreadsheet, FileText, X, CheckSquare, Square, FileDown, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
-import { formatTanggalId, namaPelaporPenanganan, formatRupiah, formatJenisKerusakan, formatDurasi } from '../masterData/inventoryHelpers';
+import { formatTanggalId, namaPelaporPenanganan, formatRupiah, formatJenisKerusakan, formatDurasi } from '../../utils/inventoryHelpers';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
 import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';

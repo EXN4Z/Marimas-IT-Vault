@@ -1,5 +1,5 @@
 // src/api/karyawan.ts
-import api from './axios'
+import api from '../axios'
 
 export interface Departemen {
   id: number

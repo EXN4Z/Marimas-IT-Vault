@@ -1,4 +1,4 @@
-import api from './axios';
+import api from '../axios';
 
 // Mirror dari api/cabang.ts -- struktur field sama persis, tanpa
 // pekerja_count karena Perusahaan sengaja belum dikaitkan ke tabel lain.

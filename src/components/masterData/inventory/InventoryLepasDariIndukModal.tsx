@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Unlink, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { lepasDariIndukInventory, type Inventory } from '../../api/masterData/inventory';
-import { ButtonCancel, ButtonSubmit, Field, Textarea } from '../shared/FormControls';
+import { lepasDariIndukInventory, type Inventory } from '../../../api/masterData/inventory';
+import { ButtonCancel, ButtonSubmit, Field, Textarea } from '../../shared/FormControls';
 
 interface Props {
   inventory: Inventory;

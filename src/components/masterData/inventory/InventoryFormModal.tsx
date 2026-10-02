@@ -8,11 +8,11 @@ import {
   type Inventory,
   type InventoryFormValues,
   type InventoryStatus,
-} from '../../api/masterData/inventory';
-import { getKategori, type Kategori } from '../../api/masterData/kategori';
-import { getSupplier, type Supplier } from '../../api/masterData/supplier';
-import { getPerusahaan, type Perusahaan } from '../../api/perusahaan';
-import { ButtonCancel, ButtonSubmit, Field, SelectField, inputClass, inputErrorClass } from '../shared/FormControls';
+} from '../../../api/masterData/inventory';
+import { getKategori, type Kategori } from '../../../api/masterData/kategori';
+import { getSupplier, type Supplier } from '../../../api/masterData/supplier';
+import { getPerusahaan, type Perusahaan } from '../../../api/masterData/perusahaan';
+import { ButtonCancel, ButtonSubmit, Field, SelectField, inputClass, inputErrorClass } from '../../shared/FormControls';
 
 const KETERANGAN_MAX = 255;
 const MAX_FOTO_MB = 4;

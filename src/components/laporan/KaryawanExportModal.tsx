@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { FileSpreadsheet, FileText, X, CheckSquare, Square, FileDown, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { type Karyawan } from '../../api/karyawan';
-import { formatTanggalId } from '../masterData/inventoryHelpers';
+import { type Karyawan } from '../../api/masterData/karyawan';
+import { formatTanggalId } from '../../utils/inventoryHelpers';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
 import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';

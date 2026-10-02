@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Search, Check, Send, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import type { Inventory } from '../../api/masterData/inventory';
-import { serahTerimaInventory, searchKaryawan, type InventoryPemakai, type KaryawanUser } from '../../api/transaksi/inventoryPemakai';
+import type { Inventory } from '../../../api/masterData/inventory';
+import { serahTerimaInventory, searchKaryawan, type InventoryPemakai, type KaryawanUser } from '../../../api/transaksi/inventoryPemakai';
 import InventoryFotoUpload from './InventoryFotoUpload';
-import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../shared/FormControls';
+import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../../shared/FormControls';
 
 interface InventorySerahTerimaModalProps {
   inventory: Inventory; // inventory utama yang mau diserahkan (mis. laptop) -- diklik dari tabel/detail

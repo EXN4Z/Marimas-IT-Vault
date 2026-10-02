@@ -7,8 +7,8 @@ import RouteModal from '../components/shared/RouteModal';
 import Select from '../components/shared/Select';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
 import { getDepartemen, type Departemen } from '../api/masterData/departemen';
-import { getPerusahaan, type Perusahaan } from '../api/perusahaan';
-import { getCabang, type Cabang } from '../api/cabang';
+import { getPerusahaan, type Perusahaan } from '../api/masterData/perusahaan';
+import { getCabang, type Cabang } from '../api/masterData/cabang';
 import { getRoles, type Role } from '../api/masterData/role';
 import SearchableSelect from '../components/shared/SearchableSelect';
 

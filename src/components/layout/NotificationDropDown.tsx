@@ -11,7 +11,7 @@ import {
   type AppNotification,
   type NotificationResponse,
 } from '../../api/notifications';
-import { Skeleton } from './skeleton';
+import { Skeleton } from '../shared/skeleton';
 
 function formatWaktu(iso: string): string {
   const date = new Date(iso);

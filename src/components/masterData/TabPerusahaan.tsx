@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Building2, MapPin, Phone, Map, Plus, Pencil, Trash2, Upload, Download, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
-import { getPerusahaan, createPerusahaan, updatePerusahaan, deletePerusahaan, importPerusahaan, type Perusahaan } from '../../api/perusahaan';
+import { getPerusahaan, createPerusahaan, updatePerusahaan, deletePerusahaan, importPerusahaan, type Perusahaan } from '../../api/masterData/perusahaan';
 import RouteModal from '../shared/RouteModal';
 import { Skeleton } from '../shared/skeleton';
 import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../shared/FormControls';

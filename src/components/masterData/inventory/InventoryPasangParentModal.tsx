@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { X, Link2, Search, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { pasangPenggantiKelengkapanInventory, type Inventory } from '../../api/masterData/inventory';
-import { ButtonCancel, ButtonSubmit, inputClass } from '../shared/FormControls';
+import { pasangPenggantiKelengkapanInventory, type Inventory } from '../../../api/masterData/inventory';
+import { ButtonCancel, ButtonSubmit, inputClass } from '../../shared/FormControls';
 
 interface Props {
   inventory: Inventory;

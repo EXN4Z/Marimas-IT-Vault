@@ -33,7 +33,7 @@ import {
   formatJenisKerusakan,
   JENIS_KERUSAKAN_OPTIONS,
   formatDurasi,
-} from '../components/masterData/inventoryHelpers';
+} from '../utils/inventoryHelpers';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
 import SearchInput from '../components/shared/SearchInput';
 import StatusBadge from '../components/shared/StatusBadge';

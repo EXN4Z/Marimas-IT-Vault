@@ -1,27 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Boxes, Plus, X, Pencil, Trash2, HandCoins, Undo2, ImageOff, Wrench, CheckCircle2, PlayCircle, Printer, Eye, Tag, ChevronDown, Upload, Loader2, Download, Link2, Unlink, RotateCcw } from 'lucide-react';
-import Pagination from '../shared/Pagination';
-import ScrollableTabBar from '../shared/ScrollableTabBar';
-import SearchInput from '../shared/SearchInput';
-import StatusBadge from '../shared/StatusBadge';
-import Tooltip from '../shared/Tooltip';
-import { Skeleton, SkeletonTable, SkeletonListCard } from '../shared/skeleton';
+import Pagination from '../../shared/Pagination';
+import ScrollableTabBar from '../../shared/ScrollableTabBar';
+import SearchInput from '../../shared/SearchInput';
+import StatusBadge from '../../shared/StatusBadge';
+import Tooltip from '../../shared/Tooltip';
+import { Skeleton, SkeletonTable, SkeletonListCard } from '../../shared/skeleton';
 import InventoryFormModal from './InventoryFormModal';
 import InventorySerahTerimaModal from './InventorySerahTerimaModal';
 import InventoryPengembalianModal from './InventoryPengembalianModal';
 import InventoryLaporKerusakanModal from './InventoryLaporKerusakanModal';
 import InventoryLepasDariIndukModal from './InventoryLepasDariIndukModal';
 import InventoryPasangIndukModal from './InventoryPasangParentModal';
-import InventoryPenangananSelesaiModal from '../transaksi/InventoryPenangananSelesaiModal';
-import InventoryExportModal from '../laporan/InventoryExportModal';
-import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
+import InventoryPenangananSelesaiModal from '../../transaksi/InventoryPenangananSelesaiModal';
+import InventoryExportModal from '../../laporan/InventoryExportModal';
+import ConfirmDeleteModal from '../../shared/ConfirmDeleteModal';
 // InventoryKelengkapanExportModal sudah tidak dipakai -- export sekarang
 // pakai 1 modal (InventoryExportModal) buat semua kategori, karena
 // kategori gak lagi nentuin bentuk export.
-import { useAuth } from '../../context/AuthContext';
-import { printStruk } from '../../utils/printStruk';
-import { namaPemakai, namaPelaporPenanganan, userIdPemakai, formatJenisKerusakan, formatDurasi } from './inventoryHelpers';
+import { useAuth } from '../../../context/AuthContext';
+import { printStruk } from '../../../utils/printStruk';
+import { namaPemakai, namaPelaporPenanganan, userIdPemakai, formatJenisKerusakan, formatDurasi } from '../../../utils/inventoryHelpers';
 import {
   getInventory,
   getInventoryById,
@@ -30,11 +30,11 @@ import {
   importInventory,
   type Inventory,
   type InventoryStatus,
-} from '../../api/masterData/inventory';
-import { deletePemakaiInventory, type InventoryPemakai } from '../../api/transaksi/inventoryPemakai';
-import { deletePenangananInventory, terimaPenangananInventory, type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
-import { getSupplier, type Supplier } from '../../api/masterData/supplier';
-import { getKategori, type Kategori } from '../../api/masterData/kategori';
+} from '../../../api/masterData/inventory';
+import { deletePemakaiInventory, type InventoryPemakai } from '../../../api/transaksi/inventoryPemakai';
+import { deletePenangananInventory, terimaPenangananInventory, type InventoryPenanganan } from '../../../api/transaksi/inventoryPenanganan';
+import { getSupplier, type Supplier } from '../../../api/masterData/supplier';
+import { getKategori, type Kategori } from '../../../api/masterData/kategori';
 
 // Kategori sekarang bebas (bukan lagi cuma 2 baris "Barang Utama"/
 // "Kelengkapan") -- filter kategori di tabel gabungan pakai kategori_id

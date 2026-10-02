@@ -2,8 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, type Location } fr
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
-import AdminRoute from './components/shared/AdminRoute';
-import AppLayout from './components/shared/AppLayout';
+import AdminRoute from './components/layout/AdminRoute';
+import AppLayout from './components/layout/AppLayout';
 import Login from './pages/Login';
 import VerifyOtp from './pages/VerifyOtp';
 import Dashboard from './pages/Dashboard';

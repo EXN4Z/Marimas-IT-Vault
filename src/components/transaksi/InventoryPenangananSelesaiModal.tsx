@@ -4,7 +4,7 @@ import Select from '../shared/Select';
 import { selesaikanPenangananInventory } from '../../api/transaksi/inventoryPenanganan';
 import type { InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
 import type { Inventory } from '../../api/masterData/inventory';
-import { formatJenisKerusakan } from '../masterData/inventoryHelpers';
+import { formatJenisKerusakan } from '../../utils/inventoryHelpers';
 
 interface Props {
   inventory: Inventory;

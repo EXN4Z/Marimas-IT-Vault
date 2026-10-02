@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FileSpreadsheet, FileText, X, CheckSquare, Square, FileDown, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { type InventoryPemakai } from '../../api/transaksi/inventoryPemakai';
-import { formatTanggalId } from '../masterData/inventoryHelpers';
+import { formatTanggalId } from '../../utils/inventoryHelpers';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
 import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';

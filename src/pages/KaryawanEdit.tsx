@@ -7,8 +7,8 @@ import Select from '../components/shared/Select';
 import SearchableSelect from '../components/shared/SearchableSelect';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shared/FormControls';
 import { getDepartemen } from '../api/masterData/departemen';
-import { getCabang, type Cabang } from '../api/cabang';
-import { getPerusahaan, type Perusahaan } from '../api/perusahaan'; // sesuaikan path
+import { getCabang, type Cabang } from '../api/masterData/cabang';
+import { getPerusahaan, type Perusahaan } from '../api/masterData/perusahaan'; // sesuaikan path
 import { setKaryawanPassword } from '../api/auth';
 import type { Departemen } from '../api/masterData/departemen';
 import { createPortal } from 'react-dom';

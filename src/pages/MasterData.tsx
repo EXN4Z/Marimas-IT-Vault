@@ -6,7 +6,7 @@ import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../components/shar
 import ConfirmDeleteModal from '../components/shared/ConfirmDeleteModal';
 import toast from 'react-hot-toast';
 import ScrollableTabBar from '../components/shared/ScrollableTabBar';
-import TabInventory from '../components/masterData/TabInventory';
+import TabInventory from '../components/masterData/inventory/TabInventory';
 import TabKategori from '../components/masterData/TabKategori';
 import TabKaryawan from '../components/masterData/TabKaryawan';
 import TabCabang from '../components/masterData/TabCabang';

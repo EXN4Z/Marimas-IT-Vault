@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { RotateCcw, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import type { Inventory } from '../../api/masterData/inventory';
-import { kembalikanInventory, type InventoryPemakai } from '../../api/transaksi/inventoryPemakai';
-import { namaPemakai } from './inventoryHelpers';
+import type { Inventory } from '../../../api/masterData/inventory';
+import { kembalikanInventory, type InventoryPemakai } from '../../../api/transaksi/inventoryPemakai';
+import { namaPemakai } from '../../../utils/inventoryHelpers';
 import InventoryFotoUpload from './InventoryFotoUpload';
-import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../shared/FormControls';
+import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../../shared/FormControls';
 
 interface InventoryPengembalianModalProps {
   inventory: Inventory;

@@ -7,7 +7,7 @@ import Tooltip from '../shared/Tooltip';
 import { getFotoDasarInventory, type Inventory } from '../../api/masterData/inventory';
 import { getFotoPemakaiInventory, type FotoPemakaiEntry } from '../../api/transaksi/inventoryPemakai';
 import { getFotoKerusakanInventory, type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
-import { namaPemakai, namaPelaporPenanganan, formatTanggalWaktuId, formatJenisKerusakan } from '../masterData/inventoryHelpers';
+import { namaPemakai, namaPelaporPenanganan, formatTanggalWaktuId, formatJenisKerusakan } from '../../utils/inventoryHelpers';
 import { SkeletonTable } from '../shared/skeleton';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';

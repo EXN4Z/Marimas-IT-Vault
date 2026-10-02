@@ -11,7 +11,7 @@ import SearchInput from '../shared/SearchInput';
 import { SkeletonTable } from '../shared/skeleton';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 import KaryawanExportModal from '../laporan/KaryawanExportModal';
-import { type Karyawan } from '../../api/karyawan';
+import { type Karyawan } from '../../api/masterData/karyawan';
 
 type TabKey = 'semua' | 'user' | 'admin';
 

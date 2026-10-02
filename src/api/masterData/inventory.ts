@@ -1,7 +1,7 @@
 import api from '../axios';
 import type { Supplier } from './supplier';
 
-import type { Perusahaan } from '../perusahaan';
+import type { Perusahaan } from './perusahaan';
 
 export type InventoryStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'dijual';
 // Struktur (induk/menempel) sekarang murni soal parent_id, independen dari
