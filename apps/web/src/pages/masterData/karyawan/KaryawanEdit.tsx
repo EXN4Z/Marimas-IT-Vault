@@ -1,0 +1,570 @@
+import { useEffect, useState, type FormEvent } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import api from '../../../api/axios';
+import RouteModal from '../../../components/shared/RouteModal';
+import Select from '../../../components/shared/Select';
+import SearchableSelect from '../../../components/shared/SearchableSelect';
+import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/shared/FormControls';
+import { getDepartemen } from '../../../api/masterData/departemen';
+import { getCabang, type Cabang } from '../../../api/masterData/cabang';
+import { getPerusahaan, type Perusahaan } from '../../../api/masterData/perusahaan'; // sesuaikan path
+import { setKaryawanPassword } from '../../../api/auth';
+import type { Departemen } from '../../../api/masterData/departemen';
+import { createPortal } from 'react-dom';
+import { Skeleton } from '../../../components/shared/skeleton';
+import ConfirmDeleteModal from '../../../components/shared/ConfirmDeleteModal';
+import { KeyRound, X } from 'lucide-react';
+
+interface RoleOption {
+    id: number;
+    nama: string;
+}
+
+interface User {
+    id: number;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    role_id: number; // GANTI: dulu `role` (string dari accessor), sekarang FK ke tabel roles
+    nik: string | null;
+    departemen_id?: number | null;
+    lokasi_kantor_id?: number | null;
+    perusahaan_id?: number | null;
+    tanggal_masuk: string | null;
+    status?: 'aktif' | 'nonaktif';
+}
+
+interface FormState {
+    name: string;
+    email: string;
+    phone: string;
+    role_id: string; // disimpan sebagai string karena dipakai langsung sebagai value <Select>
+    nik: string;
+    departemen_id: string;
+    lokasi_kantor_id: string;
+    perusahaan_id: string;
+    tanggal_masuk: string;
+    status: 'aktif' | 'nonaktif';
+}
+
+interface FieldErrors {
+    [key: string]: string[];
+}
+
+const initialForm: FormState = {
+    name: '',
+    email: '',
+    phone: '',
+    role_id: '',
+    nik: '',
+    departemen_id: '',
+    lokasi_kantor_id: '',
+    perusahaan_id: '',
+    tanggal_masuk: '',
+    status: 'aktif',
+};
+
+// Label tampilan buat tiap role. Kalau ada role baru yang namanya gak ada
+// di sini, fallback ke nama aslinya (lihat roleLabel() di bawah) -- jadi
+// gak akan hilang, cuma huruf besar/kecilnya ngikut apa adanya dari DB.
+const STATUS_OPTIONS = [
+    { value: 'aktif', label: 'Aktif' },
+    { value: 'nonaktif', label: 'Nonaktif' },
+];
+
+const ROLE_DISPLAY_LABEL: Record<string, string> = {
+    admin: 'Admin',
+    user: 'User',
+};
+
+function roleLabel(nama: string): string {
+    return ROLE_DISPLAY_LABEL[nama] ?? nama.charAt(0).toUpperCase() + nama.slice(1);
+}
+
+export default function EditKaryawanPage() {
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+
+    const [form, setForm] = useState<FormState>(initialForm);
+    const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
+    const [cabangList, setCabangList] = useState<Cabang[]>([]);
+    const [perusahaanList, setPerusahaanList] = useState<Perusahaan[]>([]);
+    // BARU: daftar role diambil dari API (GET /role), bukan hardcode --
+    // biar konsisten sama sumber kebenaran id role di database.
+    const [roleList, setRoleList] = useState<RoleOption[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [saving, setSaving] = useState<boolean>(false);
+    const [errors, setErrors] = useState<FieldErrors>({});
+    const [generalError, setGeneralError] = useState('');
+
+    const [showSetPassword, setShowSetPassword] = useState<boolean>(false);
+    const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+    const [deleting, setDeleting] = useState<boolean>(false);
+
+    const selectableRoles = roleList.filter((r) => r.nama !== 'cabang');
+
+    useEffect(() => {
+        getDepartemen().then(setDepartemenList).catch(() => {});
+        getCabang().then(setCabangList).catch(() => {});
+        getPerusahaan().then(setPerusahaanList).catch(() => {});
+        api
+            .get<RoleOption[]>('/roles')
+            .then((res) => setRoleList(res.data))
+            .catch(() => toast.error('Gagal memuat daftar role.'));
+
+        api
+            .get<User>(`/karyawan/${id}`)
+            .then((res) => {
+                const u = res.data;
+                setForm({
+                    name: u.name,
+                    email: u.email ?? '',
+                    phone: u.phone ?? '',
+                    role_id: u.role_id != null ? String(u.role_id) : '',
+                    nik: u.nik ?? '',
+                    departemen_id: u.departemen_id ? String(u.departemen_id) : '',
+                    lokasi_kantor_id: u.lokasi_kantor_id ? String(u.lokasi_kantor_id) : '',
+                    perusahaan_id: u.perusahaan_id ? String(u.perusahaan_id) : '',
+                    tanggal_masuk: u.tanggal_masuk ?? '',
+                    status: u.status === 'nonaktif' ? 'nonaktif' : 'aktif',
+                });
+            })
+            .catch(() => {
+                toast.error('Gagal memuat data user.');
+            })
+            .finally(() => setLoading(false));
+    }, [id]);
+
+    function closeModal() {
+        if (window.history.state && window.history.state.idx > 0) {
+            navigate(-1);
+        } else {
+            navigate('/karyawan', { replace: true });
+        }
+    }
+
+    function handleChange<K extends keyof FormState>(key: K, value: FormState[K]) {
+        setForm((prev) => ({ ...prev, [key]: value }));
+        if (errors[key]) {
+            setErrors((prev) => {
+                const next = { ...prev };
+                delete next[key];
+                return next;
+            });
+        }
+    }
+
+    const ROLE_OPTIONS = selectableRoles.map((r) => ({ value: String(r.id), label: roleLabel(r.nama) }));
+
+    function handleRoleChange(value: string) {
+        setForm((prev) => ({ ...prev, role_id: value }));
+        setErrors((prev) => {
+            const next = { ...prev };
+            delete next.role_id;
+            return next;
+        });
+    }
+
+    async function handleSubmit(e: FormEvent) {
+        e.preventDefault();
+        setGeneralError('');
+
+        const newErrors: FieldErrors = {};
+        if (!form.name.trim()) newErrors.name = ['Nama lengkap wajib diisi.'];
+        if (!form.role_id) newErrors.role_id = ['Role wajib dipilih.'];
+        if (!form.nik.trim()) newErrors.nik = ['NIK karyawan wajib diisi.'];
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            toast.error('Mohon lengkapi kolom yang bertanda bintang (*).');
+            return;
+        }
+
+        setSaving(true);
+        setErrors({});
+
+        try {
+            // GANTI: kirim role_id sebagai number, bukan lagi field `role`
+            // string -- backend (UserController@update) sudah expect
+            // role_id integer, bukan nama role.
+            const payload = {
+                name: form.name,
+                email: form.email || null,
+                phone: form.phone || null,
+                role_id: Number(form.role_id),
+                nik: form.nik,
+                departemen_id: form.departemen_id || null,
+                perusahaan_id: form.perusahaan_id || null,
+                lokasi_kantor_id: form.lokasi_kantor_id || null,
+                tanggal_masuk: form.tanggal_masuk || null,
+                status: form.status,
+            };
+            await api.put(`/karyawan/${id}`, payload);
+            toast.success('Perubahan berhasil disimpan.');
+            navigate('/karyawan');
+        } catch (err: any) {
+            if (err.response?.status === 422) {
+                const apiErrors = err.response.data.errors ?? {};
+                setErrors(apiErrors);
+                // Pesan spesifik dari backend (mis. masih ada pinjaman inventory)
+                // ditampilkan langsung, bukan toast generik.
+                toast.error(apiErrors.status?.[0] || 'Ada data yang belum sesuai dengan format server.');
+            } else if (err.response?.status === 403) {
+                setGeneralError('Anda tidak punya akses untuk mengubah data ini.');
+            } else {
+                setGeneralError('Gagal menyimpan perubahan. Coba lagi.');
+            }
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    function handleDelete() {
+        setShowDeleteModal(true);
+    }
+
+    async function confirmDeleteUser() {
+        setDeleting(true);
+        try {
+            await api.delete(`/karyawan/${id}`);
+            toast.success('User berhasil dihapus.');
+            navigate('/karyawan');
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Gagal menghapus user.');
+            setShowDeleteModal(false);
+        } finally {
+            setDeleting(false);
+        }
+    }
+
+    async function handleSetPassword(password: string, passwordConfirmation: string) {
+        await setKaryawanPassword(Number(id), password, passwordConfirmation);
+        toast.success('Password berhasil diubah.');
+        setShowSetPassword(false);
+    }
+
+    if (loading) {
+        return (
+            <RouteModal title="Edit User" fallbackPath="/karyawan" onClose={closeModal}>
+                <div className="space-y-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="space-y-1.5">
+                            <Skeleton className="h-3 w-24 rounded" />
+                            <Skeleton className="h-9 w-full rounded-lg" />
+                        </div>
+                    ))}
+                </div>
+            </RouteModal>
+        );
+    }
+
+    return (
+        <>
+            <RouteModal
+                title="Edit User"
+                description="Perbarui data pengguna ini."
+                fallbackPath="/karyawan"
+                onClose={closeModal}
+            >
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {generalError && (
+                        <p className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2.5 animate-[fadeIn_150ms_ease-out]" role="alert">
+                            {generalError}
+                        </p>
+                    )}
+
+                    {/* Section 1: Identitas & Kontak */}
+                    <div className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 p-4 space-y-3.5">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                            1. Identitas & Kontak
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <Field label="Nama Lengkap" error={errors.name?.[0]} required>
+                                <TextInput
+                                    value={form.name}
+                                    onChange={(v) => handleChange('name', v)}
+                                    error={!!errors.name}
+                                    placeholder="Nama lengkap karyawan"
+                                    autoFocus
+                                />
+                            </Field>
+
+                            <Field label="NIK Karyawan" error={errors.nik?.[0]} required>
+                                <TextInput
+                                    value={form.nik}
+                                    onChange={(v) => handleChange('nik', v)}
+                                    error={!!errors.nik}
+                                    placeholder="Nomor induk karyawan (MPK-001)"
+                                />
+                            </Field>
+
+                            <Field label="Alamat Email" error={errors.email?.[0]}>
+                                <TextInput
+                                    type="email"
+                                    value={form.email}
+                                    onChange={(v) => handleChange('email', v)}
+                                    error={!!errors.email}
+                                    placeholder="nama@marimas.com"
+                                />
+                            </Field>
+
+                            <Field label="Nomor Telepon / WA" error={errors.phone?.[0]}>
+                                <TextInput
+                                    value={form.phone}
+                                    onChange={(v) => handleChange('phone', v)}
+                                    error={!!errors.phone}
+                                    placeholder="08xxxxxxxxxx"
+                                />
+                            </Field>
+                        </div>
+                    </div>
+
+                    {/* Section 2: Hak Akses & Penempatan */}
+                    <div className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 p-4 space-y-3.5">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                            2. Hak Akses & Penempatan
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <Field label="Role Akses" error={errors.role_id?.[0]} required>
+                                <Select
+                                    value={form.role_id}
+                                    onChange={handleRoleChange}
+                                    placeholder="Pilih role"
+                                    error={!!errors.role_id}
+                                    options={ROLE_OPTIONS}
+                                />
+                            </Field>
+
+                            <Field label="Departemen" error={errors.departemen_id?.[0]}>
+                                <SearchableSelect
+                                    value={form.departemen_id}
+                                    onChange={(v) => handleChange('departemen_id', v)}
+                                    placeholder="Pilih departemen"
+                                    error={!!errors.departemen_id}
+                                    options={departemenList.map((d) => ({ value: String(d.id), label: d.nama }))}
+                                />
+                            </Field>
+
+                            <Field label="Cabang / Lokasi Kantor" error={errors.lokasi_kantor_id?.[0]}>
+                                <SearchableSelect
+                                    value={form.lokasi_kantor_id}
+                                    onChange={(v) => handleChange('lokasi_kantor_id', v)}
+                                    placeholder="Pilih cabang"
+                                    error={!!errors.lokasi_kantor_id}
+                                    options={cabangList.map((c) => ({ value: String(c.id), label: c.nama }))}
+                                />
+                            </Field>
+
+                            <Field label="Perusahaan" error={errors.perusahaan_id?.[0]}>
+                                <SearchableSelect
+                                    value={form.perusahaan_id}
+                                    onChange={(v) => handleChange('perusahaan_id', v)}
+                                    placeholder="Pilih perusahaan"
+                                    error={!!errors.perusahaan_id}
+                                    options={perusahaanList.map((p) => ({ value: String(p.id), label: p.nama }))}
+                                />
+                            </Field>
+                        </div>
+                    </div>
+
+                    {/* Section 3: Kepegawaian & Status */}
+                    <div className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 p-4 space-y-3.5">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                            3. Kepegawaian & Status Akun
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <Field label="Tanggal Masuk Kerja" error={errors.tanggal_masuk?.[0]}>
+                                <TextInput
+                                    type="date"
+                                    value={form.tanggal_masuk}
+                                    onChange={(v) => handleChange('tanggal_masuk', v)}
+                                    error={!!errors.tanggal_masuk}
+                                />
+                            </Field>
+
+                            <Field label="Status Akun Login" error={errors.status?.[0]}>
+                                <Select
+                                    value={form.status}
+                                    onChange={(v) => handleChange('status', v as FormState['status'])}
+                                    error={!!errors.status}
+                                    options={STATUS_OPTIONS}
+                                />
+                            </Field>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800">
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowSetPassword(true)}
+                                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-blue-200 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition cursor-pointer"
+                            >
+                                <KeyRound size={14} />
+                                Ubah Password
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleDelete}
+                                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
+                            >
+                                Hapus User
+                            </button>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2.5">
+                            <ButtonCancel onClick={closeModal} disabled={saving} />
+                            <ButtonSubmit type="submit" loading={saving} loadingLabel="Menyimpan...">
+                                Simpan Perubahan
+                            </ButtonSubmit>
+                        </div>
+                    </div>
+                </form>
+            </RouteModal>
+
+            {showSetPassword && (
+                <SetPasswordModal
+                    onClose={() => setShowSetPassword(false)}
+                    onSubmit={handleSetPassword}
+                />
+            )}
+
+            <ConfirmDeleteModal
+                isOpen={showDeleteModal}
+                itemName={form.name || 'User ini'}
+                itemCode={form.nik || undefined}
+                itemType="Karyawan / User"
+                warningMessage="Akun login dan seluruh hak akses user ini akan dicabut secara permanen."
+                loading={deleting}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={confirmDeleteUser}
+            />
+        </>
+    );
+}
+
+// Modal buat admin nentuin sendiri password baru untuk karyawan
+function SetPasswordModal({
+    onClose,
+    onSubmit,
+}: {
+    onClose: () => void;
+    onSubmit: (password: string, passwordConfirmation: string) => Promise<void>;
+}) {
+    const [password, setPassword] = useState('');
+    const [confirmation, setConfirmation] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [errors, setErrors] = useState<{ password?: string; confirmation?: string }>({});
+
+    async function handleSubmit(e: FormEvent) {
+        e.preventDefault();
+        setErrors({});
+
+        const newErrors: { password?: string; confirmation?: string } = {};
+        if (!password.trim()) {
+            newErrors.password = 'Password baru wajib diisi.';
+        }
+
+        if (!confirmation.trim()) {
+            newErrors.confirmation = 'Konfirmasi password wajib diisi.';
+        } else if (password && confirmation && password !== confirmation) {
+            newErrors.confirmation = 'Konfirmasi password tidak cocok.';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            toast.error('Mohon periksa kembali isian password.');
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            await onSubmit(password, confirmation);
+        } catch (err: any) {
+            if (err.response?.status === 422) {
+                const apiErrors = err.response.data?.errors ?? {};
+                setErrors({
+                    password: apiErrors.password?.[0] ?? 'Periksa kembali password yang diisi.',
+                });
+                toast.error(apiErrors.password?.[0] || 'Password tidak memenuhi kriteria.');
+            } else if (err.response?.status === 403) {
+                setErrors({ password: 'Anda tidak punya akses untuk mengubah password ini.' });
+            } else {
+                setErrors({ password: 'Gagal mengubah password. Coba lagi.' });
+            }
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    return createPortal(
+        <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 backdrop-blur-[2px] p-4 animate-[fadeIn_150ms_ease-out]"
+            onClick={onClose}
+        >
+            <div
+                className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="flex items-start justify-between p-6 pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3.5">
+                        <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0">
+                            <KeyRound size={22} className="text-blue-600" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-semibold text-slate-900 leading-tight">Ubah Password</h3>
+                            <p className="text-xs text-slate-500 mt-0.5">Tentukan kata sandi baru untuk akun pengguna ini.</p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={submitting}
+                        aria-label="Tutup"
+                        className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-40"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <Field label="Password Baru" error={errors.password} required>
+                        <TextInput
+                            type="password"
+                            autoFocus
+                            placeholder="Password baru"
+                            value={password}
+                            onChange={(v) => {
+                                setPassword(v);
+                                if (errors.password) setErrors((prev) => ({ ...prev, password: '' }));
+                            }}
+                            error={!!errors.password}
+                        />
+                    </Field>
+
+                    <Field label="Konfirmasi Password Baru" error={errors.confirmation} required>
+                        <TextInput
+                            type="password"
+                            placeholder="Ulangi password baru"
+                            value={confirmation}
+                            onChange={(v) => {
+                                setConfirmation(v);
+                                if (errors.confirmation) setErrors((prev) => ({ ...prev, confirmation: '' }));
+                            }}
+                            error={!!errors.confirmation}
+                        />
+                    </Field>
+
+                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
+                        <ButtonCancel onClick={onClose} disabled={submitting} />
+                        <ButtonSubmit type="submit" loading={submitting} loadingLabel="Menyimpan...">
+                            Simpan Password
+                        </ButtonSubmit>
+                    </div>
+                </form>
+            </div>
+        </div>,
+        document.body
+    );
+}
