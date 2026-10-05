@@ -45,7 +45,7 @@ export interface InventoryPenanganan {
   dilaporkan_oleh?: { id: number; name: string } | null;
 }
 
-export interface PaginatedInventoryPenanganan {
+interface PaginatedInventoryPenanganan {
   data: InventoryPenanganan[];
   current_page: number;
   last_page: number;

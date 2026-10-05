@@ -36,7 +36,7 @@ const STATUS_COLORS: Record<string, { fill: string; font: string }> = {
   Pending: { fill: 'FFFEF3C7', font: 'FFB45309' },
 };
 
-export interface StyledExcelOptions {
+interface StyledExcelOptions {
   /** Judul laporan, ditulis besar di banner atas (mis. "Data Inventory") */
   title: string;
   /** Baris kedua di banner, mis. "Periode: Januari 2026" atau ringkasan filter */
@@ -73,7 +73,7 @@ async function loadLogoBuffer(): Promise<ArrayBuffer | null> {
  * selang-seling, border tipis konsisten, kolom status berwarna, autofilter,
  * freeze header, dan footer total data + waktu generate.
  */
-export async function buildStyledWorkbook(opts: StyledExcelOptions): Promise<ExcelJS.Workbook> {
+async function buildStyledWorkbook(opts: StyledExcelOptions): Promise<ExcelJS.Workbook> {
   const { title, subtitle, headers, rows, sheetName, statusColumnIndexes = [] } = opts;
 
   const workbook = new ExcelJS.Workbook();

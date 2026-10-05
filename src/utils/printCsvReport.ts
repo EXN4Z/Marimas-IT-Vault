@@ -1,55 +1,3 @@
-// Parser CSV sederhana tapi tahan terhadap field yang dibungkus tanda kutip
-// (termasuk yang berisi koma atau newline di dalamnya).
-export function parseCsv(text: string): string[][] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = '';
-  let inQuotes = false;
-
-  // Normalisasi newline + buang BOM kalau ada
-  const clean = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
-  for (let i = 0; i < clean.length; i++) {
-    const char = clean[i];
-
-    if (inQuotes) {
-      if (char === '"') {
-        if (clean[i + 1] === '"') {
-          field += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        field += char;
-      }
-      continue;
-    }
-
-    if (char === '"') {
-      inQuotes = true;
-    } else if (char === ',') {
-      row.push(field);
-      field = '';
-    } else if (char === '\n') {
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = '';
-    } else {
-      field += char;
-    }
-  }
-
-  // Field/baris terakhir (kalau file tidak diakhiri newline)
-  if (field.length > 0 || row.length > 0) {
-    row.push(field);
-    rows.push(row);
-  }
-
-  return rows.filter((r) => r.some((cell) => cell.trim() !== ''));
-}
-
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -216,35 +164,6 @@ function buildPrintableHtml({ title, periodLabel, headers, rows }: PrintReportOp
  * tidak menganggapnya sebagai hasil klik langsung user dan akan memblokirnya
  * sebagai popup, walaupun popup blocker sudah diizinkan.
  */
-export function printCsvAsReport(
-  csvText: string,
-  opts: { title: string; periodLabel: string },
-  targetWindow: Window
-): void {
-  const rows = parseCsv(csvText);
-  if (rows.length === 0) {
-    targetWindow.close();
-    throw new Error('Data laporan kosong.');
-  }
-
-  const [headers, ...dataRows] = rows;
-  const html = buildPrintableHtml({
-    title: opts.title,
-    periodLabel: opts.periodLabel,
-    headers,
-    rows: dataRows,
-  });
-
-  targetWindow.document.open();
-  targetWindow.document.write(html);
-  targetWindow.document.close();
-
-  targetWindow.onload = () => {
-    targetWindow.focus();
-    targetWindow.print();
-  };
-}
-
 /**
  * Sama seperti printCsvAsReport, tapi buat data yang sudah kebentuk
  * headers + rows di memori (bukan hasil fetch CSV dari backend) — dipakai

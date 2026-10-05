@@ -4,12 +4,12 @@ function escapeHtml(text: string): string {
   return div.innerHTML;
 }
 
-export interface StrukRow {
+interface StrukRow {
   label: string;
   value: string;
 }
 
-export interface StrukData {
+interface StrukData {
   judul: string; // cth. "Bukti Peminjaman Inventory"
   noStruk: string;
   tanggal: string; // sudah diformat, cth. "20 Juli 2026"

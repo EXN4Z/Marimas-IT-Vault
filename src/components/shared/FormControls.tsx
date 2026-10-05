@@ -12,7 +12,7 @@ export const inputClass =
 export const inputErrorClass =
   '!border-red-400 bg-red-50/20 dark:bg-red-950/20 text-slate-900 dark:text-zinc-100 placeholder:text-red-300 focus:!border-red-500 focus:ring-4 focus:ring-red-500/15';
 
-export const textareaClass = `${inputClass} resize-none`;
+const textareaClass = `${inputClass} resize-none`;
 
 interface FieldProps {
   label: string;

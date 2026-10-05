@@ -33,7 +33,7 @@ export interface Karyawan {
   updated_at?: string
 }
 
-export type KaryawanPayload = Omit<Karyawan, 'id' | 'created_at' | 'updated_at'>
+type KaryawanPayload = Omit<Karyawan, 'id' | 'created_at' | 'updated_at'>
 
 export const karyawanApi = {
   getAll: () => api.get<Karyawan[]>('/karyawan'),

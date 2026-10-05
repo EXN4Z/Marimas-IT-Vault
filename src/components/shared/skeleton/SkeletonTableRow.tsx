@@ -14,7 +14,7 @@ interface SkeletonTableRowProps {
   widths?: string[];
 }
 
-export default function SkeletonTableRow({ columns, widths }: SkeletonTableRowProps) {
+function SkeletonTableRow({ columns, widths }: SkeletonTableRowProps) {
   return (
     <tr className="border-b border-slate-50 last:border-0">
       {Array.from({ length: columns }).map((_, i) => (

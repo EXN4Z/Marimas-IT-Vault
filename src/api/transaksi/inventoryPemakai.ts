@@ -47,7 +47,7 @@ export interface FotoPemakaiEntry {
   created_at: string;
 }
 
-export interface PaginatedFotoPemakai {
+interface PaginatedFotoPemakai {
   data: FotoPemakaiEntry[];
   current_page: number;
   last_page: number;
@@ -67,7 +67,7 @@ export interface RiwayatInventoryEvent {
   hasil?: string | null;
 }
 
-export interface PaginatedRiwayatInventory {
+interface PaginatedRiwayatInventory {
   data: RiwayatInventoryEvent[];
   current_page: number;
   last_page: number;

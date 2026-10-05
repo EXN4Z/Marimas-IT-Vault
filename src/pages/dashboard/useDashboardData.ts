@@ -83,7 +83,7 @@ export type AktivitasInventoryTerbaru = RiwayatInventoryEvent;
 // request/approve buat pinjam inventory (InventoryPemakaiController::store()
 // selalu langsung set status 'disetujui', admin serah-terima langsung tanpa
 // approval), jadi status 'pending' di enum gak pernah kepakai di praktiknya.
-export interface InventoryPribadi {
+interface InventoryPribadi {
   sedangDipinjam: number;
   totalTersedia: number;
 }
@@ -92,7 +92,7 @@ export interface InventoryPribadi {
 // ini) -- total yang PERNAH dipinjam sepanjang waktu & total laporan
 // kerusakan yang pernah dia buat. Sumbernya /inventory-pemakai/riwayat yang
 // backend-nya self-scoped buat non-admin, jadi aman dipanggil apa adanya.
-export interface RingkasanAktivitasPribadi {
+interface RingkasanAktivitasPribadi {
   totalPernahDipinjam: number;
   totalLaporRusak: number;
 }
@@ -104,7 +104,7 @@ export interface NotificationItem {
   created_at: string;
 }
 
-export interface NotificationsResponse {
+interface NotificationsResponse {
   data: NotificationItem[];
   unread_count: number;
 }
@@ -113,17 +113,17 @@ export interface NotificationsResponse {
 // FETCHERS
 // ============================================================================
 
-export async function fetchUser(): Promise<UserType> {
+async function fetchUser(): Promise<UserType> {
   const res = await api.get<UserType>('/user');
   return res.data;
 }
 
-export async function fetchNotifications(): Promise<NotificationsResponse> {
+async function fetchNotifications(): Promise<NotificationsResponse> {
   const res = await api.get<NotificationsResponse>('/notifications');
   return res.data;
 }
 
-export async function fetchDepartemenDistribusi(): Promise<DepartemenDistribusi[]> {
+async function fetchDepartemenDistribusi(): Promise<DepartemenDistribusi[]> {
   try {
     const res = await api.get<DepartemenDistribusi[]>('/dashboard/kpd');
     return Array.isArray(res.data) ? res.data : [];
@@ -132,7 +132,7 @@ export async function fetchDepartemenDistribusi(): Promise<DepartemenDistribusi[
   }
 }
 
-export async function fetchRingkasanInventory(): Promise<RingkasanInventory> {
+async function fetchRingkasanInventory(): Promise<RingkasanInventory> {
   // BARU: gak difilter kategori lagi -- sebelumnya cuma hitung 'barang_utama',
   // sekarang Kelengkapan (charger, adaptor, dll) ikut dihitung juga biar
   // "Total Inventory" di dashboard sinkron sama total data sebenarnya.
@@ -167,7 +167,7 @@ export async function fetchRingkasanInventory(): Promise<RingkasanInventory> {
 // 5 event teratas dari endpoint riwayat inventory yang sudah ada (halaman 1,
 // tanpa filter type/search) — sumber sama persis dengan tab "Riwayat Inventory"
 // di Inventaris, cuma dipotong ke 5 item terbaru buat widget dashboard.
-export async function fetchAktivitasInventoryTerbaru(): Promise<AktivitasInventoryTerbaru[]> {
+async function fetchAktivitasInventoryTerbaru(): Promise<AktivitasInventoryTerbaru[]> {
   try {
     const res = await getRiwayatInventory(1, 10);
     return Array.isArray(res?.data) ? res.data.slice(0, 5) : [];
@@ -181,7 +181,7 @@ export async function fetchAktivitasInventoryTerbaru(): Promise<AktivitasInvento
 // tanggal gak cuma nyakup aktivitas paling baru, tapi punya cakupan
 // beberapa bulan ke belakang. Tetap satu panggilan API aja (bukan loop per
 // tanggal), sumbernya sama persis dengan tab Riwayat Inventory di Inventaris.
-export async function fetchAktivitasInventoryKalender(): Promise<AktivitasInventoryTerbaru[]> {
+async function fetchAktivitasInventoryKalender(): Promise<AktivitasInventoryTerbaru[]> {
   try {
     const res = await getRiwayatInventory(1, 200);
     return Array.isArray(res?.data) ? res.data : [];
@@ -194,7 +194,7 @@ export async function fetchAktivitasInventoryKalender(): Promise<AktivitasInvent
 // InventoryController::index()): cuma balikin item 'tersedia' + item yang
 // LAGI dipegang user ini sendiri. Jadi aman langsung difilter pemakai_saat_ini
 // di sini tanpa risiko data pemakaian karyawan lain ikut kehitung.
-export async function fetchInventoryPribadi(userId: number): Promise<InventoryPribadi> {
+async function fetchInventoryPribadi(userId: number): Promise<InventoryPribadi> {
   const list = await getInventory();
   let sedangDipinjam = 0;
   let totalTersedia = 0;
@@ -211,7 +211,7 @@ export async function fetchInventoryPribadi(userId: number): Promise<InventoryPr
 // `total`-nya, gak butuh isi datanya) -- backend sudah self-scope ke riwayat
 // milik user ini sendiri buat role non-admin (lihat
 // InventoryPemakaiController::riwayat()).
-export async function fetchRingkasanAktivitasPribadi(): Promise<RingkasanAktivitasPribadi> {
+async function fetchRingkasanAktivitasPribadi(): Promise<RingkasanAktivitasPribadi> {
   const [pinjam, laporRusak] = await Promise.all([
     getRiwayatInventory(1, 10, 'pinjam'),
     getRiwayatInventory(1, 10, 'lapor_rusak'),
@@ -233,7 +233,7 @@ const STATUS_LABEL: Record<string, string> = {
   dijual: 'Dijual',
 };
 
-export async function fetchInventoryPerMerek(): Promise<InventoryPerMerek[]> {
+async function fetchInventoryPerMerek(): Promise<InventoryPerMerek[]> {
   // BARU: ikut hitung Kelengkapan juga (lihat catatan di fetchRingkasanInventory).
   const list = await getInventory();
   const counts = new Map<string, number>();
@@ -250,7 +250,7 @@ export async function fetchInventoryPerMerek(): Promise<InventoryPerMerek[]> {
 
 // 6 bulan terakhir, jumlah inventory yang tanggal_invoice-nya jatuh di bulan itu.
 // BARU: ikut hitung Kelengkapan juga (lihat catatan di fetchRingkasanInventory).
-export async function fetchTrenPembelianInventory(): Promise<TrenPembelianInventory[]> {
+async function fetchTrenPembelianInventory(): Promise<TrenPembelianInventory[]> {
   const list = await getInventory();
   const now = new Date();
 
@@ -273,7 +273,7 @@ export async function fetchTrenPembelianInventory(): Promise<TrenPembelianInvent
   return bulanKeys.map((b) => ({ bulan: b.label, jumlah: counts.get(b.key) ?? 0 }));
 }
 
-export async function fetchStatusInventoryDistribusi(): Promise<StatusInventoryDistribusi[]> {
+async function fetchStatusInventoryDistribusi(): Promise<StatusInventoryDistribusi[]> {
   // BARU: ikut hitung Kelengkapan juga (lihat catatan di fetchRingkasanInventory).
   const list = await getInventory();
   const counts = new Map<string, number>();
@@ -288,7 +288,7 @@ export async function fetchStatusInventoryDistribusi(): Promise<StatusInventoryD
     .filter((s) => s.jumlah > 0);
 }
 
-export async function fetchInventoryPerhatian(): Promise<InventoryPerhatian> {
+async function fetchInventoryPerhatian(): Promise<InventoryPerhatian> {
   // BARU: ikut hitung Kelengkapan juga (lihat catatan di fetchRingkasanInventory).
   const list = await getInventory();
   const now = Date.now();

@@ -8,7 +8,7 @@ export type InventoryStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'd
 // kategori -- lihat backend InventoryController::index(). 'induk' =
 // parent_id === null (boleh punya children, boleh juga berdiri sendiri
 // tanpa children). 'menempel' = parent_id !== null.
-export type InventoryPosisi = 'induk' | 'menempel';
+type InventoryPosisi = 'induk' | 'menempel';
 
 export interface KategoriRef {
   id: number;
@@ -91,7 +91,7 @@ export interface InventoryFormValues {
   hapus_foto?: boolean;
 }
 
-export interface PaginatedInventory {
+interface PaginatedInventory {
   data: Inventory[];
   current_page: number;
   last_page: number;
@@ -102,7 +102,7 @@ export interface PaginatedInventory {
 // Sama bentuknya kayak PaginatedInventory, cuma dipisah jadi tipe sendiri
 // biar jelas ini khusus response getFotoDasarInventory (tab "Inventory" di
 // halaman Foto Inventory).
-export type PaginatedInventoryFoto = PaginatedInventory;
+type PaginatedInventoryFoto = PaginatedInventory;
 
 function buildInventoryFormData(values: InventoryFormValues): FormData {
   const fd = new FormData();

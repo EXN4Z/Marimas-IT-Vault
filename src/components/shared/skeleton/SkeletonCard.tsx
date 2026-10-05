@@ -9,7 +9,7 @@ interface SkeletonCardProps {
   className?: string;
 }
 
-export default function SkeletonCard({ className = '' }: SkeletonCardProps) {
+function SkeletonCard({ className = '' }: SkeletonCardProps) {
   return (
     <div
       className={`bg-white rounded-lg p-4 shadow-[0_4px_24px_rgba(23,22,51,0.06)] flex flex-col gap-3 ${className}`}

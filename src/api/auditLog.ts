@@ -12,7 +12,7 @@ export interface AuditLog {
   user: { id: number; name: string } | null;
 }
 
-export interface PaginatedAuditLog {
+interface PaginatedAuditLog {
   data: AuditLog[];
   current_page: number;
   last_page: number;

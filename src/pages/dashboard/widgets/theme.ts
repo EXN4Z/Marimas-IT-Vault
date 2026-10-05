@@ -21,8 +21,6 @@ export const THEME = {
 export const cardClass =
   'bg-white dark:bg-[#18181b] dark:border dark:border-[#2c2c31] rounded-2xl p-4 sm:p-5 shadow-[0_4px_24px_rgba(23,22,51,0.06)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.6)] hover:shadow-[0_8px_32px_rgba(23,22,51,0.10)] transition-all flex flex-col justify-between';
 
-export const NOTIF_VISIBLE_COUNT = 3;
-
 // Badge tone -> bg/text classes, shared by KPI delta chips & table status pills
 export const BADGE_TONE: Record<string, string> = {
   violet: 'bg-[#EFEAFF] text-[#5A32FA] dark:bg-indigo-950/50 dark:text-indigo-300 dark:border dark:border-indigo-700/30',

@@ -62,24 +62,3 @@ export function SectionHeader({
     </div>
   );
 }
-
-// ==== Primary CTA button (DEGO-style "+ Add Product" pill) ====
-export function PrimaryActionButton({
-  icon: Icon,
-  label,
-  onClick,
-}: {
-  icon?: LucideIcon;
-  label: string;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-[#5A32FA] hover:bg-[#4C3FE0] px-4 py-2.5 rounded-xl shadow-[0_4px_14px_rgba(90,50,250,0.28)] transition-colors whitespace-nowrap"
-    >
-      {Icon && <Icon size={15} strokeWidth={2.4} />}
-      {label}
-    </button>
-  );
-}

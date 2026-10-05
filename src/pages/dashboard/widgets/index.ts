@@ -1,5 +1,3 @@
-export { THEME, cardClass, NOTIF_VISIBLE_COUNT } from './theme';
-export { LegendDot, CardIcon, PrimaryActionButton } from './primitives';
 export { WelcomeHeader } from './WelcomeHeader';
 export { DashboardSkeleton } from './DashboardSkeleton';
 export { KpiCard } from './KpiCard';

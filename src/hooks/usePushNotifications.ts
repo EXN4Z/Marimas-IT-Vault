@@ -15,7 +15,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
-export type PushStatus = 'unsupported' | 'default' | 'granted' | 'denied';
+type PushStatus = 'unsupported' | 'default' | 'granted' | 'denied';
 
 export function usePushNotifications() {
   const [status, setStatus] = useState<PushStatus>('default');

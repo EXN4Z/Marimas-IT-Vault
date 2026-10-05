@@ -14,11 +14,6 @@ interface SetPasswordResponse {
   }
 }
 
-interface RegisterResponse {
-  message: string;
-  registration_id: string;
-}
-
 interface ImportKaryawanResponse {
   success: boolean;
   message?: string;
@@ -27,17 +22,6 @@ interface ImportKaryawanResponse {
 
 export const login = async (loginIdentifier: string, password: string): Promise<AuthResponse> => {
   const res = await api.post('/login', { login: loginIdentifier, password });
-  return res.data;
-};
-
-export const register = async (
-  name: string,
-  email: string,
-  phone: string,
-  password: string,
-  password_confirmation: string
-): Promise<RegisterResponse> => {
-  const res = await api.post('/register', { name, email, phone, password, password_confirmation });
   return res.data;
 };
 
@@ -81,15 +65,6 @@ export async function updatePassword(payload: {
   const res = await api.put('/profile/password', payload);
   return res.data;
 }
-
-export const changePassword = async (payload: {
-  current_password: string;
-  password: string;
-  password_confirmation: string;
-}): Promise<{ message: string }> => {
-  const res = await api.put('/change-password', payload);
-  return res.data;
-};
 
 export const importKaryawan = async (file: File): Promise<ImportKaryawanResponse> => {
   const formData = new FormData();
