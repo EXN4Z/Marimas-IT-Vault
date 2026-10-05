@@ -1,0 +1,200 @@
+<?php
+
+namespace App\Imports\MasterData;
+
+use App\Models\MasterData\Departemen;
+use App\Models\User;
+use App\Notifications\PasswordAkunBaru;
+use Illuminate\Support\Str;
+use Maatwebsite\Excel\Concerns\ToCollection;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+
+class KaryawanImport implements ToCollection
+{
+    protected $rowCount = 0;
+    protected $errors = [];
+
+    private const MAX_BARIS_DISCAN = 10;
+    private const KOLOM_PENANDA_HEADER = 'nik';
+
+    private const NILAI_PLACEHOLDER_TANGGAL_KOSONG = ['-', '--', '---', 'n/a', 'na', '.', 'kosong'];
+
+    private const BULAN_INDONESIA_KE_INGGRIS = [
+        'september' => 'September', 'november' => 'November', 'desember' => 'December',
+        'januari' => 'January', 'februari' => 'February', 'agustus' => 'August',
+        'oktober' => 'October',
+        'maret' => 'March', 'april' => 'April',
+        'juli' => 'July', 'juni' => 'June',
+        'agt' => 'August', 'agu' => 'August', 'okt' => 'October', 'des' => 'December',
+        'jan' => 'January', 'feb' => 'February', 'mar' => 'March', 'apr' => 'April',
+        'jun' => 'June', 'jul' => 'July', 'sep' => 'September', 'sept' => 'September',
+        'nov' => 'November', 'oct' => 'October', 'dec' => 'December', 'aug' => 'August',
+        'mei' => 'May',
+    ];
+
+    public function collection(Collection $rows)
+    {
+        $indexHeader = $this->cariBarisHeader($rows);
+
+        if ($indexHeader === null) {
+            $this->errors[] = 'Tidak menemukan baris header (kolom "NIK") di ' . self::MAX_BARIS_DISCAN . ' baris pertama.';
+            return;
+        }
+
+        $headers = $rows[$indexHeader]
+            ->map(fn ($h) => $this->normalisasiHeader((string) $h))
+            ->toArray();
+
+        $dataRows = $rows->slice($indexHeader + 1);
+
+        foreach ($dataRows as $index => $rawRow) {
+            try {
+                DB::transaction(function () use ($rawRow, $headers, $index) {
+                    $rowArray = $rawRow->toArray();
+
+                    if (count(array_filter($rowArray, fn ($v) => $v !== null && $v !== '')) === 0) {
+                        return;
+                    }
+
+                    if ($this->adalahBarisFooter($rowArray)) {
+                        return; // baris footer disclaimer hasil Export Excel, lewati diam-diam
+                    }
+
+                    $row = array_combine(
+                        $headers,
+                        array_pad($rowArray, count($headers), null)
+                    );
+
+                    $nik = trim((string) ($row['nik'] ?? ''));
+                    if ($nik === '') {
+                        $this->errors[] = "Baris ke-{$index}: NIK kosong, dilewati.";
+                        return;
+                    }
+
+                    $email = trim((string) ($row['email'] ?? ''));
+                    if ($email === '') {
+                        $this->errors[] = "Baris ke-{$index}: email kosong, tidak bisa kirim password, dilewati.";
+                        return;
+                    }
+
+                    $departemenId = null;
+                    $namaDepartemen = trim((string) ($row['departemen'] ?? ''));
+                    if ($namaDepartemen !== '') {
+                        $departemenId = Departemen::firstOrCreate(['nama' => $namaDepartemen])->id;
+                    }
+
+                    // Cek duplikat: kalau NIK ATAU email sudah ada di database,
+                    // baris ini di-skip (tidak dibuat, tidak diupdate).
+                    if (User::where('nik', $nik)->exists()) {
+                        $this->errors[] = "Baris ke-{$index}: NIK {$nik} sudah terdaftar, dilewati.";
+                        return;
+                    }
+
+                    if (User::where('email', $email)->exists()) {
+                        $this->errors[] = "Baris ke-{$index}: Email {$email} sudah dipakai user lain, dilewati.";
+                        return;
+                    }
+
+                    $passwordPlain = explode(' ', trim((string) ($row['nama'] ?? '')))[0];
+
+                    // Cuma 'admin' yang dikenali dari kolom Excel -- value lain
+                    // (termasuk role lama kayak hr/manajer/karyawan/guest dari
+                    // file lama, atau kolom kosong) jatuh ke 'user', biar import
+                    // gak gagal gara-gara role_id gak ketemu.
+                    $user = User::create([
+                        'nik'           => $nik,
+                        'name'          => $row['nama'] ?? null,
+                        'email'         => $email,
+                        'phone'         => $row['phone'] ?? null,
+                        'departemen_id' => $departemenId,
+                        'tanggal_masuk' => $this->parseTanggal($row['tanggal_masuk'] ?? null),
+                        'role'          => strtolower(trim($row['role'] ?? '')) === 'admin' ? 'admin' : 'user',
+                        'password'      => $passwordPlain,
+                    ]);
+
+                    DB::afterCommit(function () use ($user, $passwordPlain) {
+                        $user->notify(new PasswordAkunBaru($passwordPlain));
+                    });
+
+                    $this->rowCount++;
+                });
+            } catch (\Exception $e) {
+                $this->errors[] = "Baris ke-{$index}: " . $e->getMessage();
+            }
+        }
+    }
+
+    /**
+     * Deteksi baris footer disclaimer yang otomatis ditambahkan fitur Export
+     * Excel ("Dokumen digenerate otomatis oleh Marimas One ..."). Kalau file
+     * hasil export diimpor balik tanpa diedit, baris ini ikut kebaca sebagai
+     * baris data (nyangkut di kolom pertama karena aslinya merged cell) dan
+     * bikin entri palsu -- makanya harus disaring.
+     */
+    private function adalahBarisFooter(array $rowArray): bool
+    {
+        $gabungan = strtolower(implode(' ', array_map('strval', $rowArray)));
+
+        return str_contains($gabungan, 'digenerate otomatis');
+    }
+
+    private function cariBarisHeader(Collection $rows): ?int
+    {
+        $batas = min(self::MAX_BARIS_DISCAN, $rows->count());
+
+        for ($i = 0; $i < $batas; $i++) {
+            $selDinormalisasi = $rows[$i]->map(fn ($v) => $this->normalisasiHeader((string) $v));
+
+            if ($selDinormalisasi->contains(self::KOLOM_PENANDA_HEADER)) {
+                return $i;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalisasiHeader(string $header): string
+    {
+        $header = str_replace("\xEF\xBB\xBF", '', $header);
+        $header = preg_replace('/[\x{00A0}\x{200B}\x{FEFF}]/u', ' ', $header);
+
+        $header = trim($header);
+        $header = strtolower($header);
+        $header = preg_replace('/[\s\-]+/', '_', $header);
+        $header = preg_replace('/[^a-z0-9_]/', '', $header);
+        $header = trim($header, '_');
+        return $header;
+    }
+
+    private function parseTanggal($value)
+    {
+        if (empty($value)) return null;
+
+        $teks = trim((string) $value);
+
+        if (in_array(strtolower($teks), self::NILAI_PLACEHOLDER_TANGGAL_KOSONG, true)) {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)->format('Y-m-d');
+        }
+
+        foreach (self::BULAN_INDONESIA_KE_INGGRIS as $indo => $inggris) {
+            $teks = preg_replace('/\b' . preg_quote($indo, '/') . '\b/i', $inggris, $teks);
+        }
+
+        return \Carbon\Carbon::parse($teks)->format('Y-m-d');
+    }
+
+    public function getRowCount()
+    {
+        return $this->rowCount;
+    }
+
+    public function getErrors()
+    {
+        return $this->errors;
+    }
+}

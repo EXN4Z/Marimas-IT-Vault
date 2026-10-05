@@ -1,0 +1,196 @@
+<?php
+
+use App\Http\Controllers\Auth\AuthController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\MasterData\UserController;
+use App\Http\Controllers\MasterData\DepartemenController;
+use App\Http\Controllers\AuditLog\AuditLogController;
+use App\Http\Controllers\Dashboard\DashboardController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
+use App\Http\Controllers\Notifikasi\NotificationController;
+use App\Http\Controllers\MasterData\AdminUserController;
+use App\Http\Controllers\MasterData\SupplierController;
+use App\Http\Controllers\MasterData\InventoryController;
+use App\Http\Controllers\MasterData\KategoriController;
+use App\Http\Controllers\Transaksi\InventoryPemakaiController;
+use App\Http\Controllers\Transaksi\InventoryPenangananController;
+use App\Http\Controllers\MasterData\CabangController;
+use App\Http\Controllers\MasterData\PerusahaanController;
+use App\Http\Controllers\Notifikasi\PushSubscriptionController;
+use App\Http\Controllers\ImportController;
+use App\Http\Controllers\MasterData\RoleController;
+
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::get('/roles', [RoleController::class, 'index']);
+
+Broadcast::routes(['middleware' => ['auth:sanctum']]);
+
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    // Route import HARUS didaftarkan sebelum apiResource -- kalau tidak,
+    // "import" akan salah tertangkap sebagai parameter {cabang} di route
+    // PUT/DELETE apiResource (sama pola dengan supplier/import & perusahaan/import).
+    Route::post('/cabang/import', [CabangController::class, 'import']);
+    Route::apiResource('cabang', CabangController::class);
+    // BARU: menu "Perusahaan" di Master Data -- mirror Cabang, admin-only.
+    // Route import HARUS didaftarkan sebelum apiResource -- kalau tidak,
+    // "import" akan salah tertangkap sebagai parameter {perusahaan} di
+    // route PUT/DELETE apiResource (sama pola dengan supplier/import).
+    Route::post('/perusahaan/import', [PerusahaanController::class, 'import']);
+    Route::apiResource('perusahaan', PerusahaanController::class);
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
+    Route::put('/profile/password', [AuthController::class, 'updatePassword']);
+    Route::put('/change-password', [AuthController::class, 'changePassword']);
+    Route::post('/cabang/{cabang}/resend-email', [CabangController::class, 'resendEmail']);
+
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('/{id}', [NotificationController::class, 'destroy']);
+    });
+
+    Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store']);
+    Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy']);
+});
+Route::middleware(['auth:sanctum', 'role:admin'])->post('/admin/users/{id}/set-password', [AdminUserController::class, 'setPassword']);
+
+// REVISI (simplify_roles_table): dulu 'role:user,admin' -- karena
+// EnsureUserIsMember sekarang cuma cek admin-only vs bukan (lihat
+// catatan di middleware itu), daftar itu udah lama efeknya sama persis
+// kayak auth:sanctum polos (semua yang login lolos). Disederhanain di
+// sini biar teksnya gak menyesatkan (kelihatannya whitelist, padahal
+// bukan lagi).
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::post('/inventory-penanganan', [InventoryPenangananController::class, 'store']); // lapor kerusakan barang -- berlaku buat semua item, apapun kategori/posisinya
+
+    Route::prefix('dashboard')->group(function () {
+        Route::get('/kpd', [DashboardController::class, 'KaryawanPerDepart']);
+    });
+
+    Route::get('/user', [AuthController::class, 'user']);
+});
+
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::get('/karyawan', [UserController::class, 'index']);
+    Route::get('/karyawan/{user}', [UserController::class, 'edit']);
+    Route::put('/karyawan/{user}', [UserController::class, 'update']);
+    Route::delete('/karyawan/{user}', [UserController::class, 'destroy']);
+    Route::post('/karyawan', [UserController::class, 'store']);
+});
+
+// Admin-only (dulu 'role:admin,hr' -- tapi karena level hr = level
+// karyawan/manajer/cabang, dulu itu efeknya malah kebuka buat SEMUA
+// non-admin, bukan cuma hr. Sekarang disamakan tegas: semua role selain
+// admin punya hak akses sama persis seperti karyawan, yaitu TIDAK ada
+// akses ke Departemen sama sekali -- sinkron sama frontend, lihat
+// AppLayout.tsx & MasterData.tsx).
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::post('/departemen/import', [DepartemenController::class, 'import']);
+    Route::apiResource('departemen', DepartemenController::class)->except(['show']);
+    Route::apiResource('kategori', KategoriController::class)->except(['show']);
+});
+
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::get('/audit-log', [AuditLogController::class, 'index']);
+    Route::get('/audit-log/trash', [AuditLogController::class, 'trash']);
+    Route::post('/inventory-penanganan/import', [ImportController::class, 'importAsetPenanganan']);
+    Route::post('/inventory-penanganan/{inventoryPenanganan}/terima', [InventoryPenangananController::class, 'terima']); // admin: terima & mulai tangani laporan
+    Route::post('/inventory-penanganan/{inventoryPenanganan}', [InventoryPenangananController::class, 'update']);
+    Route::post('/inventory/import', [ImportController::class, 'import']);
+    Route::post('/import-karyawan', [ImportController::class, 'importKaryawan']);
+});
+
+// Admin-only (dulu 'role:admin,hr', lihat catatan di grup Departemen di
+// atas soal kenapa itu disamakan). Kedua endpoint ini cuma dipakai halaman
+// Laporan/Foto Aset yang sekarang admin-only di frontend.
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::get('/inventory-pemakai', [InventoryPemakaiController::class, 'index']);
+    // WAJIB didaftarkan SEBELUM 'GET /inventory/{inventory}' di bawah (beda
+    // grup middleware pun tetap harus lebih dulu di file ini), soalnya kalau
+    // kebalik, Laravel bakal nganggep 'foto' itu isian {inventory} dan malah
+    // nyoba resolve Inventory::find('foto') -> 404, gak pernah nyampe sini.
+    Route::get('/inventory/foto', [InventoryController::class, 'foto']);
+});
+
+// REVISI (simplify_roles_table): sama seperti grup di atas -- 'role:user,admin'
+// udah lama efeknya identik dengan auth:sanctum polos (lihat catatan di
+// EnsureUserIsMember), disederhanain biar teksnya gak menyesatkan.
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/inventory', [InventoryController::class, 'index']);
+    Route::get('/inventory/{inventory}', [InventoryController::class, 'show']);
+    Route::get('/supplier', [SupplierController::class, 'index']);
+
+    // BARU: dibuka buat karyawan/manajer juga (dulu admin+hr only) -- non-
+    // admin/hr cuma boleh liat laporan penanganan yang terkait pemakaian dia
+    // sendiri, discoping DI DALAM controller (InventoryPenangananController::index()),
+    // BUKAN cuma di middleware ini -- biar gak ada celah data karyawan lain bocor.
+    Route::get('/inventory-penanganan', [InventoryPenangananController::class, 'index']);
+
+    // BARU: non-admin (karyawan/manajer/hr) butuh liat daftar kelengkapan
+    // aset (charger, tas, dll) buat tau apa yang tersedia & apa yang lagi
+    // dia pinjam sendiri -- scoping detail (gak boleh liat punya orang
+    // lain / yang berstatus rusak) dicek DI DALAM controller, bukan cuma
+    // di middleware ini.
+
+    // admin: riwayat GLOBAL semua aset. karyawan/manajer/hr: riwayat
+    // dibatasi cuma punya sendiri (dicek & difilter di dalam controller,
+    // BUKAN cuma di middleware — biar gak ada celah data orang lain bocor).
+    Route::get('/inventory-pemakai/riwayat', [InventoryPemakaiController::class, 'riwayat']);
+
+    // PINDAH ke sini (dari grup admin-only) — pemakai (karyawan/cabang) yang
+    // lagi pegang aset ini harus bisa ngembaliin sendiri, bukan cuma admin.
+    // Otorisasi detail (harus admin ATAU pemilik pemakaian ini) dicek di
+    // dalam InventoryPemakaiController::kembalikan(), bukan cuma di middleware.
+    Route::post('/inventory-pemakai/{inventoryPemakai}/kembalikan', [InventoryPemakaiController::class, 'kembalikan']);
+});
+
+// endpoint ini nampilin SEMUA laporan kerusakan dari SELURUH karyawan tanpa
+// filter (tab "Rusak" di halaman Foto Aset) -- admin-only (dulu 'role:admin,hr',
+// lihat catatan di grup Departemen di atas), beda dari /inventory-penanganan
+// (index) di atas yang self-scoping buat semua non-admin.
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::get('/inventory-penanganan/foto', [InventoryPenangananController::class, 'foto']);
+});
+
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::post('/inventory', [InventoryController::class, 'store']);
+    // Route ini WAJIB didaftarkan sebagai PUT, meskipun frontend ngirim raw
+    // HTTP method POST (lihat updateInventory() di api/masterData/inventory.ts:
+    // FormData + field _method=PUT -- trik standar krn PHP gak bisa parse body
+    // multipart kalau method aslinya PUT, jadi verb asli dibikin POST). Begitu
+    // Laravel baca _method=PUT itu, request->method() langsung KEBACA "PUT" buat
+    // urusan routing (bukan cuma buat isMethod() checks) -- makanya route yang
+    // dicocokkan router HARUS PUT, walau HTTP verb yang beneran dikirim ke
+    // server itu POST. Kalau didaftarkan sebagai POST malah salah: router bakal
+    // nyari route PUT (krn override), gak ketemu di antara method POST yang
+    // terdaftar, lempar 405 "PUT method not supported".
+    Route::put('/inventory/{inventory}', [InventoryController::class, 'update']);
+    Route::delete('/inventory/{inventory}', [InventoryController::class, 'destroy']);
+    Route::get('/inventory-pemakai/foto', [InventoryPemakaiController::class, 'foto']);
+    Route::post('/inventory/{inventory}/pemakai', [InventoryPemakaiController::class, 'store']);
+
+    Route::delete('/inventory-penanganan/{inventoryPenanganan}', [InventoryPenangananController::class, 'destroy']);
+    Route::delete('/inventory-pemakai/{inventoryPemakai}', [InventoryPemakaiController::class, 'destroy']);
+    Route::post('/inventory/{inventory}/jual', [InventoryController::class, 'jual']);
+
+    // eks AsetKelengkapanController@pasangPengganti.
+    Route::post('/inventory/{inventory}/pasang-pengganti-kelengkapan', [InventoryController::class, 'pasangPenggantiKelengkapan']);
+    Route::post('/inventory/{inventory}/lepas-dari-induk', [InventoryController::class, 'lepasDariInduk']);
+
+    Route::post('/supplier/import', [SupplierController::class, 'import']);
+    Route::apiResource('supplier', SupplierController::class)->except(['index', 'show']);
+
+    // Kategori: jenis kategori barang di Inventory (Laptop, Charger, dst
+    // -- 13 kategori, bebas nama apa saja), dikelola admin lewat Master
+    // Data -- dipakai buat dropdown pilih Kategori waktu bikin/edit
+    // Inventory. Kategori TIDAK LAGI menentukan struktur induk/menempel.
+
+});
