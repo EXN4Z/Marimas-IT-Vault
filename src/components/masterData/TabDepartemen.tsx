@@ -414,7 +414,7 @@ export default function TabDepartemen() {
                 label="Nama Departemen"
                 required
                 error={formError && !formNama.trim() ? formError : undefined}
-                hint="Nama departemen harus jelas dan unik"
+                hint=""
               >
                 <TextInput
                   value={formNama}

@@ -440,7 +440,7 @@ export default function TabSupplier() {
                 label="Nama Supplier"
                 required
                 error={formError && !formNama.trim() ? formError : undefined}
-                hint="Nama supplier harus jelas dan unik"
+                hint=""
               >
                 <TextInput
                   value={formNama}
@@ -454,7 +454,7 @@ export default function TabSupplier() {
                 />
               </Field>
 
-              <Field label="Alamat Kantor / Gudang" hint="Opsional, alamat pengiriman atau domisili supplier">
+              <Field label="Alamat Kantor / Gudang" hint="">
                 <TextInput
                   value={formAlamat}
                   onChange={setFormAlamat}
@@ -462,7 +462,7 @@ export default function TabSupplier() {
                 />
               </Field>
 
-              <Field label="Nomor Kontak / Telepon" hint="Opsional, nomor telepon kantor atau perwakilan supplier">
+              <Field label="Nomor Kontak / Telepon" hint="">
                 <TextInput
                   value={formTelepon}
                   onChange={setFormTelepon}
