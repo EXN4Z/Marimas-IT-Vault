@@ -172,7 +172,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
                   if (errors.penerima) setErrors((prev) => ({ ...prev, penerima: '' }));
                 }}
                 autoFocus
-                placeholder="Ketik nama / NIK karyawan..."
+                placeholder="Ketik nama atau NIK karyawan penerima"
                 className={`w-full pl-9 pr-8 py-2.5 border rounded-xl text-sm transition focus:outline-none focus:ring-2 ${
                   errors.penerima
                     ? 'border-red-300 bg-red-50/30 text-red-900 focus:ring-red-400 focus:border-red-400'
@@ -232,7 +232,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
               value={catatan}
               onChange={setCatatan}
               rows={2}
-              placeholder="cth. Diterima dalam kondisi fisik mulus & charger berfungsi normal."
+              placeholder="Tulis catatan serah terima barang"
             />
           </Field>
 
@@ -251,9 +251,6 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
                   </span>
                 ))}
               </div>
-              <p className="text-[11px] text-slate-400 mt-2">
-                Item di atas ikut berstatus "dipakai" otomatis bersamaan dengan unit utama.
-              </p>
             </div>
           )}
 

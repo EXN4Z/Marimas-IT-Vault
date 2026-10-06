@@ -10,7 +10,7 @@ import { getFotoKerusakanInventory, type InventoryPenanganan } from '../../api/t
 import { namaPemakai, namaPelaporPenanganan, formatTanggalWaktuId, formatJenisKerusakan } from '../../utils/inventoryHelpers';
 import { SkeletonTable } from '../shared/skeleton';
 
-const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
+const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/storage/' : '/storage/');
 const PER_PAGE = 10;
 
 interface DetailRow {
@@ -438,16 +438,11 @@ export default function TabFotoInventory() {
 
   const activeState = activeTab === 'inventory' ? inventory : activeTab === 'peminjaman' ? peminjaman : activeTab === 'pengembalian' ? pengembalian : rusak;
 
-  // Badge muncul cuma abis fetch pertama kelar (loaded=true), biar gak
-  // sempet kelip nunjukin "0" dulu sebelum totalnya beneran kebaca.
-  const tabsWithBadge: ScrollableTabItem<FotoTab>[] = TABS.map((t) => {
-    const state = t.key === 'inventory' ? inventory : t.key === 'peminjaman' ? peminjaman : t.key === 'pengembalian' ? pengembalian : rusak;
-    return { ...t, badge: state.loaded ? state.total : null };
-  });
+  const activeTabLabel = TABS.find((t) => t.key === activeTab)?.label ?? 'Foto';
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-      <ScrollableTabBar className="mb-4" tabs={tabsWithBadge} activeTab={activeTab} onChange={setActiveTab} />
+      <ScrollableTabBar className="mb-4" tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
 
       <SearchInput
         value={currentSearch}
@@ -455,6 +450,10 @@ export default function TabFotoInventory() {
         placeholder="Cari kode inventory atau nama..."
         className="mb-4"
       />
+
+      <p className="text-xs text-slate-500 mb-4">
+        Total {activeTabLabel}: <span className="font-semibold text-slate-900">{activeState.total}</span> foto
+      </p>
 
       {renderTable()}
 

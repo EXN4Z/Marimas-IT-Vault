@@ -116,8 +116,8 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
                 setKeluhan(v);
                 if (errors.keluhan) setErrors((prev) => ({ ...prev, keluhan: '' }));
               }}
-              placeholder="Jelaskan kondisi dan kronologi kejadiannya..."
               error={!!errors.keluhan}
+              placeholder="Jelaskan keluhan dan kronologi kerusakan"
             />
           </Field>
 

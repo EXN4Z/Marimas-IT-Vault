@@ -307,7 +307,7 @@ export default function TabPerusahaan() {
       </div>
 
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-        <div className="mb-6">
+        <div className="mb-4">
           <SearchInput
             value={search}
             onChange={setSearch}
@@ -315,6 +315,10 @@ export default function TabPerusahaan() {
             className="w-full"
           />
         </div>
+
+        <p className="text-xs text-slate-500 mb-4">
+          Total Semua: <span className="font-semibold text-slate-900">{filteredPerusahaan.length}</span> perusahaan
+        </p>
 
         {loading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -449,20 +453,20 @@ export default function TabPerusahaan() {
               </p>
             )}
 
-            <Field label="Nama Perusahaan" error={formErrors.nama} required hint="">
+            <Field label="Nama Perusahaan" error={formErrors.nama} required>
               <TextInput
                 value={formNama}
                 onChange={(val) => {
                   setFormNama(val);
                   clearFieldError('nama');
                 }}
-                placeholder="Contoh: PT Sumber Makmur Solusindo"
                 error={!!formErrors.nama}
+                placeholder="Masukkan nama perusahaan"
                 autoFocus
               />
             </Field>
 
-            <Field label="Alamat Lengkap" error={formErrors.alamat} required hint="">
+            <Field label="Alamat Lengkap" error={formErrors.alamat} required>
               <Textarea
                 value={formAlamat}
                 onChange={(val) => {
@@ -470,33 +474,33 @@ export default function TabPerusahaan() {
                   clearFieldError('alamat');
                 }}
                 rows={2}
-                placeholder="Contoh: Jl. Mayjen Sungkono No. 88, Dukuh Pakis, Surabaya"
+                placeholder="Masukkan alamat lengkap perusahaan"
                 error={!!formErrors.alamat}
               />
             </Field>
 
-            <Field label="Nomor Telepon" error={formErrors.telepon} required hint="">
+            <Field label="Nomor Telepon" error={formErrors.telepon} required>
               <TextInput
                 value={formTelepon}
                 onChange={(val) => {
                   setFormTelepon(val);
                   clearFieldError('telepon');
                 }}
-                placeholder="Contoh: 031-7345678 / 0812-3344-5566"
                 error={!!formErrors.telepon}
+                placeholder="Masukkan nomor telepon perusahaan"
                 type="tel"
               />
             </Field>
 
-            <Field label="Link Lokasi Peta (Google Maps)" error={formErrors.link} required hint="">
+            <Field label="Link Lokasi Peta (Google Maps)" error={formErrors.link} required>
               <TextInput
                 value={formLink}
                 onChange={(val) => {
                   setFormLink(val);
                   clearFieldError('link');
                 }}
-                placeholder="https://maps.app.goo.gl/..."
                 error={!!formErrors.link}
+                placeholder="Tempel link Google Maps lokasi perusahaan"
               />
             </Field>
 

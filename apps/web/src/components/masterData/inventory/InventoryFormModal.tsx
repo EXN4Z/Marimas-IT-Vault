@@ -16,7 +16,7 @@ import { ButtonCancel, ButtonSubmit, Field, SelectField, inputClass, inputErrorC
 
 const KETERANGAN_MAX = 255;
 const MAX_FOTO_MB = 4;
-const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
+const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/storage/' : '/storage/');
 const ACCEPTED_FOTO_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 
 // REFACTOR KATEGORI BEBAS (Fase 3): form ini dulu punya 2 mode terpisah total
@@ -389,9 +389,6 @@ export default function InventoryFormModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              {inventory ? 'Ubah data' : 'Data baru'}
-            </p>
             <h3 id="inventory-form-title" className="text-lg font-semibold text-slate-900">
               {inventory ? `Edit Inventory ${inventory.kode_inventory}` : 'Tambah Inventory'}
             </h3>
@@ -425,7 +422,6 @@ export default function InventoryFormModal({
           <Section
             index={0}
             title="Informasi Umum"
-            subtitle="Kategori, nama, dan ciri fisik barang"
             icon={
               <path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM8 5v3.5M8 10.8h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
             }
@@ -466,17 +462,17 @@ export default function InventoryFormModal({
                   ref={firstFieldRef}
                   className={`${inputClass} ${errors.nama ? inputErrorClass : ''}`}
                   value={form.nama}
+                  placeholder="Masukkan nama inventory"
                   onChange={(e) => setField('nama', e.target.value)}
-                  placeholder="Laptop Lenovo ThinkPad E14, Charger Dell 65W"
                 />
               </Field>
             </div>
             <Field label="Merk">
-              <input className={inputClass} value={form.merk} onChange={(e) => setField('merk', e.target.value)} placeholder="Lenovo, HP, WD" />
+              <input className={inputClass} placeholder="Masukkan merk" value={form.merk} onChange={(e) => setField('merk', e.target.value)} />
             </Field>
 
             <Field label="Type">
-              <input className={inputClass} value={form.type} onChange={(e) => setField('type', e.target.value)} placeholder="Ideapad 3 13ADA05" />
+              <input className={inputClass} placeholder="Masukkan type / model" value={form.type} onChange={(e) => setField('type', e.target.value)} />
             </Field>
             {/* Status BUKAN field yang bisa diisi manual di sini -- perubahan
                 status (tersedia/dipakai/dst) selalu lewat transaksi
@@ -501,15 +497,15 @@ export default function InventoryFormModal({
             )}
 
             <Field label="Warna">
-              <input className={inputClass} value={form.warna} onChange={(e) => setField('warna', e.target.value)} placeholder="Hitam, Silver, Putih" />
+              <input className={inputClass} placeholder="Masukkan warna" value={form.warna} onChange={(e) => setField('warna', e.target.value)} />
             </Field>
 
             <Field label="Serial Number" error={errors.serial_number}>
               <input
                 className={`${inputClass} font-mono text-[13px]`}
                 value={form.serial_number}
+                placeholder="Masukkan serial number"
                 onChange={(e) => setField('serial_number', e.target.value)}
-                placeholder="Nomor seri unit (S/N)"
               />
             </Field>
 
@@ -517,10 +513,10 @@ export default function InventoryFormModal({
               <input
                 type="number"
                 min={1}
+                placeholder="Masukkan jumlah unit"
                 className={inputClass}
                 value={form.jumlah}
                 onChange={(e) => setField('jumlah', e.target.value)}
-                placeholder="1"
               />
             </Field>
 
@@ -538,7 +534,6 @@ export default function InventoryFormModal({
           <Section
             index={1}
             title="Struktur"
-            subtitle="Hubungan fisik dengan item lain (opsional)"
             icon={
               <path d="M3 6.5L8 3l5 3.5v5L8 15l-5-3.5v-5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
             }
@@ -636,14 +631,13 @@ export default function InventoryFormModal({
           <Section
             index={2}
             title="Pembelian & Garansi"
-            subtitle="Sumber barang dan dokumen terkait"
             icon={
               <path d="M3 5h10l-.8 7.2a1.5 1.5 0 01-1.49 1.3H5.29a1.5 1.5 0 01-1.49-1.3L3 5zM5.5 5V3.5a2.5 2.5 0 015 0V5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
             }
           >
             <Field label="Supplier">
               <SelectField value={form.supplier_id ?? ''} onChange={(v) => setField('supplier_id', v ? Number(v) : null)}>
-                <option value="">Tanpa supplier</option>
+                <option value="">Pilih supplier</option>
                 {effectiveSupplierOptions.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.nama}
@@ -683,8 +677,8 @@ export default function InventoryFormModal({
               <input
                 className={`${inputClass} font-mono text-[13px]`}
                 value={form.no_surat_jalan}
+                placeholder="Masukkan nomor surat jalan"
                 onChange={(e) => setField('no_surat_jalan', e.target.value)}
-                placeholder="Nomor surat jalan (SJ-001)"
               />
             </Field>
 
@@ -692,8 +686,8 @@ export default function InventoryFormModal({
               <input
                 className={`${inputClass} font-mono text-[13px]`}
                 value={form.no_good_receive}
+                placeholder="Masukkan nomor good receive"
                 onChange={(e) => setField('no_good_receive', e.target.value)}
-                placeholder="Nomor good receive (GR-001)"
               />
             </Field>
           </Section>
@@ -702,7 +696,6 @@ export default function InventoryFormModal({
           <Section
             index={3}
             title="Detail Tambahan"
-            subtitle="Catatan dan foto barang"
             icon={
               <path d="M2 12.5l3.3-3.3a1.4 1.4 0 012 0L10 11.9M8.7 10.6l1.6-1.6a1.4 1.4 0 012 0L14 10.7M2.5 3h11v10h-11V3z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
             }
@@ -713,9 +706,9 @@ export default function InventoryFormModal({
                   <textarea
                     className={`${inputClass} min-h-[80px] resize-none`}
                     value={form.keterangan ?? ''}
+                    placeholder="Tulis keterangan tambahan tentang inventory ini"
                     maxLength={KETERANGAN_MAX}
                     onChange={(e) => setField('keterangan', e.target.value)}
-                    placeholder="Kondisi baik, mulus"
                   />
                   <span className="pointer-events-none absolute bottom-2 right-2.5 text-[11px] text-slate-300">
                     {(form.keterangan ?? '').length}/{KETERANGAN_MAX}
@@ -799,13 +792,11 @@ export default function InventoryFormModal({
 
 function Section({
   title,
-  subtitle,
   icon,
   index,
   children,
 }: {
   title: string;
-  subtitle?: string;
   icon?: React.ReactNode;
   index?: number;
   children: React.ReactNode;
@@ -825,7 +816,6 @@ function Section({
         )}
         <div>
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-200">{title}</h4>
-          {subtitle && <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-0.5">{subtitle}</p>}
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">{children}</div>

@@ -80,17 +80,13 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, onC
 
         {/* Body */}
         <div className="px-6 py-5 overflow-y-auto space-y-3">
-          <p className="text-xs text-slate-500 leading-relaxed">
-            Pilih unit induk tempat kelengkapan ini akan dipasangkan sebagai aksesoris resmi:
-          </p>
-
           <div className="relative">
             <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari kode atau nama item induk..."
+              placeholder="Cari kode inventory atau nama..."
               className={`${inputClass} pl-9`}
               autoFocus
             />

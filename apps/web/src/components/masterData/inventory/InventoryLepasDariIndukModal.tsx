@@ -80,7 +80,7 @@ export default function InventoryLepasDariIndukModal({ inventory, onClose, onSuc
               value={keterangan}
               onChange={setKeterangan}
               rows={3}
-              placeholder="Jelaskan alasan mengapa kelengkapan ini dilepas dari induknya..."
+              placeholder="Tulis alasan melepas kelengkapan dari induk"
             />
           </Field>
 

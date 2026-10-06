@@ -246,7 +246,7 @@ export default function TabDepartemen() {
         </div>
 
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <SearchInput
               value={search}
               onChange={setSearch}
@@ -254,6 +254,10 @@ export default function TabDepartemen() {
               className="flex-1"
             />
           </div>
+
+          <p className="text-xs text-slate-500 mb-4">
+            Total Semua: <span className="font-semibold text-slate-900">{filteredItems.length}</span> departemen
+          </p>
 
           <div className="border border-slate-200 rounded-lg overflow-hidden">
             {loading && (
@@ -388,9 +392,6 @@ export default function TabDepartemen() {
                   <h3 className="text-base font-semibold text-slate-900">
                     {editing ? 'Edit Departemen' : 'Tambah Departemen'}
                   </h3>
-                  <p className="text-xs text-slate-500">
-                    {editing ? 'Perbarui data departemen' : 'Isi data departemen baru'}
-                  </p>
                 </div>
               </div>
               <button
@@ -414,7 +415,6 @@ export default function TabDepartemen() {
                 label="Nama Departemen"
                 required
                 error={formError && !formNama.trim() ? formError : undefined}
-                hint=""
               >
                 <TextInput
                   value={formNama}
@@ -422,8 +422,8 @@ export default function TabDepartemen() {
                     setFormNama(val);
                     if (formError) setFormError('');
                   }}
-                  placeholder="Contoh: Divisi Finance & Accounting"
                   autoFocus
+                  placeholder="Masukkan nama departemen"
                   error={!!formError && !formNama.trim()}
                 />
               </Field>

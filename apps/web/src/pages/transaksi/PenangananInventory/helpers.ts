@@ -1,4 +1,4 @@
-export const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
+export const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/storage/' : '/storage/');
 
 export function todayIso() {
   // tanggal lokal (bukan toISOString yang UTC -- jam 00.00-07.00 WIB bisa mundur sehari)

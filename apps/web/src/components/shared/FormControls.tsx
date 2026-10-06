@@ -27,7 +27,7 @@ interface FieldProps {
 export function Field({ label, error, required, hint, className = '', children }: FieldProps) {
   return (
     <label className={`block text-sm ${className}`}>
-      <div className="flex items-center justify-between mb-1.5">
+      <div className="flex items-center justify-between gap-2 mb-1.5">
         <span className="font-medium text-slate-700 select-none flex items-center gap-1">
           {label}
           {required && (
@@ -36,8 +36,10 @@ export function Field({ label, error, required, hint, className = '', children }
             </span>
           )}
         </span>
-        {required && !error && (
-          <span className="text-[11px] font-normal text-slate-400">Wajib diisi</span>
+        {required && (
+          <span className="shrink-0 whitespace-nowrap text-[11px] font-medium text-red-500 dark:text-red-400 select-none">
+            wajib diisi
+          </span>
         )}
       </div>
 
@@ -144,10 +146,18 @@ interface SelectFieldProps {
   onChange: (value: string) => void;
   disabled?: boolean;
   error?: boolean;
+  placeholder?: string;
   children: ReactNode;
 }
 
-export function SelectField({ value, onChange, disabled, error, children }: SelectFieldProps) {
+export function SelectField({
+  value,
+  onChange,
+  disabled,
+  error,
+  placeholder,
+  children,
+}: SelectFieldProps) {
   const options: SelectOption[] = Children.toArray(children)
     .filter(
       (
@@ -174,6 +184,7 @@ export function SelectField({ value, onChange, disabled, error, children }: Sele
       options={options}
       disabled={disabled}
       error={error}
+      placeholder={placeholder}
     />
   );
 }

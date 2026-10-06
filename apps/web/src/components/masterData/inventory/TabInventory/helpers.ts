@@ -17,7 +17,7 @@ import type { InventoryStatus } from '../../../../api/masterData/inventory';
 // lihat adaIndukDiFilterAktif di bawah.
 export const STATUS_KHUSUS_INDUK: InventoryStatus[] = ['dijual'];
 
-export const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/storage/';
+export const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/storage/' : '/storage/');
 
 export const STATUS_LABEL: Record<InventoryStatus, string> = {
   tersedia: 'Tersedia',

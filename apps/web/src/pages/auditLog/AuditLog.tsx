@@ -134,6 +134,10 @@ export default function AuditLogPage() {
         )}
       </div>
 
+      <p className="text-xs text-slate-500 mb-4">
+        Total {activeTab === 'aktif' ? 'Log Aktif' : 'Trash'}: <span className="font-semibold text-slate-900">{total}</span> log
+      </p>
+
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
         {loading && (
           <div className="flex flex-col gap-1">

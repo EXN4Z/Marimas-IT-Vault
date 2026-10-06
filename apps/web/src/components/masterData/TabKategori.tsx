@@ -190,7 +190,7 @@ export default function TabKategori() {
       </div>
 
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <SearchInput
             value={search}
             onChange={setSearch}
@@ -198,6 +198,10 @@ export default function TabKategori() {
             className="flex-1"
           />
         </div>
+
+        <p className="text-xs text-slate-500 mb-4">
+          Total Semua: <span className="font-semibold text-slate-900">{filteredItems.length}</span> kategori
+        </p>
 
         <div className="border border-slate-200 rounded-lg overflow-hidden">
           {loading && (
@@ -331,9 +335,6 @@ export default function TabKategori() {
                   <h3 className="text-base font-semibold text-slate-900">
                     {editing ? 'Edit Kategori' : 'Tambah Kategori'}
                   </h3>
-                  <p className="text-xs text-slate-500">
-                    {editing ? 'Perbarui nama kelompok kategori barang' : 'Buat kelompok kategori barang baru'}
-                  </p>
                 </div>
               </div>
               <button
@@ -357,7 +358,6 @@ export default function TabKategori() {
                 label="Nama Kategori"
                 required
                 error={formError && !formNama.trim() ? formError : undefined}
-                hint="Contoh: Laptop, Monitor, Smartphone, Printer, Audio"
               >
                 <TextInput
                   value={formNama}
@@ -365,8 +365,8 @@ export default function TabKategori() {
                     setFormNama(val);
                     if (formError) setFormError('');
                   }}
-                  placeholder="Contoh: Laptop / Komputer"
                   autoFocus
+                  placeholder="Masukkan nama kategori"
                   error={!!formError && !formNama.trim()}
                 />
               </Field>

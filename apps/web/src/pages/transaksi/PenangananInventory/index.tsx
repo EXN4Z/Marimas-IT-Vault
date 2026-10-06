@@ -178,6 +178,8 @@ export default function PenangananInventory({ onCount }: Props) {
     { key: 'rusak_berat', label: 'Rusak Berat', list: rusakBeratList },
   ];
 
+  const activeTabLabel = tabs.find((t) => t.key === activeTab)?.label ?? 'Laporan';
+
   // Filtering by search and jenis kerusakan
   const currentTabRawList = useMemo(() => {
     switch (activeTab) {
@@ -259,8 +261,6 @@ export default function PenangananInventory({ onCount }: Props) {
           tabs={tabs.map((t) => ({
             key: t.key,
             label: t.label,
-            badge: t.list.length,
-            badgeClassName: activeTab === t.key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600',
           }))}
         />
 
@@ -272,6 +272,10 @@ export default function PenangananInventory({ onCount }: Props) {
           filterKerusakan={filterKerusakan}
           setFilterKerusakan={setFilterKerusakan}
         />
+
+        <p className="text-xs text-slate-500 mb-4">
+          Total {activeTabLabel}: <span className="font-semibold text-slate-900">{displayedList.length}</span> laporan
+        </p>
 
         {/* Tab 1 & Tab 2: Work Order Cards */}
         {activeTab === 'menunggu' || activeTab === 'diperbaiki' ? (

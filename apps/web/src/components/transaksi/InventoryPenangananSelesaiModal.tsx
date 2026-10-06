@@ -115,7 +115,7 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
                 min={0}
                 value={biayaKomponen}
                 onChange={(e) => setBiayaKomponen(e.target.value)}
-                placeholder={isRusakBerat ? '-' : '0'}
+                placeholder={isRusakBerat ? '-' : 'Masukkan biaya komponen'}
                 disabled={isRusakBerat}
                 className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
               />
@@ -127,7 +127,7 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
                 min={0}
                 value={hargaJasa}
                 onChange={(e) => setHargaJasa(e.target.value)}
-                placeholder={isRusakBerat ? '-' : '0'}
+                placeholder={isRusakBerat ? '-' : 'Masukkan biaya jasa'}
                 disabled={isRusakBerat}
                 className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
               />
@@ -150,6 +150,7 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
               value={catatan}
               onChange={(e) => setCatatan(e.target.value)}
               rows={3}
+              placeholder="Tulis catatan hasil penanganan"
               className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
             />
           </div>

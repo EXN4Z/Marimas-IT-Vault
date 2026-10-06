@@ -170,6 +170,10 @@ export default function TabRiwayatInventory() {
         ))}
       </ul>
 
+      <p className="text-xs text-slate-500 mb-4">
+        Total {riwayatFilter === 'semua' ? 'Semua' : (RIWAYAT_FILTER_LABEL[riwayatFilter] ?? 'Riwayat')}: <span className="font-semibold text-slate-900">{riwayatTotal}</span> riwayat
+      </p>
+
       {riwayatInventoryLoading ? (
         <ul className="flex flex-col gap-4">
           {Array.from({ length: 5 }).map((_, i) => (

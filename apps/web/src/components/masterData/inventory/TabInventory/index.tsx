@@ -26,7 +26,7 @@ import {
   type InventoryPenanganan,
 } from '../../../../api/transaksi/inventoryPenanganan';
 import { useInventoryList } from './useInventoryList';
-import { STATUS_PRIORITY, ASET_PER_PAGE, STATUS_KHUSUS_INDUK } from './helpers';
+import { STATUS_PRIORITY, ASET_PER_PAGE, STATUS_KHUSUS_INDUK, STATUS_LABEL } from './helpers';
 import InventoryRowActions from './InventoryRowActions';
 import InventoryHeaderBar from './InventoryHeaderBar';
 import InventorySedangDipakai from './InventorySedangDipakai';
@@ -530,6 +530,10 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         setSelectedKategoriIds={setSelectedKategoriIds}
         handleToggleKategori={handleToggleKategori}
       />
+
+      <p className="text-xs text-slate-500 mb-4">
+        Total {statusFilter === '' ? 'Semua' : (STATUS_LABEL[statusFilter] ?? 'Status')}: <span className="font-semibold text-slate-900">{filteredInventory.length}</span> inventory
+      </p>
 
       <InventoryTable
         loading={loading}

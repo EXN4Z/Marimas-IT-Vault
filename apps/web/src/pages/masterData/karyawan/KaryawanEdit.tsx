@@ -263,7 +263,6 @@ export default function EditKaryawanPage() {
         <>
             <RouteModal
                 title="Edit User"
-                description="Perbarui data pengguna ini."
                 fallbackPath="/karyawan"
                 onClose={closeModal}
             >
@@ -284,8 +283,8 @@ export default function EditKaryawanPage() {
                                 <TextInput
                                     value={form.name}
                                     onChange={(v) => handleChange('name', v)}
+                                    placeholder="Masukkan nama lengkap user"
                                     error={!!errors.name}
-                                    placeholder="Nama lengkap karyawan"
                                     autoFocus
                                 />
                             </Field>
@@ -294,8 +293,8 @@ export default function EditKaryawanPage() {
                                 <TextInput
                                     value={form.nik}
                                     onChange={(v) => handleChange('nik', v)}
+                                    placeholder="Masukkan NIK karyawan"
                                     error={!!errors.nik}
-                                    placeholder="Nomor induk karyawan (MPK-001)"
                                 />
                             </Field>
 
@@ -304,8 +303,8 @@ export default function EditKaryawanPage() {
                                     type="email"
                                     value={form.email}
                                     onChange={(v) => handleChange('email', v)}
+                                    placeholder="Masukkan alamat email"
                                     error={!!errors.email}
-                                    placeholder="nama@marimas.com"
                                 />
                             </Field>
 
@@ -313,8 +312,8 @@ export default function EditKaryawanPage() {
                                 <TextInput
                                     value={form.phone}
                                     onChange={(v) => handleChange('phone', v)}
+                                    placeholder="Masukkan nomor telepon atau WhatsApp"
                                     error={!!errors.phone}
-                                    placeholder="08xxxxxxxxxx"
                                 />
                             </Field>
                         </div>
@@ -514,7 +513,6 @@ function SetPasswordModal({
                         </div>
                         <div>
                             <h3 className="text-lg font-semibold text-slate-900 leading-tight">Ubah Password</h3>
-                            <p className="text-xs text-slate-500 mt-0.5">Tentukan kata sandi baru untuk akun pengguna ini.</p>
                         </div>
                     </div>
                     <button
@@ -533,7 +531,7 @@ function SetPasswordModal({
                         <TextInput
                             type="password"
                             autoFocus
-                            placeholder="Password baru"
+                            placeholder="Masukkan password baru"
                             value={password}
                             onChange={(v) => {
                                 setPassword(v);
@@ -546,7 +544,7 @@ function SetPasswordModal({
                     <Field label="Konfirmasi Password Baru" error={errors.confirmation} required>
                         <TextInput
                             type="password"
-                            placeholder="Ulangi password baru"
+                            placeholder="Ketik ulang password baru"
                             value={confirmation}
                             onChange={(v) => {
                                 setConfirmation(v);

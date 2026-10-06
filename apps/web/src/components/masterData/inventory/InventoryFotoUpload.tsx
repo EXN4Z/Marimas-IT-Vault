@@ -33,12 +33,17 @@ export default function InventoryFotoUpload({ files, onChange, max = 3, min, lab
 
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1">
-        {label} <span className="text-red-500">*</span>
-        <span className="text-xs text-slate-400 font-normal">
-          {min !== undefined ? ` (minimal ${min} foto)` : ` (maks. ${max} foto)`}
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <label className="block text-sm font-medium text-slate-700">
+          {label} <span className="text-red-500">*</span>
+          <span className="text-xs text-slate-400 font-normal">
+            {min !== undefined ? ` (minimal ${min} foto)` : ` (maks. ${max} foto)`}
+          </span>
+        </label>
+        <span className="shrink-0 whitespace-nowrap text-[11px] font-medium text-red-500 dark:text-red-400 select-none">
+          wajib diisi
         </span>
-      </label>
+      </div>
       <div className="flex flex-wrap gap-2">
         {files.map((_, idx) => (
           <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200 group flex-shrink-0">

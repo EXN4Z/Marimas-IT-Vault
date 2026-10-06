@@ -126,14 +126,9 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
                 if (errors.kodeStruk) setErrors((prev) => ({ ...prev, kodeStruk: '' }));
               }}
               autoFocus
-              placeholder="cth. STJ-20260722-0001"
+              placeholder="Masukkan kode struk penerimaan"
               error={!!errors.kodeStruk}
             />
-            <p className="text-[11px] text-slate-500 mt-1">
-              {isAdmin
-                ? 'Minta user menunjukkan struk penerimaan fisik lalu ketikkan kodenya.'
-                : 'Ketikkan kode struk penerimaan fisik yang diterima saat serah-terima.'}
-            </p>
           </Field>
 
           <Field label="Tanggal Pengembalian" required>
@@ -149,7 +144,7 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
               value={catatan}
               onChange={setCatatan}
               rows={2}
-              placeholder="cth. Unit dikembalikan dalam kondisi bersih & lengkap."
+              placeholder="Tulis catatan kondisi unit saat dikembalikan"
             />
           </Field>
 

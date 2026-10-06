@@ -260,7 +260,7 @@ export default function TabSupplier() {
         </div>
 
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <SearchInput
               value={search}
               onChange={setSearch}
@@ -268,6 +268,10 @@ export default function TabSupplier() {
               className="flex-1"
             />
           </div>
+
+          <p className="text-xs text-slate-500 mb-4">
+            Total Semua: <span className="font-semibold text-slate-900">{filteredItems.length}</span> supplier
+          </p>
 
           <div className="border border-slate-200 rounded-lg overflow-hidden">
             {loading && (
@@ -414,9 +418,6 @@ export default function TabSupplier() {
                   <h3 className="text-base font-semibold text-slate-900">
                     {editing ? 'Edit Supplier' : 'Tambah Supplier'}
                   </h3>
-                  <p className="text-xs text-slate-500">
-                    {editing ? 'Perbarui data supplier' : 'Isi data supplier baru'}
-                  </p>
                 </div>
               </div>
               <button
@@ -440,7 +441,6 @@ export default function TabSupplier() {
                 label="Nama Supplier"
                 required
                 error={formError && !formNama.trim() ? formError : undefined}
-                hint=""
               >
                 <TextInput
                   value={formNama}
@@ -448,25 +448,25 @@ export default function TabSupplier() {
                     setFormNama(val);
                     if (formError) setFormError('');
                   }}
-                  placeholder="Contoh: PT Sumber Makmur Solusindo"
                   autoFocus
+                  placeholder="Masukkan nama supplier"
                   error={!!formError && !formNama.trim()}
                 />
               </Field>
 
-              <Field label="Alamat Kantor / Gudang" hint="">
+              <Field label="Alamat Kantor / Gudang">
                 <TextInput
                   value={formAlamat}
                   onChange={setFormAlamat}
-                  placeholder="Contoh: Jl. Pahlawan No. 45, Semarang"
+                  placeholder="Masukkan alamat kantor atau gudang supplier"
                 />
               </Field>
 
-              <Field label="Nomor Kontak / Telepon" hint="">
+              <Field label="Nomor Kontak / Telepon">
                 <TextInput
                   value={formTelepon}
                   onChange={setFormTelepon}
-                  placeholder="Contoh: 0812-3456-7890 / 024-8765432"
+                  placeholder="Masukkan nomor kontak atau telepon supplier"
                   type="tel"
                 />
               </Field>

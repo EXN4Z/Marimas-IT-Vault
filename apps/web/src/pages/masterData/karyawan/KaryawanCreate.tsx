@@ -145,7 +145,6 @@ export default function CreateKaryawanPage() {
     return (
         <RouteModal
             title="Tambah User"
-            description="Buat akun login & lengkapi data kepegawaian baru."
             maxWidthClassName="max-w-2xl"
             fallbackPath="/karyawan"
             onClose={closeModal}
@@ -169,8 +168,8 @@ export default function CreateKaryawanPage() {
                             <TextInput
                                 value={form.name}
                                 onChange={(v) => handleChange('name', v)}
+                                placeholder="Masukkan nama lengkap user"
                                 error={!!errors.name}
-                                placeholder="Nama lengkap karyawan"
                                 autoFocus
                             />
                         </Field>
@@ -179,8 +178,8 @@ export default function CreateKaryawanPage() {
                             <TextInput
                                 value={form.nik}
                                 onChange={(v) => handleChange('nik', v)}
+                                placeholder="Masukkan NIK karyawan"
                                 error={!!errors.nik}
-                                placeholder="Nomor induk karyawan (MPK-001)"
                             />
                         </Field>
 
@@ -189,8 +188,8 @@ export default function CreateKaryawanPage() {
                                 type="email"
                                 value={form.email}
                                 onChange={(v) => handleChange('email', v)}
+                                placeholder="Masukkan alamat email"
                                 error={!!errors.email}
-                                placeholder="nama@perusahaan.com"
                             />
                         </Field>
 
@@ -198,8 +197,8 @@ export default function CreateKaryawanPage() {
                             <TextInput
                                 value={form.phone}
                                 onChange={(v) => handleChange('phone', v)}
+                                placeholder="Masukkan nomor telepon atau WhatsApp"
                                 error={!!errors.phone}
-                                placeholder="08xxxxxxxxxx"
                             />
                         </Field>
                     </div>
@@ -229,8 +228,8 @@ export default function CreateKaryawanPage() {
                                     type={showPassword ? 'text' : 'password'}
                                     value={form.password}
                                     onChange={(v) => handleChange('password', v)}
+                                    placeholder="Masukkan password awal"
                                     error={!!errors.password}
-                                    placeholder="Minimal 8 karakter"
                                     className="pr-10"
                                 />
                                 <button
