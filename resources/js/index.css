@@ -1,0 +1,946 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* SAFETY NET biar halaman gak pernah bisa digeser horizontal secara utuh
+   (kejadian di HP: elemen manapun yang dikit aja lebih lebar dari layar
+   -- tabel, tab bar yang lupa dikasih overflow-x-auto sendiri, dsb --
+   bakal bikin SELURUH halaman ikut digeser ke samping, bukan cuma elemen
+   itu doang). Komponen yang emang butuh geser horizontal (tab bar, tabel)
+   tetep jalan normal karena masing-masing udah punya overflow-x-auto
+   sendiri di dalam boxnya; ini cuma nutup pintu keluar di level halaman.
+*/
+html, body, #root, #app {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* Matiin outline default browser pas card/chart/search diklik,
+   tapi tetep nyala kalau navigasi pake keyboard (Tab) */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Hilangkan semua focus ring / box-shadow dari Tailwind focus:ring di frontend */
+:where(input, textarea, select, button, a, [tabindex]):focus,
+:where(input, textarea, select, button, a, [tabindex]):focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: none !important;
+  --tw-ring-offset-shadow: none !important;
+}
+
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Edge lama */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge Chromium */
+}
+
+/* Route modal overlay (dipakai RouteModal.tsx untuk create/edit yang tampil di atas
+   halaman sebelumnya tanpa nge-unmount halaman di belakangnya, mirip ScanQrModal) */
+@keyframes route-modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes route-modal-panel-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.route-modal-backdrop {
+  animation: route-modal-backdrop-in 0.15s ease-out;
+}
+
+.route-modal-panel {
+  animation: route-modal-panel-in 0.18s ease-out;
+}
+
+/* Keyframes generik dipakai lewat Tailwind arbitrary value (animate-[fadeIn_...],
+   animate-[slideUp_...], dst) di banyak modal (InventoryFormModal,
+   InventoryLepasDariIndukModal, InventoryPengembalianModal, InventorySerahTerimaModal,
+   InventoryLaporKerusakanModal, InventoryPenangananSelesaiModal, PenangananInventory).
+   Sebelumnya keyframes ini gak pernah didefinisiin di manapun, jadi semua
+   animate-[...] yang makai nama-nama ini diem-diem gak jalan (browser gak
+   nemu @keyframes yang cocok, tapi juga gak error). */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== ULTRA-CLEAN GRAPHITE DARK THEME ===== */
+html.dark {
+  color-scheme: dark;
+  background-color: #121214;
+}
+
+html.dark body {
+  background-color: #121214;
+  color: #f4f4f5;
+}
+
+/* Core Surfaces - Charcoal Graphite matched to reference image */
+html.dark .bg-white {
+  background-color: #18181b !important;
+  color: #f4f4f5;
+}
+
+html.dark .bg-slate-50,
+html.dark .bg-slate-50\/30,
+html.dark .bg-slate-50\/50,
+html.dark .bg-slate-50\/60,
+html.dark .bg-slate-50\/70,
+html.dark .bg-slate-50\/80,
+html.dark .bg-slate-50\/90 {
+  background-color: #1e1e22 !important;
+}
+
+html.dark .bg-zinc-100 {
+  background-color: #121214 !important;
+}
+
+html.dark .bg-slate-100,
+html.dark .bg-slate-100\/30,
+html.dark .bg-slate-100\/50,
+html.dark .bg-slate-100\/60,
+html.dark .bg-slate-100\/70,
+html.dark .bg-slate-100\/80,
+html.dark .bg-slate-100\/90 {
+  background-color: #27272a !important;
+  color: #f4f4f5;
+}
+
+html.dark .bg-slate-200,
+html.dark .bg-slate-200\/30,
+html.dark .bg-slate-200\/50,
+html.dark .bg-slate-200\/60,
+html.dark .bg-slate-200\/70,
+html.dark .bg-slate-200\/80,
+html.dark .bg-slate-200\/90 {
+  background-color: #383840 !important;
+}
+
+/* Tinted state backgrounds in dark mode: dark elevated surface with subtle hue */
+html.dark .bg-emerald-50,
+html.dark .bg-emerald-50\/60,
+html.dark .bg-emerald-50\/50,
+html.dark .bg-emerald-50\/40 {
+  background-color: rgba(6, 78, 59, 0.35) !important;
+}
+
+html.dark .bg-red-50,
+html.dark .bg-red-50\/60,
+html.dark .bg-red-50\/50,
+html.dark .bg-red-50\/40 {
+  background-color: rgba(136, 19, 55, 0.3) !important;
+}
+
+html.dark .bg-blue-50,
+html.dark .bg-blue-50\/60,
+html.dark .bg-blue-50\/50 {
+  background-color: rgba(30, 58, 138, 0.3) !important;
+}
+
+html.dark .bg-amber-50,
+html.dark .bg-amber-50\/60,
+html.dark .bg-amber-50\/50 {
+  background-color: rgba(120, 53, 15, 0.3) !important;
+}
+
+/* Hover styles for light utility classes in dark mode */
+html.dark .hover\:bg-slate-100:hover,
+html.dark .hover\:bg-slate-100\/70:hover,
+html.dark .hover\:bg-slate-100\/50:hover,
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-50\/70:hover,
+html.dark .hover\:bg-slate-50\/50:hover,
+html.dark .hover\:bg-slate-200:hover,
+html.dark .hover\:bg-slate-200\/60:hover {
+  background-color: #2a2a30 !important;
+  color: #f4f4f5 !important;
+}
+
+/* Explicit sidebar navigation reset: inactive items must be transparent */
+html.dark aside nav button:not(.bg-slate-900):not(.bg-slate-100) {
+  background-color: transparent !important;
+}
+
+html.dark aside nav button:not(.bg-slate-900):not(.bg-slate-100):hover {
+  background-color: #27272a !important;
+}
+
+/* Semi-transparent white backgrounds in dark mode: dark elevated surface */
+html.dark [class*="bg-white/"] {
+  background-color: rgba(28, 28, 32, 0.85) !important;
+}
+
+/* Typography */
+html.dark .text-slate-900 {
+  color: #fafafa !important;
+}
+
+html.dark .text-slate-800 {
+  color: #f4f4f5 !important;
+}
+
+html.dark .text-slate-700 {
+  color: #e4e4e7 !important;
+}
+
+html.dark .text-slate-600 {
+  color: #d4d4d8 !important;
+}
+
+html.dark .text-slate-500 {
+  color: #a1a1aa !important;
+}
+
+html.dark .text-slate-400 {
+  color: #71717a !important;
+}
+
+html.dark .text-slate-300 {
+  color: #cbd5e1 !important;
+}
+
+/* React-Select & custom dropdown elements: never solid white in dark mode */
+html.dark [class*="-control"],
+html.dark [class*="css-"][class*="-control"] {
+  background-color: #222226 !important;
+  border-color: #383842 !important;
+  color: #f4f4f5 !important;
+}
+
+html.dark [class*="-menu"],
+html.dark [class*="css-"][class*="-menu"] {
+  background-color: #1e1e22 !important;
+  border-color: #383842 !important;
+}
+
+html.dark [class*="-option"],
+html.dark [class*="css-"][class*="-option"] {
+  background-color: #1e1e22 !important;
+  color: #e4e4e7 !important;
+}
+
+html.dark [class*="-option"]:hover,
+html.dark [class*="-option"][class*="--is-focused"] {
+  background-color: #2a2a30 !important;
+  color: #ffffff !important;
+}
+
+html.dark [class*="-singleValue"],
+html.dark [class*="-SingleValue"] {
+  color: #f4f4f5 !important;
+}
+
+html.dark [class*="-Input"] input,
+html.dark [class*="-input"] input {
+  color: #f4f4f5 !important;
+}
+
+/* Crisp 1px Borders matching reference line */
+html.dark .border-slate-200,
+html.dark .border-slate-200\/80,
+html.dark .border-slate-200\/50 {
+  border-color: #2c2c31 !important;
+}
+
+html.dark .border-slate-100 {
+  border-color: #232327 !important;
+}
+
+html.dark .border-slate-50 {
+  border-color: #1e1e22 !important;
+}
+
+html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #2c2c31 !important;
+}
+
+/* Smooth Interactive Hovers */
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-50\/50:hover,
+html.dark .hover\:bg-slate-50\/60:hover {
+  background-color: #26262b !important;
+}
+
+html.dark .hover\:bg-slate-100:hover {
+  background-color: #27272a !important;
+}
+
+html.dark .hover\:bg-slate-200:hover {
+  background-color: #3f3f46 !important;
+}
+
+/* Form Controls & Inputs */
+html.dark input,
+html.dark select,
+html.dark textarea {
+  color-scheme: dark;
+}
+
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark select,
+html.dark textarea {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+  border-color: #2c2c31 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #71717a !important;
+}
+
+/* ==============================================================
+   COLOR REMAPPING FOR DARK MODE:
+   Orange in light mode -> Luminous Celestial Sky Cyan / Golden Honey in dark mode!
+   ============================================================== */
+/* Amber / Orange (Menunggu Perbaikan / Laporan / Review): Warm vivid orange as in light mode */
+html.dark .bg-amber-50,
+html.dark .bg-amber-50\/60,
+html.dark .bg-amber-50\/70,
+html.dark .bg-orange-50 {
+  background-color: rgba(245, 158, 11, 0.16) !important;
+  color: #fbbf24 !important;
+}
+
+html.dark .bg-amber-100,
+html.dark .bg-orange-100 {
+  background-color: rgba(245, 158, 11, 0.25) !important;
+}
+
+html.dark .text-amber-700,
+html.dark .text-amber-600,
+html.dark .text-orange-700,
+html.dark .text-orange-600 {
+  color: #fb923c !important;
+}
+
+html.dark .text-amber-800,
+html.dark .text-amber-900,
+html.dark .text-orange-800,
+html.dark .text-orange-900 {
+  color: #fed7aa !important;
+}
+
+html.dark .border-amber-200,
+html.dark .border-amber-300,
+html.dark .border-orange-200,
+html.dark .border-orange-300 {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+html.dark .ring-amber-500\/20,
+html.dark .ring-orange-500\/20 {
+  --tw-ring-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Action buttons that were amber-600 */
+html.dark .bg-amber-600,
+html.dark .bg-orange-600 {
+  background-color: #d97706 !important;
+  color: #ffffff !important;
+}
+
+html.dark .hover\:bg-amber-700:hover,
+html.dark .hover\:bg-orange-700:hover {
+  background-color: #b45309 !important;
+}
+
+/* Green (Selesai): Vibrant Mint Neon */
+html.dark .bg-emerald-50,
+html.dark .bg-emerald-50\/70 {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+}
+
+html.dark .bg-emerald-100 {
+  background-color: rgba(16, 185, 129, 0.22) !important;
+}
+
+html.dark .text-emerald-700 {
+  color: #34d399 !important;
+}
+
+html.dark .border-emerald-200,
+html.dark .border-emerald-300 {
+  border-color: rgba(52, 211, 153, 0.35) !important;
+}
+
+html.dark .ring-emerald-500\/20 {
+  --tw-ring-color: rgba(52, 211, 153, 0.3) !important;
+}
+
+/* Blue (Sedang Pengerjaan): Electric Indigo Violet */
+html.dark .bg-blue-50,
+html.dark .bg-blue-50\/60,
+html.dark .bg-blue-50\/70 {
+  background-color: rgba(99, 102, 241, 0.12) !important;
+}
+
+html.dark .bg-blue-100 {
+  background-color: rgba(99, 102, 241, 0.22) !important;
+}
+
+html.dark .text-blue-700,
+html.dark .text-blue-900 {
+  color: #a5b4fc !important;
+}
+
+html.dark .border-blue-200,
+html.dark .border-blue-300 {
+  border-color: rgba(165, 180, 252, 0.35) !important;
+}
+
+html.dark .ring-blue-500\/20 {
+  --tw-ring-color: rgba(165, 180, 252, 0.3) !important;
+}
+
+/* Red (Rusak Berat): Soft Coral Rose */
+html.dark .bg-red-50,
+html.dark .bg-red-50\/70 {
+  background-color: rgba(244, 63, 94, 0.12) !important;
+}
+
+html.dark .bg-red-100 {
+  background-color: rgba(244, 63, 94, 0.22) !important;
+}
+
+html.dark .text-red-700,
+html.dark .text-red-800 {
+  color: #fb7185 !important;
+}
+
+html.dark .border-red-200,
+html.dark .border-red-300 {
+  border-color: rgba(251, 113, 133, 0.35) !important;
+}
+
+html.dark .ring-red-500\/20 {
+  --tw-ring-color: rgba(251, 113, 133, 0.3) !important;
+}
+
+/* Indigo (Kategori Utama: e.g. Laptop & Komputer) */
+html.dark .bg-indigo-50,
+html.dark .bg-indigo-50\/60,
+html.dark .bg-indigo-50\/70 {
+  background-color: rgba(99, 102, 241, 0.16) !important;
+  color: #a5b4fc !important;
+}
+
+html.dark .bg-indigo-100 {
+  background-color: rgba(99, 102, 241, 0.25) !important;
+}
+
+html.dark .text-indigo-600,
+html.dark .text-indigo-700,
+html.dark .text-indigo-800 {
+  color: #a5b4fc !important;
+}
+
+html.dark .text-indigo-900 {
+  color: #e0e7ff !important;
+}
+
+html.dark .border-indigo-100,
+html.dark .border-indigo-200,
+html.dark .border-indigo-300 {
+  border-color: rgba(129, 140, 248, 0.35) !important;
+}
+
+html.dark .ring-indigo-500\/20 {
+  --tw-ring-color: rgba(129, 140, 248, 0.3) !important;
+}
+
+/* Sky (Kategori Child / Menempel & Selesai Perbaikan) */
+html.dark .bg-sky-50,
+html.dark .bg-sky-50\/60,
+html.dark .bg-sky-50\/70 {
+  background-color: rgba(14, 165, 233, 0.16) !important;
+  color: #38bdf8 !important;
+}
+
+html.dark .bg-sky-100 {
+  background-color: rgba(14, 165, 233, 0.25) !important;
+}
+
+html.dark .text-sky-600,
+html.dark .text-sky-700,
+html.dark .text-sky-800 {
+  color: #38bdf8 !important;
+}
+
+html.dark .text-sky-900 {
+  color: #e0f2fe !important;
+}
+
+html.dark .border-sky-100,
+html.dark .border-sky-200,
+html.dark .border-sky-300 {
+  border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+/* Purple & Violet (Status Dijual) */
+html.dark .bg-purple-50,
+html.dark .bg-purple-50\/60,
+html.dark .bg-purple-50\/70,
+html.dark .bg-violet-50,
+html.dark .bg-violet-50\/60,
+html.dark .bg-violet-50\/70 {
+  background-color: rgba(168, 85, 247, 0.16) !important;
+  color: #c084fc !important;
+}
+
+html.dark .bg-purple-100,
+html.dark .bg-violet-100 {
+  background-color: rgba(168, 85, 247, 0.25) !important;
+}
+
+html.dark .text-purple-600,
+html.dark .text-purple-700,
+html.dark .text-violet-600,
+html.dark .text-violet-700 {
+  color: #c084fc !important;
+}
+
+html.dark .border-purple-200,
+html.dark .border-violet-200 {
+  border-color: rgba(192, 132, 252, 0.35) !important;
+}
+
+/* Yellow (Status Menunggu Perbaikan) */
+html.dark .bg-yellow-50,
+html.dark .bg-yellow-50\/60,
+html.dark .bg-yellow-50\/70 {
+  background-color: rgba(234, 179, 8, 0.16) !important;
+  color: #facc15 !important;
+}
+
+html.dark .bg-yellow-100 {
+  background-color: rgba(234, 179, 8, 0.25) !important;
+}
+
+html.dark .text-yellow-600,
+html.dark .text-yellow-700,
+html.dark .text-yellow-800 {
+  color: #facc15 !important;
+}
+
+html.dark .border-yellow-200,
+html.dark .border-yellow-300 {
+  border-color: rgba(250, 204, 21, 0.35) !important;
+}
+
+/* Teal & Cyan (Role User & Tags) */
+html.dark .bg-teal-50,
+html.dark .bg-teal-50\/60,
+html.dark .bg-teal-50\/70,
+html.dark .bg-cyan-50,
+html.dark .bg-cyan-50\/60,
+html.dark .bg-cyan-50\/70 {
+  background-color: rgba(20, 184, 166, 0.16) !important;
+  color: #2dd4bf !important;
+}
+
+html.dark .bg-teal-100,
+html.dark .bg-cyan-100 {
+  background-color: rgba(20, 184, 166, 0.25) !important;
+}
+
+html.dark .text-teal-600,
+html.dark .text-teal-700,
+html.dark .text-cyan-600,
+html.dark .text-cyan-700 {
+  color: #2dd4bf !important;
+}
+
+html.dark .border-teal-200,
+html.dark .border-cyan-200 {
+  border-color: rgba(45, 212, 191, 0.35) !important;
+}
+
+/* Gray family surfaces & text in dark mode */
+html.dark .bg-gray-50,
+html.dark .bg-gray-50\/50 {
+  background-color: #1e1e22 !important;
+}
+
+html.dark .bg-gray-100 {
+  background-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+html.dark .bg-gray-200 {
+  background-color: #3f3f46 !important;
+}
+
+html.dark .border-gray-100,
+html.dark .border-gray-200 {
+  border-color: #2c2c31 !important;
+}
+
+html.dark .text-gray-900 {
+  color: #fafafa !important;
+}
+
+html.dark .text-gray-800 {
+  color: #f4f4f5 !important;
+}
+
+html.dark .text-gray-700 {
+  color: #e4e4e7 !important;
+}
+
+html.dark .text-gray-600 {
+  color: #d4d4d8 !important;
+}
+
+html.dark .text-gray-500 {
+  color: #a1a1aa !important;
+}
+
+html.dark .text-gray-400 {
+  color: #71717a !important;
+}
+
+html.dark .hover\:bg-gray-50:hover {
+  background-color: #26262b !important;
+}
+
+html.dark .hover\:bg-gray-100:hover {
+  background-color: #27272a !important;
+}
+
+html.dark .bg-black {
+  background-color: #27272a !important;
+  color: #fafafa !important;
+  border: 1px solid #3f3f46 !important;
+}
+
+html.dark .hover\:bg-gray-800:hover {
+  background-color: #3f3f46 !important;
+}
+
+/* Prevent white gradient fade in dark mode (ScrollableTabBar) */
+html.dark .from-white {
+  --tw-gradient-from: #18181b !important;
+  --tw-gradient-to: rgba(24, 24, 27, 0) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+/* Topbar Search Input: Distinct elevated surface and crisp visible border */
+header input[type="text"],
+header input {
+  transition: all 0.2s ease-in-out;
+}
+
+html.dark header input,
+html.dark header [type="text"] {
+  background-color: #222226 !important;
+  border: 1px solid #383842 !important;
+  color: #f4f4f5 !important;
+}
+
+html.dark header input:focus,
+html.dark header [type="text"]:focus {
+  border-color: #5c5c68 !important;
+  background-color: #27272d !important;
+}
+
+/* Progress bar tracks in dark mode: dark gray surface with subtle gray border (abu-abu) */
+html.dark .w-full.h-2.rounded-full,
+html.dark .w-full.h-1\.5.rounded-full,
+html.dark .w-full.h-2\.5.rounded-full,
+html.dark .w-full.rounded-full.overflow-hidden,
+html.dark .bg-\[\#F0F1F7\],
+html.dark .bg-\[\#f0f1f7\] {
+  background-color: #222226 !important;
+  border: 1px solid #383842 !important;
+}
+
+/* Status indicator dots (Online / Live pulse): Vibrant Glowing Green in dark mode */
+html.dark .w-1\.5.h-1\.5.rounded-full,
+html.dark .w-2.h-2.rounded-full.bg-emerald-400,
+html.dark .w-2.h-2.rounded-full.bg-emerald-500,
+html.dark .w-2.h-2.rounded-full.bg-\[\#34A853\],
+html.dark .w-1\.5.h-1\.5.rounded-full.bg-\[\#34A853\],
+html.dark .w-1\.5.h-1\.5.rounded-full.dark\:bg-emerald-400,
+html.dark span.animate-pulse.rounded-full {
+  background-color: #22c55e !important;
+  border: none !important;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.8) !important;
+}
+
+html.dark .bg-\[\#F7F8FC\],
+html.dark .bg-\[\#f7f8fc\] {
+  background-color: #1e1e22 !important;
+  border-color: #2c2c31 !important;
+}
+
+/* Category & Status pill badges in dark mode: subtle border matching theme, never bright white */
+html.dark span.rounded-full.bg-indigo-50,
+html.dark .rounded-full.bg-indigo-50 {
+  border: 1px solid rgba(129, 140, 248, 0.3) !important;
+}
+
+html.dark span.rounded-full.bg-sky-50,
+html.dark .rounded-full.bg-sky-50 {
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+}
+
+html.dark span.rounded-full.bg-emerald-50,
+html.dark .rounded-full.bg-emerald-50 {
+  border: 1px solid rgba(52, 211, 153, 0.3) !important;
+}
+
+html.dark span.rounded-full.bg-amber-50,
+html.dark .rounded-full.bg-amber-50 {
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+
+html.dark span.rounded-full.bg-yellow-50,
+html.dark .rounded-full.bg-yellow-50 {
+  border: 1px solid rgba(250, 204, 21, 0.3) !important;
+}
+
+html.dark span.rounded-full.bg-orange-50,
+html.dark .rounded-full.bg-orange-50 {
+  border: 1px solid rgba(249, 115, 22, 0.3) !important;
+}
+
+html.dark span.rounded-full.bg-red-50,
+html.dark span.rounded-full.bg-red-100,
+html.dark .rounded-full.bg-red-50,
+html.dark .rounded-full.bg-red-100 {
+  border: 1px solid rgba(251, 113, 133, 0.3) !important;
+}
+
+html.dark span.rounded-full.bg-purple-50,
+html.dark .rounded-full.bg-purple-50 {
+  border: 1px solid rgba(192, 132, 252, 0.3) !important;
+}
+
+html.dark span.rounded-full.bg-teal-50,
+html.dark .rounded-full.bg-teal-50 {
+  border: 1px solid rgba(45, 212, 191, 0.3) !important;
+}
+
+html.dark span.rounded-full.bg-slate-100,
+html.dark .rounded-full.bg-slate-100 {
+  border: 1px solid #38383e !important;
+}
+
+/* Active tab badge in dark mode: clean monochrome white & black (putih & item, tanpa warna biru) */
+html.dark button[data-tab] span.bg-slate-900,
+html.dark button span.bg-slate-900,
+html.dark span.bg-slate-900.rounded-full {
+  background-color: #ffffff !important;
+  color: #121214 !important;
+  font-weight: 600 !important;
+  border: 1px solid #ffffff !important;
+}
+
+/* Sign Out & Destructive buttons in Dark Mode (no solid white or light-pink) */
+html.dark .hover\:bg-red-50:hover,
+html.dark .hover\:bg-red-100:hover,
+html.dark button.hover\:bg-red-50:hover,
+html.dark a.hover\:bg-red-50:hover {
+  background-color: rgba(239, 68, 68, 0.12) !important;
+  color: #f87171 !important;
+}
+
+html.dark .text-red-600 {
+  color: #f87171 !important;
+}
+
+/* Pure Black/Slate buttons in dark mode: Elevated dark card with clean border */
+html.dark .bg-slate-900 {
+  background-color: #27272a !important;
+  color: #fafafa !important;
+  border-color: #3f3f46 !important;
+}
+
+html.dark .hover\:bg-slate-900:hover,
+html.dark .hover\:bg-slate-800:hover {
+  background-color: #3f3f46 !important;
+}
+
+/* Modals & Dropdown shadows in Dark Mode */
+html.dark .shadow-xl,
+html.dark .shadow-lg,
+html.dark .shadow-md,
+html.dark .shadow-sm {
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7), 0 0 0 1px #2c2c31 !important;
+}
+
+html.dark .ring-1.ring-slate-900\/5 {
+  --tw-ring-color: #2c2c31 !important;
+}
+
+/* ==============================================================
+   DASHBOARD & ARBITRARY COLOR REMAPPINGS FOR DARK MODE:
+   Fixes dark text on dark surfaces, blinding white boxes, and harsh pastels
+   ============================================================== */
+html.dark [class*="text-[#171633]"],
+html.dark .text-\[\#171633\] {
+  color: #fafafa !important;
+}
+
+html.dark [class*="text-[#666687]"],
+html.dark .text-\[\#666687\] {
+  color: #d4d4d8 !important;
+}
+
+html.dark [class*="text-[#A9A9C6]"],
+html.dark .text-\[\#A9A9C6\] {
+  color: #a1a1aa !important;
+}
+
+html.dark [class*="bg-[#F7F8FC]"],
+html.dark .bg-\[\#F7F8FC\] {
+  background-color: #1e1e22 !important;
+  color: #f4f4f5 !important;
+  border-color: #2c2c31;
+}
+
+html.dark [class*="bg-[#F0F1F7]"],
+html.dark .bg-\[\#F0F1F7\] {
+  background-color: #27272a !important;
+}
+
+html.dark [class*="border-[#F0F1F7]"],
+html.dark .border-\[\#F0F1F7\] {
+  border-color: #2c2c31 !important;
+}
+
+html.dark [class*="bg-[#171633]"],
+html.dark .bg-\[\#171633\] {
+  background-color: #27272a !important;
+  color: #fafafa !important;
+  border: 1px solid #3f3f46;
+}
+
+/* DEGO Pastel Badges & Icon Containers in Dark Mode - Deep Luminous Glow */
+html.dark [class*="bg-[#EFEAFF]"],
+html.dark .bg-\[\#EFEAFF\] {
+  background-color: rgba(99, 102, 241, 0.16) !important;
+}
+html.dark [class*="text-[#5A32FA]"],
+html.dark .text-\[\#5A32FA\] {
+  color: #a5b4fc !important;
+}
+
+html.dark [class*="bg-[#E7F6EC]"],
+html.dark .bg-\[\#E7F6EC\] {
+  background-color: rgba(16, 185, 129, 0.16) !important;
+}
+html.dark [class*="text-[#34A853]"],
+html.dark .text-\[\#34A853\] {
+  color: #34d399 !important;
+}
+
+html.dark [class*="bg-[#FEF5E1]"],
+html.dark .bg-\[\#FEF5E1\] {
+  background-color: rgba(245, 158, 11, 0.16) !important;
+}
+html.dark [class*="text-[#F5A623]"],
+html.dark .text-\[\#F5A623\] {
+  color: #fbbf24 !important;
+}
+
+html.dark [class*="bg-[#FEF1E7]"],
+html.dark .bg-\[\#FEF1E7\] {
+  background-color: rgba(249, 115, 22, 0.16) !important;
+}
+html.dark [class*="text-[#F2994A]"],
+html.dark .text-\[\#F2994A\] {
+  color: #fb923c !important;
+}
+
+html.dark [class*="bg-[#FDECEB]"],
+html.dark .bg-\[\#FDECEB\] {
+  background-color: rgba(244, 63, 94, 0.16) !important;
+}
+html.dark [class*="text-[#F2453D]"],
+html.dark .text-\[\#F2453D\] {
+  color: #fb7185 !important;
+}
+
+html.dark [class*="bg-[#E8F1FD]"],
+html.dark .bg-\[\#E8F1FD\] {
+  background-color: rgba(56, 189, 248, 0.16) !important;
+}
+html.dark [class*="text-[#2F80ED]"],
+html.dark .text-\[\#2F80ED\] {
+  color: #38bdf8 !important;
+}
+
+html.dark .hover\:bg-\[\#F0F1F7\]:hover {
+  background-color: #27272a !important;
+}
+
+html.dark .hover\:bg-\[\#F7F8FC\]:hover {
+  background-color: #232327 !important;
+}
+
+
+/* ==============================================================
+   PATCH: kelas terang yang sebelumnya belum punya override dark mode
+   (green-50, rose-50, red-50/30, amber-50/80 + teks & border pasangannya)
+   ============================================================== */
+html.dark .bg-green-50,
+html.dark .bg-green-50\/60,
+html.dark .bg-green-50\/50 {
+  background-color: rgba(6, 78, 59, 0.35) !important;
+}
+
+html.dark .bg-rose-50,
+html.dark .bg-rose-50\/60,
+html.dark .bg-rose-50\/50,
+html.dark .bg-red-50\/30 {
+  background-color: rgba(136, 19, 55, 0.3) !important;
+}
+
+html.dark .bg-amber-50\/80 {
+  background-color: rgba(245, 158, 11, 0.16) !important;
+}
+
+html.dark .text-green-700 {
+  color: #34d399 !important;
+}
+
+html.dark .text-rose-700,
+html.dark .text-red-900 {
+  color: #fb7185 !important;
+}
+
+html.dark .border-rose-200 {
+  border-color: rgba(251, 113, 133, 0.35) !important;
+}
+
+html.dark .border-red-100,
+html.dark .border-blue-100,
+html.dark .border-emerald-100,
+html.dark .border-amber-100 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
