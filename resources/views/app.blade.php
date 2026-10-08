@@ -6,7 +6,7 @@
     <title inertia>Marimas One</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     @viteReactRefresh
-    @vite('resources/js/app.tsx')
+    @vite('resources/js/inertia-app.tsx')
     @inertiaHead
 </head>
 <body>
