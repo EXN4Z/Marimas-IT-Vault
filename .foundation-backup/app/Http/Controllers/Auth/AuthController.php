@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Mail\OtpMail;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -80,8 +79,6 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        $this->startWebSession($request, $user);
-
         return response()->json([
             'user' => $user,
             'token' => $token,
@@ -145,8 +142,6 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        $this->startWebSession($request, $user);
-
         return response()->json([
             'user' => $user,
             'token' => $token,
@@ -201,35 +196,8 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        // Kalau request-nya autentikasi lewat cookie sesi, currentAccessToken()
-        // itu TransientToken (gak punya delete()), makanya dicek dulu.
-        $currentToken = $user->currentAccessToken();
-        if ($currentToken && method_exists($currentToken, 'delete')) {
-            $currentToken->delete();
-        }
-
-        Auth::guard('web')->logout();
-        if ($request->hasSession()) {
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-        }
+        $user->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logged out']);
-    }
-
-    /**
-     * Bikin sesi cookie (guard web) di samping token Sanctum, supaya halaman
-     * Inertia (route web + middleware 'auth') ikut kenal user yang login.
-     * Token tetap dikirim buat SPA lama. Cuma jalan kalau request stateful
-     * (same-origin, domain ada di SANCTUM_STATEFUL_DOMAINS).
-     */
-    private function startWebSession(Request $request, User $user): void
-    {
-        if (!$request->hasSession()) {
-            return;
-        }
-
-        Auth::guard('web')->login($user);
-        $request->session()->regenerate();
     }
 }
