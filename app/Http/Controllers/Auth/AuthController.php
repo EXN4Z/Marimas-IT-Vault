@@ -192,26 +192,6 @@ class AuthController extends Controller
         ]);
     }
 
-    public function changePassword(Request $request)
-    {
-        $user = $request->user();
-
-        $validated = $request->validate([
-            'current_password' => 'required|string',
-            'password' => 'required|min:6|confirmed',
-        ]);
-
-        if (!Hash::check($validated['current_password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'current_password' => ['Password saat ini salah.'],
-            ]);
-        }
-
-        $user->update(['password' => Hash::make($validated['password'])]);
-
-        return response()->json(['message' => 'Password berhasil diubah.']);
-    }
-
     public function logout(Request $request)
     {
         $user = $request->user();

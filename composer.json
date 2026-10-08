@@ -10,7 +10,6 @@
         "ext-bcmath": "*",
         "ext-gd": "*",
         "ext-zip": "*",
-        "doctrine/dbal": "^4.4",
         "inertiajs/inertia-laravel": "*",
         "laravel-notification-channels/webpush": "^11.0",
         "laravel/framework": "^13.8",

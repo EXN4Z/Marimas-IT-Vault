@@ -47,8 +47,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::put('/profile/password', [AuthController::class, 'updatePassword']);
-    Route::put('/change-password', [AuthController::class, 'changePassword']);
-    Route::post('/cabang/{cabang}/resend-email', [CabangController::class, 'resendEmail']);
 
     Route::prefix('notifications')->group(function () {
         Route::get('/', [NotificationController::class, 'index']);
