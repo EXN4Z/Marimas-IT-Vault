@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '../../../lib/router';
 import toast from 'react-hot-toast';
 import { User, Lock, Building2, Eye, EyeOff } from 'lucide-react';
 import api from '../../../api/axios';

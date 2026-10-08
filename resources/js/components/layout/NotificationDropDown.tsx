@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '../../lib/router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bell, Check, Trash2, CheckCheck } from 'lucide-react';
 import toast from 'react-hot-toast';

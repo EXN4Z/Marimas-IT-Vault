@@ -1,5 +1,5 @@
 import { Bell } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '../../../lib/router';
 import type { NotificationItem } from '../useDashboardData';
 import { cardClass } from './theme';
 import { SectionHeader } from './primitives';

@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from '../../../lib/router';
 import toast from 'react-hot-toast';
 import api from '../../../api/axios';
 import RouteModal from '../../../components/shared/RouteModal';

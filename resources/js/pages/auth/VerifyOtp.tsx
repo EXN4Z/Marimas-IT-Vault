@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from '../../lib/router';
 import { verifyOtp, resendOtp } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from '../../lib/router';
 import { Boxes, Users, ClipboardList, Loader2, Download, FileSpreadsheet, Images, History, Tags, Building2, Landmark, Truck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getInventory, type Inventory } from '../../api/masterData/inventory';

@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '../../lib/router';
 import { useDashboardCore, useDashboardAnalytics } from './useDashboardData';
 import { Boxes, Package, AlertTriangle, ShieldAlert } from 'lucide-react';
 import {

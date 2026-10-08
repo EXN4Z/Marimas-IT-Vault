@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Package } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '../../../lib/router';
 import type { InventoryPerMerek } from '../useDashboardData';
 import { cardClass } from './theme';
 import { SectionHeader } from './primitives';

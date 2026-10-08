@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from '../../lib/router';
 import toast from 'react-hot-toast';
 import { Download, Upload, Plus, Eye, Pencil, Trash2 } from 'lucide-react';
 import api from '../../api/axios';

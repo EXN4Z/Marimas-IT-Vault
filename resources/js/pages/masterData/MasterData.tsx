@@ -1,6 +1,6 @@
 import '../../index.css';
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from '../../lib/router';
 import { Building2, Truck, Package, Tags, Users } from 'lucide-react';
 import ScrollableTabBar from '../../components/shared/ScrollableTabBar';
 import TabInventory from '../../components/masterData/inventory/TabInventory';

@@ -1,5 +1,5 @@
 import { AlertTriangle, Wrench, ShieldAlert, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '../../../lib/router';
 import type { InventoryPerhatian } from '../useDashboardData';
 import { cardClass } from './theme';
 import { SectionHeader, CardIcon } from './primitives';

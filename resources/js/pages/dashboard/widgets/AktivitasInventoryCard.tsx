@@ -1,5 +1,5 @@
 import { ArrowRight, Activity } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '../../../lib/router';
 import type { AktivitasInventoryTerbaru } from '../useDashboardData';
 import { cardClass } from './theme';
 import { SectionHeader } from './primitives';

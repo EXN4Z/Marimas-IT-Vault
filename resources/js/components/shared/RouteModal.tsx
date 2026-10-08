@@ -1,5 +1,5 @@
 import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, hasInAppNavigation } from '../../lib/router';
 import { X } from 'lucide-react';
 
 interface RouteModalProps {
@@ -39,7 +39,7 @@ export default function RouteModal({
     // Kalau ada history dari dalam app (background location), mundur satu langkah
     // supaya balik ke halaman sebelumnya tanpa reload. Kalau tidak ada (akses langsung),
     // fallback ke path induknya.
-    if (window.history.state && window.history.state.idx > 0) {
+    if (hasInAppNavigation()) {
       navigate(-1);
     } else {
       navigate(fallbackPath, { replace: true });
