@@ -38,7 +38,13 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => fn () => $request->user()?->only('id', 'name', 'email'),
+                // Bentuk SAMA dengan response GET /api/user (AuthController::user):
+                // model User apa adanya ($hidden buang password, $appends bawa 'role').
+                'user' => fn () => $request->user(),
+            ],
+            'flash' => [
+                'success' => fn () => $request->hasSession() ? $request->session()->get('success') : null,
+                'error' => fn () => $request->hasSession() ? $request->session()->get('error') : null,
             ],
         ];
     }

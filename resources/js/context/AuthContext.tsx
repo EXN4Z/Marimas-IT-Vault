@@ -14,10 +14,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const lastUserId = useRef<number | string | null>(null);
+// initialUser: dipakai HANYA oleh entry Inertia (inertia-app.tsx). Kalau diisi (termasuk
+// null), provider masuk "mode Inertia": user diambil dari shared props server (session
+// cookie), BUKAN dari token localStorage + GET /user. SPA lama tidak mengirim prop ini,
+// jadi perilakunya tidak berubah.
+export function AuthProvider({ children, initialUser }: { children: ReactNode; initialUser?: User | null }) {
+  const inertiaMode = initialUser !== undefined;
+  const [user, setUser] = useState<User | null>(initialUser ?? null);
+  const [isLoading, setIsLoading] = useState(!inertiaMode);
+  const lastUserId = useRef<number | string | null>(initialUser?.id ?? null);
 
   const handleSetUser = (u: User | null) => {
     // ganti user (login akun lain) atau logout -> buang semua cache
@@ -30,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     lastUserId.current = u?.id ?? null;
 
     setUser(u);
+    if (inertiaMode) return; // mode Inertia: sumber kebenaran = shared props, bukan localStorage
     if (u) {
       localStorage.setItem('user', JSON.stringify(u));
     } else {
@@ -39,7 +45,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async (opts?: { skipServerRevoke?: boolean }): Promise<{ password_direset?: boolean } | undefined> => {
     let response: { password_direset?: boolean } | undefined;
-    const hasToken = !!localStorage.getItem('token');
+    // Mode Inertia: autentikasi lewat session cookie, jadi tidak ada token yang harus
+    // dicek -- tetap jalankan urutan yang sama (unsubscribe push dulu, baru logout server).
+    // Redirect ke /login SENGAJA tidak dilakukan di sini; itu tugas pemanggil (layout).
+    const hasToken = inertiaMode || !!localStorage.getItem('token');
 
     // PENTING: unsubscribe push HARUS jalan SEBELUM token di-revoke -- endpoint
     // DELETE /push-subscriptions butuh token yang masih valid (auth:sanctum).
@@ -75,6 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Validasi token ke backend setiap kali app dibuka/refresh
   useEffect(() => {
+    if (inertiaMode) return; // user sudah datang dari server lewat props
+
     const token = localStorage.getItem('token');
 
     if (!token) {

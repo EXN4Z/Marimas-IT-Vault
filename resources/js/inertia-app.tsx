@@ -19,11 +19,14 @@ createInertiaApp({
     return page();
   },
   setup({ el, App, props }) {
+    // User dari shared props halaman pertama -> AuthProvider masuk mode Inertia (tanpa token/GET /user).
+    const initialUser = (props as any).initialPage?.props?.auth?.user ?? null;
+
     createRoot(el).render(
       <StrictMode>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
-            <AuthProvider>
+            <AuthProvider initialUser={initialUser}>
               <Toaster position="top-center" />
               <App {...props} />
             </AuthProvider>
