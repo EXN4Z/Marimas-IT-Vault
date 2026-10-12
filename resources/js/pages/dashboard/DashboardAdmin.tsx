@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { useDashboardCore, useDashboardAnalytics } from './useDashboardData';
 import { Boxes, Package, AlertTriangle, ShieldAlert } from 'lucide-react';
 import {
@@ -17,7 +17,7 @@ import {
 } from './widgets';
 
 export default function DashboardAdmin() {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { loading, error, user, notifications, handleMarkAsRead, departemen } = useDashboardCore();
 
   const {

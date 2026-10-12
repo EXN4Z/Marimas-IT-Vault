@@ -1,5 +1,5 @@
 import { Boxes, ArrowRight, CheckCircle2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import type { RingkasanInventory } from '../useDashboardData';
 import { cardClass, THEME } from './theme';
 import { SectionHeader, LegendDot } from './primitives';
@@ -12,7 +12,7 @@ export function RingkasanInventoryCard({
   ringkasanInventory?: RingkasanInventory;
   compact?: boolean;
 }) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const inventoryTotal = ringkasanInventory?.total ?? 0;
   const inventoryTersedia = ringkasanInventory?.tersedia ?? 0;
   const inventoryDipakai = ringkasanInventory?.dipakai ?? 0;

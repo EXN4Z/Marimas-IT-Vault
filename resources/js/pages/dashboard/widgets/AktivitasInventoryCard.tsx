@@ -1,5 +1,5 @@
 import { ArrowRight, Activity } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import type { AktivitasInventoryTerbaru } from '../useDashboardData';
 import { cardClass } from './theme';
 import { SectionHeader } from './primitives';
@@ -13,7 +13,7 @@ export function AktivitasInventoryCard({
   aktivitasInventoryTerbaru?: AktivitasInventoryTerbaru[];
   className?: string;
 }) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const safeAktivitas = Array.isArray(aktivitasInventoryTerbaru) ? aktivitasInventoryTerbaru : [];
 
   return (

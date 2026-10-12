@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Activity, Search } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import Select from '../../../components/shared/Select';
 import type { AktivitasInventoryTerbaru } from '../useDashboardData';
 import { cardClass, BADGE_TONE } from './theme';
@@ -21,7 +21,7 @@ export function RiwayatAktivitasTableCard({
   aktivitas?: AktivitasInventoryTerbaru[];
   className?: string;
 }) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [search, setSearch] = useState('');
   const [sortDir, setSortDir] = useState<SortDir>('terbaru');
   const [page, setPage] = useState(1);

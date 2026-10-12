@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
@@ -326,7 +326,7 @@ export function useDashboardCore(options: { includeDepartemen?: boolean } = {}) 
   const { includeDepartemen = true } = options;
   const { user: cachedUser, isLoading: authLoading, setUser } = useAuth();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
 
   const sessionReady = !authLoading && !!cachedUser;
 

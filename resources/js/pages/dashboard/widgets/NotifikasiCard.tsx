@@ -1,5 +1,5 @@
 import { Bell } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import type { NotificationItem } from '../useDashboardData';
 import { cardClass } from './theme';
 import { SectionHeader } from './primitives';
@@ -14,7 +14,7 @@ export function NotifikasiCard({
   onMarkAsRead: (id: string) => void;
   className?: string;
 }) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const safeNotifications = Array.isArray(notifications) ? notifications : [];
   const unreadCount = safeNotifications.filter((n) => !n?.read_at).length;
 

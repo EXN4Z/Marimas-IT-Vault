@@ -1,5 +1,5 @@
 import { AlertTriangle, Wrench, ShieldAlert, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import type { InventoryPerhatian } from '../useDashboardData';
 import { cardClass } from './theme';
 import { SectionHeader, CardIcon } from './primitives';
@@ -12,7 +12,7 @@ export function InventoryPerhatianCard({
   inventoryPerhatian?: InventoryPerhatian;
   className?: string;
 }) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const rusak = inventoryPerhatian?.rusak ?? 0;
   const dalamPenanganan = inventoryPerhatian?.dalamPenanganan ?? 0;
   const garansiSegeraHabis = inventoryPerhatian?.garansiSegeraHabis ?? 0;

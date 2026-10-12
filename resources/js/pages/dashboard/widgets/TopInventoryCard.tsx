@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Package } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import type { InventoryPerMerek } from '../useDashboardData';
 import { cardClass } from './theme';
 import { SectionHeader } from './primitives';
@@ -13,7 +13,7 @@ export function TopInventoryCard({
   inventoryPerMerek?: InventoryPerMerek[];
   className?: string;
 }) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const safeData = Array.isArray(inventoryPerMerek) ? inventoryPerMerek : [];
   const topItems = useMemo(() => safeData.slice(0, 5), [safeData]);
   const maxCount = topItems.length > 0 ? Math.max(...topItems.map((i) => i.jumlah), 1) : 1;

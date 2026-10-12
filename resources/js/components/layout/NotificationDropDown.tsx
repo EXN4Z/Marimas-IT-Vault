@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bell, Check, Trash2, CheckCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -27,7 +27,7 @@ export default function NotificationDropdown() {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
 
   // Sama-sama pake query key ['notifications'] kayak Dashboard.tsx, biar satu
   // sumber data. Sebelum ini komponen punya state lokal sendiri + polling
