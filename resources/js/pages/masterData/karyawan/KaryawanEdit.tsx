@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import toast from 'react-hot-toast';
 import api from '../../../api/axios';
 import RouteModal from '../../../components/shared/RouteModal';
@@ -84,7 +85,7 @@ function roleLabel(nama: string): string {
 
 export default function EditKaryawanPage() {
     const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
+    const navigate = useAppNavigate();
 
     const [form, setForm] = useState<FormState>(initialForm);
     const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
@@ -140,7 +141,7 @@ export default function EditKaryawanPage() {
         if (window.history.state && window.history.state.idx > 0) {
             navigate(-1);
         } else {
-            navigate('/karyawan', { replace: true });
+            navigate('/master-data?tab=karyawan', { replace: true });
         }
     }
 
@@ -202,7 +203,7 @@ export default function EditKaryawanPage() {
             };
             await api.put(`/karyawan/${id}`, payload);
             toast.success('Perubahan berhasil disimpan.');
-            navigate('/karyawan');
+            navigate('/master-data?tab=karyawan');
         } catch (err: any) {
             if (err.response?.status === 422) {
                 const apiErrors = err.response.data.errors ?? {};
@@ -229,7 +230,7 @@ export default function EditKaryawanPage() {
         try {
             await api.delete(`/karyawan/${id}`);
             toast.success('User berhasil dihapus.');
-            navigate('/karyawan');
+            navigate('/master-data?tab=karyawan');
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Gagal menghapus user.');
             setShowDeleteModal(false);
@@ -246,7 +247,7 @@ export default function EditKaryawanPage() {
 
     if (loading) {
         return (
-            <RouteModal title="Edit User" fallbackPath="/karyawan" onClose={closeModal}>
+            <RouteModal title="Edit User" fallbackPath="/master-data?tab=karyawan" onClose={closeModal}>
                 <div className="space-y-4">
                     {Array.from({ length: 6 }).map((_, i) => (
                         <div key={i} className="space-y-1.5">
@@ -263,7 +264,7 @@ export default function EditKaryawanPage() {
         <>
             <RouteModal
                 title="Edit User"
-                fallbackPath="/karyawan"
+                fallbackPath="/master-data?tab=karyawan"
                 onClose={closeModal}
             >
                 <form onSubmit={handleSubmit} className="space-y-4">

@@ -7,6 +7,10 @@
 export const INERTIA_PATHS: string[] = [
   '/audit-log',
   '/settings',
+  '/dashboard',
+  '/laporan',
+  '/master-data',
+  '/penanganan-inventory',
 ];
 
 // Cocok kalau path sama persis, atau berada di bawahnya (mis. '/karyawan' juga cocok '/karyawan/3/edit').

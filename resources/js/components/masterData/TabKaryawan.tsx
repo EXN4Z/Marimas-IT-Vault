@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useAppNavigate } from '../../hooks/useAppNavigate';
 import toast from 'react-hot-toast';
 import { Download, Upload, Plus, Eye, Pencil, Trash2 } from 'lucide-react';
 import api from '../../api/axios';
@@ -95,8 +95,9 @@ function initials(name: string): string {
 // "Data User" di dalam Master Data, sepola sama tab Inventory/Kategori/dst
 // (lihat MasterData.tsx). Route /karyawan lama di-redirect ke sini.
 export default function TabKaryawan() {
-    const navigate = useNavigate();
-    const location = useLocation();
+    // SEMENTARA (P10): halaman Karyawan masih SPA (overlay RouteModal) -> useAppNavigate = full page load.
+    // Overlay-nya dikerjakan di P12.
+    const navigate = useAppNavigate();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [errorMsg, setErrorMsg] = useState<string>('');
@@ -251,7 +252,7 @@ export default function TabKaryawan() {
                         </button>
                         <button
                             type="button"
-                            onClick={() => navigate('/karyawan/create', { state: { backgroundLocation: location } })}
+                            onClick={() => navigate('/karyawan/create')}
                             className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs"
                         >
                             <Plus size={16} />
@@ -355,7 +356,7 @@ export default function TabKaryawan() {
                                                         <div className="flex items-center justify-end gap-1">
                                                             <button
                                                                 type="button"
-                                                                onClick={() => navigate(`/karyawan/${user.id}`, { state: { backgroundLocation: location } })}
+                                                                onClick={() => navigate(`/karyawan/${user.id}`)}
                                                                 title="Detail User"
                                                                 className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
                                                             >
@@ -365,7 +366,7 @@ export default function TabKaryawan() {
                                                                 <>
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => navigate(`/karyawan/${user.id}/edit`, { state: { backgroundLocation: location } })}
+                                                                        onClick={() => navigate(`/karyawan/${user.id}/edit`)}
                                                                         title="Edit User"
                                                                         className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
                                                                     >
@@ -417,7 +418,7 @@ export default function TabKaryawan() {
                                                 <div className="flex items-center gap-1">
                                                     <button
                                                         type="button"
-                                                        onClick={() => navigate(`/karyawan/${user.id}`, { state: { backgroundLocation: location } })}
+                                                        onClick={() => navigate(`/karyawan/${user.id}`)}
                                                         title="Detail"
                                                         className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
                                                     >
@@ -427,7 +428,7 @@ export default function TabKaryawan() {
                                                         <>
                                                             <button
                                                                 type="button"
-                                                                onClick={() => navigate(`/karyawan/${user.id}/edit`, { state: { backgroundLocation: location } })}
+                                                                onClick={() => navigate(`/karyawan/${user.id}/edit`)}
                                                                 title="Edit"
                                                                 className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
                                                             >

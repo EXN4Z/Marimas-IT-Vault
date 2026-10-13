@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation, type Location } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, type Location } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
@@ -6,13 +6,9 @@ import AdminRoute from './components/layout/AdminRoute';
 import AppLayout from './components/layout/AppLayout';
 import Login from './pages/auth/Login';
 import VerifyOtp from './pages/auth/VerifyOtp';
-import Dashboard from './pages/dashboard';
 import KaryawanEdit from './pages/masterData/karyawan/KaryawanEdit';
 import KaryawanCreate from './pages/masterData/karyawan/KaryawanCreate';
 import KaryawanDetail from './pages/masterData/karyawan/KaryawanDetail';
-import Laporan from './pages/laporan/Laporan';
-import MasterData from './pages/masterData/MasterData';
-import PenangananInventory from './pages/transaksi/PenangananInventory';
 
 interface LocationState {
   backgroundLocation?: Location;
@@ -43,37 +39,6 @@ function AppRoutes() {
             di antara route-route di bawah ini -- makanya scroll sidebar,
             dropdown yang lagi kebuka, dll gak reset tiap ganti halaman. */}
         <Route element={<AppLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          {/* Halaman Inventaris sudah dihapus -- Inventory pindah ke Master Data, Foto
-              Inventory & Riwayat Inventory pindah ke Laporan, dan Penanganan Inventory
-              punya halaman sendiri. Alias ini jaga-jaga buat bookmark/link lama ke
-              /inventaris. */}
-          <Route path="/inventaris" element={<Navigate to="/laporan" replace />} />
-          {/* Inventory sekarang isinya di halaman Master Data (tab "inventory"), bukan
-              lagi di Inventaris -- alias lama ini diarahin ke sana. */}
-          <Route path="/inventory" element={<Navigate to="/master-data?tab=inventory" replace />} />
-          {/* Data User & Cabang sekarang jadi tab di dalam Master Data (tab "karyawan" &
-              "cabang"), bukan halaman sendiri lagi -- alias ini jaga-jaga buat
-              bookmark/link lama. */}
-          <Route path="/karyawan" element={<Navigate to="/master-data?tab=karyawan" replace />} />
-          <Route path="/cabang" element={<Navigate to="/master-data?tab=cabang" replace />} />
-          {/* Dashboard Analytics sekarang jadi tab di dalam /dashboard, bukan halaman sendiri.
-              Redirect ini cuma buat jaga-jaga kalau ada bookmark/link lama ke /dashboard-analytics. */}
-          <Route path="/dashboard-analytics" element={<Navigate to="/dashboard?tab=analytics" replace />} />
-          {/* /laporan admin-only (sinkron sama backend, role hr/manajer udah
-              dihapus -- lihat migration simplify_roles_table) -- non-admin
-              di-redirect balik ke /dashboard, bukan cuma ditampilin pesan
-              "tidak punya akses" di dalam halamannya. */}
-          <Route
-            path="/laporan"
-            element={
-              <AdminRoute>
-                <Laporan />
-              </AdminRoute>
-            }
-          />
-          <Route path="/master-data" element={<MasterData />} />
-          <Route path='/penanganan-inventory' element={<PenangananInventory />} />
 
           {/* Fallback: kalau /karyawan/create atau /karyawan/:id/edit diakses langsung
               (refresh browser / paste link / belum ada backgroundLocation), route ini

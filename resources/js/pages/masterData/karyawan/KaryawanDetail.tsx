@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import toast from 'react-hot-toast';
 import {
   ShieldCheck,
@@ -57,7 +58,7 @@ function formatTanggal(value: string | null): string {
 
 export default function KaryawanDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -86,7 +87,7 @@ export default function KaryawanDetailPage() {
     if (window.history.state && window.history.state.idx > 0) {
       navigate(-1);
     } else {
-      navigate('/karyawan', { replace: true });
+      navigate('/master-data?tab=karyawan', { replace: true });
     }
   }
 
@@ -96,7 +97,7 @@ export default function KaryawanDetailPage() {
         title="Detail Karyawan"
         description="Informasi profil dan penempatan kerja karyawan."
         maxWidthClassName="max-w-2xl"
-        fallbackPath="/karyawan"
+        fallbackPath="/master-data?tab=karyawan"
         onClose={closeModal}
       >
         <div className="space-y-4 py-2">
@@ -125,7 +126,7 @@ export default function KaryawanDetailPage() {
       <RouteModal
         title="Detail Karyawan"
         maxWidthClassName="max-w-2xl"
-        fallbackPath="/karyawan"
+        fallbackPath="/master-data?tab=karyawan"
         onClose={closeModal}
       >
         <div className="text-center py-8">
@@ -152,7 +153,7 @@ export default function KaryawanDetailPage() {
       title="Detail Karyawan"
       description="Informasi profil dan penempatan kerja karyawan."
       maxWidthClassName="max-w-2xl"
-      fallbackPath="/karyawan"
+      fallbackPath="/master-data?tab=karyawan"
       onClose={closeModal}
     >
       <div className="space-y-6">

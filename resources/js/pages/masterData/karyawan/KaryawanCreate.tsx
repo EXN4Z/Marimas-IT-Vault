@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import toast from 'react-hot-toast';
 import { User, Lock, Building2, Eye, EyeOff } from 'lucide-react';
 import api from '../../../api/axios';
@@ -43,7 +43,7 @@ const initialForm: FormState = {
 };
 
 export default function CreateKaryawanPage() {
-    const navigate = useNavigate();
+    const navigate = useAppNavigate();
 
     const [form, setForm] = useState<FormState>(initialForm);
     const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
@@ -72,7 +72,7 @@ export default function CreateKaryawanPage() {
         if (window.history.state && window.history.state.idx > 0) {
             navigate(-1);
         } else {
-            navigate('/karyawan', { replace: true });
+            navigate('/master-data?tab=karyawan', { replace: true });
         }
     }
 
@@ -127,7 +127,7 @@ export default function CreateKaryawanPage() {
             };
             await api.post('/karyawan', payload);
             toast.success('User berhasil dibuat.');
-            navigate('/karyawan');
+            navigate('/master-data?tab=karyawan');
         } catch (err: any) {
             if (err.response?.status === 422) {
                 setErrors(err.response.data.errors ?? {});
@@ -146,7 +146,7 @@ export default function CreateKaryawanPage() {
         <RouteModal
             title="Tambah User"
             maxWidthClassName="max-w-2xl"
-            fallbackPath="/karyawan"
+            fallbackPath="/master-data?tab=karyawan"
             onClose={closeModal}
         >
             <form onSubmit={handleSubmit} className="space-y-4">

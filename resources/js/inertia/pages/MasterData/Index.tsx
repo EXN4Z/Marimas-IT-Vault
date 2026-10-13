@@ -1,16 +1,14 @@
-import '../../index.css';
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { router, usePage } from '@inertiajs/react';
 import { Building2, Truck, Package, Tags, Users } from 'lucide-react';
-import ScrollableTabBar from '../../components/shared/ScrollableTabBar';
-import TabInventory from '../../components/masterData/inventory/TabInventory';
-import TabKategori from '../../components/masterData/TabKategori';
-import TabKaryawan from '../../components/masterData/TabKaryawan';
-import TabCabang from '../../components/masterData/TabCabang';
-import TabPerusahaan from '../../components/masterData/TabPerusahaan';
-import TabDepartemen from '../../components/masterData/TabDepartemen';
-import TabSupplier from '../../components/masterData/TabSupplier';
-import { useAuth } from '../../context/AuthContext';
+import ScrollableTabBar from '../../../components/shared/ScrollableTabBar';
+import TabInventory from '../../../components/masterData/inventory/TabInventory';
+import TabKategori from '../../../components/masterData/TabKategori';
+import TabKaryawan from '../../../components/masterData/TabKaryawan';
+import TabCabang from '../../../components/masterData/TabCabang';
+import TabPerusahaan from '../../../components/masterData/TabPerusahaan';
+import TabDepartemen from '../../../components/masterData/TabDepartemen';
+import TabSupplier from '../../../components/masterData/TabSupplier';
+import { useAuth } from '../../../context/AuthContext';
 
 // Halaman Master Data = shell tipis: baca "?tab=", gambar tab bar, render tab
 // yang aktif. Isi tiap tab ada di components/masterData/*:
@@ -75,40 +73,17 @@ export default function MasterData() {
     return !roles || roles.includes(user?.role ?? '');
   };
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTabState] = useState<TabKey>(() => {
-    const fromUrl = searchParams.get('tab');
-    // kalau URL nunjuk ke tab yang gak boleh diakses role ini, paksa balik
-    // ke 'inventory' daripada nolak seluruh halaman.
-    if (isTabKey(fromUrl) && canViewTab(fromUrl)) return fromUrl;
-    return 'inventory';
-  });
+  // Tab aktif = prop `tab` dari server (MasterDataPageController: kosong/ngawur/bukan hak role -> 'inventory',
+  // sama seperti perilaku lama). Ganti tab = visit ringan ke /master-data: replace (history gak numpuk),
+  // preserveState (komponen halaman tidak di-reset).
+  const pageProps = usePage().props as unknown as { tab?: string };
+  const tabFromServer = pageProps.tab ?? null;
+  const activeTab: TabKey = isTabKey(tabFromServer) && canViewTab(tabFromServer) ? tabFromServer : 'inventory';
 
-  // ganti tab sekaligus sinkronin ke query param "?tab=" biar link dari sidebar
-  // (dan tombol back/forward browser) nyambung ke tab yang bener.
   const setActiveTab = (tab: TabKey) => {
-    setActiveTabState(tab);
-    setSearchParams({ tab }, { replace: true });
+    if (tab === activeTab) return;
+    router.get('/master-data', { tab }, { replace: true, preserveState: true, preserveScroll: true });
   };
-
-  // kalau user klik link dropdown sidebar yang query-nya beda (mis. lagi di tab
-  // "departemen" terus klik "Supplier"), pathname sama jadi gak remount komponen —
-  // effect ini yang nangkep perubahan query dan update activeTab-nya.
-  //
-  // FIX: effect ini juga harus jalan ulang begitu `user` kelar dimuat (bukan
-  // cuma pas `searchParams` berubah). Kalau di-refresh browser di halaman
-  // kayak "?tab=kategori", pas mount pertama `user` masih null (AuthContext
-  // masih nunggu GET /user), jadi canViewTab('kategori') sempet false dan
-  // state awal activeTab kepaksa jatuh ke 'inventory'. Tanpa `user` di
-  // dependency array, activeTab nyangkut di 'inventory' selamanya walau URL
-  // (dan sidebar) tetep nunjuk ke 'kategori'.
-  useEffect(() => {
-    const fromUrl = searchParams.get('tab');
-    if (isTabKey(fromUrl) && fromUrl !== activeTab && canViewTab(fromUrl)) {
-      setActiveTabState(fromUrl);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, user]);
 
   return (
     <>

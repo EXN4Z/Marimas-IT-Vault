@@ -1,24 +1,24 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { router, usePage } from '@inertiajs/react';
 import { Boxes, Users, ClipboardList, Loader2, Download, FileSpreadsheet, Images, History, Tags, Building2, Landmark, Truck } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { getInventory, type Inventory } from '../../api/masterData/inventory';
-import { karyawanApi, type Karyawan } from '../../api/masterData/karyawan';
-import { getAllInventoryPemakai, type InventoryPemakai } from '../../api/transaksi/inventoryPemakai';
-import InventoryExportModal from '../../components/laporan/InventoryExportModal';
-import KaryawanExportModal from '../../components/laporan/KaryawanExportModal';
-import InventoryPemakaiExportModal from '../../components/laporan/InventoryPemakaiExportModal';
-import ScrollableTabBar from '../../components/shared/ScrollableTabBar';
-import TabFotoInventory from '../../components/laporan/TabFotoInventory';
-import TabRiwayatInventory from '../../components/laporan/TabRiwayatInventory';
-import { getKategori, type Kategori } from '../../api/masterData/kategori';
-import KategoriExportModal from '../../components/laporan/KategoriExportModal';
-import { getDepartemen, type Departemen } from '../../api/masterData/departemen';
-import DepartemenExportModal from '../../components/laporan/DepartemenExportModal';
-import { getCabang, type Cabang } from '../../api/masterData/cabang';
-import { getPerusahaan, type Perusahaan } from '../../api/masterData/perusahaan';
-import { getSupplier, type Supplier } from '../../api/masterData/supplier';
-import SimpleExportModal from '../../components/laporan/SimpleExportModal';
+import { useAuth } from '../../../context/AuthContext';
+import { getInventory, type Inventory } from '../../../api/masterData/inventory';
+import { karyawanApi, type Karyawan } from '../../../api/masterData/karyawan';
+import { getAllInventoryPemakai, type InventoryPemakai } from '../../../api/transaksi/inventoryPemakai';
+import InventoryExportModal from '../../../components/laporan/InventoryExportModal';
+import KaryawanExportModal from '../../../components/laporan/KaryawanExportModal';
+import InventoryPemakaiExportModal from '../../../components/laporan/InventoryPemakaiExportModal';
+import ScrollableTabBar from '../../../components/shared/ScrollableTabBar';
+import TabFotoInventory from '../../../components/laporan/TabFotoInventory';
+import TabRiwayatInventory from '../../../components/laporan/TabRiwayatInventory';
+import { getKategori, type Kategori } from '../../../api/masterData/kategori';
+import KategoriExportModal from '../../../components/laporan/KategoriExportModal';
+import { getDepartemen, type Departemen } from '../../../api/masterData/departemen';
+import DepartemenExportModal from '../../../components/laporan/DepartemenExportModal';
+import { getCabang, type Cabang } from '../../../api/masterData/cabang';
+import { getPerusahaan, type Perusahaan } from '../../../api/masterData/perusahaan';
+import { getSupplier, type Supplier } from '../../../api/masterData/supplier';
+import SimpleExportModal from '../../../components/laporan/SimpleExportModal';
 
 // Admin-only. Semua role selain admin (hr/manajer/cabang termasuk)
 // disamakan persis seperti karyawan -- yaitu TIDAK punya akses ke halaman
@@ -54,41 +54,16 @@ export default function Laporan() {
   const isStaff = user?.role === 'admin';
   const isAdmin = user?.role === 'admin';
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTabState] = useState<TabKey>(() => {
-    const fromUrl = searchParams.get('tab');
-    return isTabKey(fromUrl) ? fromUrl : 'export_data';
-  });
+  // Tab aktif = prop `tab` dari server (LaporanPageController memvalidasi; kosong/ngawur -> redirect
+  // ke ?tab=export_data). Ganti tab = visit ringan ke URL yang sama: replace (history gak numpuk),
+  // preserveState (list data & modal export yang sudah ke-load tidak hilang).
+  const pageProps = usePage().props as unknown as { tab?: string };
+  const activeTab: TabKey = isTabKey(pageProps.tab ?? null) ? (pageProps.tab as TabKey) : 'export_data';
 
-  // ganti tab sekaligus sinkronin ke query param "?tab=" -- SEKARANG semua
-  // tab (termasuk 'export_data') selalu nulis query-nya, gak ada
-  // pengecualian lagi.
   const setActiveTab = (tab: TabKey) => {
-    setActiveTabState(tab);
-    setSearchParams({ tab }, { replace: true });
+    if (tab === activeTab) return;
+    router.get('/laporan', { tab }, { replace: true, preserveState: true, preserveScroll: true });
   };
-
-  // kalau user klik link dropdown sidebar yang query-nya beda tapi pathname
-  // sama (gak remount komponen), effect ini yang nangkep perubahan query dan
-  // update activeTab-nya -- sama pola kayak MasterData.tsx / Inventaris.tsx.
-  //
-  // REVISI: dulu ada cabang khusus "kalau gak ada query sama sekali ->
-  // anggap tab export tanpa nulis balik ke url". Sekarang begitu halaman
-  // diakses tanpa query ("/laporan" polos, mis. dari bookmark lama atau link
-  // sidebar yang belum diupdate), url-nya DIPAKSA nulis balik jadi
-  // "?tab=export_data" lewat setSearchParams (replace, gak nge-reload) biar
-  // address bar selalu mencerminkan tab yang lagi aktif, konsisten dengan
-  // 2 tab lain.
-  useEffect(() => {
-    const fromUrl = searchParams.get('tab');
-    if (isTabKey(fromUrl)) {
-      if (fromUrl !== activeTab) setActiveTabState(fromUrl);
-    } else {
-      setActiveTabState('export_data');
-      setSearchParams({ tab: 'export_data' }, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
 
   const [inventoryList, setInventoryList] = useState<Inventory[]>([]);
   const [inventoryLoading, setInventoryLoading] = useState(true);

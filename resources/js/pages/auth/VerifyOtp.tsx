@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { verifyOtp, resendOtp } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
 
@@ -9,7 +10,7 @@ export default function VerifyOtp() {
   const [loading, setLoading] = useState(false);
   const [resendMsg, setResendMsg] = useState('');
   const { setUser } = useAuth();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const location = useLocation();
 
   const registrationId = location.state?.registrationId;

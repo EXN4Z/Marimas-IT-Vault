@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useAppNavigate } from '../../hooks/useAppNavigate';
 import {
   User,
   Lock,
@@ -25,13 +26,27 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { user, isLoading, setUser } = useAuth();
   const { isDark, setTheme } = useTheme();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
+  const redirected = useRef(false);
   const location = useLocation();
 
   useEffect(() => {
-    if (isLoading || !user) return;
+    if (isLoading || !user || redirected.current) return;
+    redirected.current = true;
+    // P8: /dashboard sekarang halaman Inertia (butuh session cookie). Kalau token masih valid tapi
+    // session sudah habis, server melempar balik ke /login -> loop tanpa ujung. Balik ke sini <5 detik
+    // setelah redirect = session ditolak: buang token, minta login ulang. (Hapus di P13.)
+    const last = Number(sessionStorage.getItem('dashboard_redirect_at') || 0);
+    if (Date.now() - last < 5000) {
+      sessionStorage.removeItem('dashboard_redirect_at');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      return;
+    }
+    sessionStorage.setItem('dashboard_redirect_at', String(Date.now()));
     navigate('/dashboard', { replace: true });
-  }, [isLoading, user, navigate]);
+  }, [isLoading, user, navigate, setUser]);
 
   useEffect(() => {
     const state = location.state as { passwordReset?: boolean } | null;
