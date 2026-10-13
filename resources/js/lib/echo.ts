@@ -9,8 +9,9 @@ if (pusherKey) window.Pusher = Pusher;
 
 let _echo: any = null;
 
-// Autentikasi channel private lewat session cookie: request ke /api/broadcasting/auth dikirim pakai
-// instance axios aplikasi (same-origin, cookie + XSRF otomatis), BUKAN header Bearer token.
+// Autentikasi channel private lewat session cookie: POST /broadcasting/auth (route web, middleware
+// web+auth, lihat withBroadcasting di bootstrap/app.php) dikirim pakai instance axios aplikasi
+// (same-origin, cookie + XSRF otomatis). baseURL di-override ke '/' karena instance ini default-nya /api.
 // Instance dibuat sekali; waktu user ganti/logout halaman di-reload penuh (atau disconnectEcho()).
 export function getEcho() {
   if (!pusherKey) return null;
@@ -24,7 +25,7 @@ export function getEcho() {
     authorizer: (channel: { name: string }) => ({
       authorize: (socketId: string, callback: (error: boolean, data: any) => void) => {
         api
-          .post('/broadcasting/auth', { socket_id: socketId, channel_name: channel.name })
+          .post('/broadcasting/auth', { socket_id: socketId, channel_name: channel.name }, { baseURL: '/' })
           .then((response) => callback(false, response.data))
           .catch((error) => callback(true, error));
       },

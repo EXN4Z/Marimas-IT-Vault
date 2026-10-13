@@ -324,17 +324,17 @@ const AUTO_DELETE_AFTER_READ_MS = 30 * 60 * 1000; // 30 menit
 // ============================================================================
 export function useDashboardCore(options: { includeDepartemen?: boolean } = {}) {
   const { includeDepartemen = true } = options;
-  const { user: cachedUser, isLoading: authLoading, setUser } = useAuth();
+  const { user: cachedUser, setUser } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useAppNavigate();
 
-  const sessionReady = !authLoading && !!cachedUser;
+  const sessionReady = !!cachedUser;
 
   useEffect(() => {
-    if (!authLoading && !cachedUser) {
+    if (!cachedUser) {
       navigate('/login', { replace: true });
     }
-  }, [authLoading, cachedUser, navigate]);
+  }, [cachedUser, navigate]);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['user'],

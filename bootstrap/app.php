@@ -30,6 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
         ]);
     })
+    // Endpoint /broadcasting/auth (Pusher/Echo private channel) + definisi channel di routes/channels.php.
+    // Auth lewat session (web + auth), bukan lagi Bearer token Sanctum.
+    ->withBroadcasting(__DIR__.'/../routes/channels.php', ['middleware' => ['web', 'auth']])
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();

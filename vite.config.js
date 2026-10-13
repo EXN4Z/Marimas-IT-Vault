@@ -6,8 +6,7 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
     plugins: [
         laravel({
-            // main.tsx = SPA lama (react-router), inertia-app.tsx = entry Inertia buat menu yang sudah dimigrasi
-            input: ['resources/js/main.tsx', 'resources/js/inertia-app.tsx'],
+            input: ['resources/js/inertia-app.tsx'],
             refresh: true,
         }),
         react(),

@@ -7,7 +7,6 @@ use App\Http\Controllers\MasterData\DepartemenController;
 use App\Http\Controllers\AuditLog\AuditLogController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Broadcast;
 use App\Http\Controllers\Notifikasi\NotificationController;
 use App\Http\Controllers\MasterData\AdminUserController;
 use App\Http\Controllers\MasterData\SupplierController;
@@ -22,12 +21,8 @@ use App\Http\Controllers\ImportController;
 use App\Http\Controllers\MasterData\RoleController;
 
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
-Route::post('/login', [AuthController::class, 'login']);
 Route::get('/roles', [RoleController::class, 'index']);
-
-Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     // Route import HARUS didaftarkan sebelum apiResource -- kalau tidak,

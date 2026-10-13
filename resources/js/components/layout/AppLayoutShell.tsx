@@ -201,7 +201,7 @@ export interface AppLayoutShellProps {
 }
 
 // Shell PRESENTATIONAL: sidebar, header, dropdown, mobile menu. Tidak boleh import
-// react-router maupun @inertiajs. Router-nya disuntik lewat props oleh adapter
+// @inertiajs. Router-nya disuntik lewat props oleh adapter
 // (InertiaAppLayout.tsx).
 export default function AppLayoutShell({
   pathname,
@@ -409,7 +409,7 @@ export default function AppLayoutShell({
   };
 
 const handleLogout = async () => {
-    // Urutan logout (unsubscribe push -> revoke token -> bersih-bersih) + redirect
+    // Urutan logout (unsubscribe push -> logout server -> bersih-bersih) + redirect
     // ke /login ditangani adapter lewat onLogout.
     await onLogout();
   };

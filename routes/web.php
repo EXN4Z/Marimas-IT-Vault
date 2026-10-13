@@ -9,11 +9,6 @@ use App\Http\Controllers\MasterData\KaryawanPageController;
 use App\Http\Controllers\MasterData\MasterDataPageController;
 use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\Transaksi\PenangananInventoryPageController;
-use Inertia\Inertia;
-
-// ── Menu yang sudah dimigrasi ke Inertia didaftarkan DI SINI (harus di atas catch-all) ──
-// Contoh nanti:
-// Route::get('/audit-log', fn () => Inertia::render('AuditLog/Index'))->middleware('auth');
 
 // Login & verifikasi OTP: halaman Inertia, auth session penuh. Nama 'login' = tujuan redirect middleware 'auth'.
 Route::get('/login', [WebAuthController::class, 'showLogin'])->name('login');
@@ -30,7 +25,7 @@ Route::redirect('/inventory', '/master-data?tab=inventory');
 Route::redirect('/karyawan', '/master-data?tab=karyawan'); // cuma persis /karyawan; create/detail/edit ada di grup auth di bawah
 Route::redirect('/cabang', '/master-data?tab=cabang');
 
-// Halaman Inertia yang sudah dimigrasi didaftarkan di grup ini (HARUS di atas catch-all).
+// Halaman Inertia (butuh login).
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [WebAuthController::class, 'logout']);
 
@@ -62,8 +57,3 @@ Route::middleware('auth')->group(function () {
     // Audit Log (admin-only)
     Route::get('/audit-log', AuditLogPageController::class)->middleware('role:admin');
 });
-
-// ── Sisanya: SPA lama (react-router) tetap dilayani lewat satu view ──
-// /api, /storage, /build, /up, /sanctum dikecualikan supaya tidak ketangkap catch-all.
-Route::get('/{any?}', fn () => view('spa'))
-    ->where('any', '(?!api(/|$)|storage(/|$)|build(/|$)|sanctum(/|$)|up$).*');

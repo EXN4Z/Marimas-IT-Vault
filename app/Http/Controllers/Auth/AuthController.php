@@ -5,11 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 
 use App\Actions\Profile\UpdatePassword;
-use App\Actions\Auth\ResolveLoginUser;
-use App\Actions\Auth\VerifyRegistrationOtp;
 use App\Actions\Profile\UpdateProfile;
 use App\Mail\OtpMail;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -50,26 +47,6 @@ class AuthController extends Controller
         ], 200);
     }
 
-    public function verifyOtp(Request $request)
-    {
-        $request->validate([
-            'registration_id' => 'required|string',
-            'otp_code' => 'required|string',
-        ]);
-
-        // Cek OTP + bikin user ada di App\Actions\Auth\VerifyRegistrationOtp (dipakai juga verify-otp web).
-        $user = VerifyRegistrationOtp::run($request->registration_id, $request->otp_code);
-
-        $token = $user->createToken('auth-token')->plainTextToken;
-
-        $this->startWebSession($request, $user);
-
-        return response()->json([
-            'user' => $user,
-            'token' => $token,
-        ]);
-    }
-
     public function resendOtp(Request $request)
     {
         $request->validate([
@@ -99,26 +76,6 @@ class AuthController extends Controller
         Mail::to($email)->send(new OtpMail($otp));
     }
 
-    public function login(Request $request)
-    {
-        $request->validate([
-            'login' => 'required|string',
-            'password' => 'required',
-        ]);
-
-        // Logika kandidat login (email/no HP/nama + cek password) ada di App\Actions\Auth\ResolveLoginUser (dipakai juga login web).
-        $user = ResolveLoginUser::run((string) $request->login, (string) $request->password);
-
-        $token = $user->createToken('auth-token')->plainTextToken;
-
-        $this->startWebSession($request, $user);
-
-        return response()->json([
-            'user' => $user,
-            'token' => $token,
-        ]);
-    }
-
     public function user(Request $request)
     {
         return response()->json($request->user());
@@ -142,37 +99,13 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $user = $request->user();
-
-        // Kalau request-nya autentikasi lewat cookie sesi, currentAccessToken()
-        // itu TransientToken (gak punya delete()), makanya dicek dulu.
-        $currentToken = $user->currentAccessToken();
-        if ($currentToken && method_exists($currentToken, 'delete')) {
-            $currentToken->delete();
-        }
-
         Auth::guard('web')->logout();
+
         if ($request->hasSession()) {
             $request->session()->invalidate();
             $request->session()->regenerateToken();
         }
 
         return response()->json(['message' => 'Logged out']);
-    }
-
-    /**
-     * Bikin sesi cookie (guard web) di samping token Sanctum, supaya halaman
-     * Inertia (route web + middleware 'auth') ikut kenal user yang login.
-     * Token tetap dikirim buat SPA lama. Cuma jalan kalau request stateful
-     * (same-origin, domain ada di SANCTUM_STATEFUL_DOMAINS).
-     */
-    private function startWebSession(Request $request, User $user): void
-    {
-        if (!$request->hasSession()) {
-            return;
-        }
-
-        Auth::guard('web')->login($user);
-        $request->session()->regenerate();
     }
 }

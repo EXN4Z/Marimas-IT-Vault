@@ -48,7 +48,7 @@ class EnsureUserIsMember
 
     /**
      * Respons penolakan.
-     *  - API / JSON  : tetap 403 JSON (SPA lama & axios bergantung pada ini).
+     *  - API / JSON  : tetap 403 JSON (axios bergantung pada ini).
      *  - Inertia XHR : Inertia::location() -> full visit ke $redirectTo. Redirect biasa (302) ke
      *                  halaman non-Inertia (SPA) bakal ditampilkan Inertia sebagai modal error.
      *  - Request web : redirect biasa.
