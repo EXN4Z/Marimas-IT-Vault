@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Building2, MapPin, Phone, Map, Plus, Pencil, Trash2, Upload, Download, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
-import { getPerusahaan, createPerusahaan, updatePerusahaan, deletePerusahaan, importPerusahaan, type Perusahaan } from '../../api/masterData/perusahaan';
+import { router, usePage } from '@inertiajs/react';
+import type { Perusahaan } from '../../api/masterData/perusahaan';
 import RouteModal from '../shared/RouteModal';
-import { Skeleton } from '../shared/skeleton';
 import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 import Pagination from '../shared/Pagination';
@@ -12,7 +12,7 @@ import SearchInput from '../shared/SearchInput';
 import { downloadStyledExcel } from '../../utils/excelReport';
 
 // pagination client-side -- data perusahaan dimuat penuh sekali lewat
-// getPerusahaan(), tinggal dipotong per halaman di sini (sama pola yang
+// props.perusahaan dari server, tinggal dipotong per halaman di sini (sama pola yang
 // dipakai TabCabang.tsx / TabKategori.tsx).
 const ITEMS_PER_PAGE = 10;
 
@@ -28,9 +28,9 @@ export default function TabPerusahaan() {
   const { user } = useAuth();
   const isStaff = user?.role === 'admin';
 
-  const [perusahaanList, setPerusahaanList] = useState<Perusahaan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // Data dari server: MasterDataPageController -> props.perusahaan (hanya dikirim saat tab "perusahaan" aktif).
+  // Otomatis ter-update tiap mutasi (router.post/put/delete) selesai & server redirect balik ke halaman ini.
+  const perusahaanList: Perusahaan[] = (usePage().props as unknown as { perusahaan?: Perusahaan[] }).perusahaan ?? [];
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Perusahaan | null>(null);
@@ -55,28 +55,6 @@ export default function TabPerusahaan() {
   const [importLoading, setImportLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const loadData = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const data = await getPerusahaan();
-      setPerusahaanList(data);
-    } catch (err: any) {
-      if (err.response?.status === 403) {
-        setError('Anda tidak punya akses ke halaman ini.');
-      } else {
-        setError('Gagal memuat data perusahaan.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isStaff) loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const filteredPerusahaan = perusahaanList.filter((item) => {
     const q = search.toLowerCase().trim();
@@ -106,23 +84,22 @@ export default function TabPerusahaan() {
 
   //salin data ke cabang
 
-  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setImportLoading(true);
-    try {
-      const res = await importPerusahaan(file);
-      toast.success(res.message || 'Berhasil import data perusahaan.');
-      loadData();
-    } catch (err: any) {
-      const apiErrors: string[] | undefined = err.response?.data?.errors;
-      const msg = (apiErrors && apiErrors[0]) || err.response?.data?.message || 'Gagal import data perusahaan.';
-      toast.error(msg);
-    } finally {
-      setImportLoading(false);
-      if (fileInputRef.current) fileInputRef.current.value = ''; // reset biar bisa upload file yang sama lagi
-    }
+    // Sukses -> toast dari flash server (FlashToaster). Gagal -> error bag "file".
+    router.post('/master-data/perusahaan/import', { file }, {
+      forceFormData: true,
+      preserveScroll: true,
+      preserveState: true,
+      onError: (errors) => toast.error(errors.file || 'Gagal import data perusahaan.'),
+      onFinish: () => {
+        setImportLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = ''; // reset biar bisa upload file yang sama lagi
+      },
+    });
   };
 
   const handleExport = async () => {
@@ -203,54 +180,47 @@ export default function TabPerusahaan() {
 
     setSubmitting(true);
     setFormErrors({});
-    try {
-      const payload = {
-        nama: formNama.trim(),
-        alamat: formAlamat.trim(),
-        telepon: formTelepon.trim(),
-        link: formLink.trim(),
-      };
-      if (editing) {
-        await updatePerusahaan(editing.id, payload);
-        toast.success('Data perusahaan berhasil diperbarui.');
-      } else {
-        await createPerusahaan(payload);
-        toast.success('Perusahaan baru berhasil ditambahkan.');
-        setCurrentPage(1); // biar perusahaan baru langsung kelihatan
-      }
-      setModalOpen(false);
-      loadData();
-    } catch (err: any) {
-      if (err.response?.status === 422) {
-        const apiErrors = err.response.data?.errors ?? {};
+
+    const payload = {
+      nama: formNama.trim(),
+      alamat: formAlamat.trim(),
+      telepon: formTelepon.trim(),
+      link: formLink.trim(),
+    };
+    // Sukses -> toast dari flash server (FlashToaster). Gagal validasi -> error bag per field.
+    const options = {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => {
+        setModalOpen(false);
+        if (!editing) setCurrentPage(1); // biar data baru langsung kelihatan
+      },
+      onError: (errors: Record<string, string>) =>
         setFormErrors({
-          nama: apiErrors.nama?.[0],
-          alamat: apiErrors.alamat?.[0],
-          telepon: apiErrors.telepon?.[0],
-          link: apiErrors.link?.[0],
-        });
-      } else {
-        setFormErrors({ _general: err.response?.data?.message || 'Gagal menyimpan perusahaan.' });
-      }
-    } finally {
-      setSubmitting(false);
-    }
+          nama: errors.nama,
+          alamat: errors.alamat,
+          telepon: errors.telepon,
+          link: errors.link,
+        }),
+      onFinish: () => setSubmitting(false),
+    };
+
+    if (editing) router.put(`/master-data/perusahaan/${editing.id}`, payload, options);
+    else router.post('/master-data/perusahaan', payload, options);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!deleteTarget) return;
     setDeleting(true);
     setDeleteError('');
-    try {
-      await deletePerusahaan(deleteTarget.id);
-      toast.success('Perusahaan berhasil dihapus.');
-      setDeleteTarget(null);
-      loadData();
-    } catch (err: any) {
-      setDeleteError(err.response?.data?.message || 'Gagal menghapus perusahaan.');
-    } finally {
-      setDeleting(false);
-    }
+    // Sukses -> toast dari flash server. Gagal (mis. masih ada relasi) -> error bag "delete", tampil di modal.
+    router.delete(`/master-data/perusahaan/${deleteTarget.id}`, {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => setDeleteTarget(null),
+      onError: (errors) => setDeleteError(errors.delete || 'Gagal menghapus perusahaan.'),
+      onFinish: () => setDeleting(false),
+    });
   };
 
   if (!isStaff) {
@@ -320,43 +290,21 @@ export default function TabPerusahaan() {
           Total Semua: <span className="font-semibold text-slate-900">{filteredPerusahaan.length}</span> perusahaan
         </p>
 
-        {loading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-slate-50/50 rounded-xl p-5 border border-slate-200 flex flex-col gap-3">
-                <div className="flex items-center gap-2.5">
-                  <Skeleton className="w-9 h-9 rounded-lg shrink-0" />
-                  <Skeleton className="h-4 w-2/3 rounded" />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Skeleton className="h-3 w-full rounded" />
-                  <Skeleton className="h-3 w-1/2 rounded" />
-                </div>
-                <div className="pt-3 border-t border-slate-200">
-                  <Skeleton className="h-5 w-24 rounded-full" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {!loading && error && <p className="text-sm text-red-500 text-center py-12">{error}</p>}
-
-        {!loading && !error && perusahaanList.length === 0 && (
+        {perusahaanList.length === 0 && (
           <div className="rounded-xl p-12 text-center bg-slate-50 border border-dashed border-slate-200">
             <Building2 size={32} className="mx-auto text-slate-300 mb-3" />
             <p className="text-sm text-slate-400">Belum ada data perusahaan.</p>
           </div>
         )}
 
-        {!loading && !error && perusahaanList.length > 0 && filteredPerusahaan.length === 0 && (
+        {perusahaanList.length > 0 && filteredPerusahaan.length === 0 && (
           <div className="rounded-xl p-12 text-center bg-slate-50 border border-dashed border-slate-200">
             <Building2 size={32} className="mx-auto text-slate-300 mb-3" />
             <p className="text-sm text-slate-400">Perusahaan tidak ditemukan.</p>
           </div>
         )}
 
-        {!loading && !error && filteredPerusahaan.length > 0 && (
+        {filteredPerusahaan.length > 0 && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {paginatedPerusahaan.map((item) => (

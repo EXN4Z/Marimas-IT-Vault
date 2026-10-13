@@ -71,7 +71,7 @@ export default function SettingsIndex() {
 
     profile.put('/settings/profile', {
       preserveScroll: true,
-      onSuccess: () => toast.success('Profil berhasil diperbarui.'),
+      // Toast sukses datang dari flash server (FlashToaster).
       onError: (errors) =>
         toast.error(errors.email || errors.phone || errors.name || 'Gagal memperbarui profil. Coba lagi.'),
     });
@@ -90,8 +90,7 @@ export default function SettingsIndex() {
     password.put('/settings/password', {
       preserveScroll: true,
       onSuccess: () => {
-        password.reset();
-        toast.success('Password berhasil diperbarui.');
+        password.reset(); // toast sukses datang dari flash server (FlashToaster)
       },
       onError: (errors) =>
         toast.error(errors.current_password || errors.password || 'Gagal memperbarui password. Coba lagi.'),

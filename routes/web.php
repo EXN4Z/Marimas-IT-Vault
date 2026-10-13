@@ -7,6 +7,9 @@ use App\Http\Controllers\Dashboard\DashboardPageController;
 use App\Http\Controllers\Laporan\LaporanPageController;
 use App\Http\Controllers\MasterData\KaryawanPageController;
 use App\Http\Controllers\MasterData\MasterDataPageController;
+use App\Http\Controllers\MasterData\CabangWebController;
+use App\Http\Controllers\MasterData\PerusahaanWebController;
+use App\Http\Middleware\LogActivity;
 use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\Transaksi\PenangananInventoryPageController;
 
@@ -37,6 +40,21 @@ Route::middleware('auth')->group(function () {
 
     // Master Data (semua role boleh buka halamannya; tab admin-only dibatasi di controller + API)
     Route::get('/master-data', MasterDataPageController::class);
+
+    // Master Data: Cabang & Perusahaan (admin-only). Mutasi lewat Inertia (redirect back + flash).
+    // LogActivity dipasang manual di sini karena di bootstrap/app.php audit log cuma nempel di grup 'api'.
+    // Route statis (/import) HARUS di atas route {id}.
+    Route::middleware(['role:admin', LogActivity::class])->prefix('master-data')->group(function () {
+        Route::post('/cabang/import', [CabangWebController::class, 'import']);
+        Route::post('/cabang', [CabangWebController::class, 'store']);
+        Route::put('/cabang/{id}', [CabangWebController::class, 'update'])->whereNumber('id');
+        Route::delete('/cabang/{id}', [CabangWebController::class, 'destroy'])->whereNumber('id');
+
+        Route::post('/perusahaan/import', [PerusahaanWebController::class, 'import']);
+        Route::post('/perusahaan', [PerusahaanWebController::class, 'store']);
+        Route::put('/perusahaan/{id}', [PerusahaanWebController::class, 'update'])->whereNumber('id');
+        Route::delete('/perusahaan/{id}', [PerusahaanWebController::class, 'destroy'])->whereNumber('id');
+    });
 
     // Karyawan: create / detail / edit (admin-only; non-admin web/Inertia -> redirect /dashboard, API/JSON tetap 403).
     // '/create' HARUS di atas '/{user}'. Data form/detail masih lewat /api (axios); ke props di F11.

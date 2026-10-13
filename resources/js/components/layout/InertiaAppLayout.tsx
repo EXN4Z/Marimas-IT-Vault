@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useAppNavigate } from '../../hooks/useAppNavigate';
 import AppLayoutShell, { type ShellNavigateOptions } from './AppLayoutShell';
 import InertiaAuthSync from './InertiaAuthSync';
+import FlashToaster from './FlashToaster';
 
 // Adapter Inertia untuk AppLayoutShell. Dipasang sebagai persistent layout di
 // inertia-app.tsx, jadi sidebar/header TIDAK di-remount (scroll & state-nya awet)
@@ -33,6 +34,7 @@ export default function InertiaAppLayout({ children }: { children: ReactNode }) 
   return (
     <AppLayoutShell pathname={pathname} search={search} onNavigate={onNavigate} onLogout={onLogout}>
       <InertiaAuthSync />
+      <FlashToaster />
       {children}
     </AppLayoutShell>
   );

@@ -22,8 +22,13 @@ class MasterDataPageController extends Controller
 
         $tab = (string) $request->query('tab', '');
 
+        $tab = in_array($tab, $allowed, true) ? $tab : 'inventory';
+
         return Inertia::render('MasterData/Index', [
-            'tab' => in_array($tab, $allowed, true) ? $tab : 'inventory',
+            'tab' => $tab,
+            // Data tab dikirim hanya saat tab itu aktif (closure = lazy; null = tidak dikirim isinya).
+            'cabang' => $tab === 'cabang' ? fn () => CabangWebController::daftar() : null,
+            'perusahaan' => $tab === 'perusahaan' ? fn () => PerusahaanWebController::daftar() : null,
         ]);
     }
 }
