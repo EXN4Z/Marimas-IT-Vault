@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 
+use App\Actions\Profile\UpdatePassword;
+use App\Actions\Profile\UpdateProfile;
 use App\Mail\OtpMail;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -160,37 +162,14 @@ class AuthController extends Controller
 
     public function updateProfile(Request $request)
     {
-        $user = $request->user();
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|unique:users,email,' . $user->id,
-            'phone' => 'nullable|string|unique:users,phone,' . $user->id,
-        ]);
-
-        $user->update($validated);
-
-        return response()->json($user->fresh());
+        // Validasi + update ada di App\Actions\Profile\UpdateProfile (dipakai juga SettingsController web).
+        return response()->json(UpdateProfile::run($request));
     }
 
     public function updatePassword(Request $request)
     {
-        $user = $request->user();
-
-        $validated = $request->validate([
-            'current_password' => 'required|string',
-            'password' => 'required|string|confirmed',
-        ]);
-
-        if (!Hash::check($validated['current_password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'current_password' => ['Password saat ini tidak sesuai.'],
-            ]);
-        }
-
-        $user->update([
-            'password' => Hash::make($validated['password']),
-        ]);
+        // Validasi + ganti password ada di App\Actions\Profile\UpdatePassword.
+        UpdatePassword::run($request);
 
         return response()->json([
             'message' => 'Password berhasil diperbarui.',

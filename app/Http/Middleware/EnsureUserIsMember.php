@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureUserIsMember
@@ -33,15 +34,35 @@ class EnsureUserIsMember
         $user = $request->user();
 
         if (!$user) {
-            return response()->json(['message' => 'Akses ditolak'], 403);
+            return $this->deny($request, '/login');
         }
 
         $adaRoleNonAdmin = collect($roles)->contains(fn (string $role) => $role !== 'admin');
 
         if (!$adaRoleNonAdmin && !$user->isAdmin()) {
-            return response()->json(['message' => 'Akses ditolak'], 403);
+            return $this->deny($request, '/dashboard');
         }
 
         return $next($request);
+    }
+
+    /**
+     * Respons penolakan.
+     *  - API / JSON  : tetap 403 JSON (SPA lama & axios bergantung pada ini).
+     *  - Inertia XHR : Inertia::location() -> full visit ke $redirectTo. Redirect biasa (302) ke
+     *                  halaman non-Inertia (SPA) bakal ditampilkan Inertia sebagai modal error.
+     *  - Request web : redirect biasa.
+     */
+    private function deny(Request $request, string $redirectTo): Response
+    {
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json(['message' => 'Akses ditolak'], 403);
+        }
+
+        if ($request->header('X-Inertia')) {
+            return Inertia::location($redirectTo);
+        }
+
+        return redirect($redirectTo);
     }
 }

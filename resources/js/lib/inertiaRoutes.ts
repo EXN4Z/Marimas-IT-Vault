@@ -5,7 +5,8 @@
 // Tambahkan path di sini setiap kali satu menu selesai dimigrasi (langkah 4 di template),
 // dan hapus path-nya dari react-router (App.tsx) di langkah 5.
 export const INERTIA_PATHS: string[] = [
-  // contoh nanti: '/audit-log', '/settings'
+  '/audit-log',
+  '/settings',
 ];
 
 // Cocok kalau path sama persis, atau berada di bawahnya (mis. '/karyawan' juga cocok '/karyawan/3/edit').

@@ -1,11 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
+import { router } from '@inertiajs/react';
 import { ScrollText, Trash2, ArrowDownCircle, ArrowUpCircle, RefreshCw, Search, X } from 'lucide-react';
-import ScrollableTabBar from '../../components/shared/ScrollableTabBar';
-import Pagination from '../../components/shared/Pagination';
-import { Skeleton } from '../../components/shared/skeleton';
-import { getAuditLog, getAuditLogTrash, type AuditLog } from '../../api/auditLog';
+import ScrollableTabBar from '../../../components/shared/ScrollableTabBar';
+import Pagination from '../../../components/shared/Pagination';
+import { Skeleton } from '../../../components/shared/skeleton';
+import type { PaginatedAuditLog } from '../../../api/auditLog';
 
 type TabKey = 'aktif' | 'trash';
+
+interface Props {
+  tab: TabKey;
+  filters: { search: string };
+  logs: PaginatedAuditLog;
+}
+
+type VisitOptions = NonNullable<Parameters<typeof router.get>[2]>;
 
 const methodColors: Record<string, string> = {
   GET: 'bg-slate-100 text-slate-600',
@@ -25,67 +34,59 @@ function formatWaktu(iso: string): string {
   });
 }
 
-
-
-export default function AuditLogPage() {
-  const [activeTab, setActiveTab] = useState<TabKey>('aktif');
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [page, setPage] = useState(1);
-  const [lastPage, setLastPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [search, setSearch] = useState('');
+// Tab, halaman, dan search hidup di query string (?tab=&page=&search=); data datang lewat props
+// dari AuditLogPageController, bukan axios.
+export default function AuditLogIndex({ tab, filters, logs: paginator }: Props) {
+  const [search, setSearch] = useState(filters.search);
+  const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const loadData = async (tab: TabKey, targetPage: number, targetSearch: string) => {
-    setLoading(true);
-    setError('');
-    try {
-      const data = tab === 'aktif'
-        ? await getAuditLog(targetPage, targetSearch)
-        : await getAuditLogTrash(targetPage, targetSearch);
+  const logs = paginator.data;
+  const page = paginator.current_page;
+  const lastPage = paginator.last_page;
+  const total = paginator.total;
 
-      setLogs(data.data);
-      setPage(data.current_page);
-      setLastPage(data.last_page);
-      setTotal(data.total);
-    } catch (err: any) {
-      if (err.response?.status === 403) {
-        setError('Anda tidak punya akses ke halaman ini.');
-      } else {
-        setError('Gagal memuat data audit log.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Ganti tab -> reset search & langsung load halaman 1
   useEffect(() => {
-    setSearch('');
-    loadData(activeTab, 1, '');
-  }, [activeTab]);
-
-  // Ketik di search -> debounce 400ms baru fetch, biar gak nembak API tiap huruf
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      loadData(activeTab, 1, search);
-    }, 400);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
+  }, []);
 
-  function gantiTab(tab: TabKey) {
-    setActiveTab(tab);
+  const loadingHandlers = {
+    onStart: () => setLoading(true),
+    onFinish: () => setLoading(false),
+  };
+
+  function visit(params: { tab: TabKey; search?: string; page?: number }, opts: VisitOptions = {}) {
+    const data: Record<string, string | number> = {};
+    if (params.tab === 'trash') data.tab = 'trash';
+    if (params.search) data.search = params.search;
+    if (params.page && params.page > 1) data.page = params.page;
+    router.get('/audit-log', data, { preserveState: true, replace: true, ...loadingHandlers, ...opts });
+  }
+
+  // Ganti tab -> reset search & halaman 1
+  function gantiTab(next: TabKey) {
+    if (next === tab) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setSearch('');
+    visit({ tab: next });
+  }
+
+  // Ketik di search -> debounce 400ms baru visit, biar gak nembak server tiap huruf
+  function gantiSearch(value: string) {
+    setSearch(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => visit({ tab, search: value }), 400);
   }
 
   function gantiHalaman(target: number) {
     if (target < 1 || target > lastPage || target === page) return;
-    loadData(activeTab, target, search);
+    visit({ tab, search: filters.search, page: target }, { replace: false, preserveScroll: true });
+  }
+
+  function refresh() {
+    router.reload({ only: ['logs'], ...loadingHandlers });
   }
 
   return (
@@ -96,7 +97,7 @@ export default function AuditLogPage() {
           terhapus permanen setelah 7 hari di trash.
         </p>
         <button
-          onClick={() => loadData(activeTab, page, search)}
+          onClick={refresh}
           className="flex items-center gap-2 bg-slate-100 text-slate-600 text-sm font-medium px-3 py-2 rounded-lg hover:bg-slate-200 transition flex-shrink-0"
         >
           <RefreshCw size={14} />
@@ -106,7 +107,7 @@ export default function AuditLogPage() {
 
       <ScrollableTabBar
         className="mb-6 mt-4"
-        activeTab={activeTab}
+        activeTab={tab}
         onChange={gantiTab}
         tabs={[
           { key: 'aktif', label: 'Log Aktif', icon: ScrollText },
@@ -119,13 +120,13 @@ export default function AuditLogPage() {
         <input
           type="text"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => gantiSearch(e.target.value)}
           placeholder="Cari deskripsi, endpoint, IP, atau nama pengguna..."
           className="w-full text-sm border border-slate-200 rounded-lg pl-9 pr-9 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
         />
         {search && (
           <button
-            onClick={() => setSearch('')}
+            onClick={() => gantiSearch('')}
             aria-label="Hapus pencarian"
             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
           >
@@ -135,7 +136,7 @@ export default function AuditLogPage() {
       </div>
 
       <p className="text-xs text-slate-500 mb-4">
-        Total {activeTab === 'aktif' ? 'Log Aktif' : 'Trash'}: <span className="font-semibold text-slate-900">{total}</span> log
+        Total {tab === 'aktif' ? 'Log Aktif' : 'Trash'}: <span className="font-semibold text-slate-900">{total}</span> log
       </p>
 
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
@@ -156,17 +157,15 @@ export default function AuditLogPage() {
           </div>
         )}
 
-        {!loading && error && <p className="text-sm text-red-500 text-center py-8">{error}</p>}
-
-        {!loading && !error && logs.length === 0 && (
+        {!loading && logs.length === 0 && (
           <p className="text-sm text-slate-400 text-center py-8">
-            {search
-              ? `Tidak ada hasil untuk "${search}".`
-              : activeTab === 'aktif' ? 'Belum ada aktivitas.' : 'Trash kosong.'}
+            {filters.search
+              ? <>Tidak ada hasil untuk "{filters.search}".</>
+              : tab === 'aktif' ? 'Belum ada aktivitas.' : 'Trash kosong.'}
           </p>
         )}
 
-        {!loading && !error && logs.length > 0 && (
+        {!loading && logs.length > 0 && (
           <div className="flex flex-col gap-1">
             {logs.map((log) => (
               <div
@@ -175,9 +174,10 @@ export default function AuditLogPage() {
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <span
-                    className={`text-[10px] font-semibold px-2 py-1 rounded-full flex-shrink-0 ${
-                      methodColors[log.method] || 'bg-slate-100 text-slate-600'
-                    }`}
+                    className={
+                      'text-[10px] font-semibold px-2 py-1 rounded-full flex-shrink-0 ' +
+                      (methodColors[log.method] || 'bg-slate-100 text-slate-600')
+                    }
                   >
                     {log.method}
                   </span>
@@ -189,13 +189,13 @@ export default function AuditLogPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-                  {activeTab === 'aktif' ? (
+                  {tab === 'aktif' ? (
                     <ArrowDownCircle size={14} className="text-slate-300" />
                   ) : (
                     <ArrowUpCircle size={14} className="text-slate-300" />
                   )}
                   <span className="text-xs text-slate-400">
-                    {formatWaktu(activeTab === 'trash' ? log.deleted_at ?? log.created_at : log.created_at)}
+                    {formatWaktu(tab === 'trash' ? log.deleted_at ?? log.created_at : log.created_at)}
                   </span>
                 </div>
               </div>
@@ -203,7 +203,7 @@ export default function AuditLogPage() {
           </div>
         )}
 
-        {!loading && !error && logs.length > 0 && lastPage > 1 && (
+        {!loading && logs.length > 0 && lastPage > 1 && (
           <Pagination
             currentPage={page}
             totalPages={lastPage}

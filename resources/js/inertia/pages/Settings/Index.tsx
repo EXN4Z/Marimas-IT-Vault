@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useForm } from '@inertiajs/react';
 import { User as UserIcon, Mail, Phone, Save, Bell, BellOff, Lock, KeyRound } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../context/AuthContext';
-import { updateProfile, updatePassword } from '../../api/auth';
-import { usePushNotifications } from '../../hooks/usePushNotifications';
+import { useAuth } from '../../../context/AuthContext';
+import { usePushNotifications } from '../../../hooks/usePushNotifications';
 
 const roleLabels: Record<string, string> = {
   admin: 'Admin',
@@ -21,89 +20,82 @@ function initials(name?: string): string {
     .toUpperCase();
 }
 
-export default function Settings() {
-  const { user, setUser } = useAuth();
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="text-xs text-red-500 mt-1">{message}</p>;
+}
+
+// Update profil & ganti password: Inertia useForm -> PUT /settings/profile & /settings/password.
+// Error validasi datang lewat props errors; auth.user di shared props ter-update otomatis setelah simpan.
+export default function SettingsIndex() {
+  const { user } = useAuth();
   const push = usePushNotifications();
 
-  const [name, setName] = useState(user?.name ?? '');
-  const [email, setEmail] = useState(user?.email ?? '');
-  const [phone, setPhone] = useState(user?.phone ?? '');
-  const [saving, setSaving] = useState(false);
+  const profile = useForm({
+    name: user?.name ?? '',
+    email: user?.email ?? '',
+    phone: user?.phone ?? '',
+  });
 
   // GANTI PASSWORD -- kartu terpisah dari Profil Saya karena butuh
   // verifikasi current_password & validasi confirmed, beda konteks
   // dari update nama/email/HP yang semuanya opsional.
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [newPasswordConfirmation, setNewPasswordConfirmation] = useState('');
-  const [passwordSaving, setPasswordSaving] = useState(false);
+  const password = useForm({
+    current_password: '',
+    password: '',
+    password_confirmation: '',
+  });
 
   const isDirty =
-    name !== (user?.name ?? '') ||
-    email !== (user?.email ?? '') ||
-    phone !== (user?.phone ?? '');
+    profile.data.name !== (user?.name ?? '') ||
+    profile.data.email !== (user?.email ?? '') ||
+    profile.data.phone !== (user?.phone ?? '');
 
   const isPasswordDirty =
-    currentPassword.length > 0 || newPassword.length > 0 || newPasswordConfirmation.length > 0;
+    password.data.current_password.length > 0 ||
+    password.data.password.length > 0 ||
+    password.data.password_confirmation.length > 0;
 
-  const handleSubmit = async () => {
-    if (!name.trim()) {
+  const handleSubmit = () => {
+    if (!profile.data.name.trim()) {
       toast.error('Nama tidak boleh kosong.');
       return;
     }
 
-    setSaving(true);
-    try {
-      const updated = await updateProfile({
-        name: name.trim(),
-        email: email.trim() || undefined,
-        phone: phone.trim() || undefined,
-      });
-      setUser({ ...user, ...updated });
-      toast.success('Profil berhasil diperbarui.');
-    } catch (err: any) {
-      const message =
-        err.response?.data?.errors?.email?.[0] ||
-        err.response?.data?.errors?.phone?.[0] ||
-        err.response?.data?.message ||
-        'Gagal memperbarui profil. Coba lagi.';
-      toast.error(message);
-    } finally {
-      setSaving(false);
-    }
+    // Email/HP kosong tidak dikirim (sama seperti versi axios): dikirim '' akan jadi null di server.
+    profile.transform((d) => ({
+      name: d.name.trim(),
+      email: d.email.trim() || undefined,
+      phone: d.phone.trim() || undefined,
+    }));
+
+    profile.put('/settings/profile', {
+      preserveScroll: true,
+      onSuccess: () => toast.success('Profil berhasil diperbarui.'),
+      onError: (errors) =>
+        toast.error(errors.email || errors.phone || errors.name || 'Gagal memperbarui profil. Coba lagi.'),
+    });
   };
 
-  const handlePasswordSubmit = async () => {
-    if (!currentPassword.trim()) {
+  const handlePasswordSubmit = () => {
+    if (!password.data.current_password.trim()) {
       toast.error('Password saat ini wajib diisi.');
       return;
     }
-    if (newPassword !== newPasswordConfirmation) {
+    if (password.data.password !== password.data.password_confirmation) {
       toast.error('Konfirmasi password baru tidak cocok.');
       return;
     }
 
-    setPasswordSaving(true);
-    try {
-      const res = await updatePassword({
-        current_password: currentPassword,
-        password: newPassword,
-        password_confirmation: newPasswordConfirmation,
-      });
-      toast.success(res.message || 'Password berhasil diperbarui.');
-      setCurrentPassword('');
-      setNewPassword('');
-      setNewPasswordConfirmation('');
-    } catch (err: any) {
-      const message =
-        err.response?.data?.errors?.current_password?.[0] ||
-        err.response?.data?.errors?.password?.[0] ||
-        err.response?.data?.message ||
-        'Gagal memperbarui password. Coba lagi.';
-      toast.error(message);
-    } finally {
-      setPasswordSaving(false);
-    }
+    password.put('/settings/password', {
+      preserveScroll: true,
+      onSuccess: () => {
+        password.reset();
+        toast.success('Password berhasil diperbarui.');
+      },
+      onError: (errors) =>
+        toast.error(errors.current_password || errors.password || 'Gagal memperbarui password. Coba lagi.'),
+    });
   };
 
   return (
@@ -136,13 +128,14 @@ export default function Settings() {
               <div className="relative">
                 <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={profile.data.name}
+                  onChange={(e) => profile.setData('name', e.target.value)}
                   maxLength={255}
                   placeholder="Nama lengkap"
                   className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
+              <FieldError message={profile.errors.name} />
             </div>
 
             <div>
@@ -150,13 +143,14 @@ export default function Settings() {
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={profile.data.email}
+                  onChange={(e) => profile.setData('email', e.target.value)}
                   type="email"
                   placeholder="nama@email.com"
                   className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
+              <FieldError message={profile.errors.email} />
             </div>
 
             <div>
@@ -164,21 +158,22 @@ export default function Settings() {
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  value={profile.data.phone}
+                  onChange={(e) => profile.setData('phone', e.target.value)}
                   placeholder="08xxxxxxxxxx"
                   className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
+              <FieldError message={profile.errors.phone} />
             </div>
 
             <button
               onClick={handleSubmit}
-              disabled={saving || !isDirty}
+              disabled={profile.processing || !isDirty}
               className="self-start flex items-center gap-2 bg-slate-900 text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-slate-800 active:scale-[0.97] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
             >
               <Save size={16} />
-              {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
+              {profile.processing ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>
           </div>
         </div>
@@ -196,14 +191,15 @@ export default function Settings() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  value={password.data.current_password}
+                  onChange={(e) => password.setData('current_password', e.target.value)}
                   type="password"
                   autoComplete="current-password"
                   placeholder="Password sekarang"
                   className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
+              <FieldError message={password.errors.current_password} />
             </div>
 
             <div>
@@ -211,14 +207,15 @@ export default function Settings() {
               <div className="relative">
                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  value={password.data.password}
+                  onChange={(e) => password.setData('password', e.target.value)}
                   type="password"
                   autoComplete="new-password"
                   placeholder="Minimal 8 karakter"
                   className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
+              <FieldError message={password.errors.password} />
             </div>
 
             <div>
@@ -226,8 +223,8 @@ export default function Settings() {
               <div className="relative">
                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
-                  value={newPasswordConfirmation}
-                  onChange={(e) => setNewPasswordConfirmation(e.target.value)}
+                  value={password.data.password_confirmation}
+                  onChange={(e) => password.setData('password_confirmation', e.target.value)}
                   type="password"
                   autoComplete="new-password"
                   placeholder="Ulangi password baru"
@@ -243,15 +240,15 @@ export default function Settings() {
             </p>
             <button
               onClick={handlePasswordSubmit}
-              disabled={passwordSaving || !isPasswordDirty}
+              disabled={password.processing || !isPasswordDirty}
               className="ml-auto flex items-center gap-2 bg-slate-900 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-slate-800 active:scale-[0.97] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
             >
-              {passwordSaving ? (
+              {password.processing ? (
                 <Lock size={16} className="animate-pulse" />
               ) : (
                 <KeyRound size={16} />
               )}
-              {passwordSaving ? 'Menyimpan...' : 'Ganti Password'}
+              {password.processing ? 'Menyimpan...' : 'Ganti Password'}
             </button>
           </div>
         </div>
@@ -284,11 +281,12 @@ export default function Settings() {
               <button
                 onClick={push.isSubscribed ? push.unsubscribe : push.subscribe}
                 disabled={push.loading}
-                className={`flex-shrink-0 text-sm font-semibold px-4 py-2.5 rounded-lg transition disabled:opacity-40 ${
-                  push.isSubscribed
+                className={
+                  'flex-shrink-0 text-sm font-semibold px-4 py-2.5 rounded-lg transition disabled:opacity-40 ' +
+                  (push.isSubscribed
                     ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    : 'bg-slate-900 text-white hover:bg-slate-800'
-                }`}
+                    : 'bg-slate-900 text-white hover:bg-slate-800')
+                }
               >
                 {push.loading ? 'Memproses...' : push.isSubscribed ? 'Matikan' : 'Aktifkan'}
               </button>

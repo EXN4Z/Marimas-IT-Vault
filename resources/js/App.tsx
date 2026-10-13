@@ -10,8 +10,6 @@ import Dashboard from './pages/dashboard';
 import KaryawanEdit from './pages/masterData/karyawan/KaryawanEdit';
 import KaryawanCreate from './pages/masterData/karyawan/KaryawanCreate';
 import KaryawanDetail from './pages/masterData/karyawan/KaryawanDetail';
-import Settings from './pages/settings/Settings';
-import AuditLog from './pages/auditLog/AuditLog';
 import Laporan from './pages/laporan/Laporan';
 import MasterData from './pages/masterData/MasterData';
 import PenangananInventory from './pages/transaksi/PenangananInventory';
@@ -62,8 +60,6 @@ function AppRoutes() {
           {/* Dashboard Analytics sekarang jadi tab di dalam /dashboard, bukan halaman sendiri.
               Redirect ini cuma buat jaga-jaga kalau ada bookmark/link lama ke /dashboard-analytics. */}
           <Route path="/dashboard-analytics" element={<Navigate to="/dashboard?tab=analytics" replace />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/audit-log" element={<AuditLog />} />
           {/* /laporan admin-only (sinkron sama backend, role hr/manajer udah
               dihapus -- lihat migration simplify_roles_table) -- non-admin
               di-redirect balik ke /dashboard, bukan cuma ditampilin pesan
