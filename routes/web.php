@@ -9,6 +9,9 @@ use App\Http\Controllers\MasterData\KaryawanPageController;
 use App\Http\Controllers\MasterData\MasterDataPageController;
 use App\Http\Controllers\MasterData\CabangWebController;
 use App\Http\Controllers\MasterData\PerusahaanWebController;
+use App\Http\Controllers\MasterData\DepartemenWebController;
+use App\Http\Controllers\MasterData\KategoriWebController;
+use App\Http\Controllers\MasterData\SupplierWebController;
 use App\Http\Middleware\LogActivity;
 use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\Transaksi\PenangananInventoryPageController;
@@ -41,7 +44,7 @@ Route::middleware('auth')->group(function () {
     // Master Data (semua role boleh buka halamannya; tab admin-only dibatasi di controller + API)
     Route::get('/master-data', MasterDataPageController::class);
 
-    // Master Data: Cabang & Perusahaan (admin-only). Mutasi lewat Inertia (redirect back + flash).
+    // Master Data: Cabang, Perusahaan, Departemen, Kategori, Supplier (admin-only). Mutasi lewat Inertia (redirect back + flash).
     // LogActivity dipasang manual di sini karena di bootstrap/app.php audit log cuma nempel di grup 'api'.
     // Route statis (/import) HARUS di atas route {id}.
     Route::middleware(['role:admin', LogActivity::class])->prefix('master-data')->group(function () {
@@ -54,6 +57,20 @@ Route::middleware('auth')->group(function () {
         Route::post('/perusahaan', [PerusahaanWebController::class, 'store']);
         Route::put('/perusahaan/{id}', [PerusahaanWebController::class, 'update'])->whereNumber('id');
         Route::delete('/perusahaan/{id}', [PerusahaanWebController::class, 'destroy'])->whereNumber('id');
+
+        Route::post('/departemen/import', [DepartemenWebController::class, 'import']);
+        Route::post('/departemen', [DepartemenWebController::class, 'store']);
+        Route::put('/departemen/{id}', [DepartemenWebController::class, 'update'])->whereNumber('id');
+        Route::delete('/departemen/{id}', [DepartemenWebController::class, 'destroy'])->whereNumber('id');
+
+        Route::post('/kategori', [KategoriWebController::class, 'store']);
+        Route::put('/kategori/{id}', [KategoriWebController::class, 'update'])->whereNumber('id');
+        Route::delete('/kategori/{id}', [KategoriWebController::class, 'destroy'])->whereNumber('id');
+
+        Route::post('/supplier/import', [SupplierWebController::class, 'import']);
+        Route::post('/supplier', [SupplierWebController::class, 'store']);
+        Route::put('/supplier/{id}', [SupplierWebController::class, 'update'])->whereNumber('id');
+        Route::delete('/supplier/{id}', [SupplierWebController::class, 'destroy'])->whereNumber('id');
     });
 
     // Karyawan: create / detail / edit (admin-only; non-admin web/Inertia -> redirect /dashboard, API/JSON tetap 403).

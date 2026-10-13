@@ -29,6 +29,9 @@ class MasterDataPageController extends Controller
             // Data tab dikirim hanya saat tab itu aktif (closure = lazy; null = tidak dikirim isinya).
             'cabang' => $tab === 'cabang' ? fn () => CabangWebController::daftar() : null,
             'perusahaan' => $tab === 'perusahaan' ? fn () => PerusahaanWebController::daftar() : null,
+            'departemen' => $tab === 'departemen' ? fn () => DepartemenWebController::daftar() : null,
+            'kategori' => $tab === 'kategori' ? fn () => KategoriWebController::daftar() : null,
+            'supplier' => $tab === 'supplier' ? fn () => SupplierWebController::daftar() : null,
         ]);
     }
 }

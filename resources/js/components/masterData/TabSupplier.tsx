@@ -1,33 +1,26 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, Pencil, Trash2, X, Upload, Download, Loader2, AlertCircle, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
-import { SkeletonTable } from '../shared/skeleton';
 import Pagination from '../shared/Pagination';
 import SearchInput from '../shared/SearchInput';
 import { downloadStyledExcel } from '../../utils/excelReport';
 import { useBackdropClose } from '../../hooks/useBackdropClose';
-import {
-  getSupplier,
-  createSupplier,
-  updateSupplier,
-  deleteSupplier,
-  importSupplier,
-  type Supplier,
-} from '../../api/masterData/supplier';
+import { router, usePage } from '@inertiajs/react';
+import type { Supplier } from '../../api/masterData/supplier';
 
 // Tab Supplier = CRUD nama + alamat + telepon. Semua UI & logikanya ada di
 // file ini (tabel, search, pagination, modal tambah/edit, hapus, import/export Excel).
 
-// pagination client-side -- data dimuat penuh sekali lewat getSupplier(),
+// pagination client-side -- data dimuat penuh sekali lewat props.supplier (server),
 // tinggal dipotong per halaman di sini (pola yang sama dipakai di TabKategori).
 const ITEMS_PER_PAGE = 10;
 
 export default function TabSupplier() {
-  const [items, setItems] = useState<Supplier[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // Data dari server: MasterDataPageController -> props.supplier (hanya dikirim saat tab "supplier" aktif).
+  // Otomatis ter-update tiap mutasi (router.post/put/delete) selesai & server redirect balik ke halaman ini.
+  const items: Supplier[] = (usePage().props as unknown as { supplier?: Supplier[] }).supplier ?? [];
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
@@ -50,26 +43,6 @@ export default function TabSupplier() {
 
   // Catatan: state (search, halaman, modal) otomatis ke-reset tiap pindah tab
   // karena MasterData me-render komponen tab yang beda -> remount.
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      setItems(await getSupplier());
-    } catch (err: any) {
-      if (err.response?.status === 403) {
-        setError('Anda tidak punya akses ke halaman ini.');
-      } else {
-        setError('Gagal memuat data supplier.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   const filteredItems = items.filter((item) => {
     const q = search.toLowerCase().trim();
     if (!q) return true;
@@ -95,23 +68,22 @@ export default function TabSupplier() {
     setCurrentPage(1);
   }, [search]);
 
-  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setImportLoading(true);
-    try {
-      const res = await importSupplier(file);
-      toast.success(res.message || 'Berhasil import data supplier.');
-      loadData();
-    } catch (err: any) {
-      const apiErrors: string[] | undefined = err.response?.data?.errors;
-      const msg = (apiErrors && apiErrors[0]) || err.response?.data?.message || 'Gagal import data supplier.';
-      toast.error(msg);
-    } finally {
-      setImportLoading(false);
-      if (fileInputRef.current) fileInputRef.current.value = ''; // reset biar bisa upload file yang sama lagi
-    }
+    // Sukses -> toast dari flash server (FlashToaster). Gagal -> error bag "file".
+    router.post('/master-data/supplier/import', { file }, {
+      forceFormData: true,
+      preserveScroll: true,
+      preserveState: true,
+      onError: (errors) => toast.error(errors.file || 'Gagal import data supplier.'),
+      onFinish: () => {
+        setImportLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = ''; // reset biar bisa upload file yang sama lagi
+      },
+    });
   };
 
   const handleExport = async () => {
@@ -174,45 +146,43 @@ export default function TabSupplier() {
     }
     setSubmitting(true);
     setFormError('');
-    try {
-      const payload = {
-        nama: formNama.trim(),
-        alamat: formAlamat.trim(),
-        telepon: formTelepon.trim(),
-      };
-      if (editing) {
-        await updateSupplier(editing.id, payload);
-        toast.success('Supplier berhasil diperbarui.');
-      } else {
-        await createSupplier(payload);
-        toast.success('Supplier berhasil ditambahkan.');
-        setCurrentPage(1); // biar data baru langsung kelihatan
-      }
-      setModalOpen(false);
-      loadData();
-    } catch (err: any) {
-      const msg =
-        err.response?.data?.errors?.nama?.[0] || err.response?.data?.message || 'Gagal menyimpan supplier.';
-      setFormError(msg);
-    } finally {
-      setSubmitting(false);
-    }
+
+    const payload = {
+      nama: formNama.trim(),
+      alamat: formAlamat.trim(),
+      telepon: formTelepon.trim(),
+    };
+    // Sukses -> toast dari flash server (FlashToaster). Gagal validasi -> error bag per field.
+    const options = {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => {
+        setModalOpen(false);
+        if (!editing) setCurrentPage(1); // biar data baru langsung kelihatan
+      },
+      onError: (errors: Record<string, string>) =>
+        setFormError(errors.nama || errors.alamat || errors.telepon || 'Gagal menyimpan supplier.'),
+      onFinish: () => setSubmitting(false),
+    };
+
+    if (editing) router.put(`/master-data/supplier/${editing.id}`, payload, options);
+    else router.post('/master-data/supplier', payload, options);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    try {
-      await deleteSupplier(deleteTarget.id);
-      toast.success('Supplier berhasil dihapus.');
-      setDeleteTarget(null);
-      loadData();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Gagal menghapus supplier.');
-      setDeleteTarget(null);
-    } finally {
-      setDeleting(false);
-    }
+    // Sukses -> toast dari flash server. Gagal -> toast error + tutup modal (perilaku lama).
+    router.delete(`/master-data/supplier/${deleteTarget.id}`, {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => setDeleteTarget(null),
+      onError: (errors) => {
+        toast.error(errors.delete || 'Gagal menghapus supplier.');
+        setDeleteTarget(null);
+      },
+      onFinish: () => setDeleting(false),
+    });
   };
 
   return (
@@ -274,35 +244,15 @@ export default function TabSupplier() {
           </p>
 
           <div className="border border-slate-200 rounded-lg overflow-hidden">
-            {loading && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
-                      <th className="px-6 py-3.5 font-medium">Nama</th>
-                      <th className="px-6 py-3.5 font-medium">Alamat</th>
-                      <th className="px-6 py-3.5 font-medium">Telepon</th>
-                      <th className="px-6 py-3.5 font-medium text-right">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <SkeletonTable columns={4} rows={5} />
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {!loading && error && <p className="text-sm text-red-500 text-center py-8">{error}</p>}
-
-            {!loading && !error && items.length === 0 && (
+            {items.length === 0 && (
               <p className="text-sm text-slate-400 text-center py-8">Belum ada data supplier.</p>
             )}
 
-            {!loading && !error && items.length > 0 && filteredItems.length === 0 && (
+            {items.length > 0 && filteredItems.length === 0 && (
               <p className="text-sm text-slate-400 text-center py-8">Supplier tidak ditemukan.</p>
             )}
 
-            {!loading && !error && filteredItems.length > 0 && (
+            {filteredItems.length > 0 && (
               <>
                 {/* Desktop Table */}
                 <div className="hidden sm:block overflow-x-auto">

@@ -1,0 +1,14 @@
+{
+  "created": [
+    "app/Http/Controllers/MasterData/DepartemenWebController.php",
+    "app/Http/Controllers/MasterData/KategoriWebController.php",
+    "app/Http/Controllers/MasterData/SupplierWebController.php"
+  ],
+  "modified": [
+    "resources/js/components/masterData/TabDepartemen.tsx",
+    "resources/js/components/masterData/TabKategori.tsx",
+    "resources/js/components/masterData/TabSupplier.tsx",
+    "routes/web.php",
+    "app/Http/Controllers/MasterData/MasterDataPageController.php"
+  ]
+}

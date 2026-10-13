@@ -1,21 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, X, Tags, AlertCircle, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { SkeletonTable } from '../shared/skeleton';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 import Pagination from '../shared/Pagination';
 import SearchInput from '../shared/SearchInput';
 import { useBackdropClose } from '../../hooks/useBackdropClose';
 import KategoriExportModal from '../laporan/KategoriExportModal';
-import {
-  getKategori,
-  createKategori,
-  updateKategori,
-  deleteKategori,
-  type Kategori,
-  type KategoriFormValues,
-} from '../../api/masterData/kategori';
+import { router, usePage } from '@inertiajs/react';
+import type { Kategori } from '../../api/masterData/kategori';
 
 // Sekarang full CRUD -- beda dari sebelumnya (read-only 2 baris fix).
 // (REFACTOR KATEGORI BEBAS Fase 4: peringatan lama di sini -- yang bilang
@@ -26,14 +19,14 @@ import {
 // aman di-rename/hapus/tambah tanpa mempengaruhi fitur lain.)
 
 // pagination client-side -- data kategori dimuat penuh sekali lewat
-// getKategori(), jadi tinggal dipotong per halaman di sini (sama pola
+// props.kategori dari server, jadi tinggal dipotong per halaman di sini (sama pola
 // yang dipakai buat tab Departemen/Supplier di GenericMasterTab.tsx).
 const ITEMS_PER_PAGE = 10;
 
 export default function TabKategori() {
-  const [items, setItems] = useState<Kategori[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // Data dari server: MasterDataPageController -> props.kategori (hanya dikirim saat tab "kategori" aktif).
+  // Otomatis ter-update tiap mutasi (router.post/put/delete) selesai & server redirect balik ke halaman ini.
+  const items: Kategori[] = (usePage().props as unknown as { kategori?: Kategori[] }).kategori ?? [];
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Kategori | null>(null);
@@ -48,27 +41,6 @@ export default function TabKategori() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showExportModal, setShowExportModal] = useState(false);
   const [search, setSearch] = useState('');
-
-  const loadData = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const data = await getKategori();
-      setItems(data);
-    } catch (err: any) {
-      if (err.response?.status === 403) {
-        setError('Anda tidak punya akses ke halaman ini.');
-      } else {
-        setError('Gagal memuat data kategori.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   const filteredItems = items.filter((item) => item.nama.toLowerCase().includes(search.toLowerCase().trim()));
 
@@ -115,50 +87,36 @@ export default function TabKategori() {
     }
     setSubmitting(true);
     setFormError('');
-    try {
-      const payload: KategoriFormValues = { nama: formNama.trim() };
-      if (editing) {
-        await updateKategori(editing.id, payload);
-        toast.success('Kategori berhasil diperbarui.');
-      } else {
-        await createKategori(payload);
-        toast.success('Kategori berhasil ditambahkan.');
-        setCurrentPage(1); // biar kategori baru langsung kelihatan
-      }
-      setModalOpen(false);
-      loadData();
-    } catch (err: any) {
-      const msg =
-        err.response?.data?.errors?.nama?.[0] ||
-        err.response?.data?.message ||
-        'Gagal menyimpan kategori.';
-      setFormError(msg);
-    } finally {
-      setSubmitting(false);
-    }
+
+    const payload = { nama: formNama.trim() };
+    // Sukses -> toast dari flash server (FlashToaster). Gagal validasi -> error bag per field.
+    const options = {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => {
+        setModalOpen(false);
+        if (!editing) setCurrentPage(1); // biar kategori baru langsung kelihatan
+      },
+      onError: (errors: Record<string, string>) => setFormError(errors.nama || 'Gagal menyimpan kategori.'),
+      onFinish: () => setSubmitting(false),
+    };
+
+    if (editing) router.put(`/master-data/kategori/${editing.id}`, payload, options);
+    else router.post('/master-data/kategori', payload, options);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!deleteTarget) return;
     setDeleting(true);
     setDeleteError('');
-    try {
-      await deleteKategori(deleteTarget.id);
-      toast.success('Kategori berhasil dihapus.');
-      setDeleteTarget(null);
-      loadData();
-    } catch (err: any) {
-      // 422 khusus: masih dipakai baris Inventory (FK restrictOnDelete di backend).
-      if (err.response?.status === 422) {
-        setDeleteError(
-          err.response?.data?.message || 'Kategori ini masih dipakai oleh data Inventory dan tidak bisa dihapus.'
-        );
-      } else {
-        setDeleteError(err.response?.data?.message || 'Gagal menghapus kategori.');
-      }
-    } finally {
-      setDeleting(false);
-    }
+    // Sukses -> toast dari flash server. Gagal (masih dipakai Inventory) -> error bag "delete", tampil di modal.
+    router.delete(`/master-data/kategori/${deleteTarget.id}`, {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => setDeleteTarget(null),
+      onError: (errors) => setDeleteError(errors.delete || 'Gagal menghapus kategori.'),
+      onFinish: () => setDeleting(false),
+    });
   };
 
   return (
@@ -171,7 +129,6 @@ export default function TabKategori() {
           <button
             type="button"
             onClick={() => setShowExportModal(true)}
-            disabled={loading || !!error}
             className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
           >
             <Download size={16} />
@@ -180,7 +137,6 @@ export default function TabKategori() {
           <button
             type="button"
             onClick={openCreateModal}
-            disabled={loading || !!error}
             className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
           >
             <Plus size={16} />
@@ -204,27 +160,15 @@ export default function TabKategori() {
         </p>
 
         <div className="border border-slate-200 rounded-lg overflow-hidden">
-          {loading && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <tbody>
-                  <SkeletonTable columns={2} rows={5} />
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {!loading && error && <p className="text-sm text-red-500 text-center py-8">{error}</p>}
-
-          {!loading && !error && items.length === 0 && (
+          {items.length === 0 && (
             <p className="text-sm text-slate-400 text-center py-8">Belum ada data kategori.</p>
           )}
 
-          {!loading && !error && items.length > 0 && filteredItems.length === 0 && (
+          {items.length > 0 && filteredItems.length === 0 && (
             <p className="text-sm text-slate-400 text-center py-8">Kategori tidak ditemukan.</p>
           )}
 
-          {!loading && !error && filteredItems.length > 0 && (
+          {filteredItems.length > 0 && (
             <>
               {/* Desktop Table */}
               <div className="hidden sm:block overflow-x-auto">

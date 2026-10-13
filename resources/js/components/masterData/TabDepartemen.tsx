@@ -1,33 +1,26 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, Pencil, Trash2, X, Upload, Download, Loader2, AlertCircle, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
-import { SkeletonTable } from '../shared/skeleton';
 import Pagination from '../shared/Pagination';
 import SearchInput from '../shared/SearchInput';
 import { downloadStyledExcel } from '../../utils/excelReport';
 import { useBackdropClose } from '../../hooks/useBackdropClose';
-import {
-  getDepartemen,
-  createDepartemen,
-  updateDepartemen,
-  deleteDepartemen,
-  importDepartemen,
-  type Departemen,
-} from '../../api/masterData/departemen';
+import { router, usePage } from '@inertiajs/react';
+import type { Departemen } from '../../api/masterData/departemen';
 
 // Tab Departemen = CRUD nama doang. Semua UI & logikanya ada di file ini
 // (tabel, search, pagination, modal tambah/edit, hapus, import/export Excel).
 
-// pagination client-side -- data dimuat penuh sekali lewat getDepartemen(),
+// pagination client-side -- data dimuat penuh sekali lewat props.departemen (server),
 // tinggal dipotong per halaman di sini (pola yang sama dipakai di TabKategori).
 const ITEMS_PER_PAGE = 10;
 
 export default function TabDepartemen() {
-  const [items, setItems] = useState<Departemen[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // Data dari server: MasterDataPageController -> props.departemen (hanya dikirim saat tab "departemen" aktif).
+  // Otomatis ter-update tiap mutasi (router.post/put/delete) selesai & server redirect balik ke halaman ini.
+  const items: Departemen[] = (usePage().props as unknown as { departemen?: Departemen[] }).departemen ?? [];
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Departemen | null>(null);
@@ -48,26 +41,6 @@ export default function TabDepartemen() {
 
   // Catatan: state (search, halaman, modal) otomatis ke-reset tiap pindah tab
   // karena MasterData me-render komponen tab yang beda -> remount.
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      setItems(await getDepartemen());
-    } catch (err: any) {
-      if (err.response?.status === 403) {
-        setError('Anda tidak punya akses ke halaman ini.');
-      } else {
-        setError('Gagal memuat data departemen.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   const filteredItems = items.filter((item) => {
     const q = search.toLowerCase().trim();
     if (!q) return true;
@@ -89,23 +62,22 @@ export default function TabDepartemen() {
     setCurrentPage(1);
   }, [search]);
 
-  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setImportLoading(true);
-    try {
-      const res = await importDepartemen(file);
-      toast.success(res.message || 'Berhasil import data departemen.');
-      loadData();
-    } catch (err: any) {
-      const apiErrors: string[] | undefined = err.response?.data?.errors;
-      const msg = (apiErrors && apiErrors[0]) || err.response?.data?.message || 'Gagal import data departemen.';
-      toast.error(msg);
-    } finally {
-      setImportLoading(false);
-      if (fileInputRef.current) fileInputRef.current.value = ''; // reset biar bisa upload file yang sama lagi
-    }
+    // Sukses -> toast dari flash server (FlashToaster). Gagal -> error bag "file".
+    router.post('/master-data/departemen/import', { file }, {
+      forceFormData: true,
+      preserveScroll: true,
+      preserveState: true,
+      onError: (errors) => toast.error(errors.file || 'Gagal import data departemen.'),
+      onFinish: () => {
+        setImportLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = ''; // reset biar bisa upload file yang sama lagi
+      },
+    });
   };
 
   const handleExport = async () => {
@@ -164,41 +136,38 @@ export default function TabDepartemen() {
     }
     setSubmitting(true);
     setFormError('');
-    try {
-      const nama = formNama.trim();
-      if (editing) {
-        await updateDepartemen(editing.id, nama);
-        toast.success('Departemen berhasil diperbarui.');
-      } else {
-        await createDepartemen(nama);
-        toast.success('Departemen berhasil ditambahkan.');
-        setCurrentPage(1); // biar data baru langsung kelihatan
-      }
-      setModalOpen(false);
-      loadData();
-    } catch (err: any) {
-      const msg =
-        err.response?.data?.errors?.nama?.[0] || err.response?.data?.message || 'Gagal menyimpan departemen.';
-      setFormError(msg);
-    } finally {
-      setSubmitting(false);
-    }
+
+    const payload = { nama: formNama.trim() };
+    // Sukses -> toast dari flash server (FlashToaster). Gagal validasi -> error bag per field.
+    const options = {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => {
+        setModalOpen(false);
+        if (!editing) setCurrentPage(1); // biar data baru langsung kelihatan
+      },
+      onError: (errors: Record<string, string>) => setFormError(errors.nama || 'Gagal menyimpan departemen.'),
+      onFinish: () => setSubmitting(false),
+    };
+
+    if (editing) router.put(`/master-data/departemen/${editing.id}`, payload, options);
+    else router.post('/master-data/departemen', payload, options);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    try {
-      await deleteDepartemen(deleteTarget.id);
-      toast.success('Departemen berhasil dihapus.');
-      setDeleteTarget(null);
-      loadData();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Gagal menghapus departemen.');
-      setDeleteTarget(null);
-    } finally {
-      setDeleting(false);
-    }
+    // Sukses -> toast dari flash server. Gagal -> toast error + tutup modal (perilaku lama).
+    router.delete(`/master-data/departemen/${deleteTarget.id}`, {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => setDeleteTarget(null),
+      onError: (errors) => {
+        toast.error(errors.delete || 'Gagal menghapus departemen.');
+        setDeleteTarget(null);
+      },
+      onFinish: () => setDeleting(false),
+    });
   };
 
   return (
@@ -260,33 +229,15 @@ export default function TabDepartemen() {
           </p>
 
           <div className="border border-slate-200 rounded-lg overflow-hidden">
-            {loading && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
-                      <th className="px-6 py-3.5 font-medium">Nama</th>
-                      <th className="px-6 py-3.5 font-medium text-right">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <SkeletonTable columns={2} rows={5} />
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {!loading && error && <p className="text-sm text-red-500 text-center py-8">{error}</p>}
-
-            {!loading && !error && items.length === 0 && (
+            {items.length === 0 && (
               <p className="text-sm text-slate-400 text-center py-8">Belum ada data departemen.</p>
             )}
 
-            {!loading && !error && items.length > 0 && filteredItems.length === 0 && (
+            {items.length > 0 && filteredItems.length === 0 && (
               <p className="text-sm text-slate-400 text-center py-8">Departemen tidak ditemukan.</p>
             )}
 
-            {!loading && !error && filteredItems.length > 0 && (
+            {filteredItems.length > 0 && (
               <>
                 {/* Desktop Table */}
                 <div className="hidden sm:block overflow-x-auto">
