@@ -1,44 +1,28 @@
-import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useAppNavigate } from '../../hooks/useAppNavigate';
-import { verifyOtp, resendOtp } from '../../api/auth';
-import { useAuth } from '../../context/AuthContext';
+import { useState, type ReactNode } from 'react';
+import { router } from '@inertiajs/react';
+import { resendOtp } from '../../../api/auth';
 
-export default function VerifyOtp() {
+// registrationId dikirim controller (GET /verify-otp?registration_id=...).
+export default function VerifyOtp({ registrationId }: { registrationId: string }) {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [resendMsg, setResendMsg] = useState('');
-  const { setUser } = useAuth();
-  const navigate = useAppNavigate();
-  const location = useLocation();
 
-  const registrationId = location.state?.registrationId;
-
-  useEffect(() => {
-    if (!registrationId) {
-      navigate('/register');
-    }
-  }, [registrationId, navigate]);
-
-  if (!registrationId) {
-    return null;
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  // POST /verify-otp (WebAuthController). Sukses -> server membalas full redirect ke dashboard.
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
-    try {
-      const data = await verifyOtp(registrationId, otp);
-      localStorage.setItem('token', data.token);
-      setUser(data.user);
-      navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Kode OTP salah atau kedaluwarsa');
-    } finally {
-      setLoading(false);
-    }
+    router.post(
+      '/verify-otp',
+      { registration_id: registrationId, otp_code: otp },
+      {
+        onStart: () => setLoading(true),
+        onError: (errors) =>
+          setError(errors.otp_code || errors.registration_id || 'Kode OTP salah atau kedaluwarsa'),
+        onFinish: () => setLoading(false),
+      },
+    );
   };
 
   const handleResend = async () => {
@@ -100,3 +84,6 @@ export default function VerifyOtp() {
     </div>
   );
 }
+
+// Halaman tanpa sidebar/header: matikan persistent layout default (lihat inertia-app.tsx).
+VerifyOtp.layout = (page: ReactNode) => page;

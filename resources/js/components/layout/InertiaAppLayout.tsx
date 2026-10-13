@@ -19,7 +19,6 @@ export default function InertiaAppLayout({ children }: { children: ReactNode }) 
   const pathname = q === -1 ? clean : clean.slice(0, q);
   const search = q === -1 ? '' : clean.slice(q);
 
-  // opts.overlay (RouteModal) khusus SPA -- di mode Inertia diabaikan.
   const onNavigate = (to: string, opts?: ShellNavigateOptions) => {
     navigate(to, opts?.replace ? { replace: true } : undefined);
   };

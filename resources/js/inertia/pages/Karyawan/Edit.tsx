@@ -1,9 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useParams } from 'react-router-dom';
+import { usePage } from '@inertiajs/react';
 import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import toast from 'react-hot-toast';
 import api from '../../../api/axios';
-import RouteModal from '../../../components/shared/RouteModal';
+import PageCard from '../../../components/shared/PageCard';
 import Select from '../../../components/shared/Select';
 import SearchableSelect from '../../../components/shared/SearchableSelect';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/shared/FormControls';
@@ -84,7 +84,7 @@ function roleLabel(nama: string): string {
 }
 
 export default function EditKaryawanPage() {
-    const { id } = useParams<{ id: string }>();
+    const { id } = usePage().props as unknown as { id: number };
     const navigate = useAppNavigate();
 
     const [form, setForm] = useState<FormState>(initialForm);
@@ -138,11 +138,7 @@ export default function EditKaryawanPage() {
     }, [id]);
 
     function closeModal() {
-        if (window.history.state && window.history.state.idx > 0) {
-            navigate(-1);
-        } else {
-            navigate('/master-data?tab=karyawan', { replace: true });
-        }
+        navigate('/master-data?tab=karyawan', { replace: true });
     }
 
     function handleChange<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -203,7 +199,7 @@ export default function EditKaryawanPage() {
             };
             await api.put(`/karyawan/${id}`, payload);
             toast.success('Perubahan berhasil disimpan.');
-            navigate('/master-data?tab=karyawan');
+            navigate('/master-data?tab=karyawan', { replace: true });
         } catch (err: any) {
             if (err.response?.status === 422) {
                 const apiErrors = err.response.data.errors ?? {};
@@ -230,7 +226,7 @@ export default function EditKaryawanPage() {
         try {
             await api.delete(`/karyawan/${id}`);
             toast.success('User berhasil dihapus.');
-            navigate('/master-data?tab=karyawan');
+            navigate('/master-data?tab=karyawan', { replace: true });
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Gagal menghapus user.');
             setShowDeleteModal(false);
@@ -247,7 +243,7 @@ export default function EditKaryawanPage() {
 
     if (loading) {
         return (
-            <RouteModal title="Edit User" fallbackPath="/master-data?tab=karyawan" onClose={closeModal}>
+            <PageCard title="Edit User" onClose={closeModal}>
                 <div className="space-y-4">
                     {Array.from({ length: 6 }).map((_, i) => (
                         <div key={i} className="space-y-1.5">
@@ -256,15 +252,14 @@ export default function EditKaryawanPage() {
                         </div>
                     ))}
                 </div>
-            </RouteModal>
+            </PageCard>
         );
     }
 
     return (
         <>
-            <RouteModal
+            <PageCard
                 title="Edit User"
-                fallbackPath="/master-data?tab=karyawan"
                 onClose={closeModal}
             >
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -421,7 +416,7 @@ export default function EditKaryawanPage() {
                         </div>
                     </div>
                 </form>
-            </RouteModal>
+            </PageCard>
 
             {showSetPassword && (
                 <SetPasswordModal

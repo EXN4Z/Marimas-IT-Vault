@@ -189,9 +189,6 @@ interface SearchEntry {
 
 export interface ShellNavigateOptions {
   replace?: boolean;
-  // true = buka sebagai overlay (RouteModal): adapter SPA yang menerjemahkan jadi
-  // state.backgroundLocation. Di mode Inertia diabaikan.
-  overlay?: boolean;
 }
 
 export interface AppLayoutShellProps {
@@ -205,7 +202,7 @@ export interface AppLayoutShellProps {
 
 // Shell PRESENTATIONAL: sidebar, header, dropdown, mobile menu. Tidak boleh import
 // react-router maupun @inertiajs. Router-nya disuntik lewat props oleh adapter
-// (AppLayout.tsx untuk SPA, InertiaAppLayout.tsx untuk Inertia).
+// (InertiaAppLayout.tsx).
 export default function AppLayoutShell({
   pathname,
   search,
@@ -367,11 +364,7 @@ export default function AppLayoutShell({
   const handleContentScroll = () => {};
 
   const handleSearchResultClick = (path: string) => {
-    if (OVERLAY_PATHS.includes(path)) {
-      onNavigate(path, { overlay: true });
-    } else {
-      onNavigate(path);
-    }
+    onNavigate(path);
     setSearchOpen(false);
     setSearchQuery('');
     setSidebarOpen(false);
@@ -421,33 +414,19 @@ const handleLogout = async () => {
     await onLogout();
   };
 
-  // Route yang sekarang dirender sebagai overlay absolute (RouteModal) di App.tsx,
-  // bukan halaman penuh lagi — jadi navigasi ke sini WAJIB bawa state.backgroundLocation
-  // supaya halaman yang lagi kebuka tetap mounted & kelihatan di belakangnya, gak
-  // reload/hilang. Kalau path-nya gak ada di daftar ini, navigasi biasa aja.
-  const OVERLAY_PATHS = ['/karyawan/create'];
-
   const handleNavClick = (item: NavItem) => {
     if (item.children) {
       toggleDropdown(item);
       return;
     }
     if (item.path) {
-      if (OVERLAY_PATHS.includes(item.path)) {
-        onNavigate(item.path, { overlay: true });
-      } else {
-        onNavigate(item.path);
-      }
+      onNavigate(item.path);
       setSidebarOpen(false);
     }
   };
 
   const handleChildClick = (path: string) => {
-    if (OVERLAY_PATHS.includes(path)) {
-      onNavigate(path, { overlay: true });
-    } else {
-      onNavigate(path);
-    }
+    onNavigate(path);
     setSidebarOpen(false);
   };
 

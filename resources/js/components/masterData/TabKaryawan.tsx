@@ -91,23 +91,31 @@ function initials(name: string): string {
         .toUpperCase();
 }
 
+// Create/Detail/Edit sekarang halaman Inertia sendiri, jadi tab ini ke-unmount waktu user
+// membukanya. Tanpa ini, waktu balik: pencarian/filter/halaman ke-reset dan list muncul skeleton
+// lagi. Disimpan di level modul (hidup selama sesi SPA; hilang saat hard refresh / logout).
+const listMemo: { users: User[] | null; search: string; activeTab: TabKey; currentPage: number } = {
+    users: null,
+    search: '',
+    activeTab: 'semua',
+    currentPage: 1,
+};
+
 // Dipindah dari halaman /karyawan (Karyawan.tsx) -- sekarang jadi tab
 // "Data User" di dalam Master Data, sepola sama tab Inventory/Kategori/dst
 // (lihat MasterData.tsx). Route /karyawan lama di-redirect ke sini.
 export default function TabKaryawan() {
-    // SEMENTARA (P10): halaman Karyawan masih SPA (overlay RouteModal) -> useAppNavigate = full page load.
-    // Overlay-nya dikerjakan di P12.
     const navigate = useAppNavigate();
-    const [users, setUsers] = useState<User[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
+    const [users, setUsers] = useState<User[]>(listMemo.users ?? []);
+    const [loading, setLoading] = useState<boolean>(listMemo.users === null);
     const [errorMsg, setErrorMsg] = useState<string>('');
     const [currentRole, setCurrentRole] = useState<string | null>(null);
 
-    const [search, setSearch] = useState<string>('');
-    const [activeTab, setActiveTab] = useState<TabKey>('semua');
+    const [search, setSearch] = useState<string>(listMemo.search);
+    const [activeTab, setActiveTab] = useState<TabKey>(listMemo.activeTab);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
     const [deleting, setDeleting] = useState<boolean>(false);
-    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [currentPage, setCurrentPage] = useState<number>(listMemo.currentPage);
     const ITEMS_PER_PAGE = 10;
 
     // BARU: state untuk import Excel karyawan
@@ -122,8 +130,8 @@ export default function TabKaryawan() {
     // "Data User" tanpa pindah halaman.
     const [showExportModal, setShowExportModal] = useState<boolean>(false);
 
-    function loadUsers() {
-        setLoading(true);
+    function loadUsers(silent = false) {
+        if (!silent) setLoading(true);
         api
             .get<User[]>('/karyawan')
             .then((res) => setUsers(res.data))
@@ -139,7 +147,7 @@ export default function TabKaryawan() {
 
     useEffect(() => {
         api.get<{ role: string }>('/user').then((res) => setCurrentRole(res.data.role)).catch(() => {});
-        loadUsers();
+        loadUsers(listMemo.users !== null);
     }, []);
 
     const isAdmin = currentRole === 'admin';
@@ -154,9 +162,23 @@ export default function TabKaryawan() {
     }, [users, search, activeTab]);
 
     // Reset ke halaman 1 setiap kali pencarian atau tab berubah
+    const prevFilter = useRef({ search, activeTab });
     useEffect(() => {
+        if (prevFilter.current.search === search && prevFilter.current.activeTab === activeTab) return;
+        prevFilter.current = { search, activeTab };
         setCurrentPage(1);
     }, [search, activeTab]);
+
+    // simpan state list buat dipulihkan waktu tab ini di-mount lagi
+    useEffect(() => {
+        listMemo.search = search;
+        listMemo.activeTab = activeTab;
+        listMemo.currentPage = currentPage;
+    }, [search, activeTab, currentPage]);
+
+    useEffect(() => {
+        if (!loading && !errorMsg) listMemo.users = users;
+    }, [users, loading, errorMsg]);
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
 

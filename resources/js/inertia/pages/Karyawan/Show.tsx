@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { usePage } from '@inertiajs/react';
 import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import toast from 'react-hot-toast';
 import {
@@ -8,7 +8,7 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import api from '../../../api/axios';
-import RouteModal from '../../../components/shared/RouteModal';
+import PageCard from '../../../components/shared/PageCard';
 import { Skeleton } from '../../../components/shared/skeleton';
 
 type Role = 'admin' | 'user';
@@ -57,7 +57,7 @@ function formatTanggal(value: string | null): string {
 }
 
 export default function KaryawanDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id } = usePage().props as unknown as { id: number };
   const navigate = useAppNavigate();
 
   const [user, setUser] = useState<User | null>(null);
@@ -84,20 +84,15 @@ export default function KaryawanDetailPage() {
   }, [id]);
 
   function closeModal() {
-    if (window.history.state && window.history.state.idx > 0) {
-      navigate(-1);
-    } else {
-      navigate('/master-data?tab=karyawan', { replace: true });
-    }
+    navigate('/master-data?tab=karyawan', { replace: true });
   }
 
   if (loading) {
     return (
-      <RouteModal
+      <PageCard
         title="Detail Karyawan"
         description="Informasi profil dan penempatan kerja karyawan."
         maxWidthClassName="max-w-2xl"
-        fallbackPath="/master-data?tab=karyawan"
         onClose={closeModal}
       >
         <div className="space-y-4 py-2">
@@ -117,16 +112,15 @@ export default function KaryawanDetailPage() {
             ))}
           </div>
         </div>
-      </RouteModal>
+      </PageCard>
     );
   }
 
   if (errorMsg || !user) {
     return (
-      <RouteModal
+      <PageCard
         title="Detail Karyawan"
         maxWidthClassName="max-w-2xl"
-        fallbackPath="/master-data?tab=karyawan"
         onClose={closeModal}
       >
         <div className="text-center py-8">
@@ -142,18 +136,17 @@ export default function KaryawanDetailPage() {
             Kembali
           </button>
         </div>
-      </RouteModal>
+      </PageCard>
     );
   }
 
   const isAktif = user.status !== 'nonaktif';
 
   return (
-    <RouteModal
+    <PageCard
       title="Detail Karyawan"
       description="Informasi profil dan penempatan kerja karyawan."
       maxWidthClassName="max-w-2xl"
-      fallbackPath="/master-data?tab=karyawan"
       onClose={closeModal}
     >
       <div className="space-y-6">
@@ -232,7 +225,7 @@ export default function KaryawanDetailPage() {
           </button>
         </div>
       </div>
-    </RouteModal>
+    </PageCard>
   );
 }
 

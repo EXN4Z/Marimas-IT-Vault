@@ -1,49 +1,34 @@
 import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 
 interface RouteModalProps {
   title: string;
   description?: string;
   children: ReactNode;
-  /** Custom close handler. Default-nya balik ke halaman sebelumnya (navigate(-1)). */
-  onClose?: () => void;
-  /** Fallback path kalau modal ini diakses langsung (refresh / buka link) tanpa background page. */
-  fallbackPath?: string;
+  /** Dipanggil waktu modal ditutup (tombol X, klik backdrop, atau Esc). */
+  onClose: () => void;
   maxWidthClassName?: string;
 }
 
 /**
- * Overlay untuk route "child" (create/edit) yang dipasangkan sama App.tsx
- * lewat pola background-location (lihat App.tsx). Halaman di belakangnya
- * TETAP mounted & terlihat — bukan di-unmount/loading ulang — persis
- * seperti ScanQrModal, tapi ini terikat ke route-nya sendiri jadi bisa
- * diakses/di-refresh lewat URL (/karyawan/create, /karyawan/1/edit, dst).
+ * Modal overlay biasa (state dikontrol parent lewat onClose). Dipakai tab Cabang & Perusahaan.
+ * Tidak bergantung ke react-router, jadi aman dirender di halaman Inertia.
+ * Create/Detail/Edit Karyawan sekarang halaman Inertia sendiri (lihat PageCard.tsx).
  */
 export default function RouteModal({
   title,
   description,
   children,
   onClose,
-  fallbackPath = '/',
   maxWidthClassName = 'max-w-xl',
 }: RouteModalProps) {
-  const navigate = useNavigate();
   // BARU: fix bug "drag-select teks lalu kepeleset ke backdrop = modal ketutup".
   // Klik dianggap "nutup modal" cuma kalau mousedown DAN mouseup dua-duanya
   // kena backdrop-nya sendiri (bukan hasil drag yang start-nya dari dalam panel).
   const mouseDownOnBackdrop = useRef(false);
 
   function handleClose() {
-    if (onClose) return onClose();
-    // Kalau ada history dari dalam app (background location), mundur satu langkah
-    // supaya balik ke halaman sebelumnya tanpa reload. Kalau tidak ada (akses langsung),
-    // fallback ke path induknya.
-    if (window.history.state && window.history.state.idx > 0) {
-      navigate(-1);
-    } else {
-      navigate(fallbackPath, { replace: true });
-    }
+    onClose();
   }
 
   useEffect(() => {

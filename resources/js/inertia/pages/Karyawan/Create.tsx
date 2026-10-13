@@ -3,7 +3,7 @@ import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import toast from 'react-hot-toast';
 import { User, Lock, Building2, Eye, EyeOff } from 'lucide-react';
 import api from '../../../api/axios';
-import RouteModal from '../../../components/shared/RouteModal';
+import PageCard from '../../../components/shared/PageCard';
 import Select from '../../../components/shared/Select';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/shared/FormControls';
 import { getDepartemen, type Departemen } from '../../../api/masterData/departemen';
@@ -69,11 +69,7 @@ export default function CreateKaryawanPage() {
     const selectableRoles = roleList.filter((r) => r.nama !== 'cabang');
 
     function closeModal() {
-        if (window.history.state && window.history.state.idx > 0) {
-            navigate(-1);
-        } else {
-            navigate('/master-data?tab=karyawan', { replace: true });
-        }
+        navigate('/master-data?tab=karyawan', { replace: true });
     }
 
     function handleChange<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -127,7 +123,7 @@ export default function CreateKaryawanPage() {
             };
             await api.post('/karyawan', payload);
             toast.success('User berhasil dibuat.');
-            navigate('/master-data?tab=karyawan');
+            navigate('/master-data?tab=karyawan', { replace: true });
         } catch (err: any) {
             if (err.response?.status === 422) {
                 setErrors(err.response.data.errors ?? {});
@@ -143,10 +139,9 @@ export default function CreateKaryawanPage() {
     }
 
     return (
-        <RouteModal
+        <PageCard
             title="Tambah User"
             maxWidthClassName="max-w-2xl"
-            fallbackPath="/master-data?tab=karyawan"
             onClose={closeModal}
         >
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -301,6 +296,6 @@ export default function CreateKaryawanPage() {
                     </ButtonSubmit>
                 </div>
             </form>
-        </RouteModal>
+        </PageCard>
     );
 }

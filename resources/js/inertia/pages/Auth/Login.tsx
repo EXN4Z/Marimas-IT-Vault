@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useAppNavigate } from '../../hooks/useAppNavigate';
+import { useEffect, useState, type ReactNode } from 'react';
+import { router } from '@inertiajs/react';
 import {
   User,
   Lock,
@@ -11,12 +10,7 @@ import {
   Loader2,
   ArrowRight,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { login } from '../../api/auth';
-import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
-import { Skeleton } from '../../components/shared/skeleton';
-import '../../index.css';
+import { useTheme } from '../../../context/ThemeContext';
 
 export default function Login() {
   const [loginId, setLoginId] = useState('');
@@ -24,73 +18,33 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { user, isLoading, setUser } = useAuth();
   const { isDark, setTheme } = useTheme();
-  const navigate = useAppNavigate();
-  const redirected = useRef(false);
-  const location = useLocation();
 
+  // Autentikasi sekarang 100% session cookie. Buang sisa token Bearer / user dari login model lama.
   useEffect(() => {
-    if (isLoading || !user || redirected.current) return;
-    redirected.current = true;
-    // P8: /dashboard sekarang halaman Inertia (butuh session cookie). Kalau token masih valid tapi
-    // session sudah habis, server melempar balik ke /login -> loop tanpa ujung. Balik ke sini <5 detik
-    // setelah redirect = session ditolak: buang token, minta login ulang. (Hapus di P13.)
-    const last = Number(sessionStorage.getItem('dashboard_redirect_at') || 0);
-    if (Date.now() - last < 5000) {
-      sessionStorage.removeItem('dashboard_redirect_at');
+    try {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      setUser(null);
-      return;
+    } catch {
+      /* storage diblokir -> abaikan */
     }
-    sessionStorage.setItem('dashboard_redirect_at', String(Date.now()));
-    navigate('/dashboard', { replace: true });
-  }, [isLoading, user, navigate, setUser]);
+  }, []);
 
-  useEffect(() => {
-    const state = location.state as { passwordReset?: boolean } | null;
-    if (state?.passwordReset) {
-      toast('Password telah diganti, silahkan cek email Anda.', {
-        icon: '🔒',
-        duration: 4000,
-      });
-      navigate(location.pathname, { replace: true, state: null });
-    }
-  }, [location.pathname, location.state, navigate]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  // POST /login (WebAuthController). Sukses -> server membalas full redirect ke dashboard/intended.
+  // Gagal -> props errors.login dari server.
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
-    try {
-      const data = await login(loginId, password);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      setUser(data.user);
-      navigate('/dashboard', { replace: true });
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Email/No HP/Nama atau password salah');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex bg-slate-50 dark:bg-[#121214]">
-        <div className="hidden lg:block lg:w-1/2 bg-slate-900" />
-        <div className="w-full lg:w-1/2 flex items-center justify-center px-6">
-          <div className="w-full max-w-md space-y-4">
-            <Skeleton className="h-6 w-32 rounded mb-6" />
-            <Skeleton className="h-12 w-full rounded-xl" />
-            <Skeleton className="h-12 w-full rounded-xl" />
-            <Skeleton className="h-12 w-full rounded-xl" />
-          </div>
-        </div>
-      </div>
+    router.post(
+      '/login',
+      { login: loginId, password },
+      {
+        onStart: () => setLoading(true),
+        onError: (errors) => setError(errors.login || errors.password || 'Email/No HP/Nama atau password salah'),
+        onFinish: () => setLoading(false),
+      },
     );
-  }
+  };
 
   return (
     <div className="min-h-screen flex bg-slate-50 dark:bg-[#121214] text-slate-900 dark:text-zinc-100 transition-colors">
@@ -294,3 +248,6 @@ export default function Login() {
     </div>
   );
 }
+
+// Halaman tanpa sidebar/header: matikan persistent layout default (lihat inertia-app.tsx).
+Login.layout = (page: ReactNode) => page;

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 
 use App\Actions\Profile\UpdatePassword;
+use App\Actions\Auth\ResolveLoginUser;
+use App\Actions\Auth\VerifyRegistrationOtp;
 use App\Actions\Profile\UpdateProfile;
 use App\Mail\OtpMail;
 use App\Models\User;
@@ -55,30 +57,8 @@ class AuthController extends Controller
             'otp_code' => 'required|string',
         ]);
 
-        $data = Cache::get("register:{$request->registration_id}");
-
-        if (!$data) {
-            throw ValidationException::withMessages([
-                'otp_code' => ['Sesi registrasi kedaluwarsa, silakan daftar ulang.'],
-            ]);
-        }
-
-        if ((string) $data['otp_code'] !== (string) $request->otp_code) {
-            throw ValidationException::withMessages([
-                'otp_code' => ['Kode OTP salah.'],
-            ]);
-        }
-
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone' => $data['phone'],
-            'password' => $data['password'],
-            'role' => 'user',
-            'phone_verified_at' => now(),
-        ]);
-
-        Cache::forget("register:{$request->registration_id}");
+        // Cek OTP + bikin user ada di App\Actions\Auth\VerifyRegistrationOtp (dipakai juga verify-otp web).
+        $user = VerifyRegistrationOtp::run($request->registration_id, $request->otp_code);
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
@@ -126,24 +106,8 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        // BARU: login sekarang bisa pakai email, no HP, ATAU nama. Nama tidak
-        // unik di tabel users, jadi kalau ada beberapa akun dengan nama yang
-        // sama, cek password ke SEMUA kandidat -- biar tetap masuk ke akun
-        // yang password-nya cocok, bukan cuma ambil satu secara acak.
-        $candidates = User::where('email', $request->login)
-            ->orWhere('phone', $request->login)
-            ->orWhere('name', $request->login)
-            ->get();
-
-        $user = $candidates->first(
-            fn (User $candidate) => Hash::check($request->password, $candidate->password)
-        );
-
-        if (!$user) {
-            throw ValidationException::withMessages([
-                'login' => ['Email/No HP/Nama atau password salah.'],
-            ]);
-        }
+        // Logika kandidat login (email/no HP/nama + cek password) ada di App\Actions\Auth\ResolveLoginUser (dipakai juga login web).
+        $user = ResolveLoginUser::run((string) $request->login, (string) $request->password);
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
