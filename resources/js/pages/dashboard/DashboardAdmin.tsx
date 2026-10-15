@@ -1,5 +1,8 @@
 import { useAppNavigate } from '../../hooks/useAppNavigate';
-import { useDashboardCore, useDashboardAnalytics } from './useDashboardData';
+import { usePage } from '@inertiajs/react';
+import { useSharedProps } from '../../hooks/useSharedProps';
+import { useDashboardNotifications } from './useDashboardNotifications';
+import type { DashboardAdminData } from '../../types/dashboard';
 import { Boxes, Package, AlertTriangle, ShieldAlert } from 'lucide-react';
 import {
   WelcomeHeader,
@@ -16,9 +19,18 @@ import {
   DashboardSkeleton,
 } from './widgets';
 
+// [F8-INERTIA] Data dari props `analitik` (deferred; DashboardPageController -> DashboardQuery::admin), bukan axios/useQuery.
+// Selama belum datang -> skeleton. User dari shared props (auth.user). Notifikasi masih hook sendiri (F9).
 export default function DashboardAdmin() {
   const navigate = useAppNavigate();
-  const { loading, error, user, notifications, handleMarkAsRead, departemen } = useDashboardCore();
+  const { auth } = useSharedProps();
+  const user = auth?.user ?? null;
+  const { notifications, handleMarkAsRead } = useDashboardNotifications(user?.id);
+  const analitik = (usePage().props as unknown as { analitik?: DashboardAdminData | null }).analitik ?? null;
+
+  if (!analitik) {
+    return <DashboardSkeleton variant="full" />;
+  }
 
   const {
     ringkasanInventory,
@@ -26,16 +38,9 @@ export default function DashboardAdmin() {
     inventoryPerhatian,
     statusInventoryDistribusi,
     inventoryPerMerek,
-    aktivitasInventoryKalender,
-  } = useDashboardAnalytics(true, {
-    statusInventoryDistribusi: true,
-    inventoryPerMerek: true,
-    aktivitasInventoryTerbaru: false,
-  });
-
-  if (loading) {
-    return <DashboardSkeleton variant="full" />;
-  }
+    aktivitasKalender: aktivitasInventoryKalender,
+    departemen,
+  } = analitik;
 
   const inventoryTotal = ringkasanInventory?.total ?? 0;
   const tersediaCount = ringkasanInventory?.tersedia ?? 0;
@@ -57,12 +62,6 @@ export default function DashboardAdmin() {
       <WelcomeHeader
         user={user}
       />
-
-      {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl px-3 py-2">
-          {error}
-        </div>
-      )}
 
       {/* Row 1: High-Density Bento KPIs, each with a "Lihat detail" footer link */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">

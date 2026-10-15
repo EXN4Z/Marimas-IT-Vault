@@ -1,17 +1,14 @@
 import { Wrench, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
-import type { InventoryPenanganan } from '../../../api/transaksi/inventoryPenanganan';
 import type { TabStatus } from './helpers';
 
 interface PenangananKpiCardsProps {
   handleTabChange: (tab: TabStatus) => void;
   activeTab: TabStatus;
-  menungguList: InventoryPenanganan[];
-  diperbaikiList: InventoryPenanganan[];
-  diperbaikiSelesaiList: InventoryPenanganan[];
-  rusakBeratList: InventoryPenanganan[];
+  // [F6-INERTIA] jumlah per tab dari server (props.penanganan.counts), bukan panjang list di klien.
+  counts: Record<TabStatus, number>;
 }
 
-export default function PenangananKpiCards({ handleTabChange, activeTab, menungguList, diperbaikiList, diperbaikiSelesaiList, rusakBeratList }: PenangananKpiCardsProps) {
+export default function PenangananKpiCards({ handleTabChange, activeTab, counts }: PenangananKpiCardsProps) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <button
@@ -29,7 +26,7 @@ export default function PenangananKpiCards({ handleTabChange, activeTab, menungg
             <Clock size={16} />
           </span>
         </div>
-        <div className="text-2xl font-bold text-slate-900">{menungguList.length}</div>
+        <div className="text-2xl font-bold text-slate-900">{counts.menunggu}</div>
         <p className="text-xs text-slate-500 mt-1">Laporan perlu verifikasi</p>
       </button>
 
@@ -48,7 +45,7 @@ export default function PenangananKpiCards({ handleTabChange, activeTab, menungg
             <Wrench size={16} />
           </span>
         </div>
-        <div className="text-2xl font-bold text-slate-900">{diperbaikiList.length}</div>
+        <div className="text-2xl font-bold text-slate-900">{counts.diperbaiki}</div>
         <p className="text-xs text-slate-500 mt-1">Dalam proses teknisi</p>
       </button>
 
@@ -67,7 +64,7 @@ export default function PenangananKpiCards({ handleTabChange, activeTab, menungg
             <CheckCircle2 size={16} />
           </span>
         </div>
-        <div className="text-2xl font-bold text-slate-900">{diperbaikiSelesaiList.length}</div>
+        <div className="text-2xl font-bold text-slate-900">{counts.diperbaiki_selesai}</div>
         <p className="text-xs text-slate-500 mt-1">Siap pakai kembali</p>
       </button>
 
@@ -86,7 +83,7 @@ export default function PenangananKpiCards({ handleTabChange, activeTab, menungg
             <AlertTriangle size={16} />
           </span>
         </div>
-        <div className="text-2xl font-bold text-slate-900">{rusakBeratList.length}</div>
+        <div className="text-2xl font-bold text-slate-900">{counts.rusak_berat}</div>
         <p className="text-xs text-slate-500 mt-1">Afkir / write-off aset</p>
       </button>
     </div>

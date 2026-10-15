@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import Select from '../shared/Select';
-import { selesaikanPenangananInventory } from '../../api/transaksi/inventoryPenanganan';
+import { router } from '@inertiajs/react';
 import type { InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
 import type { Inventory } from '../../api/masterData/inventory';
 import { formatJenisKerusakan } from '../../utils/inventoryHelpers';
@@ -40,28 +40,24 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     setSubmitting(true);
     setError('');
-    try {
-      await selesaikanPenangananInventory(penanganan.id, {
-        tanggal_selesai: tanggalSelesai,
-        harga_jasa: hargaJasa.trim() ? Number(hargaJasa) : null,
-        biaya_komponen: biayaKomponen.trim() ? Number(biayaKomponen) : null,
-        hasil,
-        catatan: catatan.trim() || null,
-      });
-      onSuccess();
-    } catch (err: any) {
-      setError(
-        err.response?.data?.errors?.biaya_komponen?.[0] ||
-        err.response?.data?.errors?.harga_jasa?.[0] ||
-        err.response?.data?.message ||
-        'Gagal menandai penanganan selesai.'
-      );
-    } finally {
-      setSubmitting(false);
-    }
+    // [F6-INERTIA] router.put ke /penanganan-inventory/{id}. Sukses -> toast dari flash server (FlashToaster); gagal -> pesan di modal.
+    router.put(`/penanganan-inventory/${penanganan.id}`, {
+      tanggal_selesai: tanggalSelesai,
+      harga_jasa: hargaJasa.trim() ? Number(hargaJasa) : null,
+      biaya_komponen: biayaKomponen.trim() ? Number(biayaKomponen) : null,
+      hasil,
+      catatan: catatan.trim() || null,
+    }, {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => onSuccess(),
+      onError: (errors) =>
+        setError(errors.biaya_komponen || errors.harga_jasa || String(Object.values(errors)[0] || 'Gagal menandai penanganan selesai.')),
+      onFinish: () => setSubmitting(false),
+    });
   };
 
   return (

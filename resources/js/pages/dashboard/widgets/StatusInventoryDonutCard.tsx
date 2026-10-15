@@ -1,7 +1,7 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { Layers } from 'lucide-react';
 import { useTheme } from '../../../context/ThemeContext';
-import type { StatusInventoryDistribusi } from '../useDashboardData';
+import type { StatusInventoryDistribusi } from '../../../types/dashboard'; // [F8-INERTIA]
 import { THEME, cardClass } from './theme';
 import { SectionHeader, LegendDot } from './primitives';
 

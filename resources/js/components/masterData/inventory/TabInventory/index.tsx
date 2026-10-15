@@ -13,11 +13,7 @@ import ConfirmDeleteModal from '../../../shared/ConfirmDeleteModal';
 import { useAuth } from '../../../../context/AuthContext';
 import type { Inventory, InventoryStatus } from '../../../../api/masterData/inventory';
 import type { InventoryPemakai } from '../../../../api/transaksi/inventoryPemakai';
-import {
-  deletePenangananInventory,
-  terimaPenangananInventory,
-  type InventoryPenanganan,
-} from '../../../../api/transaksi/inventoryPenanganan';
+import type { InventoryPenanganan } from '../../../../api/transaksi/inventoryPenanganan';
 import type { InventoryIndukOpsi, InventoryList, InventoryOpsi, InventoryRow } from '../../../../types/inventory';
 import { STATUS_LABEL } from './helpers';
 import InventoryRowActions from './InventoryRowActions';
@@ -38,7 +34,8 @@ import { handlePrintSerahTerima, handlePrintPengembalian } from './printHelpers'
 //  - detail (riwayat lengkap) diminta lewat partial reload props.inventoryDetail (?detail=<id>, URL browser tidak berubah);
 //  - auto-refresh 5 detik = partial reload async (list + "sedang dipakai" + detail yang lagi terbuka).
 // [F5-INERTIA] Serah-terima / pengembalian / hapus riwayat pemakaian = Inertia (router.post|delete ke /master-data/inventory*, toast dari
-// flash server, struk dicetak dari flash.struk). Lapor kerusakan / penanganan masih lewat axios (dipindah di F6); setelah
+// flash server, struk dicetak dari flash.struk). [F6-INERTIA] Lapor kerusakan / terima / selesai / hapus penanganan = Inertia juga
+// (router.* ke /penanganan-inventory*, toast dari flash server) -- tidak ada axios lagi di tab ini; setelah
 // sukses, tab ini cukup memuat ulang props lewat segarkan().
 interface InventoryPageProps {
   inventory?: InventoryList;
@@ -104,7 +101,7 @@ export default function TabInventory() {
   const detailLoading = detailId !== null && detail === null;
 
   // Serah-terima 1 inventory utama (kelengkapan ikut otomatis di server) & pengembalian: modal -> router.post (F5).
-  // Lapor kerusakan & penanganan selesai: masih axios (F6).
+  // Lapor kerusakan & penanganan selesai: modal -> router.post|put ke /penanganan-inventory* (F6).
   const [serahTerimaInventory, setSerahTerimaInventory] = useState<Inventory | null>(null);
   const [pengembalianTarget, setPengembalianTarget] = useState<{ inventory: Inventory; pemakai: InventoryPemakai } | null>(null);
 
@@ -348,30 +345,30 @@ export default function TabInventory() {
   };
 
   // ------------------------------------------------------------------ aksi riwayat di modal detail
-  // (hapus riwayat pemakaian = Inertia [F5-INERTIA]; terima/hapus penanganan = axios sampai F6)
+  // (hapus riwayat pemakaian [F5-INERTIA], terima/hapus penanganan [F6-INERTIA] = router.* ke route web, toast dari flash server)
 
-  async function handleTerimaPenanganan(id: number) {
+  function handleTerimaPenanganan(id: number) {
     setHistoryActionError('');
     setTerimaLoadingId(id);
-    try {
-      await terimaPenangananInventory(id);
-      segarkan();
-    } catch (err: any) {
-      setHistoryActionError(err.response?.data?.message || 'Gagal menerima laporan penanganan.');
-    } finally {
-      setTerimaLoadingId(null);
-    }
+    // Sukses -> toast dari flash server; gagal -> error bag "terima" tampil di modal detail.
+    router.post(`/penanganan-inventory/${id}/terima`, {}, {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => segarkan(),
+      onError: (errors) => setHistoryActionError(errors.terima || 'Gagal menerima laporan penanganan.'),
+      onFinish: () => setTerimaLoadingId(null),
+    });
   }
 
-  async function handleDeletePenanganan(id: number) {
+  function handleDeletePenanganan(id: number) {
     if (!confirm('Hapus riwayat penanganan ini?')) return;
     setHistoryActionError('');
-    try {
-      await deletePenangananInventory(id);
-      segarkan();
-    } catch (err: any) {
-      setHistoryActionError(err.response?.data?.message || 'Gagal menghapus riwayat penanganan.');
-    }
+    router.delete(`/penanganan-inventory/${id}`, {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => segarkan(),
+      onError: (errors) => setHistoryActionError(String(Object.values(errors)[0] || 'Gagal menghapus riwayat penanganan.')),
+    });
   }
 
   function handleDeletePemakai(id: number) {
@@ -616,8 +613,7 @@ export default function TabInventory() {
           inventory={perbaikanInventoryTarget}
           onClose={() => setPerbaikanInventoryTarget(null)}
           onSuccess={() => {
-            setPerbaikanInventoryTarget(null);
-            toast.success('Laporan kerusakan berhasil dikirim.');
+            setPerbaikanInventoryTarget(null); // toast sukses dari flash server (FlashToaster)
             segarkan();
           }}
         />

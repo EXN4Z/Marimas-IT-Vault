@@ -3,15 +3,26 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Queries\DashboardQuery;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
+// [F8-INERTIA] GET /dashboard   (middleware: auth, lihat routes/web.php)
+// Semua role boleh. Data dikirim sebagai deferred props (halaman tampil dulu, skeleton sampai data datang):
+//  - admin     -> `analitik` (ringkasan/tren/status inventory, distribusi departemen, aktivitas kalender)
+//  - non-admin -> `pribadi`  (inventory milik sendiri, ringkasan & feed aktivitas milik sendiri)
+// DashboardAdmin vs DashboardUser dipilih di sisi React dari auth.user.role (sama dengan isAdmin() di sini).
+// Notifikasi sengaja belum di sini (F9).
 class DashboardPageController extends Controller
 {
-    // GET /dashboard   (middleware: auth, lihat routes/web.php)
-    // Semua role boleh. DashboardAdmin vs DashboardUser dipilih di sisi React dari auth.user.role.
-    // Data dashboard SENGAJA masih lewat /api (react-query) -- dipindah ke props di tahap F9.
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        return Inertia::render('Dashboard/Index');
+        $user = $request->user();
+        $admin = $user->isAdmin();
+
+        return Inertia::render('Dashboard/Index', [
+            'analitik' => $admin ? Inertia::defer(fn () => DashboardQuery::admin($user)) : null,
+            'pribadi' => !$admin ? Inertia::defer(fn () => DashboardQuery::pribadi($user)) : null,
+        ]);
     }
 }

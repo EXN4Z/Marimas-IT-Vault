@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
+import { router, usePage } from '@inertiajs/react';
 import { Images, X, ChevronLeft, ChevronRight, HandCoins, Undo2, Wrench, Eye, Package, ImageOff } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import ScrollableTabBar, { type ScrollableTabItem } from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
 import Tooltip from '../shared/Tooltip';
-import { getFotoDasarInventory, type Inventory } from '../../api/masterData/inventory';
-import { getFotoPemakaiInventory, type FotoPemakaiEntry } from '../../api/transaksi/inventoryPemakai';
-import { getFotoKerusakanInventory, type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
+import type { Inventory } from '../../api/masterData/inventory';
+import type { LaporanFotoProps } from '../../types/laporan';
+import type { FotoPemakaiEntry } from '../../api/transaksi/inventoryPemakai';
+import type { InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
 import { namaPemakai, namaPelaporPenanganan, formatTanggalWaktuId, formatJenisKerusakan } from '../../utils/inventoryHelpers';
 import { SkeletonTable } from '../shared/skeleton';
 
@@ -35,136 +37,83 @@ const TABS: ScrollableTabItem<FotoTab>[] = [
   { key: 'rusak', label: 'Rusak', icon: Wrench },
 ];
 
-// State generik yang sama bentuknya buat ketiga tab (entries beda tipe,
-// tapi search/page/lastPage/total/loading semuanya sama pola), jadi
-// masing-masing tab punya pagination & pencarian sendiri-sendiri --
-// pindah tab gak reset tab lain.
+// [F7-INERTIA] Data dari props `foto` (LaporanPageController -> FotoInventoryQuery): server cuma mengirim SATU sub-tab (yang
+// aktif) per halaman, dipaginasi server. Sub-tab, pencarian, dan halaman hidup di query string (?tab=foto_inventory&sub=&search=&page=).
+// Sub-tab lain tidak punya data di klien (state-nya kosong), jadi pindah sub-tab = visit baru (pencarian & halaman direset).
 interface TabState<T> {
   entries: T[];
   loading: boolean;
-  // true begitu fetch pertama kali kelar (sukses ATAUPUN gagal) — dipakai
-  // buat nentuin kapan badge angka boleh ditampilkan, biar gak sempet
-  // kelip nunjukin "0" dulu sebelum data aslinya kebaca dari server.
-  loaded: boolean;
   search: string;
   page: number;
   lastPage: number;
   total: number;
 }
 
-const initialTabState = <T,>(): TabState<T> => ({
-  entries: [],
-  loading: true,
-  loaded: false,
-  search: '',
-  page: 1,
-  lastPage: 1,
-  total: 0,
-});
+const kosong = <T,>(): TabState<T> => ({ entries: [], loading: false, search: '', page: 1, lastPage: 1, total: 0 });
 
 export default function TabFotoInventory() {
-  const [activeTab, setActiveTab] = useState<FotoTab>('inventory');
+  const foto = (usePage().props as unknown as { foto?: LaporanFotoProps | null }).foto ?? null;
+  const activeTab: FotoTab = foto?.sub ?? 'inventory';
+  const appliedSearch = foto?.filters.search ?? '';
 
-  const [inventory, setInventoryState] = useState<TabState<Inventory>>(initialTabState);
-  const [peminjaman, setPeminjaman] = useState<TabState<FotoPemakaiEntry>>(initialTabState);
-  const [pengembalian, setPengembalian] = useState<TabState<FotoPemakaiEntry>>(initialTabState);
-  const [rusak, setRusak] = useState<TabState<InventoryPenanganan>>(initialTabState);
-
+  const [searchInput, setSearchInput] = useState(appliedSearch);
+  const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState<FotoDetail | null>(null);
-
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const loadInventory = (targetPage: number, targetSearch: string) => {
-    setInventoryState((s) => ({ ...s, loading: true }));
-    getFotoDasarInventory(targetPage, PER_PAGE, targetSearch || undefined)
-      .then((res) =>
-        setInventoryState((s) => ({ ...s, entries: res.data, page: res.current_page, lastPage: res.last_page, total: res.total, loading: false, loaded: true }))
-      )
-      .catch((err) => {
-        console.error(err);
-        setInventoryState((s) => ({ ...s, loading: false, loaded: true }));
-      });
-  };
-
-  const loadPeminjaman = (targetPage: number, targetSearch: string) => {
-    setPeminjaman((s) => ({ ...s, loading: true }));
-    getFotoPemakaiInventory(targetPage, PER_PAGE, targetSearch || undefined, 'peminjaman')
-      .then((res) =>
-        setPeminjaman((s) => ({ ...s, entries: res.data, page: res.current_page, lastPage: res.last_page, total: res.total, loading: false, loaded: true }))
-      )
-      .catch((err) => {
-        console.error(err);
-        setPeminjaman((s) => ({ ...s, loading: false, loaded: true }));
-      });
-  };
-
-  const loadPengembalian = (targetPage: number, targetSearch: string) => {
-    setPengembalian((s) => ({ ...s, loading: true }));
-    getFotoPemakaiInventory(targetPage, PER_PAGE, targetSearch || undefined, 'pengembalian')
-      .then((res) =>
-        setPengembalian((s) => ({ ...s, entries: res.data, page: res.current_page, lastPage: res.last_page, total: res.total, loading: false, loaded: true }))
-      )
-      .catch((err) => {
-        console.error(err);
-        setPengembalian((s) => ({ ...s, loading: false, loaded: true }));
-      });
-  };
-
-  const loadRusak = (targetPage: number, targetSearch: string) => {
-    setRusak((s) => ({ ...s, loading: true }));
-    getFotoKerusakanInventory(targetPage, PER_PAGE, targetSearch || undefined)
-      .then((res) =>
-        setRusak((s) => ({ ...s, entries: res.data, page: res.current_page, lastPage: res.last_page, total: res.total, loading: false, loaded: true }))
-      )
-      .catch((err) => {
-        console.error(err);
-        setRusak((s) => ({ ...s, loading: false, loaded: true }));
-      });
-  };
-
-  // load awal buat ketiga tab sekalian (biar badge count di masing-masing
-  // sub-tab langsung kebaca meski user belum pindah-pindah tab)
   useEffect(() => {
-    loadInventory(1, '');
-    loadPeminjaman(1, '');
-    loadPengembalian(1, '');
-    loadRusak(1, '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, []);
 
-  const currentSearch =
-    activeTab === 'inventory' ? inventory.search :
-    activeTab === 'peminjaman' ? peminjaman.search : activeTab === 'pengembalian' ? pengembalian.search : rusak.search;
+  const aktif = <T,>(): TabState<T> => ({
+    entries: (foto?.data ?? []) as unknown as T[],
+    loading,
+    search: appliedSearch,
+    page: foto?.current_page ?? 1,
+    lastPage: foto?.last_page ?? 1,
+    total: foto?.total ?? 0,
+  });
+
+  const inventory = activeTab === 'inventory' ? aktif<Inventory>() : kosong<Inventory>();
+  const peminjaman = activeTab === 'peminjaman' ? aktif<FotoPemakaiEntry>() : kosong<FotoPemakaiEntry>();
+  const pengembalian = activeTab === 'pengembalian' ? aktif<FotoPemakaiEntry>() : kosong<FotoPemakaiEntry>();
+  const rusak = activeTab === 'rusak' ? aktif<InventoryPenanganan>() : kosong<InventoryPenanganan>();
+
+  const kunjungi = (params: { sub: FotoTab; search?: string; page?: number }, replace = true) => {
+    const data: Record<string, string | number> = { tab: 'foto_inventory' };
+    if (params.sub !== 'inventory') data.sub = params.sub;
+    if (params.search) data.search = params.search;
+    if (params.page && params.page > 1) data.page = params.page;
+    router.get('/laporan', data, {
+      preserveState: true,
+      preserveScroll: true,
+      replace,
+      onStart: () => setLoading(true),
+      onFinish: () => setLoading(false),
+    });
+  };
+
+  const setActiveTab = (tab: FotoTab) => {
+    if (tab === activeTab) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setSearchInput('');
+    kunjungi({ sub: tab });
+  };
+
+  const currentSearch = searchInput;
 
   const handleSearchChange = (value: string) => {
-    if (activeTab === 'inventory') setInventoryState((s) => ({ ...s, search: value }));
-    else if (activeTab === 'peminjaman') setPeminjaman((s) => ({ ...s, search: value }));
-    else if (activeTab === 'pengembalian') setPengembalian((s) => ({ ...s, search: value }));
-    else setRusak((s) => ({ ...s, search: value }));
-
+    setSearchInput(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      if (activeTab === 'inventory') loadInventory(1, value);
-      else if (activeTab === 'peminjaman') loadPeminjaman(1, value);
-      else if (activeTab === 'pengembalian') loadPengembalian(1, value);
-      else loadRusak(1, value);
-    }, 400);
+    debounceRef.current = setTimeout(() => kunjungi({ sub: activeTab, search: value }), 400);
   };
 
   const gantiHalaman = (target: number) => {
-    if (activeTab === 'inventory') {
-      if (target < 1 || target > inventory.lastPage || target === inventory.page) return;
-      loadInventory(target, inventory.search);
-    } else if (activeTab === 'peminjaman') {
-      if (target < 1 || target > peminjaman.lastPage || target === peminjaman.page) return;
-      loadPeminjaman(target, peminjaman.search);
-    } else if (activeTab === 'pengembalian') {
-      if (target < 1 || target > pengembalian.lastPage || target === pengembalian.page) return;
-      loadPengembalian(target, pengembalian.search);
-    } else {
-      if (target < 1 || target > rusak.lastPage || target === rusak.page) return;
-      loadRusak(target, rusak.search);
-    }
+    const s = aktif<unknown>();
+    if (target < 1 || target > s.lastPage || target === s.page) return;
+    kunjungi({ sub: activeTab, search: appliedSearch, page: target }, false);
   };
 
   const bukaDetail = (d: FotoDetail) => setDetail(d);

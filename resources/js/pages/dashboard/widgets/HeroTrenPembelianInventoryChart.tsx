@@ -10,7 +10,7 @@ import {
 } from 'recharts';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { useTheme } from '../../../context/ThemeContext';
-import type { TrenPembelianInventory } from '../useDashboardData';
+import type { TrenPembelianInventory } from '../../../types/dashboard'; // [F8-INERTIA]
 import { THEME, cardClass } from './theme';
 import { SectionHeader } from './primitives';
 

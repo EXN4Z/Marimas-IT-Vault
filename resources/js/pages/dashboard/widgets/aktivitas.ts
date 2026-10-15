@@ -1,4 +1,4 @@
-import type { AktivitasInventoryTerbaru } from '../useDashboardData';
+import type { AktivitasInventoryTerbaru } from '../../../types/dashboard'; // [F8-INERTIA]
 import { THEME } from './theme';
 
 // ==== Timeline Aktivitas ====

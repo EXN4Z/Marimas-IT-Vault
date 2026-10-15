@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Building2 } from 'lucide-react';
-import type { DepartemenDistribusi } from '../useDashboardData';
+import type { DepartemenDistribusi } from '../../../types/dashboard'; // [F8-INERTIA]
 import { cardClass } from './theme';
 import { SectionHeader } from './primitives';
 

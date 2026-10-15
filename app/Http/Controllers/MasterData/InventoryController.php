@@ -145,18 +145,10 @@ class InventoryController extends Controller
      * "Inventory" paling kiri di halaman Foto Inventory (Laporan).
      * Admin+hr only, sama kayak akses halaman Laporan di frontend.
      */
+    // [F7-INERTIA] Query di App\Queries\FotoInventoryQuery (dipakai bareng tab Foto Inventory di halaman Laporan).
     public function foto(Request $request)
     {
-        $query = Inventory::with('kategori')
-            ->whereNotNull('foto')
-            ->orderByDesc('created_at');
-
-        if ($search = $request->input('search')) {
-            $query->where(function ($qq) use ($search) {
-                $qq->where('kode_inventory', 'like', "%{$search}%")
-                    ->orWhere('nama', 'like', "%{$search}%");
-            });
-        }
+        $query = \App\Queries\FotoInventoryQuery::inventory($request->input('search'));
 
         $perPage = max(10, (int) $request->input('per_page', 12));
         $data = $query->paginate($perPage);

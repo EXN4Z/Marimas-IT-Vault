@@ -1,6 +1,6 @@
 import { AlertTriangle, Wrench, ShieldAlert, ArrowRight } from 'lucide-react';
 import { useAppNavigate } from '../../../hooks/useAppNavigate';
-import type { InventoryPerhatian } from '../useDashboardData';
+import type { InventoryPerhatian } from '../../../types/dashboard'; // [F8-INERTIA]
 import { cardClass } from './theme';
 import { SectionHeader, CardIcon } from './primitives';
 

@@ -1,8 +1,7 @@
 import PenangananInventory from '../../../pages/transaksi/PenangananInventory';
 
-// Tahap P11: SHELL doang. Isi halaman (usePenangananData: axios + polling 10 detik, modal, tabel) TETAP di
-// pages/transaksi/PenangananInventory/. Props Inertia sengaja tidak diteruskan (halaman lama punya prop
-// `onCount` sendiri, tidak ada hubungannya dengan props server).
+// [F6-INERTIA] SHELL: komponen halaman (pages/transaksi/PenangananInventory/) membaca props server sendiri lewat usePage()
+// (props.penanganan / props.penangananExport dari PenangananInventoryPageController), jadi tidak ada props yang diteruskan.
 export default function PenangananInventoryPage() {
   return <PenangananInventory />;
 }

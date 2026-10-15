@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
-import type { AktivitasInventoryTerbaru } from '../useDashboardData';
+import type { AktivitasInventoryTerbaru } from '../../../types/dashboard'; // [F8-INERTIA]
 import { cardClass } from './theme';
 import { SectionHeader } from './primitives';
 import { AktivitasTimelineList } from './AktivitasTimelineList';

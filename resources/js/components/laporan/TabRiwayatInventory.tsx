@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
+import { useEffect, useRef, useState, type JSX } from 'react';
+import { router, usePage } from '@inertiajs/react';
 import { Search, HandCoins, Undo2, AlertTriangle, PlayCircle, Wrench, Banknote, X } from 'lucide-react';
 import Pagination from '../shared/Pagination';
 import { useAuth } from '../../context/AuthContext';
 import { Skeleton } from '../shared/skeleton';
-import { getRiwayatInventory, type RiwayatInventoryEvent } from '../../api/transaksi/inventoryPemakai';
+import type { RiwayatInventoryEvent } from '../../api/transaksi/inventoryPemakai';
+import type { LaporanRiwayatProps } from '../../types/laporan';
 
 function formatWaktu(iso: string): string {
   const date = new Date(iso);
@@ -36,88 +38,66 @@ export default function TabRiwayatInventory() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
-  const [riwayatInventory, setRiwayatInventory] = useState<RiwayatInventoryEvent[]>([]);
-  const [riwayatInventoryLoading, setRiwayatInventoryLoading] = useState(true);
-  const [riwayatFilter, setRiwayatFilter] = useState<RiwayatFilter>('semua');
-  const [riwayatSearch, setRiwayatSearch] = useState('');
-  const [riwayatPage, setRiwayatPage] = useState(1);
-  const [riwayatLastPage, setRiwayatLastPage] = useState(1);
-  const [riwayatTotal, setRiwayatTotal] = useState(0);
-  const RIWAYAT_PER_PAGE = 10; // minimal 10 data per halaman (dipaksa juga di backend)
+  // [F7-INERTIA] Data dari props `riwayat` (LaporanPageController -> RiwayatInventoryQuery), dipaginasi & difilter server.
+  // Filter jenis, pencarian, dan halaman hidup di query string (?tab=riwayat_inventory&type=&search=&page=); ganti -> router.get.
+  // Auto-refresh 5 detik = partial reload async (tanpa spinner), tetap di halaman/filter/kata kunci yang dibuka.
+  const riwayat = (usePage().props as unknown as { riwayat?: LaporanRiwayatProps | null }).riwayat ?? null;
+  const riwayatInventory: RiwayatInventoryEvent[] = riwayat?.data ?? [];
+  const riwayatFilter: RiwayatFilter = riwayat?.filters.type ?? 'semua';
+  const riwayatPage = riwayat?.current_page ?? 1;
+  const riwayatLastPage = riwayat?.last_page ?? 1;
+  const riwayatTotal = riwayat?.total ?? 0;
+
+  const [riwayatSearch, setRiwayatSearchState] = useState(riwayat?.filters.search ?? '');
+  const [riwayatInventoryLoading, setRiwayatInventoryLoading] = useState(false);
   const riwayatSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const refreshRiwayatInventory = useCallback((targetPage = 1, targetFilter: RiwayatFilter = 'semua', targetSearch = '') => {
-    // CATATAN: dulu di sini ada pengecualian khusus role 'cabang' (skip fetch,
-    // dianggap bakal 403). Itu KELIRU — route /inventory-pemakai/riwayat pakai
-    // middleware 'role:karyawan,manajer,hr,admin' yang jalan berdasarkan LEVEL
-    // (lihat User::$roleLevels & hasRoleAtLeast di backend), dan level 'cabang'
-    // (2) lebih tinggi dari 'karyawan' (1) — jadi cabang tetap lolos middleware,
-    // dan controller riwayat() sudah otomatis batasin datanya ke milik akun
-    // cabang itu sendiri (lewat user_id). Jadi cabang HARUS bisa lihat riwayat
-    // aktivitasnya sendiri juga, sama kayak karyawan.
-    setRiwayatInventoryLoading(true);
-    getRiwayatInventory(targetPage, RIWAYAT_PER_PAGE, targetFilter === 'semua' ? undefined : targetFilter, targetSearch || undefined)
-      .then((res) => {
-        setRiwayatInventory(res.data);
-        setRiwayatPage(res.current_page);
-        setRiwayatLastPage(res.last_page);
-        setRiwayatTotal(res.total);
-      })
-      .catch(console.error)
-      .finally(() => setRiwayatInventoryLoading(false));
-  }, [user?.role]);
-
-  // versi diam-diam buat polling -- gak nyalain loading spinner tiap 5 detik,
-  // biar panel gak kedip-kedip pas auto-refresh (sama pola kayak polling di
-  // TabPenangananInventory). Tetap di halaman, filter, & kata kunci search yang
-  // lagi dibuka user, bukan balik ke halaman 1 / kosongin search.
-  const refreshRiwayatInventorySilent = useCallback(() => {
-    getRiwayatInventory(riwayatPage, RIWAYAT_PER_PAGE, riwayatFilter === 'semua' ? undefined : riwayatFilter, riwayatSearch || undefined)
-      .then((res) => {
-        setRiwayatInventory(res.data);
-        setRiwayatPage(res.current_page);
-        setRiwayatLastPage(res.last_page);
-        setRiwayatTotal(res.total);
-      })
-      .catch(console.error);
-  }, [user?.role, riwayatPage, riwayatFilter, riwayatSearch]);
+  const kunjungi = (params: { type: RiwayatFilter; search: string; page?: number }, replace = true) => {
+    const data: Record<string, string | number> = { tab: 'riwayat_inventory' };
+    if (params.type !== 'semua') data.type = params.type;
+    if (params.search) data.search = params.search;
+    if (params.page && params.page > 1) data.page = params.page;
+    router.get('/laporan', data, {
+      preserveState: true,
+      preserveScroll: true,
+      replace,
+      onStart: () => setRiwayatInventoryLoading(true),
+      onFinish: () => setRiwayatInventoryLoading(false),
+    });
+  };
 
   const gantiRiwayatFilter = (filter: RiwayatFilter) => {
-    setRiwayatFilter(filter);
-    refreshRiwayatInventory(1, filter, riwayatSearch);
+    if (filter === riwayatFilter) return;
+    if (riwayatSearchDebounceRef.current) clearTimeout(riwayatSearchDebounceRef.current);
+    kunjungi({ type: filter, search: riwayatSearch });
   };
 
   const gantiRiwayatHalaman = (target: number) => {
     if (target < 1 || target > riwayatLastPage || target === riwayatPage) return;
-    refreshRiwayatInventory(target, riwayatFilter, riwayatSearch);
+    kunjungi({ type: riwayatFilter, search: riwayat?.filters.search ?? '', page: target }, false);
+  };
+
+  // Ketik di search -> debounce 400ms baru visit (reset ke halaman 1), biar gak nembak server tiap huruf.
+  const setRiwayatSearch = (value: string) => {
+    setRiwayatSearchState(value);
+    if (riwayatSearchDebounceRef.current) clearTimeout(riwayatSearchDebounceRef.current);
+    riwayatSearchDebounceRef.current = setTimeout(() => kunjungi({ type: riwayatFilter, search: value }), 400);
   };
 
   useEffect(() => {
-    // backend /inventory-pemakai/riwayat: admin lihat semua, role lain otomatis
-    // difilter cuma riwayat aktivitas milik sendiri (lihat InventoryPemakaiController::riwayat)
-    refreshRiwayatInventory(1, 'semua', '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.role]);
-
-  // Ketik di search riwayat -> debounce 400ms baru fetch (sama pola kayak
-  // search di AuditLog.tsx), reset ke halaman 1 tiap kali kata kuncinya ganti.
-  useEffect(() => {
-    if (riwayatSearchDebounceRef.current) clearTimeout(riwayatSearchDebounceRef.current);
-    riwayatSearchDebounceRef.current = setTimeout(() => {
-      refreshRiwayatInventory(1, riwayatFilter, riwayatSearch);
-    }, 400);
     return () => {
       if (riwayatSearchDebounceRef.current) clearTimeout(riwayatSearchDebounceRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [riwayatSearch]);
+  }, []);
 
-  // auto-refresh tiap 5 detik biar riwayat langsung update tanpa perlu F5
-  // (sama pola kayak polling di TabPenangananInventory).
+  // auto-refresh tiap 5 detik biar riwayat langsung update tanpa perlu F5 (diam kalau tab browser disembunyikan)
   useEffect(() => {
-    const interval = setInterval(refreshRiwayatInventorySilent, 5000);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      router.reload({ only: ['riwayat'], async: true, showProgress: false });
+    }, 5000);
     return () => clearInterval(interval);
-  }, [refreshRiwayatInventorySilent]);
+  }, []);
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">

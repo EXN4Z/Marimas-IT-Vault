@@ -17,6 +17,7 @@ use App\Http\Middleware\LogActivity;
 use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\Transaksi\PenangananInventoryPageController;
 use App\Http\Controllers\Transaksi\InventoryPemakaiWebController;
+use App\Http\Controllers\Transaksi\InventoryPenangananWebController;
 
 // Login & verifikasi OTP: halaman Inertia, auth session penuh. Nama 'login' = tujuan redirect middleware 'auth'.
 Route::get('/login', [WebAuthController::class, 'showLogin'])->name('login');
@@ -104,8 +105,23 @@ Route::middleware('auth')->group(function () {
         Route::post('/inventory-pemakai/{inventoryPemakai}/kembalikan', [InventoryPemakaiWebController::class, 'kembalikan'])->whereNumber('inventoryPemakai');
     });
 
-    // Penanganan Inventory (semua role; non-admin hanya lihat laporan miliknya -- scoping di controller API)
+    // Penanganan Inventory (semua role; non-admin hanya lihat laporan miliknya -- scoping di InventoryPenangananQuery::populasi())
     Route::get('/penanganan-inventory', PenangananInventoryPageController::class);
+
+    // [F6-INERTIA] Mutasi penanganan (redirect back + flash). LogActivity dipasang manual (audit log cuma nempel di grup 'api'); prefix
+    // penanganan-inventory dipetakan ke pola URI API-nya di LogActivity supaya deskripsi audit tetap sama.
+    // POST / (lapor kerusakan, multipart foto) = semua role yang login -- dipicu dari modal di tab Inventory (Master Data),
+    // sama seperti route API aslinya (cuma auth). Sisanya admin-only. Route statis (/import) HARUS di atas {inventoryPenanganan}.
+    Route::middleware(LogActivity::class)->prefix('penanganan-inventory')->group(function () {
+        Route::post('/', [InventoryPenangananWebController::class, 'store']);
+
+        Route::middleware('role:admin')->group(function () {
+            Route::post('/import', [InventoryPenangananWebController::class, 'import']);
+            Route::post('/{inventoryPenanganan}/terima', [InventoryPenangananWebController::class, 'terima'])->whereNumber('inventoryPenanganan');
+            Route::put('/{inventoryPenanganan}', [InventoryPenangananWebController::class, 'update'])->whereNumber('inventoryPenanganan');
+            Route::delete('/{inventoryPenanganan}', [InventoryPenangananWebController::class, 'destroy'])->whereNumber('inventoryPenanganan');
+        });
+    });
 
     // Settings (semua role yang login)
     Route::get('/settings', [SettingsController::class, 'index']);

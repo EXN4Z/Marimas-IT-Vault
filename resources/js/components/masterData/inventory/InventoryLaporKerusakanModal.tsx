@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { laporKerusakanInventory } from '../../../api/transaksi/inventoryPenanganan';
+import { router } from '@inertiajs/react';
 import type { Inventory } from '../../../api/masterData/inventory';
 import InventoryFotoUpload from './InventoryFotoUpload';
 import { JENIS_KERUSAKAN_OPTIONS } from '../../../utils/inventoryHelpers';
@@ -21,7 +21,7 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
   const [errors, setErrors] = useState<{ jenis_kerusakan?: string; keluhan?: string; foto?: string }>({});
   const [serverError, setServerError] = useState('');
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const newErrors: { jenis_kerusakan?: string; keluhan?: string; foto?: string } = {};
     if (!jenisKerusakan.trim()) newErrors.jenis_kerusakan = 'Jenis kerusakan wajib dipilih.';
     if (!keluhan.trim()) newErrors.keluhan = 'Keluhan / kronologi kerusakan wajib diisi.';
@@ -36,25 +36,31 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
     setSubmitting(true);
     setErrors({});
     setServerError('');
-    try {
-      await laporKerusakanInventory({
-        inventory_id: inventory.id,
-        jenis_kerusakan: jenisKerusakan,
-        keluhan: keluhan.trim(),
-        foto: fotoKerusakan[0], // ambil 1 file pertama, sesuai kolom foto di backend
-      });
-      onSuccess();
-    } catch (err: any) {
-      const msg =
-        err.response?.data?.errors?.jenis_kerusakan?.[0] ||
-        err.response?.data?.errors?.foto?.[0] ||
-        err.response?.data?.message ||
-        'Gagal mengirim laporan. Coba lagi.';
-      setServerError(msg);
-      toast.error(msg);
-    } finally {
-      setSubmitting(false);
-    }
+    // [F6-INERTIA] router.post + forceFormData (1 file foto) ke /penanganan-inventory. Sukses -> toast dari flash server (FlashToaster);
+    // gagal validasi -> pesan tampil di dalam modal ini.
+    router.post('/penanganan-inventory', {
+      inventory_id: inventory.id,
+      jenis_kerusakan: jenisKerusakan,
+      keluhan: keluhan.trim(),
+      foto: fotoKerusakan[0], // ambil 1 file pertama, sesuai kolom foto di backend
+    }, {
+      forceFormData: true,
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => onSuccess(),
+      onError: (errors) => {
+        const msg =
+          errors.jenis_kerusakan ||
+          errors.foto ||
+          errors.lapor ||
+          errors.inventory_id ||
+          Object.values(errors)[0] ||
+          'Gagal mengirim laporan. Coba lagi.';
+        setServerError(msg);
+        toast.error(msg);
+      },
+      onFinish: () => setSubmitting(false),
+    });
   };
 
   return (

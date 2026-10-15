@@ -1,9 +1,7 @@
-import {
-  useDashboardCore,
-  useDashboardAnalytics,
-  usePersonalInventoryActivity,
-  usePersonalActivitySummary,
-} from './useDashboardData';
+import { usePage } from '@inertiajs/react';
+import { useSharedProps } from '../../hooks/useSharedProps';
+import { useDashboardNotifications } from './useDashboardNotifications';
+import type { DashboardUserData } from '../../types/dashboard';
 import { Package, History, AlertTriangle, Boxes } from 'lucide-react';
 import {
   WelcomeHeader,
@@ -25,46 +23,22 @@ import {
 // "Menunggu Persetujuan" -- app ini gak punya alur request/approve buat
 // pinjam inventory, admin serah-terima langsung -- dan gak ada kartu status
 // akun statis kayak "Verified" yang isinya bukan data beneran).
+// [F8-INERTIA] Data dari props `pribadi` (deferred; DashboardPageController -> DashboardQuery::pribadi), bukan axios/useQuery.
 export default function DashboardUser() {
-  const {
-    loading,
-    error,
-    user,
-    notifications,
-    handleMarkAsRead,
-  } = useDashboardCore({ includeDepartemen: false });
+  const { auth } = useSharedProps();
+  const user = auth?.user ?? null;
+  const { notifications, handleMarkAsRead } = useDashboardNotifications(user?.id);
+  const pribadi = (usePage().props as unknown as { pribadi?: DashboardUserData | null }).pribadi ?? null;
 
-  const { sedangDipinjam, totalTersedia } = usePersonalInventoryActivity(user?.id);
-  const { totalPernahDipinjam, totalLaporRusak } = usePersonalActivitySummary(!!user);
-
-  // aktivitasInventoryTerbaru/Kalender sumbernya /inventory-pemakai/riwayat,
-  // yang backend-nya SUDAH self-scoping buat role non-admin (cuma balikin
-  // riwayat milik user ini sendiri) -- lihat InventoryPemakaiController::riwayat().
-  // Widget analitik lain (ringkasan/tren/status/per-merek inventory) dimatikan
-  // karena itu gambaran lintas-perusahaan, bukan konten personal.
-  const { aktivitasInventoryTerbaru, aktivitasInventoryKalender } = useDashboardAnalytics(!!user, {
-    ringkasanInventory: false,
-    inventoryPerMerek: false,
-    inventoryPerhatian: false,
-    trenPembelianInventory: false,
-    statusInventoryDistribusi: false,
-    aktivitasInventoryTerbaru: true,
-    aktivitasInventoryKalender: true,
-  });
-
-  if (loading) {
+  if (!pribadi) {
     return <DashboardSkeleton variant="simple" />;
   }
+
+  const { sedangDipinjam, totalTersedia, totalPernahDipinjam, totalLaporRusak, aktivitasTerbaru: aktivitasInventoryTerbaru, aktivitasKalender: aktivitasInventoryKalender } = pribadi;
 
   return (
     <div className="space-y-3">
       <WelcomeHeader user={user} />
-
-      {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl px-3 py-2">
-          {error}
-        </div>
-      )}
 
       {/* KPI Cards -- semuanya personal & real, gak ada angka lintas-organisasi */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">

@@ -1,23 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { Boxes, Users, ClipboardList, Loader2, Download, FileSpreadsheet, Images, History, Tags, Building2, Landmark, Truck } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
-import { getInventory, type Inventory } from '../../../api/masterData/inventory';
-import { karyawanApi, type Karyawan } from '../../../api/masterData/karyawan';
-import { getAllInventoryPemakai, type InventoryPemakai } from '../../../api/transaksi/inventoryPemakai';
+import type { Inventory } from '../../../api/masterData/inventory';
+import type { LaporanExportData } from '../../../types/laporan';
+import type { Karyawan } from '../../../api/masterData/karyawan';
+import type { InventoryPemakai } from '../../../api/transaksi/inventoryPemakai';
 import InventoryExportModal from '../../../components/laporan/InventoryExportModal';
 import KaryawanExportModal from '../../../components/laporan/KaryawanExportModal';
 import InventoryPemakaiExportModal from '../../../components/laporan/InventoryPemakaiExportModal';
 import ScrollableTabBar from '../../../components/shared/ScrollableTabBar';
 import TabFotoInventory from '../../../components/laporan/TabFotoInventory';
 import TabRiwayatInventory from '../../../components/laporan/TabRiwayatInventory';
-import { getKategori, type Kategori } from '../../../api/masterData/kategori';
+import type { Kategori } from '../../../api/masterData/kategori';
 import KategoriExportModal from '../../../components/laporan/KategoriExportModal';
-import { getDepartemen, type Departemen } from '../../../api/masterData/departemen';
+import type { Departemen } from '../../../api/masterData/departemen';
 import DepartemenExportModal from '../../../components/laporan/DepartemenExportModal';
-import { getCabang, type Cabang } from '../../../api/masterData/cabang';
-import { getPerusahaan, type Perusahaan } from '../../../api/masterData/perusahaan';
-import { getSupplier, type Supplier } from '../../../api/masterData/supplier';
+import type { Cabang } from '../../../api/masterData/cabang';
+import type { Perusahaan } from '../../../api/masterData/perusahaan';
+import type { Supplier } from '../../../api/masterData/supplier';
 import SimpleExportModal from '../../../components/laporan/SimpleExportModal';
 
 // Admin-only. Semua role selain admin (hr/manajer/cabang termasuk)
@@ -57,7 +58,7 @@ export default function Laporan() {
   // Tab aktif = prop `tab` dari server (LaporanPageController memvalidasi; kosong/ngawur -> redirect
   // ke ?tab=export_data). Ganti tab = visit ringan ke URL yang sama: replace (history gak numpuk),
   // preserveState (list data & modal export yang sudah ke-load tidak hilang).
-  const pageProps = usePage().props as unknown as { tab?: string };
+  const pageProps = usePage().props as unknown as { tab?: string; exportData?: LaporanExportData | null };
   const activeTab: TabKey = isTabKey(pageProps.tab ?? null) ? (pageProps.tab as TabKey) : 'export_data';
 
   const setActiveTab = (tab: TabKey) => {
@@ -65,88 +66,35 @@ export default function Laporan() {
     router.get('/laporan', { tab }, { replace: true, preserveState: true, preserveScroll: true });
   };
 
-  const [inventoryList, setInventoryList] = useState<Inventory[]>([]);
-  const [inventoryLoading, setInventoryLoading] = useState(true);
+  // [F7-INERTIA] Data export datang lewat props `exportData` (deferred prop dari LaporanPageController); undefined/null = belum dimuat
+  // (kartu menampilkan "Memuat data..."). Tidak ada axios lagi di halaman ini. Cuma state buka/tutup modal yang lokal.
+  const exportData = pageProps.exportData ?? null;
+  const inventoryList: Inventory[] = exportData?.inventory ?? [];
+  const karyawanList: Karyawan[] = exportData?.karyawan ?? [];
+  const pemakaiList: InventoryPemakai[] = exportData?.pemakai ?? [];
+  const kategoriList: Kategori[] = exportData?.kategori ?? [];
+  const departemenList: Departemen[] = exportData?.departemen ?? [];
+  const cabangList: Cabang[] = exportData?.cabang ?? [];
+  const perusahaanList: Perusahaan[] = exportData?.perusahaan ?? [];
+  const supplierList: Supplier[] = exportData?.supplier ?? [];
+  const dataLoading = !exportData;
+  const inventoryLoading = dataLoading;
+  const karyawanLoading = dataLoading;
+  const pemakaiLoading = dataLoading;
+  const kategoriLoading = dataLoading;
+  const departemenLoading = dataLoading;
+  const cabangLoading = dataLoading;
+  const perusahaanLoading = dataLoading;
+  const supplierLoading = dataLoading;
+
   const [exportInventoryOpen, setExportInventoryOpen] = useState(false);
-
-  const [karyawanList, setKaryawanList] = useState<Karyawan[]>([]);
-  const [karyawanLoading, setKaryawanLoading] = useState(true);
   const [exportKaryawanOpen, setExportKaryawanOpen] = useState(false);
-
-  // BARU: kartu export ketiga -- data pemakai inventory (serah-terima &
-  // pengembalian), admin only sama kayak endpoint-nya (lihat routes/api.php).
-  const [pemakaiList, setPemakaiList] = useState<InventoryPemakai[]>([]);
-  const [pemakaiLoading, setPemakaiLoading] = useState(true);
   const [exportPemakaiOpen, setExportPemakaiOpen] = useState(false);
-  // tambahan state (taruh dekat state pemakaiList)
-  const [kategoriList, setKategoriList] = useState<Kategori[]>([]);
-  const [kategoriLoading, setKategoriLoading] = useState(true);
   const [exportKategoriOpen, setExportKategoriOpen] = useState(false);
-  // departemen
-  const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
-  const [departemenLoading, setDepartemenLoading] = useState(true);
   const [exportDepartemenOpen, setExportDepartemenOpen] = useState(false);
-  // BARU: cabang, perusahaan, role, supplier -- sebelumnya cuma bisa
-  // diexport dari tab masing-masing di Master Data, sekarang dilengkapi
-  // di sini juga biar semua master data punya kartu export di 1 tempat.
-  const [cabangList, setCabangList] = useState<Cabang[]>([]);
-  const [cabangLoading, setCabangLoading] = useState(true);
   const [exportCabangOpen, setExportCabangOpen] = useState(false);
-
-  const [perusahaanList, setPerusahaanList] = useState<Perusahaan[]>([]);
-  const [perusahaanLoading, setPerusahaanLoading] = useState(true);
   const [exportPerusahaanOpen, setExportPerusahaanOpen] = useState(false);
-
-  const [supplierList, setSupplierList] = useState<Supplier[]>([]);
-  const [supplierLoading, setSupplierLoading] = useState(true);
   const [exportSupplierOpen, setExportSupplierOpen] = useState(false);
-
-  useEffect(() => {
-    if (!isStaff) return;
-    getInventory({ posisi: 'induk' })
-      .then(setInventoryList)
-      .catch(console.error)
-      .finally(() => setInventoryLoading(false));
-
-    getKategori()
-      .then(setKategoriList)
-      .catch(console.error)
-      .finally(() => setKategoriLoading(false));
-
-    getDepartemen()
-      .then(setDepartemenList)
-      .catch(console.error)
-      .finally(() => setDepartemenLoading(false));
-
-    karyawanApi
-      .getAll()
-      .then((res) => setKaryawanList(res.data))
-      .catch(console.error)
-      .finally(() => setKaryawanLoading(false));
-
-    getCabang()
-      .then(setCabangList)
-      .catch(console.error)
-      .finally(() => setCabangLoading(false));
-
-    getPerusahaan()
-      .then(setPerusahaanList)
-      .catch(console.error)
-      .finally(() => setPerusahaanLoading(false));
-
-    getSupplier()
-      .then(setSupplierList)
-      .catch(console.error)
-      .finally(() => setSupplierLoading(false));
-  }, [isStaff]);
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    getAllInventoryPemakai()
-      .then(setPemakaiList)
-      .catch(console.error)
-      .finally(() => setPemakaiLoading(false));
-  }, [isAdmin]);
 
   if (!isStaff) {
     return (

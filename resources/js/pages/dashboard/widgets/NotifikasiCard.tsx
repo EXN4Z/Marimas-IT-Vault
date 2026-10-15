@@ -1,6 +1,6 @@
 import { Bell } from 'lucide-react';
 import { useAppNavigate } from '../../../hooks/useAppNavigate';
-import type { NotificationItem } from '../useDashboardData';
+import type { NotificationItem } from '../../../types/dashboard'; // [F8-INERTIA]
 import { cardClass } from './theme';
 import { SectionHeader } from './primitives';
 

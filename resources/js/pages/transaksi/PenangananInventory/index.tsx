@@ -1,11 +1,11 @@
-import { useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { router, usePage } from '@inertiajs/react';
 import toast from 'react-hot-toast';
 import Pagination from '../../../components/shared/Pagination';
-import api from '../../../api/axios';
-import { terimaPenangananInventory, type InventoryPenanganan } from '../../../api/transaksi/inventoryPenanganan';
+import type { InventoryPenanganan } from '../../../api/transaksi/inventoryPenanganan';
+import type { PenangananList, PenangananTab } from '../../../types/penanganan';
 import {
   formatTanggalId,
-  namaPelaporPenanganan,
   formatJenisKerusakan,
   formatDurasi,
 } from '../../../utils/inventoryHelpers';
@@ -13,9 +13,7 @@ import ScrollableTabBar from '../../../components/shared/ScrollableTabBar';
 import { printStruk } from '../../../utils/printStruk';
 import InventoryPenangananExportModal from '../../../components/transaksi/InventoryPenangananExportModal';
 import { useAuth } from '../../../context/AuthContext';
-import { usePenangananData } from './usePenangananData';
-import { formatRupiah, ITEMS_PER_PAGE } from './helpers';
-import type { TabStatus } from './helpers';
+import { formatRupiah } from './helpers';
 import PenangananSkeleton from './PenangananSkeleton';
 import PenangananHeader from './PenangananHeader';
 import PenangananKpiCards from './PenangananKpiCards';
@@ -26,92 +24,172 @@ import FormPerbaikanModal from './FormPerbaikanModal';
 import DetailPenangananModal from './DetailPenangananModal';
 import TerimaLaporanModal from './TerimaLaporanModal';
 
-interface Props {
-  onCount?: (count: number) => void;
+// [F6-INERTIA] Halaman Penanganan Inventory (tadinya usePenangananData: axios + polling + filter/pagination di klien). Sekarang:
+//  - data dari props server (PenangananInventoryPageController -> props.penanganan);
+//  - tab status, pencarian, filter jenis kerusakan, dan pagination dijalankan server lewat router.get (query string = sumber kebenaran);
+//  - Terima / Selesai / Detail = modal overlay dengan state lokal; mutasi lewat router.* ke /penanganan-inventory*, hasilnya toast dari
+//    flash server (FlashToaster);
+//  - Export = partial reload props.penangananExport (SEMUA hasil filter tab aktif) tiap tombol Export diklik;
+//  - auto-refresh 10 detik = partial reload async (props.penanganan).
+interface PageProps {
+  penanganan?: PenangananList;
+  penangananExport?: InventoryPenanganan[];
 }
 
-export default function PenangananInventory({ onCount }: Props) {
+interface FilterBaru {
+  tab?: PenangananTab;
+  search?: string;
+  jenis?: string;
+  page?: number;
+}
+
+const TAB_LABEL: Record<PenangananTab, string> = {
+  menunggu: 'Menunggu Terima',
+  diperbaiki: 'Sedang Diperbaiki',
+  diperbaiki_selesai: 'Berhasil Diperbaiki',
+  rusak_berat: 'Rusak Berat',
+};
+
+const COUNTS_KOSONG: Record<PenangananTab, number> = { menunggu: 0, diperbaiki: 0, diperbaiki_selesai: 0, rusak_berat: 0 };
+
+export default function PenangananInventory() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
-  const { penangananList, setPenangananList, loading, error, load } = usePenangananData(onCount);
-  const [activePenanganan, setActivePenanganan] = useState<InventoryPenanganan | null>(null);
-  const [activeTab, setActiveTab] = useState<TabStatus>('menunggu');
-  const [page, setPage] = useState(1);
+  const pageProps = usePage().props as unknown as PageProps;
+  const list = pageProps.penanganan;
+  const rows = list?.data ?? [];
+  const counts = list?.counts ?? COUNTS_KOSONG;
+  const activeTab: PenangananTab = list?.filters.tab ?? 'menunggu';
+  const serverSearch = list?.filters.search ?? '';
+  const filterKerusakan = list?.filters.jenis ?? 'all';
+  const currentPage = list?.current_page ?? 1;
+  const lastPage = list?.last_page ?? 1;
+  const total = list?.total ?? 0;
 
-  // Global search & filter
-  const [search, setSearch] = useState('');
-  const [filterKerusakan, setFilterKerusakan] = useState('all');
+  const [searchInput, setSearchInput] = useState<string>(serverSearch);
+  const [listLoading, setListLoading] = useState(false);
 
   // Modals
+  const [activePenanganan, setActivePenanganan] = useState<InventoryPenanganan | null>(null);
   const [detailModalTarget, setDetailModalTarget] = useState<InventoryPenanganan | null>(null);
   const [terimaTarget, setTerimaTarget] = useState<InventoryPenanganan | null>(null);
+  const [terimaLoadingId, setTerimaLoadingId] = useState<number | null>(null);
 
   // Export & Import
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
-  const [importMessage, setImportMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [importError, setImportError] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const canImportExport = isAdmin && (activeTab === 'diperbaiki_selesai' || activeTab === 'rusak_berat');
 
-  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ------------------------------------------------------------------ request ke server
+
+  // Query string dari filter. Nilai default (tab menunggu, search kosong, jenis semua, halaman 1) tidak ikut di URL.
+  function bangunData(f: Required<FilterBaru>): Record<string, string | number> {
+    const data: Record<string, string | number> = {};
+    if (f.tab !== 'menunggu') data.tab = f.tab;
+    if (f.search) data.search = f.search;
+    if (f.jenis && f.jenis !== 'all') data.jenis = f.jenis;
+    if (f.page > 1) data.page = f.page;
+    return data;
+  }
+
+  // Pindah tab / halaman / ganti filter = visit ringan ke /penanganan-inventory (partial reload cuma props.penanganan), URL ikut berubah.
+  function visitList(next: FilterBaru) {
+    const f: Required<FilterBaru> = {
+      tab: next.tab ?? activeTab,
+      search: (next.search ?? searchInput).trim(),
+      jenis: next.jenis ?? filterKerusakan,
+      page: next.page ?? 1,
+    };
+
+    setListLoading(true);
+    router.get('/penanganan-inventory', bangunData(f), {
+      only: ['penanganan'],
+      preserveState: true,
+      preserveScroll: true,
+      replace: true,
+      onFinish: () => setListLoading(false),
+    });
+  }
+
+  // Auto-refresh 10 detik (async, tanpa progress bar). Memuat ulang URL yang sedang aktif, jadi filter tetap terjaga.
+  // Dilewati kalau tab browser lagi disembunyikan.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      router.reload({ only: ['penanganan'], async: true, showProgress: false });
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Pencarian: tunggu user berhenti mengetik sebentar sebelum minta data ke server.
+  useEffect(() => {
+    if (searchInput.trim() === serverSearch) return;
+    const timer = setTimeout(() => visitList({ search: searchInput, page: 1 }), 350);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
+
+  // Adapter ke komponen filter: pencarian = state lokal (debounce di atas), jenis & reset = visit ke server.
+  const handleJenisChange = (v: string) => visitList({ jenis: v, page: 1 });
+  const handleResetFilter = () => {
+    setSearchInput('');
+    visitList({ search: '', jenis: 'all', page: 1 });
+  };
+
+  const handleTabChange = (tab: PenangananTab) => {
+    setImportError('');
+    visitList({ tab, page: 1 });
+  };
+
+  // ------------------------------------------------------------------ export / import
+
+  // Tombol Export: ambil dulu datanya dari server (SEMUA hasil filter tab aktif), baru buka modal.
+  const bukaExport = (open: boolean) => {
+    if (!open) {
+      setExportModalOpen(false);
+      return;
+    }
+    router.reload({
+      only: ['penangananExport'],
+      onSuccess: () => setExportModalOpen(true),
+      onError: () => toast.error('Gagal menyiapkan data export. Coba lagi.'),
+    });
+  };
+
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     setImportLoading(true);
-    setImportMessage(null);
-
-    try {
-      const res = await api.post('/inventory-penanganan/import', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setImportMessage({ type: 'success', text: res.data.message });
-      load();
-    } catch (err: any) {
-      setImportMessage({
-        type: 'error',
-        text: err.response?.data?.message || 'Gagal mengimport file',
-      });
-    } finally {
-      setImportLoading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+    setImportError('');
+    // Sukses -> toast dari flash server. Gagal -> pesan error inline (key "file").
+    router.post('/penanganan-inventory/import', { file }, {
+      forceFormData: true,
+      preserveScroll: true,
+      preserveState: true,
+      onError: (errors) => setImportError(String(errors.file || 'Gagal mengimport file')),
+      onFinish: () => {
+        setImportLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      },
+    });
   };
 
-  const handleTabChange = (tab: TabStatus) => {
-    setActiveTab(tab);
-    setPage(1);
-    setImportMessage(null);
-  };
+  // ------------------------------------------------------------------ mutasi (Inertia)
 
-  const [terimaLoadingId, setTerimaLoadingId] = useState<number | null>(null);
-
-  const handleTerima = async (p: InventoryPenanganan) => {
+  const handleTerima = (p: InventoryPenanganan) => {
     setTerimaLoadingId(p.id);
-    try {
-      const updated = await terimaPenangananInventory(p.id);
-      setPenangananList((prev) =>
-        prev.map((item) => (item.id === updated.id ? { ...item, ...updated } : item))
-      );
-      toast.success('Laporan diterima, aset ditandai sedang diperbaiki.');
-      setTerimaTarget(null);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Gagal menerima laporan.');
-    } finally {
-      setTerimaLoadingId(null);
-    }
-  };
-
-  const handleSelesai = (updated: InventoryPenanganan) => {
-    setPenangananList((prev) =>
-      prev.map((p) => (p.id === updated.id ? { ...p, ...updated } : p))
-    );
-    setActivePenanganan(null);
-    toast.success('Perbaikan selesai dicatat.');
+    router.post(`/penanganan-inventory/${p.id}/terima`, {}, {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => setTerimaTarget(null),
+      onError: (errors) => toast.error(errors.terima || String(Object.values(errors)[0] || 'Gagal menerima laporan.')),
+      onFinish: () => setTerimaLoadingId(null),
+    });
   };
 
   const handlePrintStruk = (p: InventoryPenanganan) => {
@@ -153,69 +231,12 @@ export default function PenangananInventory({ onCount }: Props) {
     });
   };
 
-  // Status segmentation
-  const menungguList = useMemo(
-    () => penangananList.filter((p) => !p.tanggal_selesai && !p.tanggal_diterima),
-    [penangananList]
-  );
-  const diperbaikiList = useMemo(
-    () => penangananList.filter((p) => !p.tanggal_selesai && !!p.tanggal_diterima),
-    [penangananList]
-  );
-  const diperbaikiSelesaiList = useMemo(
-    () => penangananList.filter((p) => !!p.tanggal_selesai && p.hasil !== 'rusak_berat'),
-    [penangananList]
-  );
-  const rusakBeratList = useMemo(
-    () => penangananList.filter((p) => !!p.tanggal_selesai && p.hasil === 'rusak_berat'),
-    [penangananList]
-  );
+  const tabs: { key: PenangananTab; label: string }[] = (Object.keys(TAB_LABEL) as PenangananTab[]).map((key) => ({
+    key,
+    label: TAB_LABEL[key],
+  }));
 
-  const tabs: { key: TabStatus; label: string; list: InventoryPenanganan[] }[] = [
-    { key: 'menunggu', label: 'Menunggu Terima', list: menungguList },
-    { key: 'diperbaiki', label: 'Sedang Diperbaiki', list: diperbaikiList },
-    { key: 'diperbaiki_selesai', label: 'Berhasil Diperbaiki', list: diperbaikiSelesaiList },
-    { key: 'rusak_berat', label: 'Rusak Berat', list: rusakBeratList },
-  ];
-
-  const activeTabLabel = tabs.find((t) => t.key === activeTab)?.label ?? 'Laporan';
-
-  // Filtering by search and jenis kerusakan
-  const currentTabRawList = useMemo(() => {
-    switch (activeTab) {
-      case 'menunggu':
-        return menungguList;
-      case 'diperbaiki':
-        return diperbaikiList;
-      case 'diperbaiki_selesai':
-        return diperbaikiSelesaiList;
-      case 'rusak_berat':
-        return rusakBeratList;
-    }
-  }, [activeTab, menungguList, diperbaikiList, diperbaikiSelesaiList, rusakBeratList]);
-
-  const displayedList = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return currentTabRawList.filter((p) => {
-      const matchJenis = filterKerusakan === 'all' || p.jenis_kerusakan === filterKerusakan;
-      if (!matchJenis) return false;
-      if (!q) return true;
-      return (
-        (p.inventory?.kode_inventory || '').toLowerCase().includes(q) ||
-        (p.inventory?.nama || '').toLowerCase().includes(q) ||
-        (p.jenis_kerusakan || '').toLowerCase().includes(q) ||
-        (p.keluhan || '').toLowerCase().includes(q) ||
-        namaPelaporPenanganan(p).toLowerCase().includes(q) ||
-        (p.catatan || '').toLowerCase().includes(q)
-      );
-    });
-  }, [currentTabRawList, search, filterKerusakan]);
-
-  const totalPages = Math.max(1, Math.ceil(displayedList.length / ITEMS_PER_PAGE));
-  const safePage = Math.min(page, totalPages);
-  const paginatedList = displayedList.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
-
-  if (loading) return <PenangananSkeleton />;
+  if (!list) return <PenangananSkeleton />;
 
   return (
     <div className="space-y-6">
@@ -223,94 +244,71 @@ export default function PenangananInventory({ onCount }: Props) {
       <PenangananHeader
         isAdmin={isAdmin}
         canImportExport={canImportExport}
-        setExportModalOpen={setExportModalOpen}
+        setExportModalOpen={bukaExport}
         fileInputRef={fileInputRef}
         handleFileSelected={handleFileSelected}
         importLoading={importLoading}
       />
 
       {/* KPI Overview Cards */}
-      <PenangananKpiCards
-        handleTabChange={handleTabChange}
-        activeTab={activeTab}
-        menungguList={menungguList}
-        diperbaikiList={diperbaikiList}
-        diperbaikiSelesaiList={diperbaikiSelesaiList}
-        rusakBeratList={rusakBeratList}
-      />
+      <PenangananKpiCards handleTabChange={handleTabChange} activeTab={activeTab} counts={counts} />
 
-      {importMessage && (
-        <p className={`text-sm ${importMessage.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
-          {importMessage.text}
-        </p>
-      )}
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
-          {error}
-        </div>
-      )}
+      {importError && <p className="text-sm text-red-600">{importError}</p>}
 
       {/* Main Content Box */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
         {/* Navigation Tabs */}
-        <ScrollableTabBar
-          className="mb-5"
-          activeTab={activeTab}
-          onChange={handleTabChange}
-          tabs={tabs.map((t) => ({
-            key: t.key,
-            label: t.label,
-          }))}
-        />
+        <ScrollableTabBar className="mb-5" activeTab={activeTab} onChange={handleTabChange} tabs={tabs} />
 
         {/* Filter & Search Bar */}
         <PenangananFilterBar
-          search={search}
-          setSearch={setSearch}
-          setPage={setPage}
+          search={searchInput}
+          setSearch={setSearchInput}
           filterKerusakan={filterKerusakan}
-          setFilterKerusakan={setFilterKerusakan}
+          setFilterKerusakan={handleJenisChange}
+          onReset={handleResetFilter}
         />
 
         <p className="text-xs text-slate-500 mb-4">
-          Total {activeTabLabel}: <span className="font-semibold text-slate-900">{displayedList.length}</span> laporan
+          Total {TAB_LABEL[activeTab]}: <span className="font-semibold text-slate-900">{total}</span> laporan
         </p>
 
-        {/* Tab 1 & Tab 2: Work Order Cards */}
-        {activeTab === 'menunggu' || activeTab === 'diperbaiki' ? (
-          <PenangananCardList
-            displayedList={displayedList}
-            activeTab={activeTab}
-            search={search}
-            filterKerusakan={filterKerusakan}
-            paginatedList={paginatedList}
-            setDetailModalTarget={setDetailModalTarget}
-            isAdmin={isAdmin}
-            setTerimaTarget={setTerimaTarget}
-            setActivePenanganan={setActivePenanganan}
-          />
-        ) : (
-          /* Tab 3 & Tab 4: Clean Data Table */
-          <PenangananTable
-            paginatedList={paginatedList}
-            handlePrintStruk={handlePrintStruk}
-            setDetailModalTarget={setDetailModalTarget}
-            displayedList={displayedList}
-            search={search}
-            filterKerusakan={filterKerusakan}
-            activeTab={activeTab}
-          />
-        )}
+        <div className={`transition-opacity ${listLoading ? 'opacity-60' : ''}`}>
+          {/* Tab 1 & Tab 2: Work Order Cards */}
+          {activeTab === 'menunggu' || activeTab === 'diperbaiki' ? (
+            <PenangananCardList
+              displayedList={rows}
+              activeTab={activeTab}
+              search={serverSearch}
+              filterKerusakan={filterKerusakan}
+              paginatedList={rows}
+              setDetailModalTarget={setDetailModalTarget}
+              isAdmin={isAdmin}
+              setTerimaTarget={setTerimaTarget}
+              setActivePenanganan={setActivePenanganan}
+            />
+          ) : (
+            /* Tab 3 & Tab 4: Clean Data Table */
+            <PenangananTable
+              paginatedList={rows}
+              handlePrintStruk={handlePrintStruk}
+              setDetailModalTarget={setDetailModalTarget}
+              displayedList={rows}
+              search={serverSearch}
+              filterKerusakan={filterKerusakan}
+              activeTab={activeTab}
+            />
+          )}
+        </div>
 
-        {/* Pagination */}
-        {displayedList.length > ITEMS_PER_PAGE && (
+        {/* Pagination (server) */}
+        {total > list.per_page && (
           <div className="mt-6 pt-4 border-t border-slate-100">
             <Pagination
-              currentPage={safePage}
-              totalPages={totalPages}
-              onPageChange={(p) => setPage(p)}
-              totalItems={displayedList.length}
+              currentPage={currentPage}
+              totalPages={lastPage}
+              onPageChange={(p) => visitList({ page: p })}
+              totalItems={total}
               itemLabel="laporan"
             />
           </div>
@@ -322,7 +320,7 @@ export default function PenangananInventory({ onCount }: Props) {
         <FormPerbaikanModal
           penanganan={activePenanganan}
           onClose={() => setActivePenanganan(null)}
-          onSuccess={handleSelesai}
+          onSuccess={() => setActivePenanganan(null)}
         />
       )}
 
@@ -347,8 +345,8 @@ export default function PenangananInventory({ onCount }: Props) {
         <InventoryPenangananExportModal
           open={exportModalOpen}
           onClose={() => setExportModalOpen(false)}
-          data={displayedList}
-          tabLabel={tabs.find((t) => t.key === activeTab)?.label || ''}
+          data={pageProps.penangananExport ?? []}
+          tabLabel={TAB_LABEL[activeTab]}
         />
       )}
     </div>

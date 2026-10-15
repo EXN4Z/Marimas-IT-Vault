@@ -1,6 +1,6 @@
 import { ArrowRight, Activity } from 'lucide-react';
 import { useAppNavigate } from '../../../hooks/useAppNavigate';
-import type { AktivitasInventoryTerbaru } from '../useDashboardData';
+import type { AktivitasInventoryTerbaru } from '../../../types/dashboard'; // [F8-INERTIA]
 import { cardClass } from './theme';
 import { SectionHeader } from './primitives';
 import { AktivitasTimelineList } from './AktivitasTimelineList';

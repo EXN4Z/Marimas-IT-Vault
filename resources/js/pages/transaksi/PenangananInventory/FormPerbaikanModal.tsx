@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { X, Wrench } from 'lucide-react';
 import Select from '../../../components/shared/Select';
-import { selesaikanPenangananInventory, type InventoryPenanganan } from '../../../api/transaksi/inventoryPenanganan';
+import { router } from '@inertiajs/react';
+import type { InventoryPenanganan } from '../../../api/transaksi/inventoryPenanganan';
 import { formatJenisKerusakan } from '../../../utils/inventoryHelpers';
 import { todayIso } from './helpers';
 
@@ -13,7 +14,7 @@ export default function FormPerbaikanModal({
 }: {
   penanganan: InventoryPenanganan;
   onClose: () => void;
-  onSuccess: (updated: InventoryPenanganan) => void;
+  onSuccess: () => void;
 }) {
   const [tanggalSelesai, setTanggalSelesai] = useState(todayIso());
   const [hasil, setHasil] = useState<'diperbaiki' | 'rusak_berat'>('diperbaiki');
@@ -33,28 +34,25 @@ export default function FormPerbaikanModal({
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     setSubmitting(true);
     setError('');
-    try {
-      const updated = await selesaikanPenangananInventory(penanganan.id, {
-        tanggal_selesai: tanggalSelesai,
-        biaya_komponen: biayaKomponen.trim() ? Number(biayaKomponen) : null,
-        harga_jasa: hargaJasa.trim() ? Number(hargaJasa) : null,
-        hasil,
-        catatan: catatan.trim() || null,
-      });
-      onSuccess(updated);
-    } catch (err: any) {
-      setError(
-        err.response?.data?.errors?.biaya_komponen?.[0] ||
-        err.response?.data?.errors?.harga_jasa?.[0] ||
-        err.response?.data?.message ||
-        'Gagal menyimpan perbaikan.'
-      );
-    } finally {
-      setSubmitting(false);
-    }
+    // [F6-INERTIA] router.put ke /penanganan-inventory/{id}. Sukses -> toast dari flash server (FlashToaster) + modal ditutup parent;
+    // gagal validasi -> pesan tampil di dalam modal ini.
+    router.put(`/penanganan-inventory/${penanganan.id}`, {
+      tanggal_selesai: tanggalSelesai,
+      biaya_komponen: biayaKomponen.trim() ? Number(biayaKomponen) : null,
+      harga_jasa: hargaJasa.trim() ? Number(hargaJasa) : null,
+      hasil,
+      catatan: catatan.trim() || null,
+    }, {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => onSuccess(),
+      onError: (errors) =>
+        setError(errors.biaya_komponen || errors.harga_jasa || String(Object.values(errors)[0] || 'Gagal menyimpan perbaikan.')),
+      onFinish: () => setSubmitting(false),
+    });
   };
 
   return (

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Package } from 'lucide-react';
 import { useAppNavigate } from '../../../hooks/useAppNavigate';
-import type { InventoryPerMerek } from '../useDashboardData';
+import type { InventoryPerMerek } from '../../../types/dashboard'; // [F8-INERTIA]
 import { cardClass } from './theme';
 import { SectionHeader } from './primitives';
 
