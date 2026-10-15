@@ -16,6 +16,7 @@ use App\Http\Controllers\MasterData\InventoryWebController;
 use App\Http\Middleware\LogActivity;
 use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\Transaksi\PenangananInventoryPageController;
+use App\Http\Controllers\Transaksi\InventoryPemakaiWebController;
 
 // Login & verifikasi OTP: halaman Inertia, auth session penuh. Nama 'login' = tujuan redirect middleware 'auth'.
 Route::get('/login', [WebAuthController::class, 'showLogin'])->name('login');
@@ -90,6 +91,17 @@ Route::middleware('auth')->group(function () {
         Route::post('/inventory/{inventory}/lepas-dari-induk', [InventoryWebController::class, 'lepasDariInduk'])->whereNumber('inventory');
         Route::put('/inventory/{inventory}', [InventoryWebController::class, 'update'])->whereNumber('inventory');
         Route::delete('/inventory/{inventory}', [InventoryWebController::class, 'destroy'])->whereNumber('inventory');
+
+        // [F5-INERTIA] Transaksi pemakai (admin-only): serah-terima (multipart foto_penerimaan[]) & hapus riwayat pemakaian.
+        // {inventory} = route model binding (LogActivity butuh model-nya buat deskripsi audit "meminjamkan aset <kode>").
+        Route::post('/inventory/{inventory}/pemakai', [InventoryPemakaiWebController::class, 'store'])->whereNumber('inventory');
+        Route::delete('/inventory-pemakai/{inventoryPemakai}', [InventoryPemakaiWebController::class, 'destroy'])->whereNumber('inventoryPemakai');
+    });
+
+    // [F5-INERTIA] Kembalikan inventory: BUKAN admin-only. Admin ATAU pemakai yang lagi pegang item ini (karyawan/cabang) --
+    // sama seperti route API aslinya (cuma auth). Otorisasi "admin atau pemilik" dicek di InventoryPemakaiWebController::kembalikan().
+    Route::middleware(LogActivity::class)->prefix('master-data')->group(function () {
+        Route::post('/inventory-pemakai/{inventoryPemakai}/kembalikan', [InventoryPemakaiWebController::class, 'kembalikan'])->whereNumber('inventoryPemakai');
     });
 
     // Penanganan Inventory (semua role; non-admin hanya lihat laporan miliknya -- scoping di controller API)

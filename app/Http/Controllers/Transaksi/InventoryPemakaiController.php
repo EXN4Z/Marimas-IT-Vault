@@ -2,22 +2,20 @@
 
 namespace App\Http\Controllers\Transaksi;
 
+use App\Actions\Transaksi\InventoryPemakaiAction;
 use App\Http\Controllers\Controller;
-
-use App\Http\Controllers\Concerns\GeneratesStrukNumber;
-use App\Http\Controllers\Concerns\SimpanFotoBukti;
 use App\Models\MasterData\Inventory;
 use App\Models\Transaksi\InventoryPemakai;
 use App\Models\Transaksi\InventoryPenanganan;
 use App\Models\Transaksi\InventoryWriteoff;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class InventoryPemakaiController extends Controller
 {
-    use GeneratesStrukNumber;
-    use SimpanFotoBukti;
+    // [F5-INERTIA] store / kembalikan / destroy dipakai bareng dengan InventoryPemakaiWebController lewat Action.
+    public function __construct(private InventoryPemakaiAction $pemakai)
+    {
+    }
 
     /**
      * GET /api/inventory-pemakai/riwayat
@@ -275,287 +273,37 @@ class InventoryPemakaiController extends Controller
 
     /**
      * POST /api/inventory/{inventory}/pemakai
-     * Admin serah-terima item langsung ke karyawan ATAU akun cabang (tanpa
-     * lewat alur request/approve). Bisa dipakai buat item apapun kategorinya
-     * selama dia berdiri sendiri (parent_id null) -- item yang sudah
-     * menempel ke item lain (parent_id terisi) DITOLAK di sini, karena dia
-     * cuma boleh ikut pinjam bareng induknya (lihat rule #1 di dokumen
-     * migrasi).
+     * [F5-INERTIA] Logika di InventoryPemakaiAction::serahTerima() (dipakai bareng versi web). Frontend halaman sudah
+     * pindah ke POST /master-data/inventory/{inventory}/pemakai; endpoint ini dihapus di F10.
      */
     public function store(Request $request, Inventory $inventory)
     {
-        // item yang lagi menempel ke item lain (parent_id terisi) gak boleh
-        // dipinjam sendirian -- cuma boleh ikut pinjam bareng induknya.
-        if ($inventory->parent_id) {
-            return response()->json([
-                'message' => 'Kelengkapan ini menempel ke barang utama dan tidak bisa dipinjam sendirian. Pinjamkan barang utamanya -- kelengkapan yang tersedia akan otomatis ikut dipinjamkan.',
-            ], 422);
-        }
-
-        if ($inventory->status !== 'tersedia') {
-            return response()->json(['message' => 'Item ini sedang tidak tersedia untuk diserahkan.'], 422);
-        }
-
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'tanggal_penerimaan' => 'required|date',
-            'catatan_penerimaan' => 'nullable|string',
-            'foto_penerimaan' => 'required|array|min:3|max:3',
-            'foto_penerimaan.*' => 'image|mimes:jpg,jpeg,png,webp|max:1024',
-        ], [
-            'foto_penerimaan.required' => 'Foto bukti serah terima wajib diisi (minimal 3 foto).',
-            'foto_penerimaan.min' => 'Foto bukti serah terima minimal 3 foto.',
-            'foto_penerimaan.max' => 'Foto bukti serah terima maksimal 3 foto.',
-            'foto_penerimaan.*.max' => 'Maksimal size foto adalah 1MB',
-        ]);
-
-        $pemakai = DB::transaction(function () use ($inventory, $request, $validated) {
-            $noStruk = $this->generateNoStruk('STJ', 'inventory_pemakai', 'no_struk_penerimaan');
-
-            $fotoPaths = $this->simpanFotoBukti($request, 'foto_penerimaan', 'inventory-pemakai/penerimaan');
-
-            $pemakai = InventoryPemakai::create([
-                'inventory_id' => $inventory->id,
-                'user_id' => $validated['user_id'],
-                'status' => 'disetujui',
-                'requested_by_user_id' => $request->user()?->id,
-                'no_struk_penerimaan' => $noStruk,
-                'tanggal_penerimaan' => $validated['tanggal_penerimaan'],
-                'diterima_at' => now(),
-                'catatan_penerimaan' => $validated['catatan_penerimaan'] ?? null,
-                'foto_penerimaan' => $fotoPaths,
-            ]);
-
-            $inventory->update(['status' => 'dipakai']);
-
-            // Item yang menempel (children) ikut induknya -- begitu induk
-            // dipinjamkan, semua item yang menempel padanya dan belum punya
-            // pemakaian aktif sendiri otomatis ikut dipinjamkan ke pemakai
-            // yang sama, pakai foto bukti & tanggal serah-terima yang sama
-            // juga (satu kejadian serah-terima fisik, bukan kejadian
-            // terpisah-pisah).
-            // Kalau $inventory ini sendiri lagi menempel ke item lain,
-            // children() bakal selalu kosong (item yang sudah punya parent
-            // gak boleh sekaligus punya child sendiri -- ditegakkan di
-            // InventoryController::validasiParent()), jadi aman dipanggil
-            // tanpa pengecekan tambahan.
-            //
-            // FIX: dulu filternya `where('status', 'tersedia')` -- salah,
-            // karena InventoryController::selaraskanStatusByParent() forceset
-            // status kelengkapan jadi 'dipakai' begitu parent_id keisi, TERLEPAS
-            // dari ada/tidaknya pemakaian aktif induknya saat itu (misal
-            // kelengkapan di-attach ke induk yang masih 'tersedia', belum
-            // dipinjam siapa-siapa). Akibatnya kelengkapan semacam itu sudah
-            // berstatus 'dipakai' DUAN sebelum induknya pernah benar-benar
-            // dipinjamkan, dan filter status='tersedia' di sini bakal
-            // melewatkannya -- status nyangkut 'dipakai' selamanya tanpa
-            // pernah punya baris InventoryPemakai, jadi "Dipakai Oleh" di
-            // frontend tampil "-" walau statusnya sudah 'dipakai'. Sekarang
-            // patokannya ada/tidaknya pemakaian aktif (whereDoesntHave
-            // pemakaiSaatIni), bukan kolom status yang bisa berubah karena
-            // alasan lain (structural attach). Item yang lagi dalam
-            // penanganan/rusak tetap dikecualikan.
-            $inventory->children()
-                ->whereNotIn('status', ['rusak', 'menunggu_perbaikan', 'diperbaiki', 'rusak_berat'])
-                ->whereDoesntHave('pemakaiSaatIni')
-                ->get()
-                ->each(function ($anak) use ($validated, $fotoPaths, $request) {
-                    $noStrukAnak = $this->generateNoStruk('STJ', 'inventory_pemakai', 'no_struk_penerimaan');
-
-                    InventoryPemakai::create([
-                        'inventory_id' => $anak->id,
-                        'user_id' => $validated['user_id'],
-                        'status' => 'disetujui',
-                        'requested_by_user_id' => $request->user()?->id,
-                        'no_struk_penerimaan' => $noStrukAnak,
-                        'tanggal_penerimaan' => $validated['tanggal_penerimaan'],
-                        'diterima_at' => now(),
-                        'catatan_penerimaan' => 'Dipinjamkan otomatis -- mengikuti barang utama.',
-                        'foto_penerimaan' => $fotoPaths,
-                    ]);
-
-                    $anak->update(['status' => 'dipakai']);
-                });
-
-            return $pemakai;
-        });
+        $pemakai = $this->pemakai->serahTerima($request, $inventory);
 
         return response()->json($pemakai->load('user', 'inventory'), 201);
     }
 
     /**
      * POST /api/inventory-pemakai/{inventoryPemakai}/kembalikan
-     * Admin terima kembali item dari pemakai, ATAU pemakainya sendiri
-     * (karyawan/cabang yang lagi pegang item ini) yang ngembaliin langsung.
-     * Wajib sertain no_struk_penerimaan (struk asli pas serah-terima)
-     * sebagai bukti pengembalian ini benar. Ditolak kalau masih ada laporan
-     * penanganan/perbaikan yang belum selesai (guard ini secara alami cuma
-     * pernah kena buat Barang Utama, karena Kelengkapan gak lewat alur
-     * InventoryPenanganan).
-     *
-     * Wajib sertakan foto_pengembalian (array file, 1-3 foto) sebagai bukti
-     * kondisi fisik item saat dikembalikan.
+     * Admin ATAU pemakainya sendiri. Otorisasi tetap dicek di sini (controller); logika di
+     * InventoryPemakaiAction::kembalikan().
      */
     public function kembalikan(Request $request, InventoryPemakai $inventoryPemakai)
     {
-        $user = $request->user();
-        $isPemilikPemakaian = $inventoryPemakai->user_id === $user->id;
+        $this->pemakai->pastikanBolehKembalikan($request->user(), $inventoryPemakai);
 
-        abort_unless(
-            $user->isAdmin() || $isPemilikPemakaian,
-            403,
-            'Kamu tidak punya akses untuk mengembalikan item ini.'
-        );
+        $hasil = $this->pemakai->kembalikan($request, $inventoryPemakai);
 
-        $validated = $request->validate([
-            'no_struk_penerimaan' => 'required|string',
-            'tanggal_pengembalian' => 'required|date',
-            'catatan_pengembalian' => 'nullable|string',
-            'foto_pengembalian' => 'required|array|min:3|max:3',
-            'foto_pengembalian.*' => 'image|mimes:jpg,jpeg,png,webp|max:1024',
-        ], [
-            'foto_pengembalian.required' => 'Foto bukti pengembalian wajib diisi (minimal 3 foto).',
-            'foto_pengembalian.min' => 'Foto bukti pengembalian minimal 3 foto.',
-            'foto_pengembalian.max' => 'Foto bukti pengembalian maksimal 3 foto.',
-            'foto_pengembalian.*.max' => 'Maksimal size foto adalah 1MB',
-        ]);
-
-        if ($inventoryPemakai->status !== 'disetujui') {
-            throw ValidationException::withMessages([
-                'status' => ['Data pemakaian ini bukan pemakaian aktif yang bisa dikembalikan.'],
-            ]);
-        }
-
-        if ($validated['no_struk_penerimaan'] !== $inventoryPemakai->no_struk_penerimaan) {
-            throw ValidationException::withMessages([
-                'no_struk_penerimaan' => ['Nomor struk penerimaan tidak cocok. Pengembalian wajib menyertakan bukti serah-terima yang benar.'],
-            ]);
-        }
-
-        $adaPenangananBelumSelesai = InventoryPenanganan::where('inventory_pemakai_id', $inventoryPemakai->id)
-            ->whereNull('tanggal_selesai')
-            ->exists();
-
-        if ($adaPenangananBelumSelesai) {
-            throw ValidationException::withMessages([
-                'penanganan' => ['Masih ada laporan penanganan/perbaikan yang belum diselesaikan untuk pemakaian ini.'],
-            ]);
-        }
-
-        DB::transaction(function () use ($inventoryPemakai, $request, $validated) {
-            $noStruk = $this->generateNoStruk('KBL', 'inventory_pemakai', 'no_struk_pengembalian');
-
-            // 'rusak_berat' cuma dikenal di status Barang Utama -- Kelengkapan
-            // cuma punya tersedia/dipakai/rusak, jadi gak ada state permanen
-            // yang perlu di-guard buat Kelengkapan.
-            $catatanDefault = $inventoryPemakai->catatan_pengembalian;
-            if ($inventoryPemakai->inventory?->status === 'rusak_berat') {
-                $catatanDefault = 'Dikembalikan dalam kondisi rusak berat (tidak bisa diperbaiki).';
-            }
-
-            $fotoPaths = $this->simpanFotoBukti($request, 'foto_pengembalian', 'inventory-pemakai/pengembalian');
-
-            $inventoryPemakai->update([
-                'no_struk_pengembalian' => $noStruk,
-                'tanggal_pengembalian' => $validated['tanggal_pengembalian'],
-                'dikembalikan_at' => now(),
-                'catatan_pengembalian' => $validated['catatan_pengembalian'] ?? $catatanDefault,
-                'foto_pengembalian' => $fotoPaths,
-            ]);
-
-            // jangan paksa balik 'tersedia' kalau lagi rusak_berat -- dia
-            // tetep gak boleh dipinjemin lagi walau pemakaiannya udah ditutup.
-            // Kelengkapan gak punya state itu, jadi selalu balik normal ke
-            // 'tersedia'.
-            $inventoryPemakai->inventory()
-                ->where('status', '!=', 'rusak_berat')
-                ->update(['status' => 'tersedia']);
-
-            // Kelengkapan yang nempel (children dari item yang dikembalikan
-            // ini) ikut balik juga pas dikembalikan -- semua yang masih aktif
-            // dipinjam (disetujui, belum ada tanggal_pengembalian) ditutup
-            // bareng, pakai foto & tanggal pengembalian yang sama dengan
-            // induknya (satu kejadian serah-terima fisik). Kalau item ini
-            // Kelengkapan berdiri sendiri, query di bawah otomatis gak nemu
-            // apa-apa (gak ada baris lain yang parent_id-nya nunjuk ke dia).
-            $noStrukIndukKembali = $inventoryPemakai->no_struk_pengembalian;
-            InventoryPemakai::whereIn('inventory_id', function ($q) use ($inventoryPemakai) {
-                $q->select('id')
-                    ->from('inventory')
-                    ->where('parent_id', $inventoryPemakai->inventory_id);
-            })
-                ->where('status', 'disetujui')
-                ->whereNull('tanggal_pengembalian')
-                ->get()
-                ->each(function ($anakPemakai) use ($validated, $fotoPaths, $noStrukIndukKembali) {
-                    $noStrukAnak = $this->generateNoStruk('KBL', 'inventory_pemakai', 'no_struk_pengembalian');
-
-                    $anakPemakai->update([
-                        'no_struk_pengembalian' => $noStrukAnak,
-                        'tanggal_pengembalian' => $validated['tanggal_pengembalian'],
-                        'dikembalikan_at' => now(),
-                        'catatan_pengembalian' => 'Dikembalikan otomatis -- mengikuti barang utama (' . $noStrukIndukKembali . ').',
-                        'foto_pengembalian' => $fotoPaths,
-                    ]);
-
-                    $anakPemakai->inventory()->update(['status' => 'tersedia']);
-                });
-        });
-
-        return response()->json($inventoryPemakai->fresh()->load('user', 'inventory'));
+        return response()->json($hasil->load('user', 'inventory'));
     }
 
     /**
      * DELETE /api/inventory-pemakai/{inventoryPemakai}
-     * Admin: hapus satu entri riwayat pemakaian (Barang Utama maupun
-     * Kelengkapan). Ditolak kalau entri ini punya laporan
-     * penanganan/perbaikan yang nempel (inventory_pemakai_id) -- guard ini
-     * secara alami cuma pernah kena buat Barang Utama, karena Kelengkapan
-     * gak lewat alur InventoryPenanganan. Kalau entri yang dihapus ini
-     * pemakaian yang masih aktif (belum dikembalikan), status item-nya
-     * dikembalikan ke 'tersedia' dulu (kecuali lagi rusak_berat -- tetap
-     * gak boleh dipinjemin lagi).
+     * Admin: hapus satu entri riwayat pemakaian. Logika di InventoryPemakaiAction::hapus().
      */
     public function destroy(InventoryPemakai $inventoryPemakai)
     {
-        if (InventoryPenanganan::where('inventory_pemakai_id', $inventoryPemakai->id)->exists()) {
-            return response()->json([
-                'message' => 'Riwayat pemakaian ini punya laporan perbaikan terkait dan tidak bisa dihapus.',
-            ], 422);
-        }
-
-        $masihDipakai = $inventoryPemakai->status === 'disetujui' && !$inventoryPemakai->tanggal_pengembalian;
-
-        DB::transaction(function () use ($inventoryPemakai, $masihDipakai) {
-            if ($masihDipakai) {
-                $inventoryPemakai->inventory()
-                    ->where('status', '!=', 'rusak_berat')
-                    ->update(['status' => 'tersedia']);
-
-                // Sama seperti kembalikan(): entri kelengkapan yang masih
-                // aktif ikut item ini juga ikut dilepas & ditutup statusnya
-                // (bukan dihapus, biar riwayatnya tetap ada), biar gak
-                // nyangkut "dipakai" padahal riwayat pinjam induknya udah
-                // dihapus.
-                InventoryPemakai::whereIn('inventory_id', function ($q) use ($inventoryPemakai) {
-                    $q->select('id')
-                        ->from('inventory')
-                        ->where('parent_id', $inventoryPemakai->inventory_id);
-                })
-                    ->where('status', 'disetujui')
-                    ->whereNull('tanggal_pengembalian')
-                    ->get()
-                    ->each(function ($anakPemakai) {
-                        $anakPemakai->update([
-                            'tanggal_pengembalian' => now()->toDateString(),
-                            'dikembalikan_at' => now(),
-                            'catatan_pengembalian' => 'Dikembalikan otomatis -- riwayat pinjam barang utama dihapus.',
-                        ]);
-                        $anakPemakai->inventory()->update(['status' => 'tersedia']);
-                    });
-            }
-            $inventoryPemakai->delete();
-        });
+        $this->pemakai->hapus($inventoryPemakai);
 
         return response()->json(['message' => 'Riwayat pemakaian berhasil dihapus.']);
     }

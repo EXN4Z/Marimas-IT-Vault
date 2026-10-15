@@ -1,0 +1,16 @@
+{
+  "created": [
+    "app/Actions/Transaksi/InventoryPemakaiAction.php",
+    "app/Http/Controllers/Transaksi/InventoryPemakaiWebController.php"
+  ],
+  "modified": [
+    "app/Http/Controllers/Transaksi/InventoryPemakaiController.php",
+    "routes/web.php",
+    "app/Http/Middleware/HandleInertiaRequests.php",
+    "resources/js/types/inertia.ts",
+    "resources/js/components/masterData/inventory/InventorySerahTerimaModal.tsx",
+    "resources/js/components/masterData/inventory/InventoryPengembalianModal.tsx",
+    "resources/js/components/masterData/inventory/TabInventory/index.tsx"
+  ],
+  "deleted": []
+}

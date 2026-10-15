@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Search, Check, Send, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { Inventory } from '../../../api/masterData/inventory';
-import { serahTerimaInventory, searchKaryawan, type InventoryPemakai, type KaryawanUser } from '../../../api/transaksi/inventoryPemakai';
+import { router } from '@inertiajs/react';
+// [F5-INERTIA] Submit lewat router.post ke /master-data/inventory/{id}/pemakai (bukan axios). searchKaryawan TETAP axios:
+// autocomplete per ketikan (JSON ringan), tidak cocok jadi visit Inertia.
+import { searchKaryawan, type InventoryPemakai, type KaryawanUser } from '../../../api/transaksi/inventoryPemakai';
+import type { Flash } from '../../../types/inertia';
 import InventoryFotoUpload from './InventoryFotoUpload';
 import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../../shared/FormControls';
 
@@ -71,7 +75,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
     if (errors.penerima) setErrors((prev) => ({ ...prev, penerima: '' }));
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const newErrors: { penerima?: string; foto?: string } = {};
 
     // Karyawan nonaktif tidak boleh meminjam inventory
@@ -97,30 +101,41 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
     setErrors({});
     setServerError('');
 
-    // Cuma inventory utama yang diserahkan lewat sini -- kelengkapan yang masih
-    // 'tersedia' otomatis ikut diserahkan di backend (satu struk & foto yang
-    // sama), gak perlu request terpisah dari sini lagi.
-    try {
-      const formData = new FormData();
-      formData.append('user_id', String(selected!.id));
-      formData.append('tanggal_penerimaan', tanggalPenerimaan);
-      if (catatan.trim()) formData.append('catatan_penerimaan', catatan.trim());
-      fotoPenerimaan.forEach((file) => formData.append('foto_penerimaan[]', file));
+    // Cuma inventory utama yang diserahkan lewat sini -- kelengkapan yang masih 'tersedia' otomatis ikut diserahkan di
+    // backend (satu struk & foto yang sama), gak perlu request terpisah dari sini lagi.
+    // Sukses -> toast dari flash server (FlashToaster) + data struk di flash.struk buat dicetak parent. Gagal validasi ->
+    // pesan tampil di dalam modal ini.
+    const data: Record<string, string | number | File[]> = {
+      user_id: selected!.id,
+      tanggal_penerimaan: tanggalPenerimaan,
+      foto_penerimaan: fotoPenerimaan,
+    };
+    if (catatan.trim()) data.catatan_penerimaan = catatan.trim();
 
-      const pemakai = await serahTerimaInventory(inventory.id, formData);
-      toast.success('Serah terima inventory berhasil dicatat.');
-      onSuccess([{ inventory, pemakai }]);
-    } catch (err: any) {
-      const msg =
-        err.response?.data?.errors?.user_id?.[0] ||
-        err.response?.data?.errors?.foto_penerimaan?.[0] ||
-        err.response?.data?.message ||
-        'Gagal mencatat serah-terima. Coba lagi.';
-      setServerError(msg);
-      toast.error(msg);
-    } finally {
-      setSubmitting(false);
-    }
+    router.post(`/master-data/inventory/${inventory.id}/pemakai`, data, {
+      forceFormData: true,
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: (page) => {
+        const struk = (page.props as { flash?: Flash }).flash?.struk;
+        const results =
+          struk?.tipe === 'serah_terima'
+            ? struk.results.map((r) => ({ inventory: { ...inventory, ...r.inventory }, pemakai: r.pemakai }))
+            : [];
+        onSuccess(results);
+      },
+      onError: (errors) => {
+        const msg =
+          errors.user_id ||
+          errors.foto_penerimaan ||
+          errors.serah_terima ||
+          Object.values(errors)[0] ||
+          'Gagal mencatat serah-terima. Coba lagi.';
+        setServerError(msg);
+        toast.error(msg);
+      },
+      onFinish: () => setSubmitting(false),
+    });
   };
 
   return (

@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { RotateCcw, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { Inventory } from '../../../api/masterData/inventory';
-import { kembalikanInventory, type InventoryPemakai } from '../../../api/transaksi/inventoryPemakai';
+import { router } from '@inertiajs/react';
+import type { InventoryPemakai } from '../../../api/transaksi/inventoryPemakai';
+import type { Flash } from '../../../types/inertia';
 import { namaPemakai } from '../../../utils/inventoryHelpers';
 import InventoryFotoUpload from './InventoryFotoUpload';
 import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../../shared/FormControls';
@@ -31,7 +33,7 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
   const [errors, setErrors] = useState<{ kodeStruk?: string; foto?: string }>({});
   const [serverError, setServerError] = useState('');
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const newErrors: { kodeStruk?: string; foto?: string } = {};
     if (!kodeStruk.trim()) {
       newErrors.kodeStruk = 'Kode struk penerimaan fisik wajib diisi sebagai bukti sah.';
@@ -49,28 +51,34 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
     setSubmitting(true);
     setErrors({});
     setServerError('');
-    try {
-      // pakai FormData (bukan JSON) karena ada file foto yang diunggah
-      const formData = new FormData();
-      formData.append('no_struk_penerimaan', kodeStruk.trim());
-      formData.append('tanggal_pengembalian', tanggalPengembalian);
-      if (catatan.trim()) formData.append('catatan_pengembalian', catatan.trim());
-      fotoPengembalian.forEach((file) => formData.append('foto_pengembalian[]', file));
+    // [F5-INERTIA] router.post + forceFormData (ada file foto). Sukses -> toast dari flash server (FlashToaster) + data struk
+    // pengembalian di flash.struk buat dicetak parent. Gagal validasi -> pesan tampil di dalam modal ini.
+    const data: Record<string, string | File[]> = {
+      no_struk_penerimaan: kodeStruk.trim(),
+      tanggal_pengembalian: tanggalPengembalian,
+      foto_pengembalian: fotoPengembalian,
+    };
+    if (catatan.trim()) data.catatan_pengembalian = catatan.trim();
 
-      const res = await kembalikanInventory(pemakai.id, formData);
-      toast.success('Pengembalian inventory berhasil diproses.');
-      onSuccess(res);
-    } catch (err: any) {
-      const msg =
-        err.response?.data?.errors?.no_struk_penerimaan?.[0] ||
-        err.response?.data?.errors?.foto_pengembalian?.[0] ||
-        err.response?.data?.message ||
-        'Gagal memproses pengembalian.';
-      setServerError(msg);
-      toast.error(msg);
-    } finally {
-      setSubmitting(false);
-    }
+    router.post(`/master-data/inventory-pemakai/${pemakai.id}/kembalikan`, data, {
+      forceFormData: true,
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: (page) => {
+        const struk = (page.props as { flash?: Flash }).flash?.struk;
+        onSuccess(struk?.tipe === 'pengembalian' ? struk.pemakai : pemakai);
+      },
+      onError: (errors) => {
+        const msg =
+          errors.no_struk_penerimaan ||
+          errors.foto_pengembalian ||
+          Object.values(errors)[0] ||
+          'Gagal memproses pengembalian.';
+        setServerError(msg);
+        toast.error(msg);
+      },
+      onFinish: () => setSubmitting(false),
+    });
   };
 
   return (

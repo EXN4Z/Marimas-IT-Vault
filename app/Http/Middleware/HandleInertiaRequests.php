@@ -49,6 +49,9 @@ class HandleInertiaRequests extends Middleware
             'flash' => Inertia::always(fn () => [
                 'success' => $request->hasSession() ? $request->session()->get('success') : null,
                 'error' => $request->hasSession() ? $request->session()->get('error') : null,
+                // [F5-INERTIA] Data struk (serah-terima / pengembalian) buat dicetak klien setelah mutasi sukses -- redirect tidak
+                // membawa body JSON seperti API dulu. Dibaca onSuccess modal (page.props.flash.struk), BUKAN oleh FlashToaster.
+                'struk' => $request->hasSession() ? $request->session()->get('struk') : null,
             ]),
         ];
     }

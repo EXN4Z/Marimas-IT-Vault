@@ -12,7 +12,7 @@ import InventoryExportModal from '../../../laporan/InventoryExportModal';
 import ConfirmDeleteModal from '../../../shared/ConfirmDeleteModal';
 import { useAuth } from '../../../../context/AuthContext';
 import type { Inventory, InventoryStatus } from '../../../../api/masterData/inventory';
-import { deletePemakaiInventory, type InventoryPemakai } from '../../../../api/transaksi/inventoryPemakai';
+import type { InventoryPemakai } from '../../../../api/transaksi/inventoryPemakai';
 import {
   deletePenangananInventory,
   terimaPenangananInventory,
@@ -37,7 +37,8 @@ import { handlePrintSerahTerima, handlePrintPengembalian } from './printHelpers'
 //  - mutasi inventory lewat router.* ke /master-data/inventory, hasilnya toast dari flash server (FlashToaster);
 //  - detail (riwayat lengkap) diminta lewat partial reload props.inventoryDetail (?detail=<id>, URL browser tidak berubah);
 //  - auto-refresh 5 detik = partial reload async (list + "sedang dipakai" + detail yang lagi terbuka).
-// Aksi serah-terima / pengembalian / lapor kerusakan / penanganan masih lewat axios (dipindah di F5/F6); setelah
+// [F5-INERTIA] Serah-terima / pengembalian / hapus riwayat pemakaian = Inertia (router.post|delete ke /master-data/inventory*, toast dari
+// flash server, struk dicetak dari flash.struk). Lapor kerusakan / penanganan masih lewat axios (dipindah di F6); setelah
 // sukses, tab ini cukup memuat ulang props lewat segarkan().
 interface InventoryPageProps {
   inventory?: InventoryList;
@@ -102,8 +103,8 @@ export default function TabInventory() {
   const detail = detailId !== null && propDetail && propDetail.id === detailId ? propDetail : null;
   const detailLoading = detailId !== null && detail === null;
 
-  // Serah-terima 1 inventory utama (checklist kelengkapan ada di dalam modalnya), pengembalian, lapor kerusakan,
-  // dan penanganan selesai: masih axios (F5/F6).
+  // Serah-terima 1 inventory utama (kelengkapan ikut otomatis di server) & pengembalian: modal -> router.post (F5).
+  // Lapor kerusakan & penanganan selesai: masih axios (F6).
   const [serahTerimaInventory, setSerahTerimaInventory] = useState<Inventory | null>(null);
   const [pengembalianTarget, setPengembalianTarget] = useState<{ inventory: Inventory; pemakai: InventoryPemakai } | null>(null);
 
@@ -346,7 +347,8 @@ export default function TabInventory() {
     else setExportOpen(false);
   };
 
-  // ------------------------------------------------------------------ aksi riwayat di modal detail (axios sampai F5/F6)
+  // ------------------------------------------------------------------ aksi riwayat di modal detail
+  // (hapus riwayat pemakaian = Inertia [F5-INERTIA]; terima/hapus penanganan = axios sampai F6)
 
   async function handleTerimaPenanganan(id: number) {
     setHistoryActionError('');
@@ -372,18 +374,18 @@ export default function TabInventory() {
     }
   }
 
-  async function handleDeletePemakai(id: number) {
+  function handleDeletePemakai(id: number) {
     if (!confirm('Hapus riwayat pemakaian ini?')) return;
     setHistoryActionError('');
     setDeletingPemakaiId(id);
-    try {
-      await deletePemakaiInventory(id);
-      segarkan();
-    } catch (err: any) {
-      setHistoryActionError(err.response?.data?.message || 'Gagal menghapus riwayat pemakaian.');
-    } finally {
-      setDeletingPemakaiId(null);
-    }
+    // Sukses -> toast dari flash server; gagal (mis. ada laporan perbaikan terkait) -> error bag "hapus" tampil di modal detail.
+    router.delete(`/master-data/inventory-pemakai/${id}`, {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => segarkan(),
+      onError: (errors) => setHistoryActionError(errors.hapus || 'Gagal menghapus riwayat pemakaian.'),
+      onFinish: () => setDeletingPemakaiId(null),
+    });
   }
 
   // ------------------------------------------------------------------ filter (adapter ke komponen filter lama)
