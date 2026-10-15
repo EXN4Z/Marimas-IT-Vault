@@ -2,50 +2,31 @@ import { ChevronDown, Link2 } from 'lucide-react';
 import Pagination from '../../../shared/Pagination';
 import StatusBadge from '../../../shared/StatusBadge';
 import Tooltip from '../../../shared/Tooltip';
-import { SkeletonTable, SkeletonListCard } from '../../../shared/skeleton';
+// [F4-INERTIA] Loading/pagination sekarang dari props server: tabel cuma merender halaman yang dikirim.
 import { namaPemakai } from '../../../../utils/inventoryHelpers';
 import type { Inventory } from '../../../../api/masterData/inventory';
 import { STATUS_STYLE, STATUS_LABEL } from './helpers';
 
 interface InventoryTableProps {
-  loading: boolean;
-  error: string;
-  filteredInventory: Inventory[];
   pageInventory: Inventory[];
   renderAksi: (a: Inventory) => React.ReactNode;
   expandedInventoryId: number | null;
   setExpandedInventoryId: React.Dispatch<React.SetStateAction<number | null>>;
   inventoryLastPage: number;
   inventoryPageClamped: number;
-  setInventoryPage: React.Dispatch<React.SetStateAction<number>>;
+  setInventoryPage: (page: number) => void;
+  /** Total inventory hasil filter (semua halaman). */
+  totalItems: number;
 }
 
-export default function InventoryTable({ loading, error, filteredInventory, pageInventory, renderAksi, expandedInventoryId, setExpandedInventoryId, inventoryLastPage, inventoryPageClamped, setInventoryPage }: InventoryTableProps) {
+export default function InventoryTable({ pageInventory, renderAksi, expandedInventoryId, setExpandedInventoryId, inventoryLastPage, inventoryPageClamped, setInventoryPage, totalItems }: InventoryTableProps) {
   return (
     <div className="border border-slate-200 rounded-lg overflow-hidden">
-      {loading && (
-        <>
-          {/* Desktop: skeleton tabel
-              (Kode, Nama, Kategori, Jumlah, Status, Dipakai Oleh, Aksi) */}
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="w-full text-sm">
-              <tbody>
-                <SkeletonTable columns={7} rows={6} />
-              </tbody>
-            </table>
-          </div>
-          {/* Mobile: skeleton list card, gantiin tampilan card per baris */}
-          <div className="sm:hidden">
-            <SkeletonListCard rows={5} />
-          </div>
-        </>
-      )}
-      {!loading && error && <p className="text-sm text-red-500 text-center py-8">{error}</p>}
-      {!loading && !error && filteredInventory.length === 0 && (
+      {pageInventory.length === 0 && (
         <p className="text-sm text-slate-400 text-center py-8">Belum ada inventory.</p>
       )}
 
-      {!loading && !error && filteredInventory.length > 0 && (
+      {pageInventory.length > 0 && (
         <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -111,7 +92,7 @@ export default function InventoryTable({ loading, error, filteredInventory, page
       {/* MOBILE: list card dengan dropdown expand-in-place per baris,
           gantiin tabel yang kepenuhan di layar sempit. Pola sama kayak
           "Dropdown detail" Riwayat Pemakai/Perbaikan di panel detail. */}
-      {!loading && !error && filteredInventory.length > 0 && (
+      {pageInventory.length > 0 && (
         <div className="sm:hidden flex flex-col divide-y divide-slate-100">
           {pageInventory.map((a) => {
             const expanded = expandedInventoryId === a.id;
@@ -169,13 +150,13 @@ export default function InventoryTable({ loading, error, filteredInventory, page
       )}
 
       {/* Pagination */}
-      {!loading && !error && filteredInventory.length > 0 && inventoryLastPage > 1 && (
+      {pageInventory.length > 0 && inventoryLastPage > 1 && (
         <div className="px-6 py-3 border-t border-slate-100">
           <Pagination
             currentPage={inventoryPageClamped}
             totalPages={inventoryLastPage}
             onPageChange={setInventoryPage}
-            totalItems={filteredInventory.length}
+            totalItems={totalItems}
             itemLabel="inventory"
             className="pt-0 mt-0 border-t-0"
           />

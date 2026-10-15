@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Unlink, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { lepasDariIndukInventory, type Inventory } from '../../../api/masterData/inventory';
+import { router } from '@inertiajs/react';
+import type { Inventory } from '../../../api/masterData/inventory';
 import { ButtonCancel, ButtonSubmit, Field, Textarea } from '../../shared/FormControls';
 
 interface Props {
   inventory: Inventory;
   onClose: () => void;
-  onSuccess: (updated: Inventory) => void;
+  /** [F4-INERTIA] Sukses -> toast dari flash server; parent cukup menutup modal. */
+  onSuccess: () => void;
 }
 
 export default function InventoryLepasDariIndukModal({ inventory, onClose, onSuccess }: Props) {
@@ -19,21 +21,20 @@ export default function InventoryLepasDariIndukModal({ inventory, onClose, onSuc
     ? `${inventory.parent.kode_inventory}${inventory.parent.nama ? ' — ' + inventory.parent.nama : ''}`
     : `Induk #${inventory.parent_id}`;
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     setSubmitting(true);
     setError('');
-    try {
-      const updated = await lepasDariIndukInventory(inventory.id, {
-        keterangan: keterangan.trim() || undefined,
-      });
-      onSuccess(updated);
-    } catch (err: any) {
-      const msg = err.response?.data?.message || 'Gagal melepas kelengkapan dari induk. Coba lagi.';
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setSubmitting(false);
-    }
+    router.post(`/master-data/inventory/${inventory.id}/lepas-dari-induk`, { keterangan: keterangan.trim() || undefined }, {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => onSuccess(),
+      onError: (errors) => {
+        const msg = errors.lepas || Object.values(errors)[0] || 'Gagal melepas kelengkapan dari induk. Coba lagi.';
+        setError(msg);
+        toast.error(msg);
+      },
+      onFinish: () => setSubmitting(false),
+    });
   };
 
   return (

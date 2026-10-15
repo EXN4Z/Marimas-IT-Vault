@@ -1,25 +1,23 @@
-import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { useAppNavigate } from '../../hooks/useAppNavigate';
+import { useEffect, useRef, useState, type JSX } from 'react';
+import { router, usePage } from '@inertiajs/react';
 import toast from 'react-hot-toast';
-import { Download, Upload, Plus, Eye, Pencil, Trash2 } from 'lucide-react';
-import api from '../../api/axios';
-import { importKaryawan } from '../../api/auth';
+import { Download, Upload, Plus, Eye, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import ScrollableTabBar from '../shared/ScrollableTabBar';
 import Pagination from '../shared/Pagination';
 import Tooltip from '../shared/Tooltip';
 import SearchInput from '../shared/SearchInput';
-import { SkeletonTable } from '../shared/skeleton';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
 import KaryawanExportModal from '../laporan/KaryawanExportModal';
-import { type Karyawan } from '../../api/masterData/karyawan';
+import KaryawanFormModal from './karyawan/KaryawanFormModal';
+import KaryawanDetailModal from './karyawan/KaryawanDetailModal';
+import type { KaryawanList, KaryawanOpsi, KaryawanRow } from '../../types/karyawan';
 
 type TabKey = 'semua' | 'user' | 'admin';
 
-// Sama shape persis dengan tipe Karyawan di api/karyawan.ts (dipakai bareng
-// KaryawanExportModal, lihat tombol Export di bawah) -- dulu didefinisikan
-// ulang di sini secara terpisah, sekarang di-alias langsung biar gak
-// nyimpang dan export-nya gak perlu mapping/cast apapun.
-type User = Karyawan;
+// [F3-INERTIA] Satu baris user dari props server (lengkap: id relasi, tanggal_masuk, status). Dipakai juga
+// KaryawanExportModal, jadi tetap kompatibel dengan tipe Karyawan di api/masterData/karyawan.ts.
+type User = KaryawanRow;
 
 const roleStyles: Record<string, string> = {
     admin: 'bg-red-50 text-red-700',
@@ -91,159 +89,152 @@ function initials(name: string): string {
         .toUpperCase();
 }
 
-// Create/Detail/Edit sekarang halaman Inertia sendiri, jadi tab ini ke-unmount waktu user
-// membukanya. Tanpa ini, waktu balik: pencarian/filter/halaman ke-reset dan list muncul skeleton
-// lagi. Disimpan di level modul (hidup selama sesi SPA; hilang saat hard refresh / logout).
-const listMemo: { users: User[] | null; search: string; activeTab: TabKey; currentPage: number } = {
-    users: null,
-    search: '',
-    activeTab: 'semua',
-    currentPage: 1,
-};
+// [F3-INERTIA] Tab "Data User" di Master Data (tadinya halaman /karyawan, lalu tab dengan axios + halaman
+// Create/Edit/Show terpisah). Sekarang:
+//  - data dari props server (MasterDataPageController -> props.karyawan, hanya dikirim saat tab ini aktif);
+//  - pagination, pencarian, dan filter role dijalankan server lewat router.get (query string = sumber kebenaran);
+//  - Tambah / Edit / Detail = modal overlay dengan state lokal (KaryawanFormModal / KaryawanDetailModal);
+//  - mutasi (hapus, import) lewat router.* ke /master-data/karyawan, hasilnya toast dari flash server (FlashToaster).
+interface KaryawanPageProps {
+    karyawan?: KaryawanList;
+    karyawanOpsi?: KaryawanOpsi;
+    karyawanExport?: User[];
+}
 
-// Dipindah dari halaman /karyawan (Karyawan.tsx) -- sekarang jadi tab
-// "Data User" di dalam Master Data, sepola sama tab Inventory/Kategori/dst
-// (lihat MasterData.tsx). Route /karyawan lama di-redirect ke sini.
 export default function TabKaryawan() {
-    const navigate = useAppNavigate();
-    const [users, setUsers] = useState<User[]>(listMemo.users ?? []);
-    const [loading, setLoading] = useState<boolean>(listMemo.users === null);
-    const [errorMsg, setErrorMsg] = useState<string>('');
-    const [currentRole, setCurrentRole] = useState<string | null>(null);
+    const { user: authUser } = useAuth();
+    const isAdmin = authUser?.role === 'admin';
 
-    const [search, setSearch] = useState<string>(listMemo.search);
-    const [activeTab, setActiveTab] = useState<TabKey>(listMemo.activeTab);
+    const pageProps = usePage().props as unknown as KaryawanPageProps;
+    const list = pageProps.karyawan;
+    const users: User[] = list?.data ?? [];
+    const activeTab: TabKey = list?.filters.role ?? 'semua';
+    const serverSearch = list?.filters.search ?? '';
+    const currentPage = list?.current_page ?? 1;
+    const totalPages = list?.last_page ?? 1;
+    const totalUsers = list?.total ?? 0;
+
+    const [searchInput, setSearchInput] = useState<string>(serverSearch);
+    const [listLoading, setListLoading] = useState<boolean>(false);
+
+    // Modal Tambah/Edit (user null = Tambah) dan modal Detail -- state lokal, bukan route.
+    const [formModal, setFormModal] = useState<{ user: User | null } | null>(null);
+    const [detailUser, setDetailUser] = useState<User | null>(null);
+
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
     const [deleting, setDeleting] = useState<boolean>(false);
-    const [currentPage, setCurrentPage] = useState<number>(listMemo.currentPage);
-    const ITEMS_PER_PAGE = 10;
+    const [deleteError, setDeleteError] = useState<string>('');
 
-    // BARU: state untuk import Excel karyawan
+    // State import Excel karyawan
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [importing, setImporting] = useState<boolean>(false);
     const [importErrors, setImportErrors] = useState<string[]>([]);
-    const [importSuccessMsg, setImportSuccessMsg] = useState<string>('');
     const [showImportModal, setShowImportModal] = useState<boolean>(false);
 
-    // Modal export (Excel/PDF) -- komponennya sudah ada & dipakai di halaman
-    // Laporan, di sini dipasang ulang biar bisa export langsung dari tab
-    // "Data User" tanpa pindah halaman.
+    // Modal export (Excel/PDF). Datanya = SEMUA hasil filter aktif, diambil lewat partial reload
+    // (props.karyawanExport) tiap tombol Export diklik, bukan cuma halaman yang lagi tampil.
     const [showExportModal, setShowExportModal] = useState<boolean>(false);
+    const [exportLoading, setExportLoading] = useState<boolean>(false);
 
-    function loadUsers(silent = false) {
-        if (!silent) setLoading(true);
-        api
-            .get<User[]>('/karyawan')
-            .then((res) => setUsers(res.data))
-            .catch((err) => {
-                if (err.response?.status === 403) {
-                    setErrorMsg('Anda tidak punya akses ke halaman ini.');
-                } else {
-                    setErrorMsg('Gagal memuat data. Coba lagi.');
-                }
-            })
-            .finally(() => setLoading(false));
+    // Pindah halaman / ganti filter = visit ringan ke /master-data (partial reload cuma props.karyawan).
+    // Nilai default (search kosong, role semua, halaman 1) tidak ikut di URL.
+    function visitList(next: { search?: string; role?: TabKey; page?: number }) {
+        const search = (next.search ?? searchInput).trim();
+        const role = next.role ?? activeTab;
+        const page = next.page ?? 1;
+
+        const data: Record<string, string | number> = { tab: 'karyawan' };
+        if (search) data.search = search;
+        if (role !== 'semua') data.role = role;
+        if (page > 1) data.page = page;
+
+        setListLoading(true);
+        router.get('/master-data', data, {
+            only: ['karyawan'],
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            onFinish: () => setListLoading(false),
+        });
     }
 
+    // Pencarian: tunggu user berhenti mengetik sebentar sebelum minta data ke server.
     useEffect(() => {
-        api.get<{ role: string }>('/user').then((res) => setCurrentRole(res.data.role)).catch(() => {});
-        loadUsers(listMemo.users !== null);
-    }, []);
+        if (searchInput.trim() === serverSearch) return;
+        const timer = setTimeout(() => visitList({ search: searchInput, page: 1 }), 350);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchInput]);
 
-    const isAdmin = currentRole === 'admin';
+    function openCreate() {
+        setFormModal({ user: null });
+    }
 
-    const filtered = useMemo<User[]>(() => {
-        const q = search.toLowerCase().trim();
-        return users.filter((u) => {
-            const matchSearch = u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
-            const matchTab = activeTab === 'semua' || u.role === activeTab;
-            return matchSearch && matchTab;
-        });
-    }, [users, search, activeTab]);
+    function openEdit(user: User) {
+        setFormModal({ user });
+    }
 
-    // Reset ke halaman 1 setiap kali pencarian atau tab berubah
-    const prevFilter = useRef({ search, activeTab });
-    useEffect(() => {
-        if (prevFilter.current.search === search && prevFilter.current.activeTab === activeTab) return;
-        prevFilter.current = { search, activeTab };
-        setCurrentPage(1);
-    }, [search, activeTab]);
+    // Dari tombol "Hapus User" di dalam modal Edit: tutup form dulu, baru buka konfirmasi hapus.
+    function requestDelete(user: User) {
+        setFormModal(null);
+        setDeleteError('');
+        setUserToDelete(user);
+    }
 
-    // simpan state list buat dipulihkan waktu tab ini di-mount lagi
-    useEffect(() => {
-        listMemo.search = search;
-        listMemo.activeTab = activeTab;
-        listMemo.currentPage = currentPage;
-    }, [search, activeTab, currentPage]);
-
-    useEffect(() => {
-        if (!loading && !errorMsg) listMemo.users = users;
-    }, [users, loading, errorMsg]);
-
-    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
-
-    const paginated = useMemo<User[]>(() => {
-        const start = (currentPage - 1) * ITEMS_PER_PAGE;
-        return filtered.slice(start, start + ITEMS_PER_PAGE);
-    }, [filtered, currentPage]);
-
-    async function confirmDelete() {
+    function confirmDelete() {
         if (!userToDelete) return;
 
         setDeleting(true);
-        try {
-            await api.delete(`/karyawan/${userToDelete.id}`);
-            toast.success(`User ${userToDelete.name} berhasil dihapus.`);
-            setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
-            setUserToDelete(null);
-        } catch (err: any) {
-            const msg = err.response?.status === 403
-                ? 'Anda tidak punya akses untuk menghapus user ini.'
-                : err.response?.data?.message || 'Gagal menghapus user. Coba lagi.';
-            toast.error(msg);
-            setUserToDelete(null);
-        } finally {
-            setDeleting(false);
-        }
+        setDeleteError('');
+        // Sukses -> toast dari flash server. Gagal (mis. masih punya pinjaman inventory) -> error bag "delete",
+        // tampil di dalam modal konfirmasi.
+        router.delete(`/master-data/karyawan/${userToDelete.id}`, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => setUserToDelete(null),
+            onError: (errors) => setDeleteError(errors.delete || 'Gagal menghapus user. Coba lagi.'),
+            onFinish: () => setDeleting(false),
+        });
     }
 
-    // BARU: handler saat user pilih file dari <input type="file">
-    // FIX: loadUsers() sekarang SELALU dipanggil setelah proses import
-    // selesai (baik result.success true maupun false), bukan cuma di
-    // jalur success. Soalnya backend (KaryawanImport) tetap menyimpan
-    // baris-baris yang valid walau ada baris lain yang di-skip karena
-    // duplikat -- response "success: false" bukan berarti TIDAK ADA
-    // data yang berhasil ditambahkan. Tanpa ini, data baru yang sukses
-    // masuk baru kelihatan setelah user refresh manual (tidak realtime).
-    async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    function openExport() {
+        setExportLoading(true);
+        router.reload({
+            only: ['karyawanExport'],
+            onSuccess: () => setShowExportModal(true),
+            onError: () => toast.error('Gagal menyiapkan data export. Coba lagi.'),
+            onFinish: () => setExportLoading(false),
+        });
+    }
+
+    // Handler saat user pilih file dari <input type="file">.
+    // Sukses -> toast dari flash server + modal ditutup. Ada baris bermasalah -> error bag "file" (satu pesan per
+    // baris, dipisah newline) tampil sebagai list di modal. Baris yang valid tetap tersimpan (sama seperti dulu),
+    // dan list otomatis ter-refresh karena server redirect balik ke halaman ini.
+    function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (!file) return;
 
         setImporting(true);
         setImportErrors([]);
-        setImportSuccessMsg('');
 
-        try {
-            const result = await importKaryawan(file);
-            if (result.success) {
-                setImportSuccessMsg(result.message || 'Import berhasil.');
-            } else {
-                setImportErrors(result.errors || [result.message || 'Import gagal.']);
-            }
-            loadUsers(); // refresh daftar karyawan -- selalu jalan, apapun hasilnya
-        } catch (err: any) {
-            const data = err.response?.data;
-            if (data?.errors) {
-                setImportErrors(data.errors);
-            } else {
-                setImportErrors([data?.message || 'Gagal import file. Coba lagi.']);
-            }
-            loadUsers(); // jaga-jaga: tetap refresh kalau ada baris yang sempat tersimpan
-        } finally {
-            setImporting(false);
-            // reset value biar bisa pilih file yang sama lagi kalau perlu re-upload
-            e.target.value = '';
-        }
+        router.post('/master-data/karyawan/import', { file }, {
+            forceFormData: true,
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => setShowImportModal(false),
+            onError: (errors) =>
+                setImportErrors(
+                    String(errors.file || 'Gagal import file. Coba lagi.')
+                        .split('\n')
+                        .filter(Boolean)
+                ),
+            onFinish: () => {
+                setImporting(false);
+                // reset value biar bisa pilih file yang sama lagi kalau perlu re-upload
+                if (fileInputRef.current) fileInputRef.current.value = '';
+            },
+        });
     }
 
     const activeTabLabel = tabs.find((t) => t.key === activeTab)?.label ?? 'Pekerja';
@@ -258,10 +249,11 @@ export default function TabKaryawan() {
                     <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
                         <button
                             type="button"
-                            onClick={() => setShowExportModal(true)}
-                            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 transition shadow-xs"
+                            onClick={openExport}
+                            disabled={exportLoading}
+                            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
                         >
-                            <Download size={16} />
+                            {exportLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                             Export Excel
                         </button>
                         <button
@@ -274,7 +266,7 @@ export default function TabKaryawan() {
                         </button>
                         <button
                             type="button"
-                            onClick={() => navigate('/karyawan/create')}
+                            onClick={openCreate}
                             className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs"
                         >
                             <Plus size={16} />
@@ -290,41 +282,31 @@ export default function TabKaryawan() {
                     <ScrollableTabBar
                         className="mb-4"
                         activeTab={activeTab}
-                        onChange={setActiveTab}
+                        onChange={(key) => visitList({ role: key, page: 1 })}
                         tabs={tabs}
                     />
 
                     <div className="flex flex-col sm:flex-row gap-3 mb-4">
                         <SearchInput
-                            value={search}
-                            onChange={setSearch}
+                            value={searchInput}
+                            onChange={setSearchInput}
                             placeholder="Cari nama, email, atau NIK user..."
                             className="flex-1"
                         />
                     </div>
 
                     <p className="text-xs text-slate-500 mb-4">
-                        Total {activeTabLabel}: <span className="font-semibold text-slate-900">{filtered.length}</span> user
+                        Total {activeTabLabel}: <span className="font-semibold text-slate-900">{totalUsers}</span> user
                     </p>
 
-                    <div className="border border-slate-200 rounded-lg overflow-hidden">
-                        {loading && (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <tbody>
-                                        <SkeletonTable columns={6} rows={6} />
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
+                    <div className={`border border-slate-200 rounded-lg overflow-hidden transition-opacity ${listLoading ? 'opacity-60' : ''}`}>
+                        {!list && <p className="text-center text-sm text-red-500 py-8">Gagal memuat data. Coba lagi.</p>}
 
-                        {!loading && errorMsg && <p className="text-center text-sm text-red-500 py-8">{errorMsg}</p>}
-
-                        {!loading && !errorMsg && filtered.length === 0 && (
+                        {list && users.length === 0 && (
                             <p className="text-center text-sm text-slate-400 py-8">Tidak ada user yang cocok dengan pencarian / filter ini.</p>
                         )}
 
-                        {!loading && !errorMsg && filtered.length > 0 && (
+                        {list && users.length > 0 && (
                             <>
                                 {/* Desktop Table */}
                                 <div className="hidden sm:block overflow-x-auto">
@@ -340,7 +322,7 @@ export default function TabKaryawan() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {paginated.map((user) => (
+                                            {users.map((user) => (
                                                 <tr key={user.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
                                                     <td className="px-6 py-3.5 text-slate-800">
                                                         <div className="flex items-center gap-3">
@@ -378,7 +360,7 @@ export default function TabKaryawan() {
                                                         <div className="flex items-center justify-end gap-1">
                                                             <button
                                                                 type="button"
-                                                                onClick={() => navigate(`/karyawan/${user.id}`)}
+                                                                onClick={() => setDetailUser(user)}
                                                                 title="Detail User"
                                                                 className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
                                                             >
@@ -388,7 +370,7 @@ export default function TabKaryawan() {
                                                                 <>
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => navigate(`/karyawan/${user.id}/edit`)}
+                                                                        onClick={() => openEdit(user)}
                                                                         title="Edit User"
                                                                         className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
                                                                     >
@@ -396,7 +378,7 @@ export default function TabKaryawan() {
                                                                     </button>
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => setUserToDelete(user)}
+                                                                        onClick={() => requestDelete(user)}
                                                                         title="Hapus User"
                                                                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
                                                                     >
@@ -414,7 +396,7 @@ export default function TabKaryawan() {
 
                                 {/* Mobile List View */}
                                 <div className="sm:hidden flex flex-col divide-y divide-slate-100">
-                                    {paginated.map((user) => (
+                                    {users.map((user) => (
                                         <div key={user.id} className="p-4 flex flex-col gap-2.5">
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="flex items-center gap-2.5 min-w-0">
@@ -440,7 +422,7 @@ export default function TabKaryawan() {
                                                 <div className="flex items-center gap-1">
                                                     <button
                                                         type="button"
-                                                        onClick={() => navigate(`/karyawan/${user.id}`)}
+                                                        onClick={() => setDetailUser(user)}
                                                         title="Detail"
                                                         className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
                                                     >
@@ -450,7 +432,7 @@ export default function TabKaryawan() {
                                                         <>
                                                             <button
                                                                 type="button"
-                                                                onClick={() => navigate(`/karyawan/${user.id}/edit`)}
+                                                                onClick={() => openEdit(user)}
                                                                 title="Edit"
                                                                 className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
                                                             >
@@ -458,7 +440,7 @@ export default function TabKaryawan() {
                                                             </button>
                                                             <button
                                                                 type="button"
-                                                                onClick={() => setUserToDelete(user)}
+                                                                onClick={() => requestDelete(user)}
                                                                 title="Hapus"
                                                                 className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
                                                             >
@@ -477,8 +459,8 @@ export default function TabKaryawan() {
                                         <Pagination
                                             currentPage={currentPage}
                                             totalPages={totalPages}
-                                            onPageChange={setCurrentPage}
-                                            totalItems={filtered.length}
+                                            onPageChange={(page) => visitList({ page })}
+                                            totalItems={totalUsers}
                                             itemLabel="user"
                                             className="pt-0 mt-0 border-t-0"
                                         />
@@ -490,6 +472,21 @@ export default function TabKaryawan() {
                 </div>
             </div>
 
+            {/* MODAL TAMBAH / EDIT */}
+            {formModal && pageProps.karyawanOpsi && (
+                <KaryawanFormModal
+                    key={formModal.user?.id ?? 'baru'}
+                    user={formModal.user}
+                    opsi={pageProps.karyawanOpsi}
+                    onClose={() => setFormModal(null)}
+                    onDelete={requestDelete}
+                />
+            )}
+
+            {/* MODAL DETAIL */}
+            {detailUser && <KaryawanDetailModal user={detailUser} onClose={() => setDetailUser(null)} />}
+
+            {/* MODAL KONFIRMASI HAPUS */}
             <ConfirmDeleteModal
                 isOpen={!!userToDelete}
                 itemName={userToDelete?.name || ''}
@@ -497,48 +494,48 @@ export default function TabKaryawan() {
                 itemType="Karyawan / User"
                 warningMessage="Akun login dan seluruh hak akses user ini akan dicabut secara permanen."
                 loading={deleting}
-                onClose={() => setUserToDelete(null)}
+                errorMessage={deleteError}
+                onClose={() => {
+                    setUserToDelete(null);
+                    setDeleteError('');
+                }}
                 onConfirm={confirmDelete}
             />
 
-            {/* BARU: modal import Excel */}
+            {/* MODAL IMPORT EXCEL */}
             {showImportModal && (
                 <ImportModal
                     importing={importing}
                     errors={importErrors}
-                    successMsg={importSuccessMsg}
                     fileInputRef={fileInputRef}
                     onFileSelected={handleFileSelected}
                     onClose={() => {
                         setShowImportModal(false);
                         setImportErrors([]);
-                        setImportSuccessMsg('');
                     }}
                 />
             )}
-            {/* Modal export Excel/PDF — data yang dikirim udah sesuai filter
-                tab & pencarian yang lagi aktif di tabel (bukan cuma halaman
-                yang lagi ditampilin, tapi SEMUA hasil filter). */}
+
+            {/* Modal export Excel/PDF — data = SEMUA hasil filter aktif (props.karyawanExport), bukan cuma halaman yang tampil. */}
             <KaryawanExportModal
                 open={showExportModal}
                 onClose={() => setShowExportModal(false)}
-                data={filtered}
+                data={pageProps.karyawanExport ?? []}
             />
         </>
     );
 }
 
-// BARU: modal untuk pilih & upload file Excel karyawan
+// Modal untuk pilih & upload file Excel karyawan
 interface ImportModalProps {
     importing: boolean;
     errors: string[];
-    successMsg: string;
     fileInputRef: React.RefObject<HTMLInputElement | null>;
     onFileSelected: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onClose: () => void;
 }
 
-function ImportModal({ importing, errors, successMsg, fileInputRef, onFileSelected, onClose }: ImportModalProps) {
+function ImportModal({ importing, errors, fileInputRef, onFileSelected, onClose }: ImportModalProps) {
     return (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
             <div className="bg-white rounded-xl w-full max-w-md p-5 max-h-[90vh] overflow-y-auto">
@@ -565,12 +562,6 @@ function ImportModal({ importing, errors, successMsg, fileInputRef, onFileSelect
                         onChange={onFileSelected}
                     />
                 </label>
-
-                {successMsg && (
-                    <div className="mt-4 text-sm bg-green-50 text-green-700 rounded-lg p-3">
-                        {successMsg}
-                    </div>
-                )}
 
                 {errors.length > 0 && (
                     <div className="mt-4 text-sm bg-red-50 text-red-700 rounded-lg p-3 max-h-40 overflow-y-auto">

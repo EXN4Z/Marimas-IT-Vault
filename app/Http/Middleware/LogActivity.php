@@ -87,7 +87,9 @@ class LogActivity
             return null;
         }
 
-        $uri = $route->uri(); // contoh: "inventory/{inventory}/pemakai"
+        // [F4-INERTIA] Route web inventory ada di bawah prefix master-data/ (mis. "master-data/inventory/{inventory}/jual");
+        // prefix dibuang supaya deskripsi audit sama dengan route API-nya.
+        $uri = preg_replace('#^master-data/#', '', $route->uri()); // contoh: "inventory/{inventory}/pemakai"
         $method = $request->method();
         $kodeAset = $this->kodeAsetDariRoute($route);
 

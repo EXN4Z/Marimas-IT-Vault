@@ -37,18 +37,8 @@ export const STATUS_STYLE: Record<InventoryStatus, string> = {
   dijual: 'bg-purple-50 text-purple-700',
 };
 
-// urutan tampil di tabel: tersedia paling atas, lalu dipakai, lalu status
-// yang lagi dalam proses penanganan, rusak_berat, dan dijual paling
-// bawah -- dipakai sebagai key sort di filteredInventory, BUKAN untuk urutan
-// dropdown filter (dropdown tetap ikut urutan STATUS_LABEL di atas).
-export const STATUS_PRIORITY: Record<InventoryStatus, number> = {
-  tersedia: 1,
-  dipakai: 2,
-  menunggu_perbaikan: 3,
-  diperbaiki: 4,
-  rusak_berat: 5,
-  dijual: 6,
-};
+// [F4-INERTIA] Urutan tampil (status lalu kode) dan pagination 10 per halaman sekarang dijalankan server
+// (InventoryWebController), jadi STATUS_PRIORITY & ASET_PER_PAGE tidak dipakai lagi di client.
 
 export function formatTanggalId(iso: string | null): string {
   if (!iso) return '-';
@@ -59,8 +49,6 @@ export function formatRupiah(n: number | null): string {
   if (n == null) return '-';
   return 'Rp ' + n.toLocaleString('id-ID');
 }
-
-export const ASET_PER_PAGE = 10;
 
 // Pagination + dropdown detail buat Riwayat Perbaikan & Riwayat Pemakai --
 // style ringkas, limit 5 per halaman (beda dari Pagination tabel inventory yg 10).

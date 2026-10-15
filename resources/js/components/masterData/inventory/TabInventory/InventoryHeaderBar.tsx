@@ -3,6 +3,8 @@ import type { Inventory } from '../../../../api/masterData/inventory';
 
 interface InventoryHeaderBarProps {
   setExportOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  /** [F4-INERTIA] true selama data export diambil dari server (tombol Export dinonaktifkan). */
+  exportLoading?: boolean;
   isAdmin: boolean;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   handleFileSelected: (e: React.ChangeEvent<HTMLInputElement>) => void | Promise<void>;
@@ -11,7 +13,7 @@ interface InventoryHeaderBarProps {
   setFormOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export default function InventoryHeaderBar({ setExportOpen, isAdmin, fileInputRef, handleFileSelected, importLoading, setEditingInventory, setFormOpen }: InventoryHeaderBarProps) {
+export default function InventoryHeaderBar({ setExportOpen, exportLoading = false, isAdmin, fileInputRef, handleFileSelected, importLoading, setEditingInventory, setFormOpen }: InventoryHeaderBarProps) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
       <p className="text-sm text-slate-500">
@@ -22,9 +24,10 @@ export default function InventoryHeaderBar({ setExportOpen, isAdmin, fileInputRe
         <button
           type="button"
           onClick={() => setExportOpen(true)}
-          className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 transition shadow-xs"
+          disabled={exportLoading}
+          className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
         >
-          <Download size={16} />
+          {exportLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
           Export Excel
         </button>
 

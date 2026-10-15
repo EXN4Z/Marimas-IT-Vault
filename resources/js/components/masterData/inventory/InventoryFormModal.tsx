@@ -1,17 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useForm } from '@inertiajs/react';
 import toast from 'react-hot-toast';
-import {
-  createInventory,
-  getInventory,
-  getInventoryById,
-  updateInventory,
-  type Inventory,
-  type InventoryFormValues,
-  type InventoryStatus,
-} from '../../../api/masterData/inventory';
-import { getKategori, type Kategori } from '../../../api/masterData/kategori';
-import { getSupplier, type Supplier } from '../../../api/masterData/supplier';
-import { getPerusahaan, type Perusahaan } from '../../../api/masterData/perusahaan';
+import type { InventoryStatus } from '../../../api/masterData/inventory';
+import type { InventoryIndukOpsi, InventoryOpsi, InventoryRow } from '../../../types/inventory';
 import { ButtonCancel, ButtonSubmit, Field, SelectField, inputClass, inputErrorClass } from '../../shared/FormControls';
 
 const KETERANGAN_MAX = 255;
@@ -30,12 +21,16 @@ const ACCEPTED_FOTO_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp
 // children (kalau ya, gak boleh dikasih parent_id -- aturan dari backend
 // InventoryController::validasiParent()).
 
-// Form ini nangani status secara lokal aja -- InventoryFormValues (create/update)
-// TIDAK punya field status, karena perubahan status dilakuin lewat endpoint aksi
-// khusus (pinjam/kembalikan/lapor rusak/dst), bukan lewat create/update langsung.
-// 'status' di sini cuma dipakai buat UI (badge read-only pas edit), DIBUANG
-// sebelum dikirim ke createInventory/updateInventory.
-type KelengkapanFormValues = InventoryFormValues & { status: InventoryStatus };
+// [F4-INERTIA] Form Tambah / Edit Inventory sebagai modal overlay di tab Inventory.
+//  - Data baris dari props list (tidak ada request tambahan); pilihan dropdown dari props `inventoryOpsi`;
+//    kandidat induk dari props `inventoryIndukOpsi` (dimuat tab saat modal dibuka, undefined = masih memuat).
+//  - Submit pakai useForm (multipart): preserveState + preserveScroll, sukses -> modal ditutup (toast dari flash server),
+//    error validasi server tampil di dalam modal lewat form.errors.
+//  - Edit dengan foto: kirim POST + _method=put (route di server didaftarkan PUT).
+// Kategori bebas: kategori cuma label buat dipilih dari dropdown; bentuk UI cuma ditentukan parent_id (menempel atau
+// tidak) & apakah item punya children (kalau ya, gak boleh dikasih parent_id -- aturan server, InventoryAction).
+// Status TIDAK dikirim dari form ini (perubahan status lewat aksi khusus: pinjam/kembalikan/lapor rusak/dst); 'status'
+// di sini cuma buat badge read-only pas edit.
 
 const STATUS_OPTIONS: { value: InventoryStatus; label: string; dot: string; ring: string }[] = [
   { value: 'tersedia', label: 'Tersedia', dot: 'bg-emerald-500', ring: 'ring-emerald-100 border-emerald-400 bg-emerald-50/60' },
@@ -43,19 +38,34 @@ const STATUS_OPTIONS: { value: InventoryStatus; label: string; dot: string; ring
 ];
 
 interface InventoryFormModalProps {
-  inventory: Inventory | null; // null = mode tambah
-  // Dipakai kalau pemanggil sudah punya daftar supplier ter-load (mis.
-  // TabInventory) -- biar gak fetch dobel. Kalau dikosongin, form fetch
-  // sendiri lewat getSupplier().
-  supplierOptions: Supplier[];
+  inventory: InventoryRow | null; // null = mode tambah
+  opsi: InventoryOpsi;
+  /** Kandidat induk; undefined = masih dimuat dari server. */
+  indukOptions: InventoryIndukOpsi[] | undefined;
   onClose: () => void;
-  onSaved: (inventory: Inventory, warning?: string) => void;
+  onSaved: () => void;
 }
 
-// State form lokal -- superset dari KelengkapanFormValues, cuma `jumlah`
-// ditahan sebagai string (biar input number kosong/parsial gak maksa jadi 0).
-interface FormState extends Omit<KelengkapanFormValues, 'jumlah'> {
+// State form lokal -- `jumlah` ditahan sebagai string (biar input number kosong/parsial gak maksa jadi 0).
+interface FormState {
+  kategori_id: number | null;
+  parent_id: number | null; // cuma valid kalau menempel ke induk murni (aturan server)
+  nama: string;
+  warna: string;
+  serial_number: string;
+  merk: string;
+  type: string;
   jumlah: string;
+  tanggal_garansi: string;
+  perusahaan_id: number | null;
+  keterangan: string;
+  foto: File | null;
+  supplier_id: number | null;
+  tanggal_input: string;
+  tanggal_invoice: string;
+  no_surat_jalan: string;
+  no_good_receive: string;
+  status: InventoryStatus;
 }
 
 const EMPTY_FORM: FormState = {
@@ -79,79 +89,63 @@ const EMPTY_FORM: FormState = {
   status: 'tersedia',
 };
 
+// Field yang punya tempat tampil sendiri di form; error lain dari server digabung di kotak error umum.
+const FIELD_ERROR_DITAMPILKAN = ['kategori_id', 'nama', 'serial_number', 'tanggal_garansi', 'parent_id'];
+
+// Payload ke server -- SAMA dengan buildInventoryFormData() lama: kolom kosong tidak dikirim (kecuali supplier_id),
+// foto 3 kondisi (File baru / hapus_foto / tidak disentuh).
+function bangunPayload(v: FormState, hapusFoto: boolean): Record<string, string | number | File> {
+  const p: Record<string, string | number | File> = {};
+  if (v.kategori_id != null) p.kategori_id = v.kategori_id;
+  if (v.parent_id != null) p.parent_id = v.parent_id;
+  if (v.nama) p.nama = v.nama;
+  if (v.warna) p.warna = v.warna;
+  if (v.serial_number) p.serial_number = v.serial_number;
+  if (v.merk) p.merk = v.merk;
+  if (v.type) p.type = v.type;
+  if (v.jumlah) p.jumlah = Number(v.jumlah);
+  if (v.tanggal_garansi) p.tanggal_garansi = v.tanggal_garansi;
+  if (v.tanggal_input) p.tanggal_input = v.tanggal_input;
+  if (v.tanggal_invoice) p.tanggal_invoice = v.tanggal_invoice;
+  if (v.perusahaan_id != null) p.perusahaan_id = v.perusahaan_id;
+  if (v.keterangan) p.keterangan = v.keterangan;
+
+  if (v.foto instanceof File) {
+    p.foto = v.foto;
+  } else if (hapusFoto) {
+    p.hapus_foto = 1;
+  }
+  // foto tidak disentuh -> tidak ada apa-apa yang dikirim, foto lama dibiarkan.
+
+  p.supplier_id = v.supplier_id != null ? v.supplier_id : '';
+  if (v.no_surat_jalan) p.no_surat_jalan = v.no_surat_jalan;
+  if (v.no_good_receive) p.no_good_receive = v.no_good_receive;
+  return p;
+}
+
 export default function InventoryFormModal({
   inventory,
-  supplierOptions,
+  opsi,
+  indukOptions,
   onClose,
   onSaved,
 }: InventoryFormModalProps) {
-  // ================= Referensi: kategori, supplier, perusahaan, inventory induk, lokasi =================
-  const [daftarKategori, setDaftarKategori] = useState<Kategori[]>([]);
-  const [loadingKategori, setLoadingKategori] = useState(true);
-  useEffect(() => {
-    let active = true;
-    setLoadingKategori(true);
-    getKategori()
-      .then((data) => {
-        if (active) setDaftarKategori(data);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (active) setLoadingKategori(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
+  // ================= Referensi (dari props server) =================
+  const daftarKategori = opsi.kategori;
+  const loadingKategori = false;
+  const effectiveSupplierOptions = opsi.supplier;
+  const daftarPerusahaan = opsi.perusahaan;
+  const loadingPerusahaan = false;
 
-  const [fetchedSupplierOptions, setFetchedSupplierOptions] = useState<Supplier[]>([]);
-  useEffect(() => {
-    // Kalau pemanggil sudah kasih daftar supplier (TabInventory), gak perlu fetch lagi.
-    if (supplierOptions.length > 0) return;
-    getSupplier()
-      .then(setFetchedSupplierOptions)
-      .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supplierOptions.length]);
-  const effectiveSupplierOptions = supplierOptions.length > 0 ? supplierOptions : fetchedSupplierOptions;
-
-  const [daftarPerusahaan, setDaftarPerusahaan] = useState<Perusahaan[]>([]);
-  const [loadingPerusahaan, setLoadingPerusahaan] = useState(true);
-  useEffect(() => {
-    let active = true;
-    setLoadingPerusahaan(true);
-    getPerusahaan()
-      .then((data) => {
-        if (active) setDaftarPerusahaan(data);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (active) setLoadingPerusahaan(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const [inventoryOptions, setInventoryOptions] = useState<Inventory[]>([]);
-  const [loadingRefs, setLoadingRefs] = useState(false);
-  useEffect(() => {
-    setLoadingRefs(true);
-    // Kandidat "Inventory Induk" = item apapun (kategori bebas) yang lagi
-    // berdiri sendiri (parent_id null) -- posisi=induk sudah nyaring itu di
-    // backend, independen dari kategori_id (lihat InventoryController::index()).
-    getInventory({ posisi: 'induk' })
-      .then((data) => {
-        // Item gak boleh jadi induk buat dirinya sendiri.
-        setInventoryOptions(data.filter((a) => a.id !== inventory?.id));
-      })
-      .catch(() => {})
-      .finally(() => setLoadingRefs(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inventory?.id]);
+  // Kandidat "Inventory Induk" = item apapun yang lagi berdiri sendiri (parent_id null), kecuali item ini sendiri.
+  const loadingRefs = indukOptions === undefined;
+  const inventoryOptions = useMemo(
+    () => (indukOptions ?? []).filter((a) => a.id !== inventory?.id),
+    [indukOptions, inventory?.id]
+  );
 
   // ================= Form state =================
-  const [form, setForm] = useState<FormState>(() =>
+  const formHook = useForm<FormState>(
     inventory
       ? {
           kategori_id: inventory.kategori_id ?? null,
@@ -175,35 +169,29 @@ export default function InventoryFormModal({
         }
       : EMPTY_FORM
   );
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = useState(false);
-  const [existingKelengkapan, setExistingKelengkapan] = useState<Inventory[]>([]);
+  const form = formHook.data;
+  const errors = formHook.errors as Record<string, string | undefined>;
+  const processing = formHook.processing;
+
+  const errorUmum = Object.entries(errors)
+    .filter(([k, v]) => !!v && !FIELD_ERROR_DITAMPILKAN.includes(k))
+    .map(([, v]) => v)
+    .join(' ');
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: '' }));
+    formHook.setData((prev) => ({ ...prev, [key]: value }));
+    if (errors[key]) formHook.clearErrors(key);
   }
 
-  // Mode edit: fetch ulang detail inventory (list row yang dilempar ke form
-  // belum tentu bawa relasi children) buat tau apakah item ini udah punya
-  // children -- dipakai validasi sudahPunyaChildren di bawah.
-  useEffect(() => {
-    if (!inventory) return;
-    getInventoryById(inventory.id)
-      .then((data) => setExistingKelengkapan(data.children || []))
-      .catch(() => {});
-  }, [inventory]);
-
-  // Item yang sudah punya children gak boleh dikasih parent_id (dicek juga
-  // di backend, validasiParent()) -- kalau ini terjadi (mis. item lama dari
-  // sebelum refactor), kunci field Inventory Induk & jelasin kenapa.
-  const sudahPunyaChildren = existingKelengkapan.length > 0;
+  // Item yang sudah punya children gak boleh dikasih parent_id (dicek juga di server, InventoryAction) -- kunci field
+  // Inventory Induk & jelasin kenapa. Jumlah children dari baris list (children_count).
+  const jumlahKelengkapan = inventory?.children_count ?? 0;
+  const sudahPunyaChildren = jumlahKelengkapan > 0;
 
   function pilihInventoryInduk(id: number | null) {
-    setForm((prev) => ({ ...prev, parent_id: id }));
-    if (errors.parent_id) setErrors((prev) => ({ ...prev, parent_id: '' }));
+    formHook.setData((prev) => ({ ...prev, parent_id: id }));
+    if (errors.parent_id) formHook.clearErrors('parent_id');
   }
-
 
   const [inventorySearch, setInventorySearch] = useState('');
   const [inventoryDropdownOpen, setInventoryDropdownOpen] = useState(false);
@@ -331,47 +319,32 @@ export default function InventoryFormModal({
     const next: Record<string, string> = {};
     if (!form.nama?.trim()) next.nama = 'Nama inventory wajib diisi.';
     if (!inventory && form.kategori_id == null) next.kategori_id = 'Kategori barang wajib dipilih.';
-    setErrors((prev) => ({ ...prev, ...next }));
     const hasErrors = Object.keys(next).length > 0;
     if (hasErrors) {
+      formHook.setError(next as Partial<Record<keyof FormState, string>>);
       toast.error('Mohon lengkapi kolom yang bertanda bintang (*).');
     }
     return !hasErrors;
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (submitting) return;
+    if (processing) return;
     if (!validate()) return;
 
-    // status TIDAK dikirim -- InventoryFormValues gak punya field ini
-    // (perubahan status lewat endpoint aksi khusus).
-    const { status: _status, jumlah, ...rest } = form;
-    const payload: InventoryFormValues = {
-      ...rest,
-      jumlah: jumlah ? Number(jumlah) : undefined,
-      // FIX: sertakan flag hapus_foto ke payload -- cuma true kalau user
-      // benar-benar klik "Hapus" dan gak diikuti pemilihan foto baru
-      // setelahnya (lihat applyFoto()/removeFoto() di atas).
-      hapus_foto: fotoDihapus,
-    };
+    // status TIDAK dikirim. Edit: POST + _method=put (multipart, karena ada file).
+    formHook.transform((d) => {
+      const payload = bangunPayload(d, fotoDihapus);
+      return inventory ? { ...payload, _method: 'put' } : payload;
+    });
 
-    setSubmitting(true);
-    try {
-      const saved = inventory ? await updateInventory(inventory.id, payload) : await createInventory(payload);
-      onSaved(saved);
-    } catch (err: any) {
-      const apiErrors = err?.response?.data?.errors;
-      if (apiErrors) {
-        const flat: Record<string, string> = {};
-        Object.keys(apiErrors).forEach((k) => (flat[k] = apiErrors[k][0]));
-        setErrors((prev) => ({ ...prev, ...flat }));
-      } else {
-        setErrors((prev) => ({ ...prev, _general: err?.response?.data?.message || 'Gagal menyimpan data. Coba lagi.' }));
-      }
-    } finally {
-      setSubmitting(false);
-    }
+    formHook.post(inventory ? `/master-data/inventory/${inventory.id}` : '/master-data/inventory', {
+      forceFormData: true,
+      preserveScroll: true,
+      preserveState: true,
+      // Sukses -> toast dari flash server (FlashToaster).
+      onSuccess: () => onSaved(),
+    });
   }
 
   // ================= Render =================
@@ -379,7 +352,7 @@ export default function InventoryFormModal({
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-[fadeIn_150ms_ease-out]"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget && !submitting) onClose();
+        if (e.target === e.currentTarget && !processing) onClose();
       }}
       role="dialog"
       aria-modal="true"
@@ -396,7 +369,7 @@ export default function InventoryFormModal({
           <button
             type="button"
             onClick={onClose}
-            disabled={submitting}
+            disabled={processing}
             aria-label="Tutup"
             className="group grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-40 disabled:pointer-events-none transition-colors"
           >
@@ -408,13 +381,13 @@ export default function InventoryFormModal({
 
         {/* Body */}
         <form id="inventory-form" onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto">
-          {errors._general && (
+          {errorUmum && (
             <p className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2.5 animate-[fadeIn_150ms_ease-out]" role="alert">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
                 <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.4" />
                 <path d="M8 5v3.5M8 11h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
               </svg>
-              {errors._general}
+              {errorUmum}
             </p>
           )}
 
@@ -546,7 +519,7 @@ export default function InventoryFormModal({
                       <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.4" />
                       <path d="M8 5v3.5M8 11h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                     </svg>
-                    Item ini punya {existingKelengkapan.length} kelengkapan menempel, jadi gak bisa dipasang ke induk lain.
+                    Item ini punya {jumlahKelengkapan} kelengkapan menempel, jadi gak bisa dipasang ke induk lain.
                   </div>
                 ) : (
                   <div className="relative">
@@ -773,8 +746,8 @@ export default function InventoryFormModal({
 
         {/* Footer */}
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 shrink-0">
-          <ButtonCancel onClick={onClose} disabled={submitting} />
-          <ButtonSubmit type="submit" form="inventory-form" loading={submitting} loadingLabel="Menyimpan...">
+          <ButtonCancel onClick={onClose} disabled={processing} />
+          <ButtonSubmit type="submit" form="inventory-form" loading={processing} loadingLabel="Menyimpan...">
             {inventory ? 'Simpan Perubahan' : 'Tambah Inventory'}
           </ButtonSubmit>
         </div>

@@ -5,13 +5,14 @@ use App\Http\Controllers\Auth\WebAuthController;
 use App\Http\Controllers\AuditLog\AuditLogPageController;
 use App\Http\Controllers\Dashboard\DashboardPageController;
 use App\Http\Controllers\Laporan\LaporanPageController;
-use App\Http\Controllers\MasterData\KaryawanPageController;
+use App\Http\Controllers\MasterData\KaryawanWebController;
 use App\Http\Controllers\MasterData\MasterDataPageController;
 use App\Http\Controllers\MasterData\CabangWebController;
 use App\Http\Controllers\MasterData\PerusahaanWebController;
 use App\Http\Controllers\MasterData\DepartemenWebController;
 use App\Http\Controllers\MasterData\KategoriWebController;
 use App\Http\Controllers\MasterData\SupplierWebController;
+use App\Http\Controllers\MasterData\InventoryWebController;
 use App\Http\Middleware\LogActivity;
 use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\Transaksi\PenangananInventoryPageController;
@@ -28,7 +29,7 @@ Route::redirect('/', '/dashboard'); // belum login -> middleware 'auth' di /dash
 Route::redirect('/dashboard-analytics', '/dashboard?tab=analytics');
 Route::redirect('/inventaris', '/laporan');
 Route::redirect('/inventory', '/master-data?tab=inventory');
-Route::redirect('/karyawan', '/master-data?tab=karyawan'); // cuma persis /karyawan; create/detail/edit ada di grup auth di bawah
+Route::redirect('/karyawan', '/master-data?tab=karyawan'); // alias lama [F3-INERTIA]: create/detail/edit sekarang modal di tab Karyawan, bukan route
 Route::redirect('/cabang', '/master-data?tab=cabang');
 
 // Halaman Inertia (butuh login).
@@ -44,7 +45,7 @@ Route::middleware('auth')->group(function () {
     // Master Data (semua role boleh buka halamannya; tab admin-only dibatasi di controller + API)
     Route::get('/master-data', MasterDataPageController::class);
 
-    // Master Data: Cabang, Perusahaan, Departemen, Kategori, Supplier (admin-only). Mutasi lewat Inertia (redirect back + flash).
+    // Master Data: Cabang, Perusahaan, Departemen, Kategori, Supplier, Karyawan (admin-only). Mutasi lewat Inertia (redirect back + flash).
     // LogActivity dipasang manual di sini karena di bootstrap/app.php audit log cuma nempel di grup 'api'.
     // Route statis (/import) HARUS di atas route {id}.
     Route::middleware(['role:admin', LogActivity::class])->prefix('master-data')->group(function () {
@@ -71,14 +72,24 @@ Route::middleware('auth')->group(function () {
         Route::post('/supplier', [SupplierWebController::class, 'store']);
         Route::put('/supplier/{id}', [SupplierWebController::class, 'update'])->whereNumber('id');
         Route::delete('/supplier/{id}', [SupplierWebController::class, 'destroy'])->whereNumber('id');
-    });
 
-    // Karyawan: create / detail / edit (admin-only; non-admin web/Inertia -> redirect /dashboard, API/JSON tetap 403).
-    // '/create' HARUS di atas '/{user}'. Data form/detail masih lewat /api (axios); ke props di F11.
-    Route::middleware('role:admin')->prefix('karyawan')->group(function () {
-        Route::get('/create', [KaryawanPageController::class, 'create']);
-        Route::get('/{user}', [KaryawanPageController::class, 'show'])->whereNumber('user');
-        Route::get('/{user}/edit', [KaryawanPageController::class, 'edit'])->whereNumber('user');
+        // [F3-INERTIA] Karyawan (Data User): modal Tambah/Edit/Hapus/Ubah Password + import. Statis (/import) di atas {id}.
+        Route::post('/karyawan/import', [KaryawanWebController::class, 'import']);
+        Route::post('/karyawan', [KaryawanWebController::class, 'store']);
+        Route::put('/karyawan/{id}/password', [KaryawanWebController::class, 'setPassword'])->whereNumber('id');
+        Route::put('/karyawan/{id}', [KaryawanWebController::class, 'update'])->whereNumber('id');
+        Route::delete('/karyawan/{id}', [KaryawanWebController::class, 'destroy'])->whereNumber('id');
+
+        // [F4-INERTIA] Inventory: modal Tambah/Edit/Hapus/Jual/Pasang ke Induk/Lepas dari Induk + import. Statis (/import) di atas {inventory}.
+        // {inventory} = route model binding (LogActivity butuh model-nya buat deskripsi audit "mengubah/menghapus aset <kode>").
+        // Update dengan foto: klien kirim POST + _method=put, jadi route-nya WAJIB didaftarkan PUT.
+        Route::post('/inventory/import', [InventoryWebController::class, 'import']);
+        Route::post('/inventory', [InventoryWebController::class, 'store']);
+        Route::post('/inventory/{inventory}/jual', [InventoryWebController::class, 'jual'])->whereNumber('inventory');
+        Route::post('/inventory/{inventory}/pasang-ke-induk', [InventoryWebController::class, 'pasangKeInduk'])->whereNumber('inventory');
+        Route::post('/inventory/{inventory}/lepas-dari-induk', [InventoryWebController::class, 'lepasDariInduk'])->whereNumber('inventory');
+        Route::put('/inventory/{inventory}', [InventoryWebController::class, 'update'])->whereNumber('inventory');
+        Route::delete('/inventory/{inventory}', [InventoryWebController::class, 'destroy'])->whereNumber('inventory');
     });
 
     // Penanganan Inventory (semua role; non-admin hanya lihat laporan miliknya -- scoping di controller API)

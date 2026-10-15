@@ -4,9 +4,9 @@ namespace App\Http\Controllers\MasterData;
 
 use App\Http\Controllers\Controller;
 
+use App\Actions\MasterData\KaryawanAction;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 
 class AdminUserController extends Controller
 {
@@ -24,9 +24,8 @@ class AdminUserController extends Controller
 
         $user = User::findOrFail($id);
 
-        $user->update([
-            'password' => Hash::make($validated['password']),
-        ]);
+        // [F3-INERTIA] logika dipakai bareng halaman web (KaryawanWebController::setPassword)
+        KaryawanAction::ubahPassword($user, $validated['password']);
 
         return response()->json([
             'message' => 'Password berhasil diubah.',

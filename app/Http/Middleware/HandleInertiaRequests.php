@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -42,10 +43,13 @@ class HandleInertiaRequests extends Middleware
                 // model User apa adanya ($hidden buang password, $appends bawa 'role').
                 'user' => fn () => $request->user(),
             ],
-            'flash' => [
-                'success' => fn () => $request->hasSession() ? $request->session()->get('success') : null,
-                'error' => fn () => $request->hasSession() ? $request->session()->get('error') : null,
-            ],
+            // [F4-INERTIA] Inertia::always: flash ikut di SETIAP response, termasuk partial reload (polling, pagination,
+            // search). Tanpa ini, flash dari mutasi terakhir tetap menempel di props klien dan FlashToaster menampilkan
+            // toast yang sama lagi di setiap partial reload berikutnya.
+            'flash' => Inertia::always(fn () => [
+                'success' => $request->hasSession() ? $request->session()->get('success') : null,
+                'error' => $request->hasSession() ? $request->session()->get('error') : null,
+            ]),
         ];
     }
 }

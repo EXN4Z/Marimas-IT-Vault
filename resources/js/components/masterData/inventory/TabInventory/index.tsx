@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { router, usePage } from '@inertiajs/react';
 import toast from 'react-hot-toast';
 import InventoryFormModal from '../InventoryFormModal';
 import InventorySerahTerimaModal from '../InventorySerahTerimaModal';
@@ -10,23 +11,15 @@ import InventoryPenangananSelesaiModal from '../../../transaksi/InventoryPenanga
 import InventoryExportModal from '../../../laporan/InventoryExportModal';
 import ConfirmDeleteModal from '../../../shared/ConfirmDeleteModal';
 import { useAuth } from '../../../../context/AuthContext';
-import { namaPemakai, userIdPemakai } from '../../../../utils/inventoryHelpers';
-import {
-  getInventoryById,
-  deleteInventory,
-  jualInventory,
-  importInventory,
-  type Inventory,
-  type InventoryStatus,
-} from '../../../../api/masterData/inventory';
+import type { Inventory, InventoryStatus } from '../../../../api/masterData/inventory';
 import { deletePemakaiInventory, type InventoryPemakai } from '../../../../api/transaksi/inventoryPemakai';
 import {
   deletePenangananInventory,
   terimaPenangananInventory,
   type InventoryPenanganan,
 } from '../../../../api/transaksi/inventoryPenanganan';
-import { useInventoryList } from './useInventoryList';
-import { STATUS_PRIORITY, ASET_PER_PAGE, STATUS_KHUSUS_INDUK, STATUS_LABEL } from './helpers';
+import type { InventoryIndukOpsi, InventoryList, InventoryOpsi, InventoryRow } from '../../../../types/inventory';
+import { STATUS_LABEL } from './helpers';
 import InventoryRowActions from './InventoryRowActions';
 import InventoryHeaderBar from './InventoryHeaderBar';
 import InventorySedangDipakai from './InventorySedangDipakai';
@@ -37,62 +30,80 @@ import InventoryJualConfirmModal from './InventoryJualConfirmModal';
 import InventoryDetailModal from './InventoryDetailModal';
 import { handlePrintSerahTerima, handlePrintPengembalian } from './printHelpers';
 
-interface Props {
-  onlyMenipis?: boolean;
-  onCount?: (count: number) => void;
+// [F4-INERTIA] Tab "Inventory" di Master Data (tadinya axios + useInventoryList + filter/pagination di client). Sekarang:
+//  - data dari props server (MasterDataPageController -> props.inventory, hanya dikirim saat tab ini aktif);
+//  - pagination, pencarian, filter status, dan filter kategori dijalankan server lewat router.get (query string = sumber kebenaran);
+//  - Tambah / Edit / Detail / Jual / Pasang ke Induk / Lepas dari Induk / Hapus = modal overlay dengan state lokal;
+//  - mutasi inventory lewat router.* ke /master-data/inventory, hasilnya toast dari flash server (FlashToaster);
+//  - detail (riwayat lengkap) diminta lewat partial reload props.inventoryDetail (?detail=<id>, URL browser tidak berubah);
+//  - auto-refresh 5 detik = partial reload async (list + "sedang dipakai" + detail yang lagi terbuka).
+// Aksi serah-terima / pengembalian / lapor kerusakan / penanganan masih lewat axios (dipindah di F5/F6); setelah
+// sukses, tab ini cukup memuat ulang props lewat segarkan().
+interface InventoryPageProps {
+  inventory?: InventoryList;
+  inventoryDipakai?: InventoryRow[];
+  inventoryOpsi?: InventoryOpsi;
+  inventoryExport?: InventoryRow[];
+  inventoryIndukOpsi?: InventoryIndukOpsi[];
+  inventoryDetail?: Inventory | null;
 }
 
-export default function TabInventory({ onlyMenipis, onCount }: Props) {
+interface FilterBaru {
+  search?: string;
+  status?: InventoryStatus | '';
+  kategori?: number[];
+  page?: number;
+}
+
+const OPSI_KOSONG: InventoryOpsi = { kategori: [], supplier: [], perusahaan: [] };
+
+export default function TabInventory() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
-  const [search, setSearch] = useState('');
+  const pageProps = usePage().props as unknown as InventoryPageProps;
+  const list = pageProps.inventory;
+  const pageInventory = list?.data ?? [];
+  const statusFilter: InventoryStatus | '' = list?.filters.status ?? '';
+  const selectedKategoriIds = list?.filters.kategori ?? [];
+  const serverSearch = list?.filters.search ?? '';
+  const currentPage = list?.current_page ?? 1;
+  const lastPage = list?.last_page ?? 1;
+  const totalInventory = list?.total ?? 0;
+  const adaIndukDiFilterAktif = list?.ada_induk ?? false;
+  const myBorrowedItems = pageProps.inventoryDipakai ?? [];
+  const opsi = pageProps.inventoryOpsi ?? OPSI_KOSONG;
 
-  const { inventoryList, setInventoryList, supplierOptions, kategoriOptions, loading, error, loadList, loadListSilent } = useInventoryList(onCount);
+  const [searchInput, setSearchInput] = useState<string>(serverSearch);
+  const [listLoading, setListLoading] = useState<boolean>(false);
 
-  const [statusFilter, setStatusFilter] = useState<InventoryStatus | ''>('');
-  // Filter kategori (dinamis, multi-select) di sisi client -- 1 request
-  // getInventory() tanpa ?kategori_id= (biar sekali fetch ambil semua),
-  // filter dilakuin di FE lewat dropdown checklist ini. Array kosong = semua
-  // kategori. Aman buat non-admin juga: pembatasan visibility non-admin di
-  // backend (InventoryController::index()) gak bergantung ke query
-  // ?kategori_id=, jadi fetch tanpa filter tetap ke-filter dengan benar oleh
-  // backend.
-  const [selectedKategoriIds, setSelectedKategoriIds] = useState<number[]>([]);
   const [kategoriDropdownOpen, setKategoriDropdownOpen] = useState(false);
   const kategoriDropdownRef = useRef<HTMLDivElement>(null);
 
-  // BARU: Lapor Rusak Kelengkapan -- dipindah dari TabKelengkapanInventory.tsx.
-  // Masuk alur InventoryPenanganan (menunggu_perbaikan -> diperbaiki -> selesai).
-
-  // Export -- 1 tombol & 1 modal (InventoryExportModal) untuk semua kategori.
+  // Export -- 1 tombol & 1 modal (InventoryExportModal) untuk semua kategori. Datanya = SEMUA hasil filter aktif,
+  // diambil lewat partial reload (props.inventoryExport) tiap tombol Export diklik, bukan cuma halaman yang tampil.
   const [exportOpen, setExportOpen] = useState(false);
-
-  // Pagination tabel inventory — style sama kayak pager Riwayat Inventory (10 per
-  // halaman, angka + elipsis). Client-side krn /api/inventory gak dipaging
-  // di backend, tapi UI-nya ngikut pola yang sama.
-  const [inventoryPage, setInventoryPage] = useState(1);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const [formOpen, setFormOpen] = useState(false);
-  const [editingInventory, setEditingInventory] = useState<Inventory | null>(null);
+  const [editingInventory, setEditingInventory] = useState<InventoryRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Inventory | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
-  // BARU: kalau delete normal gagal krn inventory punya riwayat pemakai/penanganan
-  // (data lama/test yang "kecantol"), backend balikin force_available: true —
-  // munculin opsi hapus paksa di modal yang sama, gak perlu klik ulang.
+  // Kalau hapus normal gagal krn inventory punya riwayat pemakai/penanganan (data lama/test), server menandai
+  // error "force_available" -- modal yang sama menawarkan Hapus Paksa.
   const [deleteForceAvailable, setDeleteForceAvailable] = useState(false);
 
+  // Detail: id disimpan lokal; datanya = props.inventoryDetail (diminta lewat partial reload). detailIdRef supaya
+  // polling selalu tahu id TERBARU tanpa membuat ulang interval.
   const [detailId, setDetailId] = useState<number | null>(null);
-  const [detail, setDetail] = useState<Inventory | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const detailIdRef = useRef<number | null>(null);
+  const propDetail = pageProps.inventoryDetail ?? null;
+  const detail = detailId !== null && propDetail && propDetail.id === detailId ? propDetail : null;
+  const detailLoading = detailId !== null && detail === null;
 
-  // Serah-terima 1 inventory utama (klik tombol "Serahkan" di baris) -- di dalam
-  // modalnya sendiri ada checklist buat nambahin inventory kelengkapan (tas,
-  // charger, dst) yang mau ikut dipinjamkan bareng inventory utama ini dalam SATU
-  // proses (satu penerima, satu tanggal, satu set foto bukti, satu struk).
-  // Tetap ditaruh di sini (bukan di dalam modal) karena inventory yang diklik
-  // datang dari tabel/detail panel ini.
+  // Serah-terima 1 inventory utama (checklist kelengkapan ada di dalam modalnya), pengembalian, lapor kerusakan,
+  // dan penanganan selesai: masih axios (F5/F6).
   const [serahTerimaInventory, setSerahTerimaInventory] = useState<Inventory | null>(null);
   const [pengembalianTarget, setPengembalianTarget] = useState<{ inventory: Inventory; pemakai: InventoryPemakai } | null>(null);
 
@@ -100,90 +111,114 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
   const [penangananSelesaiTarget, setPenangananSelesaiTarget] = useState<{ inventory: Inventory; penanganan: InventoryPenanganan } | null>(null);
   const [historyActionError, setHistoryActionError] = useState('');
 
-  // BARU: state untuk aksi "Jual Inventory" (inventory berstatus tersedia atau rusak_berat) —
-  // cuma tanda/konfirmasi, gak ada form harga/catatan
+  // Jual: inventory tersedia atau rusak_berat -- cuma konfirmasi, gak ada form.
   const [jualTarget, setJualTarget] = useState<Inventory | null>(null);
   const [jualLoading, setJualLoading] = useState(false);
   const [jualError, setJualError] = useState('');
 
-  // BARU (3B): state untuk aksi "Lepas dari Induk" — muncul di baris tabel
-  // kelengkapan yang masih nempel (parent_id terisi) & di panel detail children.
+  // Lepas dari Induk (baris kelengkapan yang menempel & panel detail children) dan Pasang ke Induk (kebalikannya).
   const [lepasTarget, setLepasTarget] = useState<Inventory | null>(null);
-
-  // BARU: state untuk aksi "Pasang ke Induk" — kelengkapan berdiri sendiri
-  // (parent_id null) yang statusnya tersedia bisa dipasang ke Barang Utama
-  // tertentu lewat modal ini (kebalikan dari Lepas dari Induk).
   const [pasangIndukTarget, setPasangIndukTarget] = useState<Inventory | null>(null);
 
-  // PINDAHAN dari Inventaris.tsx: Import Excel data inventory (bulk import: inventory +
-  // jenis + supplier + kelengkapan) — sekarang ditaruh di sini biar aksinya
-  // nempel langsung sama tabel/list inventory yang dia pengaruhi.
+  // Import Excel data inventory (bulk). Sukses -> toast dari flash server; gagal -> pesan error inline.
   const [importLoading, setImportLoading] = useState(false);
-  const [importMessage, setImportMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [importError, setImportError] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // versi silent buat dipanggil dari polling interval (gak ada loading state)
-  const refreshDetailSilent = async (id: number) => {
-    try {
-      const data = await getInventoryById(id);
-      setDetail((prev) => (prev && prev.id === id ? data : prev));
-      setInventoryList((prev) => prev.map((a) => (a.id === data.id ? { ...a, status: data.status } : a)));
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const [terimaLoadingId, setTerimaLoadingId] = useState<number | null>(null);
+  const [penangananPage, setPenangananPage] = useState(1);
+  const [pemakaiPage, setPemakaiPage] = useState(1);
+  const [expandedPenangananId, setExpandedPenangananId] = useState<number | null>(null);
+  const [expandedPemakaiId, setExpandedPemakaiId] = useState<number | null>(null);
+  const [deletingPemakaiId, setDeletingPemakaiId] = useState<number | null>(null);
+  const [expandedInventoryId, setExpandedInventoryId] = useState<number | null>(null);
 
-  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // ------------------------------------------------------------------ request ke server
 
-    setImportLoading(true);
-    setImportMessage(null);
+  // Query string dari filter. Nilai default (search kosong, status semua, kategori kosong, halaman 1) tidak ikut di URL.
+  function bangunData(f: Required<FilterBaru>, detailParam?: number | null): Record<string, string | number | number[]> {
+    const data: Record<string, string | number | number[]> = { tab: 'inventory' };
+    if (f.search) data.search = f.search;
+    if (f.status) data.status = f.status;
+    if (f.kategori.length > 0) data.kategori = f.kategori;
+    if (f.page > 1) data.page = f.page;
+    if (detailParam) data.detail = detailParam;
+    return data;
+  }
 
-    try {
-      const res = await importInventory(file);
-      setImportMessage({ type: 'success', text: res.message });
-      // refresh list inventory setelah import berhasil (badge count ikut update
-      // otomatis lewat efek onCount di bawah begitu inventoryList berubah)
-      loadList();
-    } catch (err: any) {
-      setImportMessage({
-        type: 'error',
-        text: err.response?.data?.errors?.[0] || err.response?.data?.message || 'Gagal mengimport file',
-      });
-    } finally {
-      setImportLoading(false);
-      if (fileInputRef.current) fileInputRef.current.value = ''; // reset biar bisa upload file yang sama lagi
-    }
-  };
+  // Filter yang SEDANG aktif di server (sumber kebenaran = props, bukan input yang lagi diketik).
+  function filterAktif(): Required<FilterBaru> {
+    return { search: serverSearch, status: statusFilter, kategori: selectedKategoriIds, page: currentPage };
+  }
 
-  // dipakai polling interval biar selalu tau detailId TERBARU tanpa perlu
-  // re-create interval-nya tiap kali detailId berubah
-  const detailIdRef = useRef<number | null>(null);
-  useEffect(() => {
-    detailIdRef.current = detailId;
-  }, [detailId]);
+  // Pindah halaman / ganti filter = visit ringan ke /master-data (partial reload cuma props.inventory), URL ikut berubah.
+  function visitList(next: FilterBaru) {
+    const f: Required<FilterBaru> = {
+      search: (next.search ?? searchInput).trim(),
+      status: next.status ?? statusFilter,
+      kategori: next.kategori ?? selectedKategoriIds,
+      page: next.page ?? 1,
+    };
 
-  // BARU: auto-refresh tiap 5 detik biar perubahan status (menunggu perbaikan /
-  // sedang diperbaiki / tersedia) langsung kelihatan tanpa perlu refresh manual —
-  // baik di list maupun di modal detail yang lagi kebuka.
+    setListLoading(true);
+    router.get('/master-data', bangunData(f), {
+      only: ['inventory'],
+      preserveState: true,
+      preserveScroll: true,
+      replace: true,
+      onFinish: () => setListLoading(false),
+    });
+  }
+
+  // Muat ulang list + "sedang dipakai" (+ detail yang lagi terbuka) tanpa mengubah filter/URL. silent = polling:
+  // async (tidak membatalkan request lain, mis. submit form yang lagi jalan) dan tanpa progress bar.
+  function segarkan(silent = false) {
+    const id = detailIdRef.current;
+    const only = ['inventory', 'inventoryDipakai'];
+    if (id) only.push('inventoryDetail');
+
+    const options = {
+      only,
+      preserveState: true,
+      preserveScroll: true,
+      replace: true,
+      preserveUrl: true,
+      async: silent,
+      showProgress: !silent,
+    };
+
+    // Detail butuh ?detail=<id> di request; preserveUrl menjaga URL browser tetap bersih.
+    router.get('/master-data', bangunData(filterAktif(), id), options);
+  }
+
+  // Polling 5 detik biar perubahan status (menunggu perbaikan / sedang diperbaiki / tersedia) langsung kelihatan, baik di
+  // list maupun di modal detail yang kebuka. Dilewati kalau tab browser lagi disembunyikan.
+  const segarkanRef = useRef(segarkan);
+  segarkanRef.current = segarkan;
   useEffect(() => {
     const interval = setInterval(() => {
-      loadListSilent();
-      if (detailIdRef.current) {
-        refreshDetailSilent(detailIdRef.current);
-      }
+      if (document.hidden) return;
+      segarkanRef.current(true);
     }, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
-  // Tutup dropdown kategori kalau klik di luar. Sebelumnya pakai listener
-  // capture-phase yang nutup dropdown pada SETIAP klik di document tanpa
-  // ngecek apakah kliknya di dalam dropdown -- akibatnya checkbox kategori
-  // gak bisa dipilih lebih dari satu kali, karena tiap klik checkbox juga
-  // langsung nutup dropdown-nya. Sekarang dicek dulu apakah target klik ada
-  // di dalam kategoriDropdownRef sebelum nutup.
+  // Pencarian: tunggu user berhenti mengetik sebentar sebelum minta data ke server.
+  useEffect(() => {
+    if (searchInput.trim() === serverSearch) return;
+    const timer = setTimeout(() => visitList({ search: searchInput, page: 1 }), 350);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
+
+  // Kandidat induk dimuat hanya saat form Tambah/Edit atau modal Pasang ke Induk dibuka.
+  useEffect(() => {
+    if (!formOpen && !pasangIndukTarget) return;
+    router.reload({ only: ['inventoryIndukOpsi'], async: true, showProgress: false });
+  }, [formOpen, pasangIndukTarget]);
+
+  // Tutup dropdown kategori kalau klik di luar (dicek dulu apakah target klik ada di dalam dropdown, supaya
+  // checkbox kategori bisa dipilih lebih dari satu kali).
   useEffect(() => {
     if (!kategoriDropdownOpen) return;
     const close = (e: MouseEvent) => {
@@ -195,259 +230,182 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
     return () => document.removeEventListener('mousedown', close);
   }, [kategoriDropdownOpen]);
 
-  const openDetail = async (id: number) => {
+  // ------------------------------------------------------------------ detail
+
+  function openDetail(id: number) {
     setDetailId(id);
+    detailIdRef.current = id;
     setPenangananPage(1);
     setPemakaiPage(1);
     setExpandedPenangananId(null);
     setExpandedPemakaiId(null);
-    setDetailLoading(true);
-    try {
-      const data = await getInventoryById(id);
-      setDetail(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setDetailLoading(false);
-    }
-  };
 
-  const closeDetail = () => {
+    router.get('/master-data', bangunData(filterAktif(), id), {
+      only: ['inventoryDetail'],
+      preserveState: true,
+      preserveScroll: true,
+      preserveUrl: true,
+      onSuccess: (page) => {
+        const d = (page.props as unknown as InventoryPageProps).inventoryDetail;
+        if (!d || d.id !== id) {
+          toast.error('Detail inventory tidak bisa dibuka (tidak ditemukan atau kamu tidak punya akses).');
+          closeDetail();
+        }
+      },
+    });
+  }
+
+  function closeDetail() {
     setDetailId(null);
-    setDetail(null);
-  };
+    detailIdRef.current = null;
+  }
 
-  const refreshDetail = async () => {
-    if (!detailId) return;
-    const data = await getInventoryById(detailId);
-    setDetail(data);
-    setInventoryList((prev) => prev.map((a) => (a.id === data.id ? { ...a, status: data.status } : a)));
-  };
+  // ------------------------------------------------------------------ mutasi inventory (Inertia)
 
-  const confirmDelete = async (force = false) => {
+  function confirmDelete(force = false) {
     if (!deleteTarget) return;
+    const target = deleteTarget;
+
     setDeleting(true);
     setDeleteError('');
-    try {
-      await deleteInventory(deleteTarget.id, force);
-      setInventoryList((prev) => prev.filter((a) => a.id !== deleteTarget.id));
-      setDeleteTarget(null);
-      setDeleteForceAvailable(false);
-      if (detailId === deleteTarget.id) closeDetail();
-    } catch (err: any) {
-      setDeleteError(err.response?.data?.message || 'Gagal menghapus inventory.');
-      setDeleteForceAvailable(!!err.response?.data?.force_available);
-    } finally {
-      setDeleting(false);
-    }
+    // Sukses -> toast dari flash server. Gagal -> error bag "delete" tampil di modal konfirmasi
+    // (+ "force_available" -> tawarkan Hapus Paksa).
+    router.delete(`/master-data/inventory/${target.id}`, {
+      data: force ? { force: true } : undefined,
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => {
+        setDeleteTarget(null);
+        setDeleteForceAvailable(false);
+        if (detailIdRef.current === target.id) closeDetail();
+      },
+      onError: (errors) => {
+        setDeleteError(errors.delete || 'Gagal menghapus inventory.');
+        setDeleteForceAvailable(!!errors.force_available);
+      },
+      onFinish: () => setDeleting(false),
+    });
+  }
+
+  function openJual(a: Inventory) {
+    setJualTarget(a);
+    setJualError('');
+  }
+
+  // Jual: tandai inventory sebagai 'dijual', gak ada input tambahan.
+  function confirmJual() {
+    if (!jualTarget) return;
+
+    setJualLoading(true);
+    setJualError('');
+    router.post(`/master-data/inventory/${jualTarget.id}/jual`, {}, {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => {
+        setJualTarget(null);
+        if (detailIdRef.current) segarkan();
+      },
+      onError: (errors) => setJualError(errors.jual || 'Gagal menandai inventory sebagai terjual.'),
+      onFinish: () => setJualLoading(false),
+    });
+  }
+
+  function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportLoading(true);
+    setImportError('');
+    router.post('/master-data/inventory/import', { file }, {
+      forceFormData: true,
+      preserveScroll: true,
+      preserveState: true,
+      onError: (errors) => setImportError(String(errors.file || 'Gagal mengimport file')),
+      onFinish: () => {
+        setImportLoading(false);
+        // reset biar bisa upload file yang sama lagi
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      },
+    });
+  }
+
+  function siapkanExport() {
+    setExportLoading(true);
+    router.reload({
+      only: ['inventoryExport'],
+      onSuccess: () => setExportOpen(true),
+      onError: () => toast.error('Gagal menyiapkan data export. Coba lagi.'),
+      onFinish: () => setExportLoading(false),
+    });
+  }
+
+  // InventoryHeaderBar memanggil setExportOpen(true): buka modal = ambil dulu datanya dari server.
+  const bukaExport: React.Dispatch<React.SetStateAction<boolean>> = (v) => {
+    const next = typeof v === 'function' ? v(exportOpen) : v;
+    if (next) siapkanExport();
+    else setExportOpen(false);
   };
 
-  const [terimaLoadingId, setTerimaLoadingId] = useState<number | null>(null);
+  // ------------------------------------------------------------------ aksi riwayat di modal detail (axios sampai F5/F6)
 
-  const [penangananPage, setPenangananPage] = useState(1);
-  const [pemakaiPage, setPemakaiPage] = useState(1);
-  const [expandedPenangananId, setExpandedPenangananId] = useState<number | null>(null);
-  const [expandedPemakaiId, setExpandedPemakaiId] = useState<number | null>(null);
-  const [deletingPemakaiId, setDeletingPemakaiId] = useState<number | null>(null);
-
-  const handleTerimaPenanganan = async (id: number) => {
+  async function handleTerimaPenanganan(id: number) {
     setHistoryActionError('');
     setTerimaLoadingId(id);
     try {
       await terimaPenangananInventory(id);
-      await refreshDetail();
-      loadList();
+      segarkan();
     } catch (err: any) {
       setHistoryActionError(err.response?.data?.message || 'Gagal menerima laporan penanganan.');
     } finally {
       setTerimaLoadingId(null);
     }
-  };
+  }
 
-  const handleDeletePenanganan = async (id: number) => {
+  async function handleDeletePenanganan(id: number) {
     if (!confirm('Hapus riwayat penanganan ini?')) return;
     setHistoryActionError('');
     try {
       await deletePenangananInventory(id);
-      await refreshDetail();
+      segarkan();
     } catch (err: any) {
       setHistoryActionError(err.response?.data?.message || 'Gagal menghapus riwayat penanganan.');
     }
-  };
+  }
 
-  const handleDeletePemakai = async (id: number) => {
+  async function handleDeletePemakai(id: number) {
     if (!confirm('Hapus riwayat pemakaian ini?')) return;
     setHistoryActionError('');
     setDeletingPemakaiId(id);
     try {
       await deletePemakaiInventory(id);
-      await refreshDetail();
-      loadList();
+      segarkan();
     } catch (err: any) {
       setHistoryActionError(err.response?.data?.message || 'Gagal menghapus riwayat pemakaian.');
     } finally {
       setDeletingPemakaiId(null);
     }
-  };
+  }
 
-  // BARU: buka modal konfirmasi jual
-  const openJual = (a: Inventory) => {
-    setJualTarget(a);
-    setJualError('');
-  };
+  // ------------------------------------------------------------------ filter (adapter ke komponen filter lama)
 
-  // BARU: submit aksi jual — tandai inventory sebagai 'dijual', gak ada input tambahan
-  const confirmJual = async () => {
-    if (!jualTarget) return;
-    setJualLoading(true);
-    setJualError('');
-    try {
-      const updated = await jualInventory(jualTarget.id);
-      setInventoryList((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
-      if (detailId === updated.id) setDetail(updated);
-      toast.success('Inventory berhasil ditandai sebagai dijual.');
-      setJualTarget(null);
-    } catch (err: any) {
-      setJualError(err.response?.data?.message || 'Gagal menandai inventory sebagai terjual.');
-    } finally {
-      setJualLoading(false);
-    }
-  };
-
-  // BARU: karyawan/cabang sekarang selalu lihat TABEL yang isinya cuma
-  // inventory berstatus 'tersedia' (siap dipinjam) -- apapun status filter
-  // yang mereka pilih, tabel gak lagi nyampur nampilin inventory yang lagi
-  // dia pakai sendiri. Item yang lagi dia pakai dipisah & ditampilkan
-  // sebagai card di section "Sedang Anda Pakai" (lihat myBorrowedItems di
-  // bawah), bukan sebagai baris tabel lagi.
-  const visibleInventoryList = useMemo(() => {
-    if (isAdmin) return inventoryList;
-    return inventoryList.filter((a) => a.status === 'tersedia');
-  }, [inventoryList, isAdmin]);
-
-  // BARU: daftar inventory yang lagi dipakai/ditangani (proses perbaikan)
-  // oleh karyawan/cabang yang sedang login -- dipakai buat render section
-  // card "Sedang Anda Pakai" di atas tabel, terpisah dari tabel utama yang
-  // sekarang murni isinya inventory tersedia. Pakai userIdPemakai() (bukan
-  // akses langsung .pekerja?.user?.id) biar akun cabang (yang gak punya
-  // pekerja, cuma user langsung) juga kedeteksi bener sebagai pemilik
-  // record.
-  const myBorrowedItems = useMemo(() => {
-    if (isAdmin) return [];
-    return inventoryList.filter((a) => userIdPemakai(a.pemakai_saat_ini) === user?.id);
-  }, [inventoryList, isAdmin, user?.id]);
-
-  // Daftar item yang boleh jadi induk (parent_id === null, apapun
-  // kategorinya) buat pilihan di modal Pasang ke Induk -- diambil dari
-  // inventoryList yang sudah ada di state, gak perlu fetch ulang.
-  const indukOptions = useMemo(
-    () => inventoryList.filter((a) => a.parent_id === null),
-    [inventoryList]
-  );
-
-  const filteredInventory = visibleInventoryList
-    .filter((a) => {
-      const matchStatus = !statusFilter || a.status === statusFilter;
-      // Filter kategori multi-select -- array kosong berarti semua kategori
-      // lolos. Dikombinasikan AND dengan filter status & search yang sudah
-      // ada.
-      const matchKategori =
-        selectedKategoriIds.length === 0 ||
-        (a.kategori_id != null && selectedKategoriIds.includes(a.kategori_id));
-      const q = search.toLowerCase();
-      const matchSearch =
-        !q ||
-        a.kode_inventory.toLowerCase().includes(q) ||
-        (a.serial_number || '').toLowerCase().includes(q) ||
-        (a.nama || '').toLowerCase().includes(q) ||
-        // BARU: search juga cocokkan nama di kolom "Dipakai Oleh". Status
-        // 'dijual' sengaja dilewati karena kolomnya ditampilkan sebagai "-"
-        // di tabel (namaPemakai lama sudah tidak relevan buat inventory yang dijual).
-        (a.status !== 'dijual' && namaPemakai(a.pemakai_saat_ini).toLowerCase().includes(q));
-      return matchStatus && matchKategori && matchSearch;
-    })
-    .filter((a) => !onlyMenipis || a.status === 'tersedia')
-    // BARU: urutkan berdasarkan prioritas status — tersedia paling atas,
-    // dipakai, lalu status dalam proses penanganan, rusak_berat, dan
-    // dijual paling bawah. Lihat STATUS_PRIORITY di atas.
-    .sort((a, b) => {
-      const diffStatus = STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status];
-      if (diffStatus !== 0) return diffStatus;
-      return a.kode_inventory.localeCompare(b.kode_inventory, 'id', { numeric: true });
-    });
-
-  // Jumlah inventory per status (dari visibleInventoryList -- yang udah kena filter
-  // kepemilikan, sama kayak sumber filteredInventory -- BUKAN dari inventoryList
-  // mentah), dipakai buat badge angka di tiap opsi dropdown status. Ini
-  // yang bikin badge tab selalu sinkron sama isi tabelnya. Buat non-admin,
-  // visibleInventoryList cuma berisi status 'tersedia', jadi tab status pun
-  // sudah disembunyikan sekalian (lihat isAdmin && <ScrollableTabBar> di bawah).
-  // Ngitung dari populasi yang sudah kena filter kategori aktif (selectedKategoriIds)
-  // biar badge per-status konsisten dengan badge "Semua Status".
-  const statusCounts = useMemo(() => {
-    const counts: Record<InventoryStatus, number> = {
-      tersedia: 0,
-      dipakai: 0,
-      menunggu_perbaikan: 0,
-      diperbaiki: 0,
-      rusak_berat: 0,
-      dijual: 0,
-    };
-    for (const a of visibleInventoryList) {
-      const matchKategori =
-        selectedKategoriIds.length === 0 ||
-        (a.kategori_id != null && selectedKategoriIds.includes(a.kategori_id));
-      if (matchKategori) counts[a.status] += 1;
-    }
-    return counts;
-  }, [visibleInventoryList, selectedKategoriIds]);
-
-  // Apakah ada item yang parent_id === null di dalam hasil filter kategori aktif?
-  // Dipakai untuk menentukan apakah tab "Dijual" ditampilkan -- kalau semua
-  // item yang lolos filter adalah child (menempel), tab dijual disembunyikan
-  // karena endpoint jual() hanya berlaku untuk item yang bukan child.
-  const adaIndukDiFilterAktif = useMemo(() => {
-    return visibleInventoryList.some((a) => {
-      const matchKategori =
-        selectedKategoriIds.length === 0 ||
-        (a.kategori_id != null && selectedKategoriIds.includes(a.kategori_id));
-      return matchKategori && a.parent_id === null;
-    });
-  }, [visibleInventoryList, selectedKategoriIds]);
-
-  const inventoryLastPage = Math.max(1, Math.ceil(filteredInventory.length / ASET_PER_PAGE));
-  const inventoryPageClamped = Math.min(inventoryPage, inventoryLastPage);
-  const pageInventory = filteredInventory.slice(
-    (inventoryPageClamped - 1) * ASET_PER_PAGE,
-    inventoryPageClamped * ASET_PER_PAGE
-  );
-
-  // Balik ke halaman 1 tiap kali search/filter/status atau isi data berubah,
-  // biar gak nyangkut di halaman kosong (sama pola kayak riwayat search).
-  useEffect(() => {
-    setInventoryPage(1);
-  }, [search, statusFilter, selectedKategoriIds, onlyMenipis]);
-
-  // Toggle satu kategori_id di filter multi-select. Kalau setelah toggle
-  // hasil filter jadi gak ada induk (adaIndukDiFilterAktif false) dan status
-  // aktif adalah STATUS_KHUSUS_INDUK, reset status ke semua.
+  // Toggle satu kategori_id di filter multi-select. Status "Dijual" otomatis di-reset oleh server kalau hasil filter
+  // baru tidak punya item induk.
   const handleToggleKategori = (id: number) => {
-    setSelectedKategoriIds((prev) => {
-      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
-      // cek apakah ada induk di hasil filter baru
-      const adaInduk = visibleInventoryList.some((a) => {
-        const matchKategori =
-          next.length === 0 || (a.kategori_id != null && next.includes(a.kategori_id));
-        return matchKategori && a.parent_id === null;
-      });
-      if (!adaInduk && statusFilter && STATUS_KHUSUS_INDUK.includes(statusFilter)) {
-        setStatusFilter('');
-      }
-      return next;
-    });
+    const next = selectedKategoriIds.includes(id) ? selectedKategoriIds.filter((x) => x !== id) : [...selectedKategoriIds, id];
+    visitList({ kategori: next, page: 1 });
   };
 
-  // Tombol aksi per baris (tabel desktop & card mobile) -- isinya sekarang di InventoryRowActions.tsx
+  const setSelectedKategoriIds: React.Dispatch<React.SetStateAction<number[]>> = (v) => {
+    const next = typeof v === 'function' ? v(selectedKategoriIds) : v;
+    visitList({ kategori: next, page: 1 });
+  };
+
+  const setStatusFilter: React.Dispatch<React.SetStateAction<InventoryStatus | ''>> = (v) => {
+    const next = typeof v === 'function' ? v(statusFilter) : v;
+    visitList({ status: next, page: 1 });
+  };
+
+  // Tombol aksi per baris (tabel desktop & card mobile) -- isinya di InventoryRowActions.tsx
   const renderAksi = (a: Inventory) => (
     <InventoryRowActions
       a={a}
@@ -467,12 +425,11 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
     />
   );
 
-  const [expandedInventoryId, setExpandedInventoryId] = useState<number | null>(null);
-
   return (
     <>
       <InventoryHeaderBar
-        setExportOpen={setExportOpen}
+        setExportOpen={bukaExport}
+        exportLoading={exportLoading}
         isAdmin={isAdmin}
         fileInputRef={fileInputRef}
         handleFileSelected={handleFileSelected}
@@ -481,21 +438,12 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         setFormOpen={setFormOpen}
       />
 
-      {importMessage && (
-        <p className={`text-sm mb-4 -mt-2 ${importMessage.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
-          {importMessage.text}
-        </p>
-      )}
+      {importError && <p className="text-sm mb-4 -mt-2 text-red-600">{importError}</p>}
 
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
 
-      {/* BARU: section card "Sedang Anda Pakai" -- cuma buat karyawan/cabang
-          (non-admin), berisi inventory yang lagi dia pakai/lagi ditangani
-          (menunggu_perbaikan/diperbaiki/rusak_berat) sendiri. Item-item ini
-          sengaja TIDAK ikut ditampilkan sebagai baris di tabel utama lagi --
-          tabel utama sekarang murni daftar inventory 'tersedia' (lihat
-          visibleInventoryList). Ditaruh sebelum tab status/tabel biar
-          langsung kelihatan begitu tab ini dibuka. */}
+      {/* Section card "Sedang Anda Pakai" -- cuma buat karyawan/cabang (non-admin), berisi inventory yang lagi dia
+          pakai/lagi ditangani sendiri. Tabel utama non-admin murni daftar inventory 'tersedia'. */}
       {!isAdmin && myBorrowedItems.length > 0 && (
         <InventorySedangDipakai
           myBorrowedItems={myBorrowedItems}
@@ -505,68 +453,59 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         />
       )}
 
-      {/* Filter status sekarang pakai tab nav (ScrollableTabBar) -- sama pola
-          kayak Forum Penanganan Inventory, biar konsisten di seluruh halaman
-          Inventaris. BARU: cuma dimunculkan buat admin -- tabel non-admin
-          sekarang selalu isinya inventory 'tersedia' aja (lihat
-          visibleInventoryList), jadi tab status gak relevan lagi buat mereka. */}
+      {/* Filter status pakai tab nav (ScrollableTabBar). Cuma buat admin -- tabel non-admin selalu isinya
+          inventory 'tersedia' aja. */}
       {isAdmin && (
         <InventoryStatusTabs
           statusFilter={statusFilter}
           setStatusFilter={setStatusFilter}
-          statusCounts={statusCounts}
           adaIndukDiFilterAktif={adaIndukDiFilterAktif}
         />
       )}
 
       <InventoryFilterBar
-        search={search}
-        setSearch={setSearch}
+        search={searchInput}
+        setSearch={setSearchInput}
         kategoriDropdownRef={kategoriDropdownRef}
         setKategoriDropdownOpen={setKategoriDropdownOpen}
         selectedKategoriIds={selectedKategoriIds}
-        kategoriOptions={kategoriOptions}
+        kategoriOptions={opsi.kategori}
         kategoriDropdownOpen={kategoriDropdownOpen}
         setSelectedKategoriIds={setSelectedKategoriIds}
         handleToggleKategori={handleToggleKategori}
       />
 
       <p className="text-xs text-slate-500 mb-4">
-        Total {statusFilter === '' ? 'Semua' : (STATUS_LABEL[statusFilter] ?? 'Status')}: <span className="font-semibold text-slate-900">{filteredInventory.length}</span> inventory
+        Total {statusFilter === '' ? 'Semua' : (STATUS_LABEL[statusFilter] ?? 'Status')}: <span className="font-semibold text-slate-900">{totalInventory}</span> inventory
       </p>
 
-      <InventoryTable
-        loading={loading}
-        error={error}
-        filteredInventory={filteredInventory}
-        pageInventory={pageInventory}
-        renderAksi={renderAksi}
-        expandedInventoryId={expandedInventoryId}
-        setExpandedInventoryId={setExpandedInventoryId}
-        inventoryLastPage={inventoryLastPage}
-        inventoryPageClamped={inventoryPageClamped}
-        setInventoryPage={setInventoryPage}
-      />
+      <div className={`transition-opacity ${listLoading ? 'opacity-60' : ''}`}>
+        <InventoryTable
+          pageInventory={pageInventory}
+          renderAksi={renderAksi}
+          expandedInventoryId={expandedInventoryId}
+          setExpandedInventoryId={setExpandedInventoryId}
+          inventoryLastPage={lastPage}
+          inventoryPageClamped={currentPage}
+          setInventoryPage={(page) => visitList({ page })}
+          totalItems={totalInventory}
+        />
+      </div>
 
-      {/* FORM TAMBAH / EDIT ASET */}
+      {/* FORM TAMBAH / EDIT INVENTORY */}
       {formOpen && (
         <InventoryFormModal
           inventory={editingInventory}
-          supplierOptions={supplierOptions}
+          opsi={opsi}
+          indukOptions={pageProps.inventoryIndukOpsi}
           onClose={() => setFormOpen(false)}
-          onSaved={(saved, warning) => {
-            setInventoryList((prev) => {
-              const exists = prev.some((a) => a.id === saved.id);
-              return exists ? prev.map((a) => (a.id === saved.id ? saved : a)) : [saved, ...prev];
-            });
+          onSaved={() => {
             setFormOpen(false);
-            if (detailId === saved.id) refreshDetail();
-            if (warning) toast.error(warning);
+            if (detailIdRef.current) segarkan();
           }}
         />
       )}
 
-    
       {/* KONFIRMASI HAPUS */}
       <ConfirmDeleteModal
         isOpen={!!deleteTarget}
@@ -589,7 +528,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         onConfirm={(force) => confirmDelete(!!force)}
       />
 
-      {/* BARU: KONFIRMASI JUAL ASET — cuma tanda, gak ada form */}
+      {/* KONFIRMASI JUAL INVENTORY — cuma tanda, gak ada form */}
       {jualTarget && (
         <InventoryJualConfirmModal
           jualTarget={jualTarget}
@@ -600,18 +539,11 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
         />
       )}
 
-      {/* EXPORT -- 1 modal untuk semua kategori. Data yang dikirim =
-          filteredInventory (ngikutin filter status/search/kategori aktif). */}
-      <InventoryExportModal open={exportOpen} onClose={() => setExportOpen(false)} data={filteredInventory} />
+      {/* EXPORT -- 1 modal untuk semua kategori. Data = SEMUA hasil filter status/search/kategori aktif. */}
+      <InventoryExportModal open={exportOpen} onClose={() => setExportOpen(false)} data={pageProps.inventoryExport ?? []} />
 
-      {/* Konfirmasi Lapor Rusak Kelengkapan lama (instan/final) sudah
-          dihapus -- kelengkapan yang nempel ke induk sekarang lapor
-          kerusakan lewat InventoryLaporKerusakanModal yang sama kaya Barang
-          Utama, lihat renderAksiKelengkapan di atas. */}
-
-      {/* DETAIL ASET — disembunyiin sementara kalau ada modal aksi (serah-terima,
-          terima kembali, jual, dst) yang kebuka di atasnya, biar gak numpuk 2
-          modal + 2 overlay keliatan bareng */}
+      {/* DETAIL INVENTORY — disembunyiin sementara kalau ada modal aksi (serah-terima, terima kembali, jual, dst)
+          yang kebuka di atasnya, biar gak numpuk 2 modal + 2 overlay keliatan bareng */}
       {detailId &&
         !serahTerimaInventory &&
         !pengembalianTarget &&
@@ -658,8 +590,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
           onSuccess={(results) => {
             handlePrintSerahTerima(results);
             setSerahTerimaInventory(null);
-            loadList();
-            if (detailId) refreshDetail();
+            segarkan();
           }}
         />
       )}
@@ -673,8 +604,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
           onSuccess={(pemakai) => {
             handlePrintPengembalian(pengembalianTarget.inventory, pemakai);
             setPengembalianTarget(null);
-            loadList();
-            if (detailId) refreshDetail();
+            segarkan();
           }}
         />
       )}
@@ -686,8 +616,7 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
           onSuccess={() => {
             setPerbaikanInventoryTarget(null);
             toast.success('Laporan kerusakan berhasil dikirim.');
-            loadList();
-            if (detailId) refreshDetail();
+            segarkan();
           }}
         />
       )}
@@ -699,43 +628,34 @@ export default function TabInventory({ onlyMenipis, onCount }: Props) {
           onClose={() => setPenangananSelesaiTarget(null)}
           onSuccess={() => {
             setPenangananSelesaiTarget(null);
-            loadList();
-            if (detailId) refreshDetail();
+            segarkan();
           }}
         />
       )}
 
-      {/* BARU (3B): Modal Lepas dari Induk — dipicu dari baris tabel
-          (renderAksiKelengkapan) maupun tombol Lepas di panel detail children.
-          onSuccess: refresh list + detail (parent berubah karena child-nya
-          berkurang), tutup modal, tampilkan toast. */}
+      {/* Lepas dari Induk — dipicu dari baris tabel maupun tombol Lepas di panel detail children. Sukses -> toast dari
+          flash server; modal ditutup, list + detail dimuat ulang oleh redirect (detail lewat segarkan()). */}
       {lepasTarget && (
         <InventoryLepasDariIndukModal
           inventory={lepasTarget}
           onClose={() => setLepasTarget(null)}
-          onSuccess={(updated) => {
+          onSuccess={() => {
             setLepasTarget(null);
-            toast.success(`${updated.kode_inventory} berhasil dilepas dari induk.`);
-            loadList();
-            if (detailId) refreshDetail();
+            if (detailIdRef.current) segarkan();
           }}
         />
       )}
 
-      {/* BARU: Modal Pasang ke Induk — kebalikan dari Lepas dari Induk. Dipicu
-          dari baris tabel/card (kelengkapan berdiri sendiri, status tersedia)
-          maupun tombol di panel detail. onSuccess: refresh list + detail
-          (kalau lagi kebuka), tutup modal, tampilkan toast. */}
+      {/* Pasang ke Induk — kebalikan dari Lepas dari Induk. Kandidat induk = props.inventoryIndukOpsi (dimuat saat modal dibuka). */}
       {pasangIndukTarget && (
         <InventoryPasangIndukModal
           inventory={pasangIndukTarget}
-          indukOptions={indukOptions}
+          indukOptions={pageProps.inventoryIndukOpsi ?? []}
+          memuatOpsi={pageProps.inventoryIndukOpsi === undefined}
           onClose={() => setPasangIndukTarget(null)}
-          onSuccess={(updated) => {
+          onSuccess={() => {
             setPasangIndukTarget(null);
-            toast.success(`${updated.kode_inventory} berhasil dipasang ke induk.`);
-            loadList();
-            if (detailId) refreshDetail();
+            if (detailIdRef.current) segarkan();
           }}
         />
       )}

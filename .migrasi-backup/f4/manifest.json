@@ -1,0 +1,25 @@
+{
+  "created": [
+    "app/Queries/InventoryQuery.php",
+    "app/Actions/MasterData/InventoryAction.php",
+    "app/Http/Controllers/MasterData/InventoryWebController.php",
+    "resources/js/types/inventory.ts"
+  ],
+  "modified": [
+    "routes/web.php",
+    "app/Http/Controllers/MasterData/MasterDataPageController.php",
+    "app/Http/Middleware/HandleInertiaRequests.php",
+    "app/Http/Middleware/LogActivity.php",
+    "app/Http/Controllers/MasterData/InventoryController.php",
+    "resources/js/components/masterData/inventory/TabInventory/InventoryHeaderBar.tsx",
+    "resources/js/components/masterData/inventory/TabInventory/helpers.ts",
+    "resources/js/components/masterData/inventory/TabInventory/InventoryTable.tsx",
+    "resources/js/components/masterData/inventory/InventoryLepasDariIndukModal.tsx",
+    "resources/js/components/masterData/inventory/InventoryPasangParentModal.tsx",
+    "resources/js/components/masterData/inventory/TabInventory/index.tsx",
+    "resources/js/components/masterData/inventory/InventoryFormModal.tsx"
+  ],
+  "deleted": [
+    "resources/js/components/masterData/inventory/TabInventory/useInventoryList.ts"
+  ]
+}

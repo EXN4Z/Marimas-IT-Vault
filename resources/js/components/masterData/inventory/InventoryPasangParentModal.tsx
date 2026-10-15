@@ -1,17 +1,23 @@
 import { useMemo, useState } from 'react';
 import { X, Link2, Search, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { pasangPenggantiKelengkapanInventory, type Inventory } from '../../../api/masterData/inventory';
+import { router } from '@inertiajs/react';
+import type { Inventory } from '../../../api/masterData/inventory';
+import type { InventoryIndukOpsi } from '../../../types/inventory';
 import { ButtonCancel, ButtonSubmit, inputClass } from '../../shared/FormControls';
 
 interface Props {
   inventory: Inventory;
-  indukOptions: Inventory[];
+  /** [F4-INERTIA] Kandidat induk dari props server (dimuat saat modal dibuka). */
+  indukOptions: InventoryIndukOpsi[];
+  /** true selama kandidat induk belum sampai dari server. */
+  memuatOpsi?: boolean;
   onClose: () => void;
-  onSuccess: (updated: Inventory) => void;
+  /** Sukses -> toast dari flash server; parent cukup menutup modal. */
+  onSuccess: () => void;
 }
 
-export default function InventoryPasangIndukModal({ inventory, indukOptions, onClose, onSuccess }: Props) {
+export default function InventoryPasangIndukModal({ inventory, indukOptions, memuatOpsi = false, onClose, onSuccess }: Props) {
   const [parentId, setParentId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,23 +33,24 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, onC
 
   const selected = indukOptions.find((p) => p.id === parentId) || null;
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!parentId) {
       toast.error('Pilih salah satu unit induk terlebih dahulu.');
       return;
     }
     setLoading(true);
     setError('');
-    try {
-      const updated = await pasangPenggantiKelengkapanInventory(inventory.id, parentId);
-      onSuccess(updated);
-    } catch (err: any) {
-      const msg = err.response?.data?.message || 'Gagal memasang kelengkapan ke induk.';
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
+    router.post(`/master-data/inventory/${inventory.id}/pasang-ke-induk`, { parent_id: parentId }, {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => onSuccess(),
+      onError: (errors) => {
+        const msg = errors.pasang || Object.values(errors)[0] || 'Gagal memasang kelengkapan ke induk.';
+        setError(msg);
+        toast.error(msg);
+      },
+      onFinish: () => setLoading(false),
+    });
   };
 
   return (
@@ -111,7 +118,9 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, onC
           <div className="border border-slate-200 rounded-xl max-h-52 overflow-y-auto divide-y divide-slate-100">
             {filteredOptions.length === 0 && (
               <p className="text-xs text-slate-400 text-center py-6">
-                {indukOptions.length === 0
+                {memuatOpsi
+                  ? 'Memuat daftar induk…'
+                  : indukOptions.length === 0
                   ? 'Belum ada item yang bisa dipilih jadi induk.'
                   : 'Tidak ada item yang cocok dengan pencarian.'}
               </p>
