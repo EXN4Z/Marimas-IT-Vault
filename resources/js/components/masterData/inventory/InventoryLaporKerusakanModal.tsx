@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { router } from '@inertiajs/react';
-import type { Inventory } from '../../../api/masterData/inventory';
+import type { Inventory } from '../../../types/inventory';
 import InventoryFotoUpload from './InventoryFotoUpload';
 import { JENIS_KERUSAKAN_OPTIONS } from '../../../utils/inventoryHelpers';
 import { ButtonCancel, ButtonSubmit, Field, SelectField, Textarea } from '../../shared/FormControls';

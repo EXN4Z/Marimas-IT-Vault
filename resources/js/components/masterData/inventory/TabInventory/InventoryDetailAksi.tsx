@@ -1,8 +1,8 @@
 import { HandCoins, Undo2, Wrench, Tag, Link2 } from 'lucide-react';
 import { useAuth } from '../../../../context/AuthContext';
 import { userIdPemakai } from '../../../../utils/inventoryHelpers';
-import type { Inventory } from '../../../../api/masterData/inventory';
-import type { InventoryPemakai } from '../../../../api/transaksi/inventoryPemakai';
+import type { Inventory } from '../../../../types/inventory';
+import type { InventoryPemakai } from '../../../../types/inventoryPemakai';
 
 interface InventoryDetailAksiProps {
   isAdmin: boolean;

@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Search, Check, Send, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import type { Inventory } from '../../../api/masterData/inventory';
+import type { Inventory } from '../../../types/inventory';
 import { router } from '@inertiajs/react';
 // [F5-INERTIA] Submit lewat router.post ke /master-data/inventory/{id}/pemakai. Autocomplete karyawan = pengecualian JSON
 // (per ketikan, tidak cocok jadi visit Inertia): GET /master-data/karyawan/cari lewat requestJson [F9b], bukan axios.
 import { requestJson } from '../../../lib/http';
-import type { InventoryPemakai, KaryawanUser } from '../../../api/transaksi/inventoryPemakai';
+import type { InventoryPemakai, KaryawanUser } from '../../../types/inventoryPemakai';
 import type { Flash } from '../../../types/inertia';
 import InventoryFotoUpload from './InventoryFotoUpload';
 import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../../shared/FormControls';

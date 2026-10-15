@@ -1,6 +1,6 @@
 // [F8-INERTIA] Tipe data dashboard (dulu di pages/dashboard/useDashboardData.ts) + bentuk props dari server
 // (DashboardPageController -> DashboardQuery).
-import type { RiwayatInventoryEvent } from '../api/transaksi/inventoryPemakai';
+import type { RiwayatInventoryEvent } from './inventoryPemakai';
 
 export interface DepartemenDistribusi {
   departemen: string;

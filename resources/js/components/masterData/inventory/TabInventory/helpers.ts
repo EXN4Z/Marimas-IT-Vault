@@ -1,4 +1,4 @@
-import type { InventoryStatus } from '../../../../api/masterData/inventory';
+import type { InventoryStatus } from '../../../../types/inventory';
 
 // Kategori sekarang bebas (bukan lagi cuma 2 baris "Barang Utama"/
 // "Kelengkapan") -- filter kategori di tabel gabungan pakai kategori_id

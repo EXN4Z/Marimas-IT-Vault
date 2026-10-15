@@ -1,8 +1,8 @@
 import type { Supplier } from './supplier';
 import type { Perusahaan } from './perusahaan';
 import type { Kategori } from './kategori';
-import type { InventoryPenanganan } from '../penanganan'; // Asumsi lokasinya
-import type { InventoryPemakai } from '../laporan'; // Asumsi lokasinya
+import type { InventoryPenanganan } from './penanganan';
+import type { InventoryPemakai } from './inventoryPemakai';
 
 export type InventoryStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'dijual';
 

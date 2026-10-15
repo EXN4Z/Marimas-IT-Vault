@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Unlink, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { router } from '@inertiajs/react';
-import type { Inventory } from '../../../api/masterData/inventory';
+import type { Inventory } from '../../../types/inventory';
 import { ButtonCancel, ButtonSubmit, Field, Textarea } from '../../shared/FormControls';
 
 interface Props {

@@ -11,9 +11,9 @@ import InventoryPenangananSelesaiModal from '../../../transaksi/InventoryPenanga
 import InventoryExportModal from '../../../laporan/InventoryExportModal';
 import ConfirmDeleteModal from '../../../shared/ConfirmDeleteModal';
 import { useAuth } from '../../../../context/AuthContext';
-import type { Inventory, InventoryStatus } from '../../../../api/masterData/inventory';
-import type { InventoryPemakai } from '../../../../api/transaksi/inventoryPemakai';
-import type { InventoryPenanganan } from '../../../../api/transaksi/inventoryPenanganan';
+import type { Inventory, InventoryStatus } from '../../../../types/inventory';
+import type { InventoryPemakai } from '../../../../types/inventoryPemakai';
+import type { InventoryPenanganan } from '../../../../types/penanganan';
 import type { InventoryIndukOpsi, InventoryList, InventoryOpsi, InventoryRow } from '../../../../types/inventory';
 import { STATUS_LABEL } from './helpers';
 import InventoryRowActions from './InventoryRowActions';
