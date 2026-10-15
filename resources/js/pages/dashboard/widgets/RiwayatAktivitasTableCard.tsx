@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Activity, Search } from 'lucide-react';
 import { useAppNavigate } from '../../../hooks/useAppNavigate';
-import Select from '../../../components/shared/Select';
+import Select from '../../../components/form/Select';
 import type { AktivitasInventoryTerbaru } from '../../../types/dashboard'; // [F8-INERTIA]
 import { cardClass, BADGE_TONE } from './theme';
 import { CardIcon } from './primitives';

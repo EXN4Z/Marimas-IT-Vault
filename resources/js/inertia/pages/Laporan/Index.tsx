@@ -9,7 +9,7 @@ import type { InventoryPemakai } from '../../../api/transaksi/inventoryPemakai';
 import InventoryExportModal from '../../../components/laporan/InventoryExportModal';
 import KaryawanExportModal from '../../../components/laporan/KaryawanExportModal';
 import InventoryPemakaiExportModal from '../../../components/laporan/InventoryPemakaiExportModal';
-import ScrollableTabBar from '../../../components/shared/ScrollableTabBar';
+import ScrollableTabBar from '../../../components/navigation/ScrollableTabBar';
 import TabFotoInventory from '../../../components/laporan/TabFotoInventory';
 import TabRiwayatInventory from '../../../components/laporan/TabRiwayatInventory';
 import type { Kategori } from '../../../api/masterData/kategori';

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import toast from 'react-hot-toast';
-import Pagination from '../../../components/shared/Pagination';
+import Pagination from '../../../components/table/Pagination';
 import type { InventoryPenanganan } from '../../../api/transaksi/inventoryPenanganan';
 import type { PenangananList, PenangananTab } from '../../../types/penanganan';
 import {
@@ -9,7 +9,7 @@ import {
   formatJenisKerusakan,
   formatDurasi,
 } from '../../../utils/inventoryHelpers';
-import ScrollableTabBar from '../../../components/shared/ScrollableTabBar';
+import ScrollableTabBar from '../../../components/navigation/ScrollableTabBar';
 import { printStruk } from '../../../utils/printStruk';
 import InventoryPenangananExportModal from '../../../components/transaksi/InventoryPenangananExportModal';
 import { useAuth } from '../../../context/AuthContext';

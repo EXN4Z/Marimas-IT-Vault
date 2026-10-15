@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Wrench } from 'lucide-react';
-import Select from '../../../components/shared/Select';
+import Select from '../../../components/form/Select';
 import { router } from '@inertiajs/react';
 import type { InventoryPenanganan } from '../../../api/transaksi/inventoryPenanganan';
 import { formatJenisKerusakan } from '../../../utils/inventoryHelpers';

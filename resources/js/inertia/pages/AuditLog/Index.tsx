@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { router } from '@inertiajs/react';
 import { ScrollText, Trash2, ArrowDownCircle, ArrowUpCircle, RefreshCw, Search, X } from 'lucide-react';
-import ScrollableTabBar from '../../../components/shared/ScrollableTabBar';
-import Pagination from '../../../components/shared/Pagination';
-import { Skeleton } from '../../../components/shared/skeleton';
+import ScrollableTabBar from '../../../components/navigation/ScrollableTabBar';
+import Pagination from '../../../components/table/Pagination';
+import { Skeleton } from '../../../components/skeleton';
 import type { PaginatedAuditLog } from '../../../types/auditLog';
 
 type TabKey = 'aktif' | 'trash';

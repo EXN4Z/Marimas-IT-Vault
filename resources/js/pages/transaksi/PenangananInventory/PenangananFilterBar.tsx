@@ -1,7 +1,7 @@
 import { RotateCcw } from 'lucide-react';
-import Select from '../../../components/shared/Select';
+import Select from '../../../components/form/Select';
 import { JENIS_KERUSAKAN_OPTIONS } from '../../../utils/inventoryHelpers';
-import SearchInput from '../../../components/shared/SearchInput';
+import SearchInput from '../../../components/form/SearchInput';
 
 // [F6-INERTIA] Filter dijalankan server: `search` = input lokal (debounce -> visit di halaman), `setFilterKerusakan` & `onReset`
 // = visit ke /penanganan-inventory. Pindah ke halaman 1 diurus halaman (visitList), jadi tidak ada setPage di sini lagi.

@@ -1,4 +1,4 @@
-import { Skeleton, SkeletonListCard } from '../../../components/shared/skeleton';
+import { Skeleton, SkeletonListCard } from '../../../components/skeleton';
 
 export default function PenangananSkeleton() {
   return (
