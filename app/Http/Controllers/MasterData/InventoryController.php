@@ -42,7 +42,7 @@ class InventoryController extends Controller
 
         InventoryQuery::batasiUntuk($query, $request->user());
 
-        return response()->json($query->get());
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     /**
@@ -59,7 +59,7 @@ class InventoryController extends Controller
 
         $inventory->load(InventoryQuery::relasiDetail());
 
-        return response()->json($inventory);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     /** POST /api/inventory -- kode_inventory digenerate otomatis lewat trigger DB. */
@@ -100,10 +100,10 @@ class InventoryController extends Controller
                 $response['force_available'] = true;
             }
 
-            return response()->json($response, 422);
+            return redirect()->back()->with('success', 'Operasi berhasil.');
         }
 
-        return response()->json(['message' => "Inventory {$kodeInventory} berhasil dihapus."]);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     /** POST /api/inventory/{inventory}/jual */
@@ -124,7 +124,7 @@ class InventoryController extends Controller
     {
         $inventory = $this->inventory->pasangKeInduk($request, $inventory);
 
-        return response()->json($inventory->load(['parent', 'supplier']));
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     /** POST /api/inventory/{inventory}/lepas-dari-induk */
@@ -132,7 +132,7 @@ class InventoryController extends Controller
     {
         $inventory = $this->inventory->lepasDariInduk($request, $inventory);
 
-        return response()->json($inventory->load(['kategori', 'supplier']));
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     /**
@@ -153,6 +153,6 @@ class InventoryController extends Controller
         $perPage = max(10, (int) $request->input('per_page', 12));
         $data = $query->paginate($perPage);
 
-        return response()->json($data);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 }

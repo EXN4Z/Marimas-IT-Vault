@@ -56,14 +56,14 @@ class InventoryPemakaiController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return response()->json($data);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     // [F7-INERTIA] Logika di App\Queries\RiwayatInventoryQuery (dipakai bareng tab Riwayat Inventory di halaman Laporan).
     // Endpoint ini masih dipanggil Dashboard sampai F8; dihapus di F10.
     public function riwayat(Request $request)
     {
-        return response()->json(RiwayatInventoryQuery::dariRequest($request));
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     /**
@@ -79,7 +79,7 @@ class InventoryPemakaiController extends Controller
         $perPage = max(10, (int) $request->input('per_page', 12));
         $data = $query->paginate($perPage);
 
-        return response()->json($data);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     /**
@@ -91,7 +91,7 @@ class InventoryPemakaiController extends Controller
     {
         $pemakai = $this->pemakai->serahTerima($request, $inventory);
 
-        return response()->json($pemakai->load('user', 'inventory'), 201);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     /**
@@ -105,7 +105,7 @@ class InventoryPemakaiController extends Controller
 
         $hasil = $this->pemakai->kembalikan($request, $inventoryPemakai);
 
-        return response()->json($hasil->load('user', 'inventory'));
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     /**
@@ -116,6 +116,6 @@ class InventoryPemakaiController extends Controller
     {
         $this->pemakai->hapus($inventoryPemakai);
 
-        return response()->json(['message' => 'Riwayat pemakaian berhasil dihapus.']);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 }

@@ -15,23 +15,16 @@ use Maatwebsite\Excel\Facades\Excel;
 // Perusahaan sengaja belum dikaitkan ke tabel lain (lihat model Perusahaan).
 class PerusahaanController extends Controller
 {
-    // GET /api/perusahaan
+    // GET / — daftar perusahaan
     public function index()
     {
-        $perusahaan = Perusahaan::orderBy('nama')->get();
-
-        return response()->json($perusahaan);
+        return Inertia::render('MasterData/Index', [
+            'perusahaans' => Perusahaan::orderBy('nama')->get(),
+            'tab' => 'perusahaan'
+        ]);
     }
 
-    // GET /api/perusahaan/{id}
-    public function show($id)
-    {
-        $perusahaan = Perusahaan::findOrFail($id);
-
-        return response()->json($perusahaan);
-    }
-
-    // POST /api/perusahaan
+    // POST /
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -44,16 +37,16 @@ class PerusahaanController extends Controller
             'alamat.required' => 'Kolom alamat wajib diisi.',
             'telepon.required' => 'Kolom nomor telepon wajib diisi.',
             'link.required' => 'Kolom link wajib diisi.',
-            'alamat.unique' => 'Alamat ini sudah terdaftar di cabang lain.',
-            'link.unique'   => 'Link ini sudah digunakan oleh cabang lain.',
+            'alamat.unique' => 'Alamat ini sudah terdaftar.',
+            'link.unique'   => 'Link ini sudah digunakan.',
         ]);
 
-        $perusahaan = Perusahaan::create($validated);
+        Perusahaan::create($validated);
 
-        return response()->json($perusahaan, 201);
+        return redirect()->back()->with('success', 'Perusahaan berhasil ditambahkan.');
     }
 
-    // PUT /api/perusahaan/{id}
+    // PUT /{id}
     public function update(Request $request, $id)
     {
         $perusahaan = Perusahaan::findOrFail($id);
@@ -72,28 +65,20 @@ class PerusahaanController extends Controller
 
         $perusahaan->update($validated);
 
-        return response()->json($perusahaan);
+        return redirect()->back()->with('success', 'Perusahaan berhasil diperbarui.');
     }
 
-    // DELETE /api/perusahaan/{id}
+    // DELETE /{id}
     public function destroy($id)
     {
-        $perusahaan = Perusahaan::findOrFail($id);
-        $perusahaan->delete();
-
-        return response()->json(['message' => 'Perusahaan berhasil dihapus.']);
+        Perusahaan::findOrFail($id)->delete();
+        return redirect()->back()->with('success', 'Perusahaan berhasil dihapus.');
     }
 
-    /**
-     * POST /api/perusahaan/import -- import massal data Perusahaan dari file
-     * Excel (.xlsx/.xls). Format kolom: Nama | Alamat | Telepon | Link.
-     * Baris dengan nama yang sudah ada di-UPDATE (bukan dilewati) -- lihat
-     * PerusahaanImport. Mirror SupplierController::import().
-     */
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240', // max 10MB
+            'file' => 'required|file|mimes:xlsx,xls|max:10240',
         ]);
 
         DB::beginTransaction();
@@ -103,24 +88,16 @@ class PerusahaanController extends Controller
 
             if (count($import->getErrors()) > 0) {
                 DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'errors'  => $import->getErrors(),
-                ], 422);
+                return redirect()->back()->with('error', 'Gagal import: ' . implode(', ', $import->getErrors()));
             }
 
             DB::commit();
-            return response()->json([
-                'success' => true,
-                'message' => "Berhasil import {$import->getCreatedCount()} perusahaan baru"
-                    . ($import->getUpdatedCount() > 0 ? ", {$import->getUpdatedCount()} diperbarui" : ''),
-            ]);
+            $message = "Berhasil import {$import->getCreatedCount()} perusahaan baru"
+                . ($import->getUpdatedCount() > 0 ? ", {$import->getUpdatedCount()} diperbarui" : '');
+            return redirect()->back()->with('success', $message);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal import: ' . $e->getMessage(),
-            ], 422);
+            return redirect()->back()->with('error', 'Gagal import: ' . $e->getMessage());
         }
     }
 }

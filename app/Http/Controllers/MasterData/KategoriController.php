@@ -26,7 +26,7 @@ class KategoriController extends Controller
     // bikin/edit Inventory.
     public function index()
     {
-        return response()->json(Kategori::orderBy('nama')->get());
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     public function store(Request $request)
@@ -37,7 +37,7 @@ class KategoriController extends Controller
 
         $kategori = Kategori::create($validated);
 
-        return response()->json($kategori, 201);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     public function update(Request $request, Kategori $kategori)
@@ -48,7 +48,7 @@ class KategoriController extends Controller
 
         $kategori->update($validated);
 
-        return response()->json($kategori->fresh());
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     /**
@@ -69,6 +69,6 @@ class KategoriController extends Controller
         $namaKategori = $kategori->nama;
         $kategori->delete();
 
-        return response()->json(['message' => "Kategori {$namaKategori} berhasil dihapus."]);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 }

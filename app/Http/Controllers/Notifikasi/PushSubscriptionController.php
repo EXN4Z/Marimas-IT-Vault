@@ -34,7 +34,7 @@ class PushSubscriptionController extends Controller
             $validated['keys']['auth']
         );
 
-        return response()->json(['message' => 'Subscription tersimpan.']);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     // browser matiin izin notif / user logout dari device ini -> hapus subscription-nya aja
@@ -46,6 +46,6 @@ class PushSubscriptionController extends Controller
 
         $request->user()->deletePushSubscription($validated['endpoint']);
 
-        return response()->json(['message' => 'Subscription dihapus.']);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 }

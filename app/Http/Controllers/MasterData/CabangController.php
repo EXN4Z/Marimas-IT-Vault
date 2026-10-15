@@ -18,44 +18,31 @@ use App\Mail\BranchCredentials;
 
 class CabangController extends Controller
 {
-    // GET /api/cabang — daftar cabang + jumlah pegawai masing-masing
+    // GET / — daftar cabang
     public function index()
     {
-        // BARU: withCount('karyawan') -- relasi baru yang udah filter
-        // role != 'cabang' (lihat LokasiKantor::karyawan()), biar akun
-        // cabang gak ikut kehitung sebagai pegawainya sendiri. Alias tetap
-        // 'pekerja_count' biar frontend (CabangPage.tsx) gak perlu diubah.
-        $cabang = LokasiKantor::withCount(['karyawan as pekerja_count'])
-        ->with('akunCabang') // eager load biar gak N+1 query
-        ->get()
-        ->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'nama' => $item->nama,
-                'alamat' => $item->alamat,
-                'telepon' => $item->telepon,
-                'link' => $item->link,
-                'pekerja_count' => $item->pekerja_count,
-                'email' => $item->akunCabang?->email, // ambil dari relasi user
-            ];
-        });
-        
-        return response()->json($cabang);
+        return Inertia::render('MasterData/Index', [
+            'cabangs' => LokasiKantor::withCount(['karyawan as pekerja_count'])
+                ->with('akunCabang')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'nama' => $item->nama,
+                        'alamat' => $item->alamat,
+                        'telepon' => $item->telepon,
+                        'link' => $item->link,
+                        'pekerja_count' => $item->pekerja_count,
+                        'email' => $item->akunCabang?->email,
+                    ];
+                }),
+            'tab' => 'cabang'
+        ]);
     }
 
-    // GET /api/cabang/{id}
-    public function show($id)
-    {
-        $cabang = LokasiKantor::withCount(['karyawan as pekerja_count'])->findOrFail($id);
-
-        return response()->json($cabang);
-    }
-
-    // POST /api/cabang
+    // POST /
     public function store(Request $request)
     {
-         Log::info('CABANG STORE DIPANGGIL', $request->all());
-
         $validated = $request->validate([
             'nama' => 'required|string|max:150',
             'alamat' => 'required|string|max:1000|unique:lokasi_kantor,alamat',
@@ -68,15 +55,12 @@ class CabangController extends Controller
             'link.unique'   => 'Link ini sudah digunakan oleh cabang lain.',
         ]);
 
-        Log::info('VALIDASI LOLOS', $validated);
+        LokasiKantor::create($validated);
 
-        $cabang = LokasiKantor::create($validated);
-        $cabang->loadCount(['karyawan as pekerja_count']);
-
-        return response()->json($cabang, 201);
+        return redirect()->back()->with('success', 'Cabang berhasil ditambahkan.');
     }
 
-    // PUT /api/cabang/{id}
+    // PUT /{id}
     public function update(Request $request, $id)
     {
         $cabang = LokasiKantor::findOrFail($id);
@@ -92,43 +76,31 @@ class CabangController extends Controller
         ]);
 
         $cabang->update($validated);
-        $cabang->loadCount(['karyawan as pekerja_count']);
 
-        return response()->json($cabang);
+        return redirect()->back()->with('success', 'Cabang berhasil diperbarui.');
     }
 
-    // DELETE /api/cabang/{id}
+    // DELETE /{id}
     public function destroy($id)
     {
         $cabang = LokasiKantor::withCount(['karyawan as pekerja_count'])->findOrFail($id);
 
         if ($cabang->pekerja_count > 0) {
-            return response()->json([
-                'message' => 'Cabang ini masih memiliki ' . $cabang->pekerja_count . ' pegawai. Pindahkan pegawai terlebih dahulu sebelum menghapus.',
-            ], 422);
+            return redirect()->back()->with('error', 'Cabang ini masih memiliki ' . $cabang->pekerja_count . ' pegawai. Pindahkan pegawai terlebih dahulu.');
         }
 
         DB::transaction(function () use ($cabang) {
-            // Hapus akun user (role cabang) yang terhubung ke lokasi ini dulu,
-            // baru hapus cabangnya -- biar gak ada akun "nyantol" tanpa cabang
             $cabang->akunCabang?->delete();
             $cabang->delete();
         });
 
-        return response()->json(['message' => 'Cabang berhasil dihapus.']);
+        return redirect()->back()->with('success', 'Cabang berhasil dihapus.');
     }
 
-    /**
-     * POST /api/cabang/import -- import massal data Cabang dari file Excel
-     * (.xlsx/.xls). Format kolom: Nama | Alamat | Telepon | Link.
-     * Baris dengan nama yang sudah ada di-UPDATE (bukan dilewati) -- lihat
-     * CabangImport. Mirror PerusahaanController::import() persis, cuma
-     * beda target model (LokasiKantor).
-     */
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240', // max 10MB
+            'file' => 'required|file|mimes:xlsx,xls|max:10240',
         ]);
 
         DB::beginTransaction();
@@ -138,24 +110,16 @@ class CabangController extends Controller
 
             if (count($import->getErrors()) > 0) {
                 DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'errors'  => $import->getErrors(),
-                ], 422);
+                return redirect()->back()->with('error', 'Gagal import: ' . implode(', ', $import->getErrors()));
             }
 
             DB::commit();
-            return response()->json([
-                'success' => true,
-                'message' => "Berhasil import {$import->getCreatedCount()} cabang baru"
-                    . ($import->getUpdatedCount() > 0 ? ", {$import->getUpdatedCount()} diperbarui" : ''),
-            ]);
+            $message = "Berhasil import {$import->getCreatedCount()} cabang baru"
+                . ($import->getUpdatedCount() > 0 ? ", {$import->getUpdatedCount()} diperbarui" : '');
+            return redirect()->back()->with('success', $message);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal import: ' . $e->getMessage(),
-            ], 422);
+            return redirect()->back()->with('error', 'Gagal import: ' . $e->getMessage());
         }
     }
 }

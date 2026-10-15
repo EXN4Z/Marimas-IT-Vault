@@ -15,7 +15,7 @@ class DepartemenController extends Controller
 {
     public function index()
     {
-        return response()->json(Departemen::orderBy('nama')->get());
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     /**
@@ -65,7 +65,7 @@ class DepartemenController extends Controller
 
         $departemen = Departemen::create($validated);
 
-        return response()->json($departemen, 201);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     public function update(Request $request, Departemen $departeman)
@@ -76,13 +76,13 @@ class DepartemenController extends Controller
 
         $departeman->update($validated);
 
-        return response()->json($departeman);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     public function destroy(Departemen $departeman)
     {
         $departeman->delete();
 
-        return response()->json(['message' => "Departemen {$departeman->nama} berhasil dihapus."]);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 }

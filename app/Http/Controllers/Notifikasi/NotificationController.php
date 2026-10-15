@@ -24,7 +24,7 @@ class NotificationController extends Controller
         $notification = $request->user()->notifications()->findOrFail($id);
         $notification->markAsRead();
 
-        return response()->json(['message' => 'Notifikasi ditandai sudah dibaca.']);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     // POST /api/notifications/read-all
@@ -32,12 +32,12 @@ class NotificationController extends Controller
     {
         $request->user()->unreadNotifications->markAsRead();
 
-        return response()->json(['message' => 'Semua notifikasi ditandai sudah dibaca.']);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
     public function destroy(Request $request, $id) {
         $notification = $request->user()->notifications()->findOrFail($id);
         $notification->delete();
 
-        return response()->json(['message' => 'Notifikasi dihapus.']);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 }

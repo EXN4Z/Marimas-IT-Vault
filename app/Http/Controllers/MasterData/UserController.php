@@ -25,12 +25,12 @@ class UserController extends Controller
             $request->filled('search') ? (string) $request->search : null,
         );
 
-        return response()->json($query->latest()->get());
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     public function edit(User $user)
     {
-        return response()->json($user->load('departemen', 'lokasiKantor', 'roleRef', 'perusahaan'));
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     // [F3-INERTIA] store/update/destroy: aturan & logikanya dipindah ke KaryawanAction (dipakai bareng halaman web).
@@ -61,7 +61,7 @@ class UserController extends Controller
             return $this->responseValidasi($e);
         }
 
-        return response()->json($user->load('departemen', 'lokasiKantor', 'roleRef'));
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     public function destroy(User $user)
@@ -72,7 +72,7 @@ class UserController extends Controller
             return $this->responseValidasi($e);
         }
 
-        return response()->json(['message' => 'User deleted successfully']);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     /**

@@ -14,7 +14,7 @@ class SupplierController extends Controller
 {
     public function index()
     {
-        return response()->json(Supplier::orderBy('nama')->get());
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     /**
@@ -67,7 +67,7 @@ class SupplierController extends Controller
 
         $supplier = Supplier::create($validated);
 
-        return response()->json($supplier, 201);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     public function update(Request $request, Supplier $supplier)
@@ -80,13 +80,13 @@ class SupplierController extends Controller
 
         $supplier->update($validated);
 
-        return response()->json($supplier);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     public function destroy(Supplier $supplier)
     {
         $supplier->delete();
 
-        return response()->json(['message' => "Supplier {$supplier->nama} berhasil dihapus."]);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 }

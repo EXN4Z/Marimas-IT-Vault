@@ -48,7 +48,7 @@ class InventoryPenangananController extends Controller
         $perPage = max(10, (int) $request->input('per_page', 12));
         $data = $query->paginate($perPage);
 
-        return response()->json($data);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     // POST /api/inventory-penanganan
@@ -56,25 +56,25 @@ class InventoryPenangananController extends Controller
     // endpoint ini dihapus di F10.
     public function store(Request $request)
     {
-        return response()->json($this->penanganan->lapor($request), 201);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     // admin: terima & mulai tangani laporan -> item jadi "diperbaiki" (sedang diperbaiki). Logika di Action::terima().
     public function terima(InventoryPenanganan $inventoryPenanganan)
     {
-        return response()->json($this->penanganan->terima($inventoryPenanganan));
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     // admin: tandai penanganan selesai + isi hasil/biaya, generate no_struk. Logika di Action::selesaikan().
     public function update(Request $request, InventoryPenanganan $inventoryPenanganan)
     {
-        return response()->json($this->penanganan->selesaikan($request, $inventoryPenanganan));
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     public function destroy(InventoryPenanganan $inventoryPenanganan)
     {
         $this->penanganan->hapus($inventoryPenanganan);
 
-        return response()->json(['message' => 'Laporan penanganan berhasil dihapus.']);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 }

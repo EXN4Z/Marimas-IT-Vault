@@ -57,7 +57,7 @@ class AuthController extends Controller
         // Logic ada di App\Actions\Auth\ResendRegistrationOtp (dipakai juga WebAuthController::resendOtp).
         ResendRegistrationOtp::run((string) $request->registration_id);
 
-        return response()->json(['message' => 'Kode OTP baru sudah dikirim']);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     private function sendOtpEmail(string $email, int $otp): void
@@ -67,13 +67,13 @@ class AuthController extends Controller
 
     public function user(Request $request)
     {
-        return response()->json($request->user());
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     public function updateProfile(Request $request)
     {
         // Validasi + update ada di App\Actions\Profile\UpdateProfile (dipakai juga SettingsController web).
-        return response()->json(UpdateProfile::run($request));
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 
     public function updatePassword(Request $request)
@@ -95,6 +95,6 @@ class AuthController extends Controller
             $request->session()->regenerateToken();
         }
 
-        return response()->json(['message' => 'Logged out']);
+        return redirect()->back()->with('success', 'Operasi berhasil.');
     }
 }
