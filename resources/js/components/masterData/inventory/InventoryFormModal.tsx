@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import toast from 'react-hot-toast';
-import type { InventoryStatus } from '../../../api/masterData/inventory';
+import type { InventoryStatus } from '../../../types/inventory';
 import type { InventoryIndukOpsi, InventoryOpsi, InventoryRow } from '../../../types/inventory';
 import { ButtonCancel, ButtonSubmit, Field, SelectField, inputClass, inputErrorClass } from '../../shared/FormControls';
 

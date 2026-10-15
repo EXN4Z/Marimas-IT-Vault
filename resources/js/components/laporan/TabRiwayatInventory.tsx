@@ -4,7 +4,7 @@ import { Search, HandCoins, Undo2, AlertTriangle, PlayCircle, Wrench, Banknote, 
 import Pagination from '../shared/Pagination';
 import { useAuth } from '../../context/AuthContext';
 import { Skeleton } from '../shared/skeleton';
-import type { RiwayatInventoryEvent } from '../../api/transaksi/inventoryPemakai';
+import type { RiwayatInventoryEvent } from '../../types/inventoryPemakai';
 import type { LaporanRiwayatProps } from '../../types/laporan';
 
 function formatWaktu(iso: string): string {

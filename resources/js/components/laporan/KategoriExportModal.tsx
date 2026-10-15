@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FileSpreadsheet, FileText, X, FileDown, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { type Kategori } from '../../api/masterData/kategori';
+import { type Kategori } from '../../../types/kategori';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
 import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';

@@ -5,10 +5,10 @@ import Pagination from '../shared/Pagination';
 import ScrollableTabBar, { type ScrollableTabItem } from '../shared/ScrollableTabBar';
 import SearchInput from '../shared/SearchInput';
 import Tooltip from '../shared/Tooltip';
-import type { Inventory } from '../../api/masterData/inventory';
+import type { Inventory } from '../../types/inventory';
 import type { LaporanFotoProps } from '../../types/laporan';
-import type { FotoPemakaiEntry } from '../../api/transaksi/inventoryPemakai';
-import type { InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
+import type { FotoPemakaiEntry } from '../../types/inventoryPemakai';
+import type { InventoryPenanganan } from '../../types/penanganan';
 import { namaPemakai, namaPelaporPenanganan, formatTanggalWaktuId, formatJenisKerusakan } from '../../utils/inventoryHelpers';
 import { SkeletonTable } from '../shared/skeleton';
 

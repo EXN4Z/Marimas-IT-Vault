@@ -3,7 +3,7 @@ import { Building2, MapPin, Phone, Map, Plus, Pencil, Trash2, Upload, Download, 
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { router, usePage } from '@inertiajs/react';
-import type { Perusahaan } from '../../api/masterData/perusahaan';
+import type { Perusahaan } from '../../types/perusahaan';
 import RouteModal from '../shared/RouteModal';
 import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';

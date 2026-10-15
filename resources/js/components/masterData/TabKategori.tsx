@@ -8,7 +8,7 @@ import SearchInput from '../shared/SearchInput';
 import { useBackdropClose } from '../../hooks/useBackdropClose';
 import KategoriExportModal from '../laporan/KategoriExportModal';
 import { router, usePage } from '@inertiajs/react';
-import type { Kategori } from '../../api/masterData/kategori';
+import type { Kategori } from '../../types/kategori';
 
 // Sekarang full CRUD -- beda dari sebelumnya (read-only 2 baris fix).
 // (REFACTOR KATEGORI BEBAS Fase 4: peringatan lama di sini -- yang bilang

@@ -8,7 +8,7 @@ import SearchInput from '../shared/SearchInput';
 import { downloadStyledExcel } from '../../utils/excelReport';
 import { useBackdropClose } from '../../hooks/useBackdropClose';
 import { router, usePage } from '@inertiajs/react';
-import type { Supplier } from '../../api/masterData/supplier';
+import type { Supplier } from '../../types/supplier';
 
 // Tab Supplier = CRUD nama + alamat + telepon. Semua UI & logikanya ada di
 // file ini (tabel, search, pagination, modal tambah/edit, hapus, import/export Excel).

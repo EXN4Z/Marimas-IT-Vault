@@ -1,37 +1,49 @@
-import type { Inventory, InventoryStatus } from '../api/masterData/inventory';
-import type { Kategori } from '../api/masterData/kategori';
-import type { Supplier } from '../api/masterData/supplier';
-import type { Perusahaan } from '../api/masterData/perusahaan';
+import type { Supplier } from './supplier';
+import type { Perusahaan } from './perusahaan';
+import type { Kategori } from './kategori';
+import type { InventoryPenanganan } from '../penanganan'; // Asumsi lokasinya
+import type { InventoryPemakai } from '../laporan'; // Asumsi lokasinya
 
-// [F4-INERTIA] Bentuk data tab Inventory dari server (InventoryWebController, lewat MasterDataPageController).
+export type InventoryStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'dijual';
 
-// Satu baris list = Inventory + jumlah kelengkapan yang menempel (dipakai form Edit buat mengunci "Pasang ke Induk").
-export interface InventoryRow extends Inventory {
-  children_count?: number;
-}
-
-// Props `inventory`: satu halaman data + filter aktif (query string = sumber kebenaran).
-export interface InventoryList {
-  data: InventoryRow[];
-  total: number;
-  current_page: number;
-  last_page: number;
-  per_page: number;
-  /** Ada item induk (parent_id kosong) di populasi filter kategori aktif -> tab status "Dijual" ditampilkan. */
-  ada_induk: boolean;
-  filters: { search: string; status: InventoryStatus | ''; kategori: number[] };
-}
-
-// Props `inventoryOpsi`: pilihan dropdown form & filter kategori (kosong untuk non-admin, sama seperti dulu).
-export interface InventoryOpsi {
-  kategori: Kategori[];
-  supplier: Supplier[];
-  perusahaan: Perusahaan[];
-}
-
-// Props `inventoryIndukOpsi` (optional, dimuat saat modal dibuka): kandidat induk.
-export interface InventoryIndukOpsi {
+export interface Inventory {
   id: number;
   kode_inventory: string;
+  parent_id: number | null;
+  parent?: Inventory | null;
+  children?: Inventory[];
+  merk: string | null;
+  type: string | null;
+  kategori_id: number | null;
+  kategori?: Kategori | null;
   nama: string | null;
+  warna: string | null;
+  serial_number: string | null;
+  jumlah: number;
+  tanggal_garansi: string | null;
+  perusahaan_id: number | null;
+  perusahaan?: Perusahaan | null;
+  keterangan: string | null;
+  foto: string | null;
+  supplier_id: number | null;
+  supplier?: Supplier | null;
+  tanggal_input: string | null;
+  tanggal_invoice: string | null;
+  no_surat_jalan: string | null;
+  no_good_receive: string | null;
+  status: InventoryStatus;
+  tanggal_rusak: string | null;
+  pemakai_saat_ini?: InventoryPemakai | null;
+  pemakai?: InventoryPemakai[];
+  penanganan?: InventoryPenanganan[];
+  penanganan_aktif?: { id: number; jenis_kerusakan: string; keluhan: string; tanggal_lapor: string } | null;
+  writeoff?: {
+    id: number;
+    alasan: string;
+    no_berita_acara: string | null;
+    tanggal_writeoff: string;
+    catatan: string | null;
+    penyetuju?: { id: number; name: string } | null;
+    created_at: string;
+  } | null;
 }
