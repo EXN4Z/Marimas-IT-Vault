@@ -1,4 +1,4 @@
-import api from './axios';
+import { requestJson } from '../lib/http'; // [F9-INERTIA] route web /push-subscriptions (JSON), bukan /api + axios
 
 interface WebPushSubscriptionPayload {
   endpoint: string;
@@ -10,14 +10,14 @@ interface WebPushSubscriptionPayload {
 
 export async function savePushSubscription(subscription: PushSubscription): Promise<void> {
   const json = subscription.toJSON() as WebPushSubscriptionPayload;
-  await api.post('/push-subscriptions', {
+  await requestJson('POST', '/push-subscriptions', {
     endpoint: json.endpoint,
     keys: json.keys,
   });
 }
 
 export async function removePushSubscription(endpoint: string): Promise<void> {
-  await api.delete('/push-subscriptions', { data: { endpoint } });
+  await requestJson('DELETE', '/push-subscriptions', { endpoint });
 }
 
 // Dipanggil pas logout. Push subscription itu nempel ke browser/device, bukan

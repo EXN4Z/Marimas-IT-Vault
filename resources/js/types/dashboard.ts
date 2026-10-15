@@ -73,17 +73,8 @@ export type AktivitasInventoryTerbaru = RiwayatInventoryEvent;
 // request/approve buat pinjam inventory (InventoryPemakaiController::store()
 // selalu langsung set status 'disetujui', admin serah-terima langsung tanpa
 // approval), jadi status 'pending' di enum gak pernah kepakai di praktiknya.
-export interface NotificationItem {
-  id: string;
-  data: { message: string; [key: string]: any };
-  read_at: string | null;
-  created_at: string;
-}
-
-export interface NotificationsResponse {
-  data: NotificationItem[];
-  unread_count: number;
-}
+// [F9-INERTIA] Tipe notifikasi dipindah ke types/notification.ts (satu definisi); nama lama tetap bisa diimport.
+export type { AppNotification as NotificationItem, NotificationResponse as NotificationsResponse } from './notification';
 
 
 /** Props `analitik` (admin; deferred -> undefined/null selama belum dimuat). */

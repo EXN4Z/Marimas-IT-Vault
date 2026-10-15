@@ -1,16 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppNavigate } from '../../hooks/useAppNavigate';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bell, Check, Trash2, CheckCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
-import {
-  getNotifications,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
-  deleteNotification,
-  type AppNotification,
-  type NotificationResponse,
-} from '../../api/notifications';
+import { useNotifications } from '../../context/NotificationsContext';
+import type { AppNotification } from '../../types/notification';
 import { Skeleton } from '../shared/skeleton';
 
 function formatWaktu(iso: string): string {
@@ -26,35 +19,20 @@ function formatWaktu(iso: string): string {
 export default function NotificationDropdown() {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
   const navigate = useAppNavigate();
 
-  // Sama-sama pake query key ['notifications'] kayak Dashboard.tsx, biar satu
-  // sumber data. Sebelum ini komponen punya state lokal sendiri + polling
-  // 30 detik sendiri, gak nyambung ke cache Dashboard -- jadi badge/notif baru
-  // yang masuk lewat push Echo di Dashboard gak pernah nyampe ke bell ini,
-  // dan tandai-dibaca di satu tempat gak sinkron ke tempat lain.
-  const { data, isLoading } = useQuery<NotificationResponse>({
-    queryKey: ['notifications'],
-    queryFn: getNotifications,
-    refetchInterval: 5000,
-    refetchIntervalInBackground: true,
-  });
+  // [F9-INERTIA] Sumber data = NotificationsProvider (context/NotificationsContext.tsx): satu poller JSON
+  // (GET /notifications, tiap 5 detik) + aksi tandai-dibaca/hapus, dipakai bareng kartu Notifikasi di Dashboard,
+  // jadi badge di sini dan di Dashboard selalu sinkron.
+  const { items, unreadCount, loaded, markAsRead, markAllAsRead, remove } = useNotifications();
+  const isLoading = !loaded;
 
-  const items = data?.data ?? [];
-  const unreadCount = data?.unread_count ?? 0;
-
-  // GANTI: dulu notif baru cuma nongol lewat push Pusher (Echo) di Dashboard.tsx,
-  // gagal kalau Pusher gak konek di production. Sekarang polling (di atas) yang
-  // jadi satu-satunya sumber, dan tiap ketemu notif ID baru yang belum pernah
-  // kelihatan sebelumnya, langsung munculin toast alert -- gak butuh Pusher sama sekali.
-  // Kecuali kalau data.silent true (misal: notif laporan kerusakan yang
-  // ditujukan buat pelapornya sendiri) -- tetap masuk ke list & unread_count,
-  // cuma toast-nya di-skip biar gak nge-alert orang soal aksinya sendiri.
+  // Notif baru (ID yang belum pernah kelihatan, belum dibaca, bukan data.silent) -> toast alert. Notif silent
+  // (mis. laporan kerusakan untuk pelapornya sendiri) tetap masuk list & unread_count, cuma toast-nya di-skip.
   const seenIdsRef = useRef<Set<string> | null>(null);
 
   useEffect(() => {
-    if (!data) return;
+    if (!loaded) return;
 
     const currentIds = new Set(items.map((n) => n.id));
 
@@ -69,8 +47,7 @@ export default function NotificationDropdown() {
     }
 
     seenIdsRef.current = currentIds;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  }, [items, loaded]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -84,53 +61,17 @@ export default function NotificationDropdown() {
 
   const handleToggle = () => setOpen((prev) => !prev);
 
-  const handleMarkAsRead = async (id: string) => {
-    queryClient.setQueryData<NotificationResponse | undefined>(['notifications'], (old) => {
-      if (!old) return old;
-      return {
-        data: old.data.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)),
-        unread_count: Math.max(0, old.unread_count - 1),
-      };
-    });
-    try {
-      await markNotificationAsRead(id);
-    } catch (err) {
-      console.error('Gagal menandai notifikasi.', err);
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    }
+  // Aksi optimistic + sinkron ke server ada di NotificationsProvider.
+  const handleMarkAsRead = (id: string) => {
+    void markAsRead(id);
   };
 
-  const handleMarkAllAsRead = async () => {
-    queryClient.setQueryData<NotificationResponse | undefined>(['notifications'], (old) => {
-      if (!old) return old;
-      return {
-        data: old.data.map((n) => ({ ...n, read_at: n.read_at ?? new Date().toISOString() })),
-        unread_count: 0,
-      };
-    });
-    try {
-      await markAllNotificationsAsRead();
-    } catch (err) {
-      console.error('Gagal menandai semua notifikasi.', err);
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    }
+  const handleMarkAllAsRead = () => {
+    void markAllAsRead();
   };
 
-  const handleDelete = async (id: string) => {
-    const target = items.find((n) => n.id === id);
-    queryClient.setQueryData<NotificationResponse | undefined>(['notifications'], (old) => {
-      if (!old) return old;
-      return {
-        data: old.data.filter((n) => n.id !== id),
-        unread_count: target && !target.read_at ? Math.max(0, old.unread_count - 1) : old.unread_count,
-      };
-    });
-    try {
-      await deleteNotification(id);
-    } catch (err) {
-      console.error('Gagal menghapus notifikasi.', err);
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    }
+  const handleDelete = (id: string) => {
+    void remove(id);
   };
 
   // Klik notif (bukan tombol tandai-dibaca/hapus di kanannya) -> tandai dibaca

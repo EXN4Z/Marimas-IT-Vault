@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { router } from '@inertiajs/react';
-import { resendOtp } from '../../../api/auth';
+// [F9-INERTIA] tanpa api/auth: kirim ulang OTP lewat router.post (route web)
 
 // registrationId dikirim controller (GET /verify-otp?registration_id=...).
 export default function VerifyOtp({ registrationId }: { registrationId: string }) {
@@ -25,14 +25,20 @@ export default function VerifyOtp({ registrationId }: { registrationId: string }
     );
   };
 
-  const handleResend = async () => {
+  // [F9-INERTIA] resend: POST /resend-otp (WebAuthController). Halaman ini tanpa layout, jadi pesan ditampilkan lokal
+  // (bukan lewat FlashToaster). preserveState supaya kode OTP yang sudah diketik tidak hilang.
+  const handleResend = () => {
     setResendMsg('');
-    try {
-      await resendOtp(registrationId);
-      setResendMsg('Kode OTP baru sudah dikirim ke email kamu');
-    } catch {
-      setResendMsg('Gagal mengirim ulang OTP');
-    }
+    router.post(
+      '/resend-otp',
+      { registration_id: registrationId },
+      {
+        preserveState: true,
+        preserveScroll: true,
+        onSuccess: () => setResendMsg('Kode OTP baru sudah dikirim ke email kamu'),
+        onError: (errors) => setResendMsg(errors.registration_id || 'Gagal mengirim ulang OTP'),
+      },
+    );
   };
 
   return (

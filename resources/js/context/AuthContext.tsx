@@ -1,14 +1,13 @@
-import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
+import { router } from '@inertiajs/react';
 import type { User } from '../types/user';
-import api from '../api/axios';
-import { queryClient } from '../lib/queryClient';
 import { disconnectEcho } from '../lib/echo';
 import { unsubscribeThisDevice } from '../api/pushNotifications';
 
 interface AuthContextType {
   user: User | null;
   setUser: (user: User | null) => void;
-  logout: () => Promise<{ password_direset?: boolean } | undefined>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,42 +17,34 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Tidak ada lagi token / user di localStorage dan tidak ada GET /user.
 export function AuthProvider({ children, initialUser }: { children: ReactNode; initialUser: User | null }) {
   const [user, setUser] = useState<User | null>(initialUser);
-  const lastUserId = useRef<number | string | null>(initialUser?.id ?? null);
 
-  const handleSetUser = (u: User | null) => {
-    // ganti user (login akun lain) atau logout -> buang semua cache react-query, supaya data
-    // user sebelumnya tidak sempat kelihatan.
-    if (lastUserId.current !== null && (u?.id ?? null) !== lastUserId.current) {
-      queryClient.clear();
-    }
-    lastUserId.current = u?.id ?? null;
-    setUser(u);
-  };
-
-  // Urutan: unsubscribe push DULU (DELETE /push-subscriptions butuh sesi yang masih valid),
-  // baru POST /api/logout (mengakhiri sesi). Redirect ke /login = tugas pemanggil (layout).
-  const logout = async (): Promise<{ password_direset?: boolean } | undefined> => {
-    let response: { password_direset?: boolean } | undefined;
-
+  // Urutan: unsubscribe push DULU (DELETE /push-subscriptions butuh sesi yang masih valid), baru POST /logout
+  // (route web, WebAuthController::logout -> Inertia::location('/login')). Redirect ke /login = tugas pemanggil (layout).
+  const logout = async (): Promise<void> => {
     await unsubscribeThisDevice();
-
-    try {
-      const res = await api.post('/logout');
-      response = res.data;
-    } catch {
-      // best-effort, tetap lanjut bersihin state lokal
-    }
-
     disconnectEcho();
-    queryClient.clear();
-    lastUserId.current = null;
-    setUser(null);
 
-    return response;
+    await new Promise<void>((resolve) => {
+      // 'httpException' (Inertia v3) = respons non-Inertia (mis. 419 karena sesi sudah habis): jangan tampilkan modal error,
+      // tujuannya sama saja (balik ke /login).
+      const stopInvalid = router.on('httpException', (event) => event.preventDefault());
+      router.post(
+        '/logout',
+        {},
+        {
+          onFinish: () => {
+            stopInvalid();
+            resolve();
+          },
+        },
+      );
+    });
+
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser: handleSetUser, logout }}>
+    <AuthContext.Provider value={{ user, setUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

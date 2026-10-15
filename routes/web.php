@@ -6,6 +6,7 @@ use App\Http\Controllers\AuditLog\AuditLogPageController;
 use App\Http\Controllers\Dashboard\DashboardPageController;
 use App\Http\Controllers\Laporan\LaporanPageController;
 use App\Http\Controllers\MasterData\KaryawanWebController;
+use App\Http\Controllers\MasterData\UserController;
 use App\Http\Controllers\MasterData\MasterDataPageController;
 use App\Http\Controllers\MasterData\CabangWebController;
 use App\Http\Controllers\MasterData\PerusahaanWebController;
@@ -13,6 +14,8 @@ use App\Http\Controllers\MasterData\DepartemenWebController;
 use App\Http\Controllers\MasterData\KategoriWebController;
 use App\Http\Controllers\MasterData\SupplierWebController;
 use App\Http\Controllers\MasterData\InventoryWebController;
+use App\Http\Controllers\Notifikasi\NotificationController;
+use App\Http\Controllers\Notifikasi\PushSubscriptionController;
 use App\Http\Middleware\LogActivity;
 use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\Transaksi\PenangananInventoryPageController;
@@ -24,6 +27,7 @@ Route::get('/login', [WebAuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [WebAuthController::class, 'login']);
 Route::get('/verify-otp', [WebAuthController::class, 'showVerifyOtp']);
 Route::post('/verify-otp', [WebAuthController::class, 'verifyOtp']);
+Route::post('/resend-otp', [WebAuthController::class, 'resendOtp']); // [F9-INERTIA] tombol "Kirim ulang kode" di halaman verifikasi OTP
 Route::redirect('/', '/dashboard'); // belum login -> middleware 'auth' di /dashboard melempar ke /login
 
 // Alias lama (tadinya Navigate di App.tsx). Di luar grup auth: kalau belum login, /dashboard yang akan
@@ -76,6 +80,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/supplier/{id}', [SupplierWebController::class, 'destroy'])->whereNumber('id');
 
         // [F3-INERTIA] Karyawan (Data User): modal Tambah/Edit/Hapus/Ubah Password + import. Statis (/import) di atas {id}.
+        // [F9b-INERTIA] Autocomplete karyawan (modal Serah-Terima): SENGAJA JSON (per ketikan, bukan visit Inertia).
+        // Controller SAMA dengan GET /api/karyawan (filter search/role), admin-only seperti aslinya. Statis di atas {id}.
+        Route::get('/karyawan/cari', [UserController::class, 'index']);
         Route::post('/karyawan/import', [KaryawanWebController::class, 'import']);
         Route::post('/karyawan', [KaryawanWebController::class, 'store']);
         Route::put('/karyawan/{id}/password', [KaryawanWebController::class, 'setPassword'])->whereNumber('id');
@@ -122,6 +129,19 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{inventoryPenanganan}', [InventoryPenangananWebController::class, 'destroy'])->whereNumber('inventoryPenanganan');
         });
     });
+
+    // [F9-INERTIA] Notifikasi (bell + kartu Dashboard) & push subscription: SENGAJA tetap JSON, bukan Inertia (pengecualian).
+    //  - GET /notifications dipoll klien tiap 5 detik; aksinya (tandai dibaca / hapus) optimistic dari state lokal dan
+    //    tidak mengubah props halaman manapun, jadi tidak perlu redirect + render ulang halaman aktif.
+    //  - /push-subscriptions dipanggil di background (izin browser, dan sebelum logout), bukan aksi halaman.
+    // Controller-nya SAMA dengan route /api lama (tidak ada logic ganda). LogActivity sengaja tidak dipasang: ini bukan
+    // perubahan data bisnis (dulu tercatat generik di audit log lewat grup 'api').
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']); // statis di atas {id}
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+    Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store']);
+    Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy']);
 
     // Settings (semua role yang login)
     Route::get('/settings', [SettingsController::class, 'index']);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 
+use App\Actions\Auth\ResendRegistrationOtp;
 use App\Actions\Profile\UpdatePassword;
 use App\Actions\Profile\UpdateProfile;
 use App\Mail\OtpMail;
@@ -53,20 +54,8 @@ class AuthController extends Controller
             'registration_id' => 'required|string',
         ]);
 
-        $data = Cache::get("register:{$request->registration_id}");
-
-        if (!$data) {
-            throw ValidationException::withMessages([
-                'registration_id' => ['Sesi registrasi kedaluwarsa, silakan daftar ulang.'],
-            ]);
-        }
-
-        $otp = rand(100000, 999999);
-        $data['otp_code'] = $otp;
-
-        Cache::put("register:{$request->registration_id}", $data, now()->addMinutes(5));
-
-        $this->sendOtpEmail($data['email'], $otp);
+        // Logic ada di App\Actions\Auth\ResendRegistrationOtp (dipakai juga WebAuthController::resendOtp).
+        ResendRegistrationOtp::run((string) $request->registration_id);
 
         return response()->json(['message' => 'Kode OTP baru sudah dikirim']);
     }

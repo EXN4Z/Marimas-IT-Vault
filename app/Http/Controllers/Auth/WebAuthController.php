@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Actions\Auth\ResendRegistrationOtp;
 use App\Actions\Auth\ResolveLoginUser;
 use App\Actions\Auth\VerifyRegistrationOtp;
 use App\Http\Controllers\Controller;
@@ -68,6 +69,18 @@ class WebAuthController extends Controller
         $request->session()->regenerate();
 
         return $this->toIntended();
+    }
+
+    // POST /resend-otp   (sesi registrasi kedaluwarsa -> props errors.registration_id, halaman VerifyOtp yang menampilkan)
+    public function resendOtp(Request $request)
+    {
+        $request->validate([
+            'registration_id' => 'required|string',
+        ]);
+
+        ResendRegistrationOtp::run((string) $request->input('registration_id'));
+
+        return back()->with('success', 'Kode OTP baru sudah dikirim ke email kamu');
     }
 
     // POST /logout
