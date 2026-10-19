@@ -1,7 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { useSharedProps } from '../../hooks/useSharedProps';
-import { useDashboardNotifications } from './useDashboardNotifications';
-import type { DashboardUserData } from '../../types/dashboard';
+import { useDashboardNotifications } from './hooks/useDashboardNotifications';
+import type { DashboardUserData } from './types';
 import { Package, History, AlertTriangle, Boxes } from 'lucide-react';
 import {
   WelcomeHeader,
@@ -10,7 +10,7 @@ import {
   CalendarCard,
   NotifikasiCard,
   DashboardSkeleton,
-} from './widgets';
+} from './widgets/_shared';
 
 // Dashboard user = halaman "home" personal -- cuma nampilin data milik si
 // user sendiri (inventory yang lagi dia pinjam, riwayat & kalender pemakaian

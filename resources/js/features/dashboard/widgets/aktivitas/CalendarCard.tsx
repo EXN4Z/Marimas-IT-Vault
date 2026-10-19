@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
-import type { AktivitasInventoryTerbaru } from '../../../types/dashboard'; // [F8-INERTIA]
-import { cardClass } from './theme';
-import { SectionHeader } from './primitives';
+import type { AktivitasInventoryTerbaru } from '../../types';
+import { cardClass } from '../_shared/theme';
+import { SectionHeader } from '../_shared/primitives';
 import { AktivitasTimelineList } from './AktivitasTimelineList';
 
 // ==== Kalender Card ====

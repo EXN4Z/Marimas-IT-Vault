@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { router } from '@inertiajs/react';
-import { useAuth } from './AuthContext';
-import { HttpError, requestJson } from '../lib/http';
-import type { AppNotification, NotificationResponse } from '../types/notification';
+import { useAuth } from '../../context/AuthContext';
+import { HttpError, requestJson } from '../../lib/http';
+import type { AppNotification, NotificationResponse } from './types';
 
 // [F9-INERTIA] Satu sumber data notifikasi untuk bell (NotificationDropDown) dan kartu Notifikasi di Dashboard,
 // menggantikan react-query ['notifications'].

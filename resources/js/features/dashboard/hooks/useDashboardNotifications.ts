@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { useNotifications } from '../../context/NotificationsContext';
-import { getEcho } from '../../lib/echo';
+import { useNotifications } from '../../notifications/NotificationsContext';
+import { getEcho } from '../../../lib/echo';
 
 // [F9-INERTIA] Notifikasi Dashboard: data & aksi (tandai-dibaca/hapus) datang dari NotificationsProvider (satu poller
 // JSON bareng NotificationDropDown), bukan axios/useQuery. Yang tersisa di sini: realtime Echo, notif browser, dan

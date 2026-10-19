@@ -1,8 +1,8 @@
 import { ArrowRight, Activity } from 'lucide-react';
-import { useAppNavigate } from '../../../hooks/useAppNavigate';
-import type { AktivitasInventoryTerbaru } from '../../../types/dashboard'; // [F8-INERTIA]
-import { cardClass } from './theme';
-import { SectionHeader } from './primitives';
+import { useAppNavigate } from '../../../../hooks/useAppNavigate';
+import type { AktivitasInventoryTerbaru } from '../../types';
+import { cardClass } from '../_shared/theme';
+import { SectionHeader } from '../_shared/primitives';
 import { AktivitasTimelineList } from './AktivitasTimelineList';
 import { formatWaktuSingkat } from './aktivitas';
 

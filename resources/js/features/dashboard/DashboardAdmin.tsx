@@ -1,8 +1,8 @@
 import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { usePage } from '@inertiajs/react';
 import { useSharedProps } from '../../hooks/useSharedProps';
-import { useDashboardNotifications } from './useDashboardNotifications';
-import type { DashboardAdminData } from '../../types/dashboard';
+import { useDashboardNotifications } from './hooks/useDashboardNotifications';
+import type { DashboardAdminData } from './types';
 import { Boxes, Package, AlertTriangle, ShieldAlert } from 'lucide-react';
 import {
   WelcomeHeader,
@@ -17,7 +17,7 @@ import {
   CalendarCard,
   NotifikasiCard,
   DashboardSkeleton,
-} from './widgets';
+} from './widgets/_shared';
 
 // [F8-INERTIA] Data dari props `analitik` (deferred; DashboardPageController -> DashboardQuery::admin), bukan axios/useQuery.
 // Selama belum datang -> skeleton. User dari shared props (auth.user). Notifikasi masih hook sendiri (F9).

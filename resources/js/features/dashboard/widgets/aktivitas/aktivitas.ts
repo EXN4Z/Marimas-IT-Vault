@@ -1,5 +1,5 @@
-import type { AktivitasInventoryTerbaru } from '../../../types/dashboard'; // [F8-INERTIA]
-import { THEME } from './theme';
+import type { AktivitasInventoryTerbaru } from '../../types';
+import { THEME } from '../_shared/theme';
 
 // ==== Timeline Aktivitas ====
 export const AKTIVITAS_ASET_STYLE: Record<AktivitasInventoryTerbaru['type'], { color: string; label: string; tone: 'amber' | 'emerald' | 'rose' | 'orange' | 'sky' | 'indigo' }> = {

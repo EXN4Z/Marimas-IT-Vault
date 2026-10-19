@@ -1,8 +1,8 @@
 import { Boxes, ArrowRight, CheckCircle2 } from 'lucide-react';
-import { useAppNavigate } from '../../../hooks/useAppNavigate';
-import type { RingkasanInventory } from '../../../types/dashboard'; // [F8-INERTIA]
-import { cardClass, THEME } from './theme';
-import { SectionHeader, LegendDot } from './primitives';
+import { useAppNavigate } from '../../../../hooks/useAppNavigate';
+import type { RingkasanInventory } from '../../types';
+import { cardClass, THEME } from '../_shared/theme';
+import { SectionHeader, LegendDot } from '../_shared/primitives';
 
 // ==== Ringkasan Status Inventory Card ====
 export function RingkasanInventoryCard({

@@ -1,9 +1,9 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { Layers } from 'lucide-react';
-import { useTheme } from '../../../context/ThemeContext';
-import type { StatusInventoryDistribusi } from '../../../types/dashboard'; // [F8-INERTIA]
-import { THEME, cardClass } from './theme';
-import { SectionHeader, LegendDot } from './primitives';
+import { useTheme } from '../../../../context/ThemeContext';
+import type { StatusInventoryDistribusi } from '../../types';
+import { THEME, cardClass } from '../_shared/theme';
+import { SectionHeader, LegendDot } from '../_shared/primitives';
 
 // ==== Status Inventory Donut Card ====
 const STATUS_ASET_COLOR: Record<string, string> = {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { savePushSubscription, removePushSubscription } from '../lib/pushNotifications';
+import { savePushSubscription, removePushSubscription } from '../pushNotifications';
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
 

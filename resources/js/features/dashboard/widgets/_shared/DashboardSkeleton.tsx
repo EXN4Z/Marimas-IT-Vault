@@ -4,7 +4,7 @@ import {
   SkeletonChart,
   SkeletonDonutChart,
   SkeletonTable,
-} from '../../../components/skeleton';
+} from '../../../../components/skeleton';
 import { cardClass } from './theme';
 
 // ==== Skeleton loading buat Dashboard, niru layout asli tiap varian biar

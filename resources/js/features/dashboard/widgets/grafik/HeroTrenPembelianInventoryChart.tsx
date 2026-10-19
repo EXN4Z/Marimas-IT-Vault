@@ -9,10 +9,10 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { TrendingUp, TrendingDown } from 'lucide-react';
-import { useTheme } from '../../../context/ThemeContext';
-import type { TrenPembelianInventory } from '../../../types/dashboard'; // [F8-INERTIA]
-import { THEME, cardClass } from './theme';
-import { SectionHeader } from './primitives';
+import { useTheme } from '../../../../context/ThemeContext';
+import type { TrenPembelianInventory } from '../../types';
+import { THEME, cardClass } from '../_shared/theme';
+import { SectionHeader } from '../_shared/primitives';
 
 // ==== Hero Chart: Tren Pembelian Inventory ====
 export function HeroTrenPembelianInventoryChart({

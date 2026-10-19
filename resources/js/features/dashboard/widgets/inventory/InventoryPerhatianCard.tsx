@@ -1,8 +1,8 @@
 import { AlertTriangle, Wrench, ShieldAlert, ArrowRight } from 'lucide-react';
-import { useAppNavigate } from '../../../hooks/useAppNavigate';
-import type { InventoryPerhatian } from '../../../types/dashboard'; // [F8-INERTIA]
-import { cardClass } from './theme';
-import { SectionHeader, CardIcon } from './primitives';
+import { useAppNavigate } from '../../../../hooks/useAppNavigate';
+import type { InventoryPerhatian } from '../../types';
+import { cardClass } from '../_shared/theme';
+import { SectionHeader, CardIcon } from '../_shared/primitives';
 
 // ==== Inventory Butuh Perhatian Card ====
 export function InventoryPerhatianCard({

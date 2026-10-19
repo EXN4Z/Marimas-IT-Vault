@@ -5,7 +5,7 @@ import { useAppNavigate } from '../hooks/useAppNavigate';
 import AppLayoutShell, { type ShellNavigateOptions } from './AppLayoutShell';
 import AuthSync from './AuthSync';
 import FlashToaster from './FlashToaster';
-import { NotificationsProvider } from '../context/NotificationsContext';
+import { NotificationsProvider } from '../features/notifications/NotificationsContext';
 
 // Adapter Inertia untuk AppLayoutShell. Dipasang sebagai persistent layout di
 // app.tsx, jadi sidebar/header TIDAK di-remount (scroll & state-nya awet)

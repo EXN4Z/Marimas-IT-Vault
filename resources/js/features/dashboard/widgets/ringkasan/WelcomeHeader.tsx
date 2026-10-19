@@ -1,4 +1,4 @@
-import type { User as UserType } from '../../../types/user';
+import type { User as UserType } from '../../../../types/user';
 
 const GREETING_ROLE_LABEL: Record<string, string> = {
   admin: 'Administrator',

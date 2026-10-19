@@ -2,7 +2,7 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 import { router } from '@inertiajs/react';
 import type { User } from '../types/user';
 import { disconnectEcho } from '../lib/echo';
-import { unsubscribeThisDevice } from '../lib/pushNotifications';
+import { unsubscribeThisDevice } from '../features/notifications/pushNotifications';
 
 interface AuthContextType {
   user: User | null;

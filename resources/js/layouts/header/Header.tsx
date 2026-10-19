@@ -1,7 +1,7 @@
 import { Menu, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import NotificationDropdown from '../NotificationDropDown';
+import NotificationDropdown from '../../features/notifications/NotificationDropDown';
 import GlobalSearch from './GlobalSearch';
 import { initials } from '../navigation';
 import type { NavItem } from '../navigation';

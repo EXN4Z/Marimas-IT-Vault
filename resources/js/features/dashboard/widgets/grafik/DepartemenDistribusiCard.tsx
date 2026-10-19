@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { Building2 } from 'lucide-react';
-import type { DepartemenDistribusi } from '../../../types/dashboard'; // [F8-INERTIA]
-import { cardClass } from './theme';
-import { SectionHeader } from './primitives';
+import type { DepartemenDistribusi } from '../../types';
+import { cardClass } from '../_shared/theme';
+import { SectionHeader } from '../_shared/primitives';
 
 // ==== Distribusi Departemen Card ====
 export function DepartemenDistribusiCard({

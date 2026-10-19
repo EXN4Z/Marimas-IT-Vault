@@ -1,6 +1,6 @@
-import type { AktivitasInventoryTerbaru } from '../../../types/dashboard'; // [F8-INERTIA]
+import type { AktivitasInventoryTerbaru } from '../../types';
 import { AKTIVITAS_ASET_STYLE } from './aktivitas';
-import { THEME } from './theme';
+import { THEME } from '../_shared/theme';
 
 export function AktivitasTimelineList({
   events = [],

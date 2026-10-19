@@ -1,4 +1,4 @@
-import { requestJson } from './http'; // [F9-INERTIA] route web /push-subscriptions (JSON), bukan /api + axios
+import { requestJson } from '../../lib/http';
 
 interface WebPushSubscriptionPayload {
   endpoint: string;

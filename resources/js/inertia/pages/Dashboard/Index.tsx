@@ -1,5 +1,5 @@
-import DashboardAdmin from '../../../pages/dashboard/DashboardAdmin';
-import DashboardUser from '../../../pages/dashboard/DashboardUser';
+import DashboardAdmin from '../../../features/dashboard/DashboardAdmin';
+import DashboardUser from '../../../features/dashboard/DashboardUser';
 import { useSharedProps } from '../../../hooks/useSharedProps';
 
 // Role yang dapet DashboardAdmin (full analytics + inventaris). Sama persis dengan
