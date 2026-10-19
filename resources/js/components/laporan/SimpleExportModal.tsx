@@ -3,7 +3,7 @@ import { FileSpreadsheet, FileText, X, FileDown, AlertCircle } from 'lucide-reac
 import toast from 'react-hot-toast';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
-import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';
+import { ButtonCancel, ButtonSubmit } from '../form/FormControls';
 
 type FileType = 'excel' | 'pdf';
 

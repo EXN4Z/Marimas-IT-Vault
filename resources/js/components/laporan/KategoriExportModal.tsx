@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { type Kategori } from '../../../types/kategori';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
-import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';
+import { ButtonCancel, ButtonSubmit } from '../form/FormControls';
 
 type FileType = 'excel' | 'pdf';
 

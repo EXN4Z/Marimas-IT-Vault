@@ -3,7 +3,7 @@ import { useForm } from '@inertiajs/react';
 import toast from 'react-hot-toast';
 import type { InventoryStatus } from '../../../types/inventory';
 import type { InventoryIndukOpsi, InventoryOpsi, InventoryRow } from '../../../types/inventory';
-import { ButtonCancel, ButtonSubmit, Field, SelectField, inputClass, inputErrorClass } from '../../shared/FormControls';
+import { ButtonCancel, ButtonSubmit, Field, SelectField, inputClass, inputErrorClass } from '../../form/FormControls';
 
 const KETERANGAN_MAX = 255;
 const MAX_FOTO_MB = 4;

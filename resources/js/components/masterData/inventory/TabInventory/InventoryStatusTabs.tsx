@@ -1,4 +1,4 @@
-import ScrollableTabBar from '../../../shared/ScrollableTabBar';
+import ScrollableTabBar from '../../../navigation/ScrollableTabBar';
 import type { InventoryStatus } from '../../../../api/masterData/inventory';
 import { STATUS_LABEL, STATUS_KHUSUS_INDUK } from './helpers';
 

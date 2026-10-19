@@ -5,7 +5,7 @@ import { type InventoryPenanganan } from '../../api/transaksi/inventoryPenangana
 import { formatTanggalId, namaPelaporPenanganan, formatRupiah, formatJenisKerusakan, formatDurasi } from '../../utils/inventoryHelpers';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
-import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';
+import { ButtonCancel, ButtonSubmit } from '../form/FormControls';
 
 // Cuma dipakai buat 2 tab yang sudah "final": Berhasil Diperbaiki & Rusak
 // Berat (keduanya punya tanggal_selesai terisi) -- tab "Menunggu Terima" &

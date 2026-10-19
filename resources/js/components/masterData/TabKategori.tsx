@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, X, Tags, AlertCircle, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
-import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
-import Pagination from '../shared/Pagination';
-import SearchInput from '../shared/SearchInput';
+import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../form/FormControls';
+import ConfirmDeleteModal from '../modal/ConfirmDeleteModal';
+import Pagination from '../table/Pagination';
+import SearchInput from '../form/SearchInput';
 import { useBackdropClose } from '../../hooks/useBackdropClose';
 import KategoriExportModal from '../laporan/KategoriExportModal';
 import { router, usePage } from '@inertiajs/react';

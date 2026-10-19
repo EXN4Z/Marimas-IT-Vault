@@ -1,6 +1,6 @@
 import { Boxes, X, Eye, Unlink } from 'lucide-react';
-import StatusBadge from '../../../shared/StatusBadge';
-import { Skeleton } from '../../../shared/skeleton';
+import StatusBadge from '../../../feedback/StatusBadge';
+import { Skeleton } from '../../../skeleton';
 import { useAuth } from '../../../../context/AuthContext';
 import type { Inventory } from '../../../../api/masterData/inventory';
 import type { InventoryPemakai } from '../../../../api/transaksi/inventoryPemakai';

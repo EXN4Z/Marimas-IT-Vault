@@ -5,7 +5,7 @@ import { type InventoryPemakai } from '../../../types/inventoryPemakai';
 import { formatTanggalId } from '../../utils/inventoryHelpers';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
-import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';
+import { ButtonCancel, ButtonSubmit } from '../form/FormControls';
 
 const STATUS_LABEL: Record<InventoryPemakai['status'], string> = {
   pending: 'Pending',

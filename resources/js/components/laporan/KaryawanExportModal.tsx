@@ -5,7 +5,7 @@ import { type Karyawan } from '../../../types/karyawan';
 import { formatTanggalId } from '../../utils/inventoryHelpers';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
-import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';
+import { ButtonCancel, ButtonSubmit } from '../form/FormControls';
 
 const ROLE_LABEL: Record<string | number, string> = {
   1: 'User',

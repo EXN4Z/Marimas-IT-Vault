@@ -1,6 +1,6 @@
 import { Trash2, CheckCircle2, PlayCircle, Printer, Eye, ChevronDown } from 'lucide-react';
-import Pagination from '../../../shared/Pagination';
-import StatusBadge from '../../../shared/StatusBadge';
+import Pagination from '../../../table/Pagination';
+import StatusBadge from '../../../feedback/StatusBadge';
 import { namaPelaporPenanganan, formatJenisKerusakan, formatDurasi } from '../../../../utils/inventoryHelpers';
 import type { Inventory } from '../../../../api/masterData/inventory';
 import type { InventoryPenanganan } from '../../../../api/transaksi/inventoryPenanganan';

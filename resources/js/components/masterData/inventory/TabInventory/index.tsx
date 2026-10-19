@@ -9,7 +9,7 @@ import InventoryLepasDariIndukModal from '../InventoryLepasDariIndukModal';
 import InventoryPasangIndukModal from '../InventoryPasangParentModal';
 import InventoryPenangananSelesaiModal from '../../../transaksi/InventoryPenangananSelesaiModal';
 import InventoryExportModal from '../../../laporan/InventoryExportModal';
-import ConfirmDeleteModal from '../../../shared/ConfirmDeleteModal';
+import ConfirmDeleteModal from '../../../modal/ConfirmDeleteModal';
 import { useAuth } from '../../../../context/AuthContext';
 import type { Inventory, InventoryStatus } from '../../../../types/inventory';
 import type { InventoryPemakai } from '../../../../types/inventoryPemakai';

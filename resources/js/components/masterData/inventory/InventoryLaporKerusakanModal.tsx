@@ -5,7 +5,7 @@ import { router } from '@inertiajs/react';
 import type { Inventory } from '../../../types/inventory';
 import InventoryFotoUpload from './InventoryFotoUpload';
 import { JENIS_KERUSAKAN_OPTIONS } from '../../../utils/inventoryHelpers';
-import { ButtonCancel, ButtonSubmit, Field, SelectField, Textarea } from '../../shared/FormControls';
+import { ButtonCancel, ButtonSubmit, Field, SelectField, Textarea } from '../../form/FormControls';
 
 interface Props {
   inventory: Inventory;

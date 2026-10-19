@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ShieldCheck, CheckCircle2 } from 'lucide-react';
-import RouteModal from '../../shared/RouteModal';
+import RouteModal from '../../modal/Modal';
 import type { KaryawanRow } from '../../../types/karyawan';
 
 interface Props {

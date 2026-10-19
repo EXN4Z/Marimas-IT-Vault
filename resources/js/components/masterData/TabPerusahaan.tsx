@@ -4,11 +4,11 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { router, usePage } from '@inertiajs/react';
 import type { Perusahaan } from '../../types/perusahaan';
-import RouteModal from '../shared/RouteModal';
-import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../shared/FormControls';
-import ConfirmDeleteModal from '../shared/ConfirmDeleteModal';
-import Pagination from '../shared/Pagination';
-import SearchInput from '../shared/SearchInput';
+import RouteModal from '../modal/Modal';
+import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../form/FormControls';
+import ConfirmDeleteModal from '../modal/ConfirmDeleteModal';
+import Pagination from '../table/Pagination';
+import SearchInput from '../form/SearchInput';
 import { downloadStyledExcel } from '../../utils/excelReport';
 
 // pagination client-side -- data perusahaan dimuat penuh sekali lewat

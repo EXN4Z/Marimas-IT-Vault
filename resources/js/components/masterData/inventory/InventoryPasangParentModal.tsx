@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { router } from '@inertiajs/react';
 import type { Inventory } from '../../../types/inventory';
 import type { InventoryIndukOpsi } from '../../../types/inventory';
-import { ButtonCancel, ButtonSubmit, inputClass } from '../../shared/FormControls';
+import { ButtonCancel, ButtonSubmit, inputClass } from '../../form/FormControls';
 
 interface Props {
   inventory: Inventory;

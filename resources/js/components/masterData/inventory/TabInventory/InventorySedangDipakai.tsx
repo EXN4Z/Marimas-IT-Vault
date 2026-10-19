@@ -1,5 +1,5 @@
 import { Undo2, Wrench } from 'lucide-react';
-import StatusBadge from '../../../shared/StatusBadge';
+import StatusBadge from '../../../feedback/StatusBadge';
 import type { Inventory } from '../../../../api/masterData/inventory';
 import type { InventoryPemakai } from '../../../../api/transaksi/inventoryPemakai';
 import { STATUS_STYLE, STATUS_LABEL } from './helpers';

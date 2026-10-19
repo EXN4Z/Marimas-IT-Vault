@@ -4,7 +4,7 @@ import { Bell, Check, Trash2, CheckCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNotifications } from '../../context/NotificationsContext';
 import type { AppNotification } from '../../types/notification';
-import { Skeleton } from '../shared/skeleton';
+import { Skeleton } from '../skeleton';
 
 function formatWaktu(iso: string): string {
   const date = new Date(iso);

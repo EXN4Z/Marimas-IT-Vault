@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { Images, X, ChevronLeft, ChevronRight, HandCoins, Undo2, Wrench, Eye, Package, ImageOff } from 'lucide-react';
-import Pagination from '../shared/Pagination';
-import ScrollableTabBar, { type ScrollableTabItem } from '../shared/ScrollableTabBar';
-import SearchInput from '../shared/SearchInput';
-import Tooltip from '../shared/Tooltip';
+import Pagination from '../table/Pagination';
+import ScrollableTabBar, { type ScrollableTabItem } from '../navigation/ScrollableTabBar';
+import SearchInput from '../form/SearchInput';
+import Tooltip from '../feedback/Tooltip';
 import type { Inventory } from '../../types/inventory';
 import type { LaporanFotoProps } from '../../types/laporan';
 import type { FotoPemakaiEntry } from '../../types/inventoryPemakai';
 import type { InventoryPenanganan } from '../../types/penanganan';
 import { namaPemakai, namaPelaporPenanganan, formatTanggalWaktuId, formatJenisKerusakan } from '../../utils/inventoryHelpers';
-import { SkeletonTable } from '../shared/skeleton';
+import { SkeletonTable } from '../skeleton';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/storage/' : '/storage/');
 const PER_PAGE = 10;

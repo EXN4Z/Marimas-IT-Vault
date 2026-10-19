@@ -1,5 +1,5 @@
 import { Trash2, Printer, Eye, ChevronDown } from 'lucide-react';
-import Pagination from '../../../shared/Pagination';
+import Pagination from '../../../table/Pagination';
 import { namaPemakai } from '../../../../utils/inventoryHelpers';
 import type { Inventory } from '../../../../api/masterData/inventory';
 import { RIWAYAT_PEMAKAI_PER_PAGE, formatTanggalId } from './helpers';

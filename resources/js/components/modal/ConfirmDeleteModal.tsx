@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { AlertTriangle, Trash2, X, AlertCircle } from 'lucide-react';
-import { ButtonCancel, ButtonSubmit } from './FormControls';
+import { ButtonCancel, ButtonSubmit } from '../form/FormControls';
 import { useBackdropClose } from '../../hooks/useBackdropClose';
 
 interface ConfirmDeleteModalProps {

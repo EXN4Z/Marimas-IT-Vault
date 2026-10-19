@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useForm } from '@inertiajs/react';
 import toast from 'react-hot-toast';
 import { KeyRound, X } from 'lucide-react';
-import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../shared/FormControls';
+import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../form/FormControls';
 
 interface Props {
   userId: number;

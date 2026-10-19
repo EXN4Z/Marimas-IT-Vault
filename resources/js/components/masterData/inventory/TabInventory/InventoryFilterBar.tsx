@@ -1,5 +1,5 @@
 import { ChevronDown, RotateCcw } from 'lucide-react';
-import SearchInput from '../../../shared/SearchInput';
+import SearchInput from '../../../form/SearchInput';
 import type { Kategori } from '../../../../api/masterData/kategori';
 
 interface InventoryFilterBarProps {

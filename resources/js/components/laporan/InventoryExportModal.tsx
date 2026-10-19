@@ -5,7 +5,7 @@ import { type Inventory } from '../../../types/inventory';
 import { formatTanggalId, namaPemakai } from '../../utils/inventoryHelpers';
 import { printRowsAsReport } from '../../utils/printCsvReport';
 import { downloadStyledExcel } from '../../utils/excelReport';
-import { ButtonCancel, ButtonSubmit } from '../shared/FormControls';
+import { ButtonCancel, ButtonSubmit } from '../form/FormControls';
 
 const STATUS_LABEL: Record<Inventory['status'], string> = {
   tersedia: 'Tersedia',

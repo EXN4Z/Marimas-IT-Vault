@@ -7,7 +7,7 @@ import type { InventoryPemakai } from '../../../types/inventoryPemakai';
 import type { Flash } from '../../../types/inertia';
 import { namaPemakai } from '../../../utils/inventoryHelpers';
 import InventoryFotoUpload from './InventoryFotoUpload';
-import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../../shared/FormControls';
+import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../../form/FormControls';
 
 interface InventoryPengembalianModalProps {
   inventory: Inventory;
