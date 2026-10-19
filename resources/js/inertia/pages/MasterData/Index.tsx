@@ -1,7 +1,7 @@
 import { router, usePage } from '@inertiajs/react';
 import { Building2, Truck, Package, Tags, Users } from 'lucide-react';
 import ScrollableTabBar from '../../../components/navigation/ScrollableTabBar';
-import TabInventory from '../../../components/masterData/inventory/TabInventory';
+import InventoryTab from '../../../features/inventory/InventoryTab';
 import TabKategori from '../../../components/masterData/TabKategori';
 import TabKaryawan from '../../../components/masterData/TabKaryawan';
 import TabCabang from '../../../components/masterData/TabCabang';
@@ -47,7 +47,7 @@ function isTabKey(value: string | null): value is TabKey {
 function renderTab(tab: TabKey) {
   switch (tab) {
     case 'inventory':
-      return <TabInventory />;
+      return <InventoryTab />;
     case 'kategori':
       return <TabKategori />;
     case 'karyawan':

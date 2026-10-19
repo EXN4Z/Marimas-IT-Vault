@@ -6,20 +6,20 @@ import type { Inventory } from '../../../api/masterData/inventory';
 import type { LaporanExportData } from '../../../types/laporan';
 import type { Karyawan } from '../../../api/masterData/karyawan';
 import type { InventoryPemakai } from '../../../api/transaksi/inventoryPemakai';
-import InventoryExportModal from '../../../components/laporan/InventoryExportModal';
-import KaryawanExportModal from '../../../components/laporan/KaryawanExportModal';
-import InventoryPemakaiExportModal from '../../../components/laporan/InventoryPemakaiExportModal';
+import InventoryExportModal from '../../../features/laporan/InventoryExportModal';
+import KaryawanExportModal from '../../../features/laporan/KaryawanExportModal';
+import InventoryPemakaiExportModal from '../../../features/laporan/InventoryPemakaiExportModal';
 import ScrollableTabBar from '../../../components/navigation/ScrollableTabBar';
-import TabFotoInventory from '../../../components/laporan/TabFotoInventory';
-import TabRiwayatInventory from '../../../components/laporan/TabRiwayatInventory';
+import TabFotoInventory from '../../../features/laporan/TabFotoInventory';
+import TabRiwayatInventory from '../../../features/laporan/TabRiwayatInventory';
 import type { Kategori } from '../../../api/masterData/kategori';
-import KategoriExportModal from '../../../components/laporan/KategoriExportModal';
+import KategoriExportModal from '../../../features/laporan/KategoriExportModal';
 import type { Departemen } from '../../../api/masterData/departemen';
-import DepartemenExportModal from '../../../components/laporan/DepartemenExportModal';
+import DepartemenExportModal from '../../../features/laporan/DepartemenExportModal';
 import type { Cabang } from '../../../api/masterData/cabang';
 import type { Perusahaan } from '../../../api/masterData/perusahaan';
 import type { Supplier } from '../../../api/masterData/supplier';
-import SimpleExportModal from '../../../components/laporan/SimpleExportModal';
+import SimpleExportModal from '../../../features/laporan/SimpleExportModal';
 
 // Admin-only. Semua role selain admin (hr/manajer/cabang termasuk)
 // disamakan persis seperti karyawan -- yaitu TIDAK punya akses ke halaman

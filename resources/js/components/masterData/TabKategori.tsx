@@ -6,7 +6,7 @@ import ConfirmDeleteModal from '../modal/ConfirmDeleteModal';
 import Pagination from '../table/Pagination';
 import SearchInput from '../form/SearchInput';
 import { useBackdropClose } from '../../hooks/useBackdropClose';
-import KategoriExportModal from '../laporan/KategoriExportModal';
+import KategoriExportModal from '../../features/laporan/KategoriExportModal';
 import { router, usePage } from '@inertiajs/react';
 import type { Kategori } from '../../types/kategori';
 

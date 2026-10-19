@@ -8,7 +8,7 @@ import Pagination from '../table/Pagination';
 import Tooltip from '../feedback/Tooltip';
 import SearchInput from '../form/SearchInput';
 import ConfirmDeleteModal from '../modal/ConfirmDeleteModal';
-import KaryawanExportModal from '../laporan/KaryawanExportModal';
+import KaryawanExportModal from '../../features/laporan/KaryawanExportModal';
 import KaryawanFormModal from './karyawan/KaryawanFormModal';
 import KaryawanDetailModal from './karyawan/KaryawanDetailModal';
 import type { KaryawanList, KaryawanOpsi, KaryawanRow } from '../../types/karyawan';
