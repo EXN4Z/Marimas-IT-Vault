@@ -5,7 +5,7 @@ import type { Flash } from '../../types/inertia';
 
 // [F1-INERTIA] Satu-satunya tempat yang menampilkan toast dari flash server (session success/error).
 // Controller cukup `back()->with('success', '...')`; komponen tidak perlu toast manual setelah mutasi.
-// Dipasang sekali di InertiaAppLayout (persistent layout). Pakai event 'success' per visit, jadi pesan yang
+// Dipasang sekali di AppLayout (persistent layout). Pakai event 'success' per visit, jadi pesan yang
 // sama dua kali berturut-turut tetap muncul dua kali.
 export default function FlashToaster() {
   useEffect(() => {

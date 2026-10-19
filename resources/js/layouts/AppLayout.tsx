@@ -1,16 +1,16 @@
 import type { ReactNode } from 'react';
 import { usePage } from '@inertiajs/react';
-import { useAuth } from '../../context/AuthContext';
-import { useAppNavigate } from '../../hooks/useAppNavigate';
+import { useAuth } from '../context/AuthContext';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import AppLayoutShell, { type ShellNavigateOptions } from './AppLayoutShell';
-import InertiaAuthSync from './InertiaAuthSync';
+import AuthSync from './AuthSync';
 import FlashToaster from './FlashToaster';
-import { NotificationsProvider } from '../../context/NotificationsContext';
+import { NotificationsProvider } from '../context/NotificationsContext';
 
 // Adapter Inertia untuk AppLayoutShell. Dipasang sebagai persistent layout di
-// inertia-app.tsx, jadi sidebar/header TIDAK di-remount (scroll & state-nya awet)
+// app.tsx, jadi sidebar/header TIDAK di-remount (scroll & state-nya awet)
 // saat pindah antar halaman Inertia.
-export default function InertiaAppLayout({ children }: { children: ReactNode }) {
+export default function AppLayout({ children }: { children: ReactNode }) {
   const { url } = usePage();
   const { logout } = useAuth();
   const navigate = useAppNavigate();
@@ -35,7 +35,7 @@ export default function InertiaAppLayout({ children }: { children: ReactNode }) 
   return (
     <NotificationsProvider>
       <AppLayoutShell pathname={pathname} search={search} onNavigate={onNavigate} onLogout={onLogout}>
-        <InertiaAuthSync />
+        <AuthSync />
         <FlashToaster />
         {children}
       </AppLayoutShell>

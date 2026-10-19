@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { useSharedProps } from '../../hooks/useSharedProps';
+import { useAuth } from '../context/AuthContext';
+import { useSharedProps } from '../hooks/useSharedProps';
 
 // Dipasang di dalam layout Inertia (P5). Tiap navigasi Inertia, auth.user di shared
 // props bisa berubah (mis. habis update profil) -- komponen ini menyamakan AuthContext

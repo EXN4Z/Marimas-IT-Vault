@@ -7,7 +7,7 @@ import { queryClient } from './lib/queryClient';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
-import InertiaAppLayout from './components/layout/InertiaAppLayout';
+import AppLayout from './layouts/AppLayout';
 
 // Halaman Inertia ditaruh di resources/js/inertia/pages/<Menu>/<Halaman>.tsx
 // dan dipanggil dari Laravel: Inertia::render('<Menu>/<Halaman>')
@@ -19,10 +19,10 @@ createInertiaApp({
     if (!loader) throw new Error(`Halaman Inertia tidak ditemukan: ${name}`);
     const page = await loader();
     // Persistent layout: halaman yang TIDAK mendefinisikan Page.layout otomatis dibungkus
-    // InertiaAppLayout. Halaman tanpa sidebar/header (Login, VerifyOtp di P13) cukup set
+    // AppLayout. Halaman tanpa sidebar/header (Login, VerifyOtp di P13) cukup set
     // `Page.layout = null` (atau fungsi yang return page apa adanya).
     if (page.default.layout === undefined) {
-      page.default.layout = (node: ReactNode) => <InertiaAppLayout>{node}</InertiaAppLayout>;
+      page.default.layout = (node: ReactNode) => <AppLayout>{node}</AppLayout>;
     }
     return page;
   },
