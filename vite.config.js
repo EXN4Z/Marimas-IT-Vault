@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/js/inertia-app.tsx'],
+            input: ['resources/js/app.tsx'],
             refresh: true,
         }),
         react(),
