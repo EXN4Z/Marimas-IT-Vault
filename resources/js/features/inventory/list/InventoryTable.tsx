@@ -1,7 +1,7 @@
 import { ChevronDown, Link2 } from 'lucide-react';
-import Pagination from '../../../table/Pagination';
-import StatusBadge from '../../../feedback/StatusBadge';
-import Tooltip from '../../../feedback/Tooltip';
+import Pagination from '../../../components/table/Pagination';
+import StatusBadge from '../../../components/feedback/StatusBadge';
+import Tooltip from '../../../components/feedback/Tooltip';
 // [F4-INERTIA] Loading/pagination sekarang dari props server: tabel cuma merender halaman yang dikirim.
 import { namaPemakai } from '../inventoryHelpers';
 import type { Inventory } from '../types/inventory';

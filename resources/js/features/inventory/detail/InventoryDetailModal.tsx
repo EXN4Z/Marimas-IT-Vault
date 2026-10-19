@@ -1,6 +1,6 @@
 import { Boxes, X, Eye, Unlink } from 'lucide-react';
-import StatusBadge from '../../../feedback/StatusBadge';
-import { Skeleton } from '../../../skeleton';
+import StatusBadge from '../../../components/feedback/StatusBadge';
+import { Skeleton } from '../../../components/skeleton';
 import { useAuth } from '../../../../context/AuthContext';
 import type { Inventory } from '../types/inventory';
 import type { InventoryPemakai } from '../types/inventoryPemakai';

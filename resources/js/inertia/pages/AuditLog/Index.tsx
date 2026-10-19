@@ -4,7 +4,7 @@ import { ScrollText, Trash2, ArrowDownCircle, ArrowUpCircle, RefreshCw, Search, 
 import ScrollableTabBar from '../../../components/navigation/ScrollableTabBar';
 import Pagination from '../../../components/table/Pagination';
 import { Skeleton } from '../../../components/skeleton';
-import type { PaginatedAuditLog } from '../../../types/auditLog';
+import type { PaginatedAuditLog } from '../../../features/audit-log/types';
 
 type TabKey = 'aktif' | 'trash';
 

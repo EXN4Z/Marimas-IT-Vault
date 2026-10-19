@@ -6,7 +6,7 @@ import {
   formatJenisKerusakan,
   formatDurasi,
 } from '../../inventory/inventoryHelpers';
-import { STORAGE_BASE_URL, formatRupiah } from './helpers';
+import { STORAGE_BASE_URL, formatRupiah } from '../helpers';
 
 // Modal Detail Penanganan
 export default function DetailPenangananModal({

@@ -2,10 +2,10 @@ import { useState, type FormEvent } from 'react';
 import { useForm } from '@inertiajs/react';
 import toast from 'react-hot-toast';
 import { User as UserIcon, Lock, Building2, Eye, EyeOff, KeyRound } from 'lucide-react';
-import RouteModal from '../../modal/Modal';
-import Select from '../../form/Select';
-import SearchableSelect from '../../form/SearchableSelect';
-import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../form/FormControls';
+import RouteModal from '../../../components/modal/Modal';
+import Select from '../../../components/form/Select';
+import SearchableSelect from '../../../components/form/SearchableSelect';
+import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
 import KaryawanPasswordModal from './KaryawanPasswordModal';
 import type { KaryawanOpsi, KaryawanRow } from '../../../types/karyawan';
 

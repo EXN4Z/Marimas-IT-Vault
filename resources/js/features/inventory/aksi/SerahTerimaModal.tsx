@@ -8,8 +8,8 @@ import { router } from '@inertiajs/react';
 import { requestJson } from '../../../lib/http';
 import type { InventoryPemakai, KaryawanUser } from '../types/inventoryPemakai';
 import type { Flash } from '../../../types/inertia';
-import InventoryFotoUpload from './InventoryFotoUpload';
-import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../../components/form/FormControls';
+import InventoryFotoUpload from '../form/InventoryFotoUpload';
+import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../../../components/form/FormControls';
 
 interface InventorySerahTerimaModalProps {
   inventory: Inventory; // inventory utama yang mau diserahkan (mis. laptop) -- diklik dari tabel/detail

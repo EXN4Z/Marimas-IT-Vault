@@ -3,7 +3,7 @@ import { Unlink, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { router } from '@inertiajs/react';
 import type { Inventory } from '../../../types/inventory';
-import { ButtonCancel, ButtonSubmit, Field, Textarea } from '../../form/FormControls';
+import { ButtonCancel, ButtonSubmit, Field, Textarea } from '../../../components/form/FormControls';
 
 interface Props {
   inventory: Inventory;

@@ -6,8 +6,8 @@ import { router } from '@inertiajs/react';
 import type { InventoryPemakai } from '../../../types/inventoryPemakai';
 import type { Flash } from '../../../types/inertia';
 import { namaPemakai } from '../inventoryHelpers';
-import InventoryFotoUpload from './InventoryFotoUpload';
-import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../../form/FormControls';
+import InventoryFotoUpload from '../form/InventoryFotoUpload';
+import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../../../components/form/FormControls';
 
 interface InventoryPengembalianModalProps {
   inventory: Inventory;

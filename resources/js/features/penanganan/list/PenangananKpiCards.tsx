@@ -1,5 +1,5 @@
 import { Wrench, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
-import type { TabStatus } from './helpers';
+import type { TabStatus } from '../helpers';
 
 interface PenangananKpiCardsProps {
   handleTabChange: (tab: TabStatus) => void;

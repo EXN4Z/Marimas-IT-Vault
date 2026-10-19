@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Building2, MapPin, Phone, Map, Plus, Pencil, Trash2, Upload, Download, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../../context/AuthContext';
 import { router, usePage } from '@inertiajs/react';
 import type { Cabang } from '../../types/cabang';
 import RouteModal from '../modal/Modal';

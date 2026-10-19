@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type JSX } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { Search, HandCoins, Undo2, AlertTriangle, PlayCircle, Wrench, Banknote, X } from 'lucide-react';
-import Pagination from '../table/Pagination';
+import Pagination from '../../components/table/Pagination';
 import { useAuth } from '../../context/AuthContext';
-import { Skeleton } from '../skeleton';
+import { Skeleton } from '../../components/skeleton';
 import type { RiwayatInventoryEvent } from '../../types/inventoryPemakai';
 import type { LaporanRiwayatProps } from '../../types/laporan';
 

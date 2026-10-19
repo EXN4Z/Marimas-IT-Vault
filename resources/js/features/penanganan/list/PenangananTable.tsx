@@ -3,8 +3,8 @@ import { Printer, Eye } from 'lucide-react';
 import type { InventoryPenanganan } from '../../../api/transaksi/inventoryPenanganan';
 import { formatTanggalId, namaPelaporPenanganan, formatJenisKerusakan } from '../../inventory/inventoryHelpers';
 import StatusBadge from '../../../components/feedback/StatusBadge';
-import { formatRupiah } from './helpers';
-import type { TabStatus } from './helpers';
+import { formatRupiah } from '../helpers';
+import type { TabStatus } from '../helpers';
 
 interface PenangananTableProps {
   paginatedList: InventoryPenanganan[];

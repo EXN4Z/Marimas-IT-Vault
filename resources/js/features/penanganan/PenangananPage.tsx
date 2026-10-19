@@ -10,7 +10,7 @@ import {
   formatDurasi,
 } from '../inventory/inventoryHelpers';
 import ScrollableTabBar from '../../components/navigation/ScrollableTabBar';
-import { printStruk } from './print/printStruk';
+import { printStruk } from '../inventory/print/printStruk';
 import PenangananExportModal from './export/PenangananExportModal';
 import { useAuth } from '../../context/AuthContext';
 import { formatRupiah } from './helpers';

@@ -2,8 +2,8 @@ import { Wrench, PlayCircle, Eye, CheckCircle2, Check } from 'lucide-react';
 import type { InventoryPenanganan } from '../../../api/transaksi/inventoryPenanganan';
 import { formatTanggalId, namaPelaporPenanganan, formatJenisKerusakan } from '../../inventory/inventoryHelpers';
 import StatusBadge from '../../../components/feedback/StatusBadge';
-import { initials } from './helpers';
-import type { TabStatus } from './helpers';
+import { initials } from '../helpers';
+import type { TabStatus } from '../helpers';
 
 interface PenangananCardListProps {
   displayedList: InventoryPenanganan[];

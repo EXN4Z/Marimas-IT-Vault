@@ -8,7 +8,7 @@ import InventoryLaporKerusakanModal from './aksi/LaporKerusakanModal';
 import InventoryLepasDariIndukModal from './aksi/LepasDariIndukModal';
 import InventoryPasangIndukModal from './aksi/PasangParentModal';
 import InventoryPenangananSelesaiModal from '../penanganan/modals/PenangananSelesaiModal';
-import InventoryExportModal from '../laporan/export/InventoryExportModal';
+import InventoryExportModal from '../laporan/InventoryExportModal';
 import ConfirmDeleteModal from '../../components/modal/ConfirmDeleteModal';
 import { useAuth } from '../../context/AuthContext';
 import type { Inventory, InventoryStatus } from './types/inventory';

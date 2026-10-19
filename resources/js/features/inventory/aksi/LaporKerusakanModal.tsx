@@ -3,9 +3,9 @@ import { AlertTriangle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { router } from '@inertiajs/react';
 import type { Inventory } from '../../../types/inventory';
-import InventoryFotoUpload from './InventoryFotoUpload';
+import InventoryFotoUpload from '../form/InventoryFotoUpload';
 import { JENIS_KERUSAKAN_OPTIONS } from '../inventoryHelpers';
-import { ButtonCancel, ButtonSubmit, Field, SelectField, Textarea } from '../../form/FormControls';
+import { ButtonCancel, ButtonSubmit, Field, SelectField, Textarea } from '../../../components/form/FormControls';
 
 interface Props {
   inventory: Inventory;
