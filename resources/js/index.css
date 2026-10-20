@@ -39,7 +39,7 @@ html, body, #root, #app {
   display: none; /* Chrome, Safari, Edge Chromium */
 }
 
-/* Route modal overlay (dipakai RouteModal.tsx untuk create/edit yang tampil di atas
+/* Route modal overlay (dipakai Modal.tsx untuk create/edit yang tampil di atas
    halaman sebelumnya tanpa nge-unmount halaman di belakangnya, mirip ScanQrModal) */
 @keyframes route-modal-backdrop-in {
   from { opacity: 0; }

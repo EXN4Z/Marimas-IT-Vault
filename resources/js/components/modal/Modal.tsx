@@ -1,7 +1,7 @@
 import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 
-interface RouteModalProps {
+interface ModalProps {
   title: string;
   description?: string;
   children: ReactNode;
@@ -15,13 +15,13 @@ interface RouteModalProps {
  * Tidak bergantung ke react-router, jadi aman dirender di halaman Inertia.
  * Create/Detail/Edit Karyawan sekarang halaman Inertia sendiri (lihat PageCard.tsx).
  */
-export default function RouteModal({
+export default function Modal({
   title,
   description,
   children,
   onClose,
   maxWidthClassName = 'max-w-xl',
-}: RouteModalProps) {
+}: ModalProps) {
   // BARU: fix bug "drag-select teks lalu kepeleset ke backdrop = modal ketutup".
   // Klik dianggap "nutup modal" cuma kalau mousedown DAN mouseup dua-duanya
   // kena backdrop-nya sendiri (bukan hasil drag yang start-nya dari dalam panel).

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ShieldCheck, CheckCircle2 } from 'lucide-react';
-import RouteModal from '../../../components/modal/Modal';
+import Modal from '../../../components/modal/Modal';
 import type { KaryawanRow } from '../types';
 
 interface Props {
@@ -42,7 +42,7 @@ export default function KaryawanDetailModal({ user, onClose }: Props) {
   const isAktif = user.status !== 'nonaktif';
 
   return (
-    <RouteModal
+    <Modal
       title="Detail Karyawan"
       description="Informasi profil dan penempatan kerja karyawan."
       onClose={onClose}
@@ -120,7 +120,7 @@ export default function KaryawanDetailModal({ user, onClose }: Props) {
           </button>
         </div>
       </div>
-    </RouteModal>
+    </Modal>
   );
 }
 

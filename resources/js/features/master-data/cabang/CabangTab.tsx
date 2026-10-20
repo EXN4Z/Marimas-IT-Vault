@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../../context/AuthContext';
 import { router, usePage } from '@inertiajs/react';
 import type { Cabang } from './types';
-import RouteModal from '../../../components/modal/Modal';
+import Modal from '../../../components/modal/Modal';
 import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
 import ConfirmDeleteModal from '../../../components/modal/ConfirmDeleteModal';
 import Pagination from '../../../components/table/Pagination';
@@ -383,7 +383,7 @@ export default function TabCabang() {
 
       {/* MODAL TAMBAH / EDIT */}
       {modalOpen && (
-        <RouteModal
+        <Modal
           title={editing ? 'Edit Cabang' : 'Tambah Cabang'}
           onClose={closeModal}
           maxWidthClassName="max-w-md"
@@ -453,7 +453,7 @@ export default function TabCabang() {
               </ButtonSubmit>
             </div>
           </div>
-        </RouteModal>
+        </Modal>
       )}
 
       {/* MODAL KONFIRMASI HAPUS */}

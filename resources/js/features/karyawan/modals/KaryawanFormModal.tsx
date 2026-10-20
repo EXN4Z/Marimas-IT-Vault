@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useForm } from '@inertiajs/react';
 import toast from 'react-hot-toast';
 import { User as UserIcon, Lock, Building2, Eye, EyeOff, KeyRound } from 'lucide-react';
-import RouteModal from '../../../components/modal/Modal';
+import Modal from '../../../components/modal/Modal';
 import Select from '../../../components/form/Select';
 import SearchableSelect from '../../../components/form/SearchableSelect';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
@@ -137,7 +137,7 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
 
   return (
     <>
-      <RouteModal title={isEdit ? 'Edit User' : 'Tambah User'} onClose={handleClose} maxWidthClassName="max-w-2xl">
+      <Modal title={isEdit ? 'Edit User' : 'Tambah User'} onClose={handleClose} maxWidthClassName="max-w-2xl">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Section 1: Identitas & Kontak */}
           <div className={sectionClass}>
@@ -321,7 +321,7 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
             </div>
           </div>
         </form>
-      </RouteModal>
+      </Modal>
 
       {showSetPassword && user && (
         <KaryawanPasswordModal userId={user.id} userName={user.name} onClose={() => setShowSetPassword(false)} />
