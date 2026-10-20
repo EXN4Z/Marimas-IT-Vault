@@ -11,6 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Requests\MasterData\StoreCabangRequest;
+use App\Http\Requests\MasterData\UpdateCabangRequest;
+use App\Http\Requests\MasterData\ImportCabangRequest;
 
 // [F1-INERTIA] Versi Inertia dari CabangController (API). Dipanggil lewat routes/web.php (session + CSRF),
 // balasan = redirect back + flash (bukan JSON). Aturan validasi & logika SAMA dengan versi API.
@@ -37,19 +40,9 @@ class CabangController extends Controller
     }
 
     // POST /master-data/cabang
-    public function store(Request $request): RedirectResponse
+    public function store(StoreCabangRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'nama' => 'required|string|max:150',
-            'alamat' => 'required|string|max:1000|unique:lokasi_kantor,alamat',
-            'telepon' => 'nullable|string|max:30',
-            'link' => 'nullable|string|max:255|unique:lokasi_kantor,link',
-        ], [
-            'nama.required' => 'Kolom nama wajib diisi.',
-            'alamat.required' => 'Kolom alamat wajib diisi.',
-            'alamat.unique' => 'Alamat ini sudah terdaftar di cabang lain.',
-            'link.unique'   => 'Link ini sudah digunakan oleh cabang lain.',
-        ]);
+        $validated = $request->validated();
 
         LokasiKantor::create($validated);
 
@@ -57,19 +50,11 @@ class CabangController extends Controller
     }
 
     // PUT /master-data/cabang/{id}
-    public function update(Request $request, $id): RedirectResponse
+    public function update(UpdateCabangRequest $request, $id): RedirectResponse
     {
         $cabang = LokasiKantor::findOrFail($id);
 
-        $validated = $request->validate([
-            'nama' => 'sometimes|required|string|max:150',
-            'alamat' => 'sometimes|required|string|max:1000',
-            'telepon' => 'sometimes|nullable|string|max:30',
-            'link' => 'sometimes|nullable|string|max:255',
-        ], [
-            'nama.required' => 'Kolom nama wajib diisi.',
-            'alamat.required' => 'Kolom alamat wajib diisi.',
-        ]);
+        $validated = $request->validated();
 
         $cabang->update($validated);
 
@@ -100,12 +85,8 @@ class CabangController extends Controller
 
     // POST /master-data/cabang/import -- Excel (.xlsx/.xls). Kolom: Nama | Alamat | Telepon | Link.
     // Gagal -> error bag key "file" (pesan pertama), semua-atau-tidak-sama-sekali (rollback).
-    public function import(Request $request): RedirectResponse
+    public function import(ImportCabangRequest $request): RedirectResponse
     {
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240', // max 10MB
-        ]);
-
         $pesanError = null;
         $pesanSukses = null;
 

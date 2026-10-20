@@ -9,6 +9,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use App\Http\Requests\Auth\LoginAuthRequest;
+use App\Http\Requests\Auth\VerifyOtpAuthRequest;
+use App\Http\Requests\Auth\ResendOtpAuthRequest;
 
 class AuthController extends Controller
 {
@@ -28,13 +31,8 @@ class AuthController extends Controller
     }
 
     // POST /login   (error validasi -> props errors.login, halaman Login yang menampilkan)
-    public function login(Request $request)
+    public function login(LoginAuthRequest $request)
     {
-        $request->validate([
-            'login' => 'required|string',
-            'password' => 'required',
-        ]);
-
         $user = ResolveLoginUser::run((string) $request->input('login'), (string) $request->input('password'));
 
         Auth::guard('web')->login($user, self::REMEMBER);
@@ -56,13 +54,8 @@ class AuthController extends Controller
     }
 
     // POST /verify-otp
-    public function verifyOtp(Request $request)
+    public function verifyOtp(VerifyOtpAuthRequest $request)
     {
-        $request->validate([
-            'registration_id' => 'required|string',
-            'otp_code' => 'required|string',
-        ]);
-
         $user = VerifyRegistrationOtp::run($request->input('registration_id'), $request->input('otp_code'));
 
         Auth::guard('web')->login($user, self::REMEMBER);
@@ -72,12 +65,8 @@ class AuthController extends Controller
     }
 
     // POST /resend-otp   (sesi registrasi kedaluwarsa -> props errors.registration_id, halaman VerifyOtp yang menampilkan)
-    public function resendOtp(Request $request)
+    public function resendOtp(ResendOtpAuthRequest $request)
     {
-        $request->validate([
-            'registration_id' => 'required|string',
-        ]);
-
         ResendRegistrationOtp::run((string) $request->input('registration_id'));
 
         return back()->with('success', 'Kode OTP baru sudah dikirim ke email kamu');

@@ -5,17 +5,15 @@ namespace App\Http\Controllers\Notifikasi;
 use Illuminate\Http\Request;
 use NotificationChannels\WebPush\PushSubscription;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Notifikasi\StorePushSubscriptionRequest;
+use App\Http\Requests\Notifikasi\DestroyPushSubscriptionRequest;
 
 class PushSubscriptionController extends Controller
 {
     // simpan/update subscription push browser milik user yang login
-    public function store(Request $request)
+    public function store(StorePushSubscriptionRequest $request)
     {
-        $validated = $request->validate([
-            'endpoint' => 'required|string',
-            'keys.p256dh' => 'required|string',
-            'keys.auth' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
         // Endpoint = device/browser, bukan sesi login. Kalau device ini
         // sebelumnya subscribe pake akun lain (device sharing, lupa
@@ -38,11 +36,9 @@ class PushSubscriptionController extends Controller
     }
 
     // browser matiin izin notif / user logout dari device ini -> hapus subscription-nya aja
-    public function destroy(Request $request)
+    public function destroy(DestroyPushSubscriptionRequest $request)
     {
-        $validated = $request->validate([
-            'endpoint' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
         $request->user()->deletePushSubscription($validated['endpoint']);
 

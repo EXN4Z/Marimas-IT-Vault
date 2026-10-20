@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Requests\MasterData\ImportInventoryRequest;
 
 // [F4-INERTIA] Versi Inertia dari InventoryController (API) untuk tab "Inventory" di Master Data.
 // Data baca (daftar/dipakai/export/opsi/detail) dipanggil MasterDataPageController sebagai props; mutasi dipanggil
@@ -193,12 +194,8 @@ class InventoryController extends Controller
 
     // POST /master-data/inventory/import -- Excel (.xlsx/.xls), semua-atau-tidak-sama-sekali (rollback).
     // Gagal -> error bag key "file" (pesan pertama, sama seperti tampilan lama).
-    public function import(Request $request): RedirectResponse
+    public function import(ImportInventoryRequest $request): RedirectResponse
     {
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240', // max 10MB
-        ]);
-
         $pesanError = null;
         $pesanSukses = null;
 

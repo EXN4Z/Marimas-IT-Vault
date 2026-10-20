@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Requests\MasterData\StoreDepartemenRequest;
+use App\Http\Requests\MasterData\ImportDepartemenRequest;
 
 // [F2-INERTIA] Versi Inertia dari DepartemenController (API). Dipanggil lewat routes/web.php (session + CSRF),
 // balasan = redirect back + flash (bukan JSON). Aturan validasi & logika SAMA dengan versi API.
@@ -26,11 +28,9 @@ class DepartemenController extends Controller
     }
 
     // POST /master-data/departemen
-    public function store(Request $request): RedirectResponse
+    public function store(StoreDepartemenRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'nama' => 'required|string|unique:departemen,nama',
-        ]);
+        $validated = $request->validated();
 
         Departemen::create($validated);
 
@@ -62,12 +62,8 @@ class DepartemenController extends Controller
 
     // POST /master-data/departemen/import -- Excel (.xlsx/.xls). Kolom: Nama. Nama yang sudah ada dilewati.
     // Gagal -> error bag key "file" (pesan pertama), semua-atau-tidak-sama-sekali (rollback).
-    public function import(Request $request): RedirectResponse
+    public function import(ImportDepartemenRequest $request): RedirectResponse
     {
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240', // max 10MB
-        ]);
-
         $pesanError = null;
         $pesanSukses = null;
 

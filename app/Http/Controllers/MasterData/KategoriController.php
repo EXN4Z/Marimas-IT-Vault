@@ -7,6 +7,8 @@ use App\Models\MasterData\Kategori;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use App\Http\Requests\MasterData\StoreKategoriRequest;
+use App\Http\Requests\MasterData\UpdateKategoriRequest;
 
 // [F2-INERTIA] Versi Inertia dari KategoriController (API). Dipanggil lewat routes/web.php (session + CSRF),
 // balasan = redirect back + flash (bukan JSON). Aturan validasi & logika SAMA dengan versi API.
@@ -22,11 +24,9 @@ class KategoriController extends Controller
     }
 
     // POST /master-data/kategori
-    public function store(Request $request): RedirectResponse
+    public function store(StoreKategoriRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         Kategori::create($validated);
 
@@ -34,13 +34,11 @@ class KategoriController extends Controller
     }
 
     // PUT /master-data/kategori/{id}
-    public function update(Request $request, $id): RedirectResponse
+    public function update(UpdateKategoriRequest $request, $id): RedirectResponse
     {
         $kategori = Kategori::findOrFail($id);
 
-        $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         $kategori->update($validated);
 

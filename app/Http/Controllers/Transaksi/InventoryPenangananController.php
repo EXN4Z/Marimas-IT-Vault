@@ -9,6 +9,7 @@ use App\Queries\Transaksi\InventoryPenangananQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use App\Http\Requests\Transaksi\ImportInventoryPenangananRequest;
 
 // [F6-INERTIA] Versi Inertia dari InventoryPenangananController (API) untuk halaman Penanganan Inventory + aksi dari modal
 // di tab Inventory (Master Data). Data baca (daftar / export) dipanggil PenangananPageController sebagai props;
@@ -101,12 +102,8 @@ class InventoryPenangananController extends Controller
 
     // POST /penanganan-inventory/import -- Excel (.xlsx/.xls), semua-atau-tidak-sama-sekali (rollback). Admin-only.
     // Gagal -> error bag key "file" (pesan pertama, sama seperti tampilan lama).
-    public function import(Request $request): RedirectResponse
+    public function import(ImportInventoryPenangananRequest $request): RedirectResponse
     {
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240', // max 10MB
-        ]);
-
         $hasil = $this->penanganan->import($request->file('file'));
 
         if (!$hasil['sukses']) {

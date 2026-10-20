@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Requests\MasterData\StoreSupplierRequest;
+use App\Http\Requests\MasterData\ImportSupplierRequest;
 
 // [F2-INERTIA] Versi Inertia dari SupplierController (API). Dipanggil lewat routes/web.php (session + CSRF),
 // balasan = redirect back + flash (bukan JSON). Aturan validasi & logika SAMA dengan versi API.
@@ -26,13 +28,9 @@ class SupplierController extends Controller
     }
 
     // POST /master-data/supplier
-    public function store(Request $request): RedirectResponse
+    public function store(StoreSupplierRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'nama' => 'required|string|unique:supplier,nama',
-            'alamat' => 'nullable|string',
-            'telepon' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         Supplier::create($validated);
 
@@ -67,12 +65,8 @@ class SupplierController extends Controller
     // POST /master-data/supplier/import -- Excel (.xlsx/.xls). Kolom: Nama | Alamat | Telepon.
     // Nama yang sudah ada di-UPDATE (bukan dilewati). Gagal -> error bag key "file" (pesan pertama),
     // semua-atau-tidak-sama-sekali (rollback).
-    public function import(Request $request): RedirectResponse
+    public function import(ImportSupplierRequest $request): RedirectResponse
     {
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240', // max 10MB
-        ]);
-
         $pesanError = null;
         $pesanSukses = null;
 
