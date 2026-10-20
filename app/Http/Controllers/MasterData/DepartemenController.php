@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\MasterData;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\MasterData\UpdateDepartemenRequest;
 use App\Imports\MasterData\DepartemenImport;
 use App\Models\MasterData\Departemen;
 use Exception;
@@ -38,13 +39,11 @@ class DepartemenController extends Controller
     }
 
     // PUT /master-data/departemen/{id}
-    public function update(Request $request, $id): RedirectResponse
+    public function update(UpdateDepartemenRequest $request, $id): RedirectResponse
     {
         $departemen = Departemen::findOrFail($id);
 
-        $validated = $request->validate([
-            'nama' => 'required|string|unique:departemen,nama,' . $departemen->id,
-        ]);
+        $validated = $request->validated();
 
         $departemen->update($validated);
 

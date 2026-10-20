@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\MasterData;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\MasterData\UpdateSupplierRequest;
 use App\Imports\MasterData\SupplierImport;
 use App\Models\MasterData\Supplier;
 use Exception;
@@ -38,15 +39,11 @@ class SupplierController extends Controller
     }
 
     // PUT /master-data/supplier/{id}
-    public function update(Request $request, $id): RedirectResponse
+    public function update(UpdateSupplierRequest $request, $id): RedirectResponse
     {
         $supplier = Supplier::findOrFail($id);
 
-        $validated = $request->validate([
-            'nama' => 'required|string|unique:supplier,nama,' . $supplier->id,
-            'alamat' => 'nullable|string',
-            'telepon' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $supplier->update($validated);
 
