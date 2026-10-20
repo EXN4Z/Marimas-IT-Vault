@@ -6,17 +6,14 @@ use App\Queries\MasterData\SupplierQuery;
 use App\Queries\MasterData\KategoriQuery;
 use App\Queries\MasterData\PerusahaanQuery;
 use App\Actions\MasterData\InventoryAction;
+use App\Actions\Shared\ImportExcel;
 use App\Http\Controllers\Controller;
 use App\Imports\MasterData\InventoryBuktiImport;
 use App\Models\MasterData\Inventory;
 use App\Queries\MasterData\InventoryQuery;
-use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
-use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Requests\MasterData\ImportInventoryRequest;
 
 // [F4-INERTIA] Versi Inertia dari InventoryController (API) untuk tab "Inventory" di Master Data.
@@ -199,31 +196,14 @@ class InventoryController extends Controller
     // Gagal -> error bag key "file" (pesan pertama, sama seperti tampilan lama).
     public function import(ImportInventoryRequest $request): RedirectResponse
     {
-        $pesanError = null;
-        $pesanSukses = null;
+        $pesan = ImportExcel::dalamTransaksi(
+            InventoryBuktiImport::class,
+            $request->file('file'),
+            'Gagal mengimport file',
+            fn ($import) => "Berhasil import {$import->getRowCount()} baris data"
+        );
 
-        DB::beginTransaction();
-        try {
-            $import = new InventoryBuktiImport();
-            Excel::import($import, $request->file('file'));
-
-            if (count($import->getErrors()) > 0) {
-                DB::rollBack();
-                $pesanError = (string) ($import->getErrors()[0] ?? 'Gagal mengimport file');
-            } else {
-                DB::commit();
-                $pesanSukses = "Berhasil import {$import->getRowCount()} baris data";
-            }
-        } catch (Exception $e) {
-            DB::rollBack();
-            $pesanError = 'Gagal import: ' . $e->getMessage();
-        }
-
-        if ($pesanError !== null) {
-            throw ValidationException::withMessages(['file' => $pesanError]);
-        }
-
-        return back()->with('success', $pesanSukses);
+        return back()->with('success', $pesan);
     }
 
     // ================================================================== helper

@@ -2,15 +2,12 @@
 
 namespace App\Http\Controllers\MasterData;
 
+use App\Actions\Shared\ImportExcel;
 use App\Http\Controllers\Controller;
 use App\Imports\MasterData\PerusahaanImport;
 use App\Models\MasterData\Perusahaan;
-use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
-use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Requests\MasterData\StorePerusahaanRequest;
 use App\Http\Requests\MasterData\UpdatePerusahaanRequest;
 use App\Http\Requests\MasterData\ImportPerusahaanRequest;
@@ -54,31 +51,14 @@ class PerusahaanController extends Controller
     // Gagal -> error bag key "file" (pesan pertama), semua-atau-tidak-sama-sekali (rollback).
     public function import(ImportPerusahaanRequest $request): RedirectResponse
     {
-        $pesanError = null;
-        $pesanSukses = null;
+        $pesan = ImportExcel::dalamTransaksi(
+            PerusahaanImport::class,
+            $request->file('file'),
+            'Gagal import data perusahaan.',
+            fn ($import) => "Berhasil import {$import->getCreatedCount()} perusahaan baru"
+            . ($import->getUpdatedCount() > 0 ? ", {$import->getUpdatedCount()} diperbarui" : '')
+        );
 
-        DB::beginTransaction();
-        try {
-            $import = new PerusahaanImport();
-            Excel::import($import, $request->file('file'));
-
-            if (count($import->getErrors()) > 0) {
-                DB::rollBack();
-                $pesanError = (string) ($import->getErrors()[0] ?? 'Gagal import data perusahaan.');
-            } else {
-                DB::commit();
-                $pesanSukses = "Berhasil import {$import->getCreatedCount()} perusahaan baru"
-                    . ($import->getUpdatedCount() > 0 ? ", {$import->getUpdatedCount()} diperbarui" : '');
-            }
-        } catch (Exception $e) {
-            DB::rollBack();
-            $pesanError = 'Gagal import: ' . $e->getMessage();
-        }
-
-        if ($pesanError !== null) {
-            throw ValidationException::withMessages(['file' => $pesanError]);
-        }
-
-        return back()->with('success', $pesanSukses);
+        return back()->with('success', $pesan);
     }
 }
