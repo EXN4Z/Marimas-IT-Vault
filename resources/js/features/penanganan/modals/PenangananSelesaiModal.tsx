@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import Select from '../../../components/form/Select';
 import { router } from '@inertiajs/react';
-import type { InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
-import type { Inventory } from '../../api/masterData/inventory';
+import type { InventoryPenanganan } from '../types';
+import type { Inventory } from '../../inventory/types/inventory';
 import { formatJenisKerusakan } from '../../inventory/inventoryHelpers';
 
 interface Props {

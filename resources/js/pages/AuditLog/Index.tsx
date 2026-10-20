@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { router } from '@inertiajs/react';
 import { ScrollText, Trash2, ArrowDownCircle, ArrowUpCircle, RefreshCw, Search, X } from 'lucide-react';
-import ScrollableTabBar from '../../../components/navigation/ScrollableTabBar';
-import Pagination from '../../../components/table/Pagination';
-import { Skeleton } from '../../../components/skeleton';
-import type { PaginatedAuditLog } from '../../../features/audit-log/types';
+import ScrollableTabBar from '../../components/navigation/ScrollableTabBar';
+import Pagination from '../../components/table/Pagination';
+import { Skeleton } from '../../components/skeleton';
+import type { PaginatedAuditLog } from '../../features/audit-log/types';
 
 type TabKey = 'aktif' | 'trash';
 

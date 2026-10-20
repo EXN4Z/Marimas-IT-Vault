@@ -1,13 +1,13 @@
 // [F7-INERTIA] Bentuk data halaman Laporan dari server (LaporanPageController). Tab yang tidak aktif = null.
-import type { Inventory } from '../api/masterData/inventory';
-import type { Karyawan } from '../api/masterData/karyawan';
-import type { Kategori } from '../api/masterData/kategori';
-import type { Departemen } from '../api/masterData/departemen';
-import type { Cabang } from '../api/masterData/cabang';
-import type { Perusahaan } from '../api/masterData/perusahaan';
-import type { Supplier } from '../api/masterData/supplier';
-import type { InventoryPemakai, FotoPemakaiEntry, RiwayatInventoryEvent } from '../api/transaksi/inventoryPemakai';
-import type { InventoryPenanganan } from '../api/transaksi/inventoryPenanganan';
+import type { Inventory } from '../inventory/types/inventory';
+import type { Karyawan } from '../karyawan/types';
+import type { Kategori } from '../master-data/kategori/types';
+import type { Departemen } from '../master-data/departemen/types';
+import type { Cabang } from '../master-data/cabang/types';
+import type { Perusahaan } from '../master-data/perusahaan/types';
+import type { Supplier } from '../master-data/supplier/types';
+import type { InventoryPemakai, FotoPemakaiEntry, RiwayatInventoryEvent } from '../inventory/types/inventoryPemakai';
+import type { InventoryPenanganan } from '../penanganan/types';
 
 /** Props `exportData` (deferred; undefined/null = belum dimuat). */
 export interface LaporanExportData {

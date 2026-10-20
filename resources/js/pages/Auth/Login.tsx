@@ -10,7 +10,7 @@ import {
   Loader2,
   ArrowRight,
 } from 'lucide-react';
-import { useTheme } from '../../../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function Login() {
   const [loginId, setLoginId] = useState('');
@@ -249,5 +249,5 @@ export default function Login() {
   );
 }
 
-// Halaman tanpa sidebar/header: matikan persistent layout default (lihat inertia-app.tsx).
+// Halaman tanpa sidebar/header: matikan persistent layout default (lihat app.tsx).
 Login.layout = (page: ReactNode) => page;

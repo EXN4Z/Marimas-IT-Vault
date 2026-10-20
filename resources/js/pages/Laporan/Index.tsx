@@ -1,25 +1,25 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { Boxes, Users, ClipboardList, Loader2, Download, FileSpreadsheet, Images, History, Tags, Building2, Landmark, Truck } from 'lucide-react';
-import { useAuth } from '../../../context/AuthContext';
-import type { Inventory } from '../../../api/masterData/inventory';
-import type { LaporanExportData } from '../../../types/laporan';
-import type { Karyawan } from '../../../api/masterData/karyawan';
-import type { InventoryPemakai } from '../../../api/transaksi/inventoryPemakai';
-import InventoryExportModal from '../../../features/laporan/InventoryExportModal';
-import KaryawanExportModal from '../../../features/laporan/KaryawanExportModal';
-import InventoryPemakaiExportModal from '../../../features/laporan/InventoryPemakaiExportModal';
-import ScrollableTabBar from '../../../components/navigation/ScrollableTabBar';
-import TabFotoInventory from '../../../features/laporan/TabFotoInventory';
-import TabRiwayatInventory from '../../../features/laporan/TabRiwayatInventory';
-import type { Kategori } from '../../../api/masterData/kategori';
-import KategoriExportModal from '../../../features/laporan/KategoriExportModal';
-import type { Departemen } from '../../../api/masterData/departemen';
-import DepartemenExportModal from '../../../features/laporan/DepartemenExportModal';
-import type { Cabang } from '../../../api/masterData/cabang';
-import type { Perusahaan } from '../../../api/masterData/perusahaan';
-import type { Supplier } from '../../../api/masterData/supplier';
-import SimpleExportModal from '../../../features/laporan/SimpleExportModal';
+import { useAuth } from '../../context/AuthContext';
+import type { Inventory } from '../../features/inventory/types/inventory';
+import type { LaporanExportData } from '../../features/laporan/types';
+import type { Karyawan } from '../../features/karyawan/types';
+import type { InventoryPemakai } from '../../features/inventory/types/inventoryPemakai';
+import InventoryExportModal from '../../features/laporan/export/InventoryExportModal';
+import KaryawanExportModal from '../../features/laporan/export/KaryawanExportModal';
+import InventoryPemakaiExportModal from '../../features/laporan/export/InventoryPemakaiExportModal';
+import ScrollableTabBar from '../../components/navigation/ScrollableTabBar';
+import FotoInventoryTab from '../../features/laporan/foto/FotoInventoryTab';
+import RiwayatInventoryTab from '../../features/laporan/riwayat/RiwayatInventoryTab';
+import type { Kategori } from '../../features/master-data/kategori/types';
+import KategoriExportModal from '../../features/laporan/export/KategoriExportModal';
+import type { Departemen } from '../../features/master-data/departemen/types';
+import DepartemenExportModal from '../../features/laporan/export/DepartemenExportModal';
+import type { Cabang } from '../../features/master-data/cabang/types';
+import type { Perusahaan } from '../../features/master-data/perusahaan/types';
+import type { Supplier } from '../../features/master-data/supplier/types';
+import SimpleExportModal from '../../features/laporan/export/SimpleExportModal';
 
 // Admin-only. Semua role selain admin (hr/manajer/cabang termasuk)
 // disamakan persis seperti karyawan -- yaitu TIDAK punya akses ke halaman
@@ -312,9 +312,9 @@ export default function Laporan() {
           )}
         </div>
       ) : activeTab === 'foto_inventory' ? (
-        <TabFotoInventory />
+        <FotoInventoryTab />
       ) : (
-        <TabRiwayatInventory />
+        <RiwayatInventoryTab />
       )}
 
       <InventoryExportModal open={exportInventoryOpen} onClose={() => setExportInventoryOpen(false)} data={inventoryList} />

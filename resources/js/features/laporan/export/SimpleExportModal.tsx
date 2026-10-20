@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { FileSpreadsheet, FileText, X, FileDown, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { printRowsAsReport } from '../../utils/printCsvReport';
-import { downloadStyledExcel } from '../../utils/excelReport';
-import { ButtonCancel, ButtonSubmit } from '../../components/form/FormControls';
+import { printRowsAsReport } from '../../../lib/export/printCsvReport';
+import { downloadStyledExcel } from '../../../lib/export/excelReport';
+import { ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
 
 type FileType = 'excel' | 'pdf';
 

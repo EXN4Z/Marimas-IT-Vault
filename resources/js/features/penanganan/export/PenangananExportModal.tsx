@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { FileSpreadsheet, FileText, X, CheckSquare, Square, FileDown, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { type InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
+import { type InventoryPenanganan } from '../types';
 import { formatTanggalId, namaPelaporPenanganan, formatRupiah, formatJenisKerusakan, formatDurasi } from '../../inventory/inventoryHelpers';
-import { printRowsAsReport } from '../../utils/printCsvReport';
-import { downloadStyledExcel } from '../../utils/excelReport';
-import { ButtonCancel, ButtonSubmit } from '../form/FormControls';
+import { printRowsAsReport } from '../../../lib/export/printCsvReport';
+import { downloadStyledExcel } from '../../../lib/export/excelReport';
+import { ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
 
 // Cuma dipakai buat 2 tab yang sudah "final": Berhasil Diperbaiki & Rusak
 // Berat (keduanya punya tanggal_selesai terisi) -- tab "Menunggu Terima" &

@@ -91,5 +91,5 @@ export default function VerifyOtp({ registrationId }: { registrationId: string }
   );
 }
 
-// Halaman tanpa sidebar/header: matikan persistent layout default (lihat inertia-app.tsx).
+// Halaman tanpa sidebar/header: matikan persistent layout default (lihat app.tsx).
 VerifyOtp.layout = (page: ReactNode) => page;

@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import { FileSpreadsheet, FileText, X, FileDown, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { type Kategori } from '../../../types/kategori';
-import { printRowsAsReport } from '../../utils/printCsvReport';
-import { downloadStyledExcel } from '../../utils/excelReport';
-import { ButtonCancel, ButtonSubmit } from '../../components/form/FormControls';
+import { type Departemen } from '../../master-data/departemen/types';
+import { printRowsAsReport } from '../../../lib/export/printCsvReport';
+import { downloadStyledExcel } from '../../../lib/export/excelReport';
+import { ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
 
 type FileType = 'excel' | 'pdf';
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  data: Kategori[];
+  data: Departemen[];
 }
 
-export default function KategoriExportModal({ open, onClose, data }: Props) {
+export default function DepartemenExportModal({ open, onClose, data }: Props) {
   const [fileType, setFileType] = useState<FileType>('excel');
   const [exporting, setExporting] = useState(false);
 
@@ -22,7 +22,7 @@ export default function KategoriExportModal({ open, onClose, data }: Props) {
 
   const handleExport = async () => {
     if (data.length === 0) {
-      toast.error('Tidak ada data kategori untuk diekspor.');
+      toast.error('Tidak ada data departemen untuk diekspor.');
       return;
     }
 
@@ -34,34 +34,34 @@ export default function KategoriExportModal({ open, onClose, data }: Props) {
 
     setExporting(true);
     try {
-      const headers = ['Nama Kategori'];
-      const rows = data.map((k) => [k.nama]);
+      const headers = ['Nama Departemen'];
+      const rows = data.map((d) => [d.nama]);
       const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
       if (fileType === 'excel') {
         await downloadStyledExcel(
           {
-            title: 'Data Kategori',
-            subtitle: `${data.length} data kategori`,
+            title: 'Data Departemen',
+            subtitle: `${data.length} data departemen`,
             headers,
             rows,
-            sheetName: 'Data Kategori',
+            sheetName: 'Data Departemen',
           },
-          `Data Kategori - ${today}.xlsx`
+          `Data Departemen - ${today}.xlsx`
         );
       } else if (printWindow) {
         printRowsAsReport(
           headers,
           rows,
-          { title: 'Data Kategori', periodLabel: `Diexport ${today} — ${data.length} data kategori` },
+          { title: 'Data Departemen', periodLabel: `Diexport ${today} — ${data.length} data departemen` },
           printWindow
         );
       }
-      toast.success(`${data.length} data kategori berhasil diexport.`);
+      toast.success(`${data.length} data departemen berhasil diexport.`);
       onClose();
     } catch (err) {
       console.error(err);
-      toast.error('Gagal export data kategori.');
+      toast.error('Gagal export data departemen.');
     } finally {
       setExporting(false);
     }
@@ -82,9 +82,9 @@ export default function KategoriExportModal({ open, onClose, data }: Props) {
               <FileDown size={20} className="text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white leading-tight">Export Data Kategori</h2>
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white leading-tight">Export Data Departemen</h2>
               <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-                <span className="font-semibold text-slate-700 dark:text-zinc-200">{data.length}</span> data kategori siap diekspor
+                <span className="font-semibold text-slate-700 dark:text-zinc-200">{data.length}</span> data departemen siap diekspor
               </p>
             </div>
           </div>
@@ -104,7 +104,7 @@ export default function KategoriExportModal({ open, onClose, data }: Props) {
           {data.length === 0 && (
             <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 text-amber-800 dark:text-amber-200 text-xs">
               <AlertCircle size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
-              <span>Tidak ada data kategori yang cocok dengan filter saat ini untuk diekspor.</span>
+              <span>Tidak ada data departemen yang cocok dengan filter saat ini untuk diekspor.</span>
             </div>
           )}
 

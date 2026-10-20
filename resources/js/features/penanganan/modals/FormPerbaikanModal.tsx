@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { X, Wrench } from 'lucide-react';
 import Select from '../../../components/form/Select';
 import { router } from '@inertiajs/react';
-import type { InventoryPenanganan } from '../../../api/transaksi/inventoryPenanganan';
+import type { InventoryPenanganan } from '../types';
 import { formatJenisKerusakan } from '../../inventory/inventoryHelpers';
 import { todayIso } from '../helpers';
 

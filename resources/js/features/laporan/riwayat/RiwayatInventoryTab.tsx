@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type JSX } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { Search, HandCoins, Undo2, AlertTriangle, PlayCircle, Wrench, Banknote, X } from 'lucide-react';
-import Pagination from '../../components/table/Pagination';
-import { useAuth } from '../../context/AuthContext';
-import { Skeleton } from '../../components/skeleton';
-import type { RiwayatInventoryEvent } from '../../types/inventoryPemakai';
-import type { LaporanRiwayatProps } from '../../types/laporan';
+import Pagination from '../../../components/table/Pagination';
+import { useAuth } from '../../../context/AuthContext';
+import { Skeleton } from '../../../components/skeleton';
+import type { RiwayatInventoryEvent } from '../../inventory/types/inventoryPemakai';
+import type { LaporanRiwayatProps } from '../types';
 
 function formatWaktu(iso: string): string {
   const date = new Date(iso);
@@ -34,7 +34,7 @@ const RIWAYAT_FILTER_LABEL: Record<RiwayatInventoryEvent['type'], string> = {
 // dipisah jadi halaman/tab sendiri (dulu nempel di bawah tabel tab "Inventory") biar
 // sejajar sama child-class lain di Inventaris (Inventory, Penanganan Inventory, Foto Inventory,
 // Kelengkapan Inventory) -- pola yang sama kayak tab di MasterData.tsx.
-export default function TabRiwayatInventory() {
+export default function RiwayatInventoryTab() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 

@@ -1,68 +1,45 @@
 import { useState } from 'react';
 import { FileSpreadsheet, FileText, X, CheckSquare, Square, FileDown, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { type Inventory } from '../../../types/inventory';
-import { formatTanggalId, namaPemakai } from '../inventory/inventoryHelpers';
-import { printRowsAsReport } from '../../utils/printCsvReport';
-import { downloadStyledExcel } from '../../utils/excelReport';
-import { ButtonCancel, ButtonSubmit } from '../../components/form/FormControls';
+import { type InventoryPemakai } from '../../inventory/types/inventoryPemakai';
+import { formatTanggalId } from '../../inventory/inventoryHelpers';
+import { printRowsAsReport } from '../../../lib/export/printCsvReport';
+import { downloadStyledExcel } from '../../../lib/export/excelReport';
+import { ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
 
-const STATUS_LABEL: Record<Inventory['status'], string> = {
-  tersedia: 'Tersedia',
-  dipakai: 'Dipakai',
-  menunggu_perbaikan: 'Menunggu Perbaikan',
-  diperbaiki: 'Sedang Diperbaiki',
-  rusak_berat: 'Rusak Berat',
-  dijual: 'Dijual',
+const STATUS_LABEL: Record<InventoryPemakai['status'], string> = {
+  pending: 'Pending',
+  disetujui: 'Disetujui',
+  ditolak: 'Ditolak',
 };
 
-// Daftar kolom yang bisa diekspor — sengaja ngikutin field-field yang ada
-// di form "Tambah Inventory" (InventoryFormModal), plus beberapa info identitas/status
-// yang gak ada di form tapi tetap berguna buat laporan (kode inventory, status,
-// pemakai saat ini, kelengkapan). Urutan di sini = urutan kolom di file
-// export & urutan checkbox di modal.
+// Daftar kolom yang bisa diekspor buat data pemakai inventory (serah-terima
+// & pengembalian) — ngikutin pola yang sama kayak InventoryExportModal:
+// key = identitas field, label = judul kolom di file export, defaultChecked
+// = dicentang otomatis pas modal dibuka, get = cara ambil nilainya dari 1
+// baris InventoryPemakai (lewat relasi inventory & user; requested_by_user_id
+// belum punya objek relasi yang dikirim BE, jadi belum ada kolom buat itu).
 interface ExportColumn {
   key: string;
   label: string;
-  /** dicentang otomatis pas modal pertama dibuka */
   defaultChecked: boolean;
-  get: (a: Inventory) => string;
+  get: (p: InventoryPemakai) => string;
 }
 
 const EXPORT_COLUMNS: ExportColumn[] = [
-  { key: 'kode_inventory', label: 'Kode Inventory', defaultChecked: true, get: (a) => a.kode_inventory },
-  { key: 'nama', label: 'Nama', defaultChecked: true, get: (a) => a.nama || '-' },
-  { key: 'merk', label: 'Merk', defaultChecked: false, get: (a) => a.merk || '-' },
-  { key: 'type', label: 'Type', defaultChecked: false, get: (a) => a.type || '-' },
-  { key: 'kategori_id', label: 'Kategori', defaultChecked: true, get: (a) => a.kategori?.nama || '-' },
-  { key: 'warna', label: 'Warna', defaultChecked: false, get: (a) => a.warna || '-' },
-  { key: 'serial_number', label: 'Serial Number', defaultChecked: true, get: (a) => a.serial_number || '-' },
-  { key: 'jumlah', label: 'Jumlah', defaultChecked: true, get: (a) => String(a.jumlah ?? 1) },
-  { key: 'status', label: 'Status', defaultChecked: true, get: (a) => STATUS_LABEL[a.status] },
-  { key: 'pemakai_saat_ini', label: 'Pemakai Saat Ini', defaultChecked: true, get: (a) => namaPemakai(a.pemakai_saat_ini) },
-  {
-    key: 'tanggal_garansi',
-    label: 'Tanggal Garansi',
-    defaultChecked: false,
-    get: (a) => formatTanggalId(a.tanggal_garansi),
-  },
-  { key: 'perusahaan_id', label: 'Perusahaan', defaultChecked: false, get: (a) => a.perusahaan?.nama || '-' },
-  { key: 'supplier', label: 'Supplier', defaultChecked: false, get: (a) => a.supplier?.nama || '-' },
-  { key: 'no_surat_jalan', label: 'No. Surat Jalan', defaultChecked: false, get: (a) => a.no_surat_jalan || '-' },
-  { key: 'no_good_receive', label: 'No. Good Receive', defaultChecked: false, get: (a) => a.no_good_receive || '-' },
-  {
-    key: 'tanggal_invoice',
-    label: 'Tanggal Pembelian',
-    defaultChecked: true,
-    get: (a) => formatTanggalId(a.tanggal_invoice),
-  },
-  {
-    key: 'tanggal_input',
-    label: 'Tanggal Input',
-    defaultChecked: true,
-    get: (a) => formatTanggalId(a.tanggal_input),
-  },
-  { key: 'keterangan', label: 'Keterangan', defaultChecked: false, get: (a) => a.keterangan || '-' },
+  { key: 'kode_inventory', label: 'Kode Inventory', defaultChecked: true, get: (p) => p.inventory?.kode_inventory || '-' },
+  { key: 'nama_inventory', label: 'Nama Barang', defaultChecked: true, get: (p) => p.inventory?.nama || '-' },
+  { key: 'pemakai', label: 'Pemakai', defaultChecked: true, get: (p) => p.user?.name || '-' },
+  { key: 'status', label: 'Status', defaultChecked: true, get: (p) => STATUS_LABEL[p.status] },
+  { key: 'nomor_penerimaan', label: 'Nomor Penerimaan', defaultChecked: false, get: (p) => p.nomor_penerimaan || '-' },
+  { key: 'no_struk_penerimaan', label: 'No. Struk Penerimaan', defaultChecked: true, get: (p) => p.no_struk_penerimaan || '-' },
+  { key: 'tanggal_penerimaan', label: 'Tanggal Penerimaan', defaultChecked: true, get: (p) => formatTanggalId(p.tanggal_penerimaan) },
+  { key: 'catatan_penerimaan', label: 'Catatan Penerimaan', defaultChecked: false, get: (p) => p.catatan_penerimaan || '-' },
+  { key: 'nomor_pengembalian', label: 'Nomor Pengembalian', defaultChecked: false, get: (p) => p.nomor_pengembalian || '-' },
+  { key: 'no_struk_pengembalian', label: 'No. Struk Pengembalian', defaultChecked: true, get: (p) => p.no_struk_pengembalian || '-' },
+  { key: 'tanggal_pengembalian', label: 'Tanggal Pengembalian', defaultChecked: true, get: (p) => formatTanggalId(p.tanggal_pengembalian) },
+  { key: 'catatan_pengembalian', label: 'Catatan Pengembalian', defaultChecked: false, get: (p) => p.catatan_pengembalian || '-' },
+  { key: 'catatan_penolakan', label: 'Catatan Penolakan', defaultChecked: false, get: (p) => p.catatan_penolakan || '-' },
 ];
 
 type FileType = 'excel' | 'pdf';
@@ -71,10 +48,10 @@ interface Props {
   open: boolean;
   onClose: () => void;
   /** data yang mau diexport — sudah difilter sesuai tampilan tabel saat ini (search/status/dll) */
-  data: Inventory[];
+  data: InventoryPemakai[];
 }
 
-export default function InventoryExportModal({ open, onClose, data }: Props) {
+export default function InventoryPemakaiExportModal({ open, onClose, data }: Props) {
   const [fileType, setFileType] = useState<FileType>('excel');
   const [checkedKeys, setCheckedKeys] = useState<Set<string>>(
     () => new Set(EXPORT_COLUMNS.filter((c) => c.defaultChecked).map((c) => c.key))
@@ -103,7 +80,7 @@ export default function InventoryExportModal({ open, onClose, data }: Props) {
       return;
     }
     if (data.length === 0) {
-      toast.error('Gak ada data inventory buat diexport.');
+      toast.error('Gak ada data pemakai inventory buat diexport.');
       return;
     }
 
@@ -119,7 +96,7 @@ export default function InventoryExportModal({ open, onClose, data }: Props) {
     setExporting(true);
     try {
       const headers = selectedColumns.map((c) => c.label);
-      const rows = data.map((a) => selectedColumns.map((c) => c.get(a)));
+      const rows = data.map((p) => selectedColumns.map((c) => c.get(p)));
       const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       // Kalau kolom "Status" dicentang, index-nya dikirim ke builder Excel
       // biar sel status itu diwarnai badge (hijau/merah/kuning) otomatis.
@@ -128,28 +105,28 @@ export default function InventoryExportModal({ open, onClose, data }: Props) {
       if (fileType === 'excel') {
         await downloadStyledExcel(
           {
-            title: 'Data Inventory',
-            subtitle: `${data.length} inventory sesuai filter saat ini`,
+            title: 'Data Pemakai Inventory',
+            subtitle: `${data.length} data pemakai sesuai filter saat ini`,
             headers,
             rows,
-            sheetName: 'Data Inventory',
+            sheetName: 'Data Pemakai Inventory',
             statusColumnIndexes: statusColIdx >= 0 ? [statusColIdx] : [],
           },
-          `Data Inventory - ${today}.xlsx`
+          `Data Pemakai Inventory - ${today}.xlsx`
         );
       } else if (printWindow) {
         printRowsAsReport(
           headers,
           rows,
-          { title: 'Data Inventory', periodLabel: `Diexport ${today} — ${data.length} inventory` },
+          { title: 'Data Pemakai Inventory', periodLabel: `Diexport ${today} — ${data.length} data pemakai` },
           printWindow
         );
       }
-      toast.success(`${data.length} inventory berhasil diexport.`);
+      toast.success(`${data.length} data pemakai berhasil diexport.`);
       onClose();
     } catch (err) {
       console.error(err);
-      toast.error('Gagal export data inventory.');
+      toast.error('Gagal export data pemakai inventory.');
     } finally {
       setExporting(false);
     }
@@ -170,9 +147,9 @@ export default function InventoryExportModal({ open, onClose, data }: Props) {
               <FileDown size={20} className="text-blue-600" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-slate-900 leading-tight">Export Data Inventory</h2>
+              <h2 className="text-base font-semibold text-slate-900 leading-tight">Export Data Pemakai Inventory</h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                <span className="font-semibold text-slate-700">{data.length}</span> item inventory sesuai filter aktif
+                <span className="font-semibold text-slate-700">{data.length}</span> riwayat pemakai sesuai filter aktif
               </p>
             </div>
           </div>
@@ -192,7 +169,7 @@ export default function InventoryExportModal({ open, onClose, data }: Props) {
           {data.length === 0 && (
             <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
               <AlertCircle size={16} className="shrink-0 text-amber-600" />
-              <span>Tidak ada data inventory yang cocok dengan filter saat ini untuk diekspor.</span>
+              <span>Tidak ada data pemakai yang cocok dengan filter saat ini untuk diekspor.</span>
             </div>
           )}
 
@@ -305,7 +282,7 @@ export default function InventoryExportModal({ open, onClose, data }: Props) {
             loading={exporting}
             loadingLabel="Mengekspor..."
           >
-            Export {data.length} Item ({fileType === 'excel' ? 'Excel' : 'PDF'})
+            Export {data.length} Data ({fileType === 'excel' ? 'Excel' : 'PDF'})
           </ButtonSubmit>
         </div>
       </div>

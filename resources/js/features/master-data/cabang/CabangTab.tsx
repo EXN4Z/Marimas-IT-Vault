@@ -3,13 +3,13 @@ import { Building2, MapPin, Phone, Map, Plus, Pencil, Trash2, Upload, Download, 
 import toast from 'react-hot-toast';
 import { useAuth } from '../../../context/AuthContext';
 import { router, usePage } from '@inertiajs/react';
-import type { Cabang } from '../../types/cabang';
-import RouteModal from '../modal/Modal';
-import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../form/FormControls';
-import ConfirmDeleteModal from '../modal/ConfirmDeleteModal';
-import Pagination from '../table/Pagination';
-import SearchInput from '../form/SearchInput';
-import { downloadStyledExcel } from '../../utils/excelReport';
+import type { Cabang } from './types';
+import RouteModal from '../../../components/modal/Modal';
+import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
+import ConfirmDeleteModal from '../../../components/modal/ConfirmDeleteModal';
+import Pagination from '../../../components/table/Pagination';
+import SearchInput from '../../../components/form/SearchInput';
+import { downloadStyledExcel } from '../../../lib/export/excelReport';
 
 // pagination client-side -- data cabang dimuat penuh sekali lewat
 // props.cabang dari server, tinggal dipotong per halaman di sini (sama pola yang

@@ -1,5 +1,5 @@
 import { Pencil, Trash2, HandCoins, Undo2, Wrench, Eye, Link2, Unlink } from 'lucide-react';
-import { useAuth } from '../../../../context/AuthContext';
+import { useAuth } from '../../../context/AuthContext';
 import { userIdPemakai } from '../inventoryHelpers';
 import type { Inventory } from '../types/inventory';
 import type { InventoryPemakai } from '../types/inventoryPemakai';

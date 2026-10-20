@@ -7,7 +7,7 @@ import Select from '../../../components/form/Select';
 import SearchableSelect from '../../../components/form/SearchableSelect';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
 import KaryawanPasswordModal from './KaryawanPasswordModal';
-import type { KaryawanOpsi, KaryawanRow } from '../../../types/karyawan';
+import type { KaryawanOpsi, KaryawanRow } from '../types';
 
 interface Props {
   /** null = mode Tambah, baris user = mode Edit. */

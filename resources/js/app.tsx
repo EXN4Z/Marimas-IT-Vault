@@ -9,13 +9,13 @@ import { AuthProvider } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 import AppLayout from './layouts/AppLayout';
 
-// Halaman Inertia ditaruh di resources/js/inertia/pages/<Menu>/<Halaman>.tsx
+// Halaman Inertia ditaruh di resources/js/pages/<Menu>/<Halaman>.tsx
 // dan dipanggil dari Laravel: Inertia::render('<Menu>/<Halaman>')
-const pages = import.meta.glob<any>('./inertia/pages/**/*.tsx');
+const pages = import.meta.glob<any>('./pages/**/*.tsx');
 
 createInertiaApp({
   resolve: async (name) => {
-    const loader = pages[`./inertia/pages/${name}.tsx`];
+    const loader = pages[`./pages/${name}.tsx`];
     if (!loader) throw new Error(`Halaman Inertia tidak ditemukan: ${name}`);
     const page = await loader();
     // Persistent layout: halaman yang TIDAK mendefinisikan Page.layout otomatis dibungkus

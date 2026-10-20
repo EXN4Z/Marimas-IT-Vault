@@ -1,4 +1,4 @@
-import type { Inventory } from '../../../../api/masterData/inventory';
+import type { Inventory } from '../types/inventory';
 
 interface InventoryJualConfirmModalProps {
   jualTarget: Inventory;

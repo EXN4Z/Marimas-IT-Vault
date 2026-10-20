@@ -1,6 +1,6 @@
 import type { User } from './user';
-import type { Inventory } from '../api/masterData/inventory';
-import type { InventoryPemakai } from '../api/transaksi/inventoryPemakai';
+import type { Inventory } from '../features/inventory/types/inventory';
+import type { InventoryPemakai } from '../features/inventory/types/inventoryPemakai';
 
 // [F5-INERTIA] Data struk yang dikirim server lewat flash setelah serah-terima / pengembalian sukses (lihat
 // InventoryPemakaiWebController). `inventory` pada serah_terima cuma berisi id, kode_inventory, nama -- klien menggabungkannya

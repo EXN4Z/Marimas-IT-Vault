@@ -1,5 +1,5 @@
 import { X, PlayCircle, ImageOff, Loader2 } from 'lucide-react';
-import type { InventoryPenanganan } from '../../../api/transaksi/inventoryPenanganan';
+import type { InventoryPenanganan } from '../types';
 import { formatTanggalWaktuId, namaPelaporPenanganan, formatJenisKerusakan } from '../../inventory/inventoryHelpers';
 import { STORAGE_BASE_URL } from '../helpers';
 

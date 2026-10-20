@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, X, Tags, AlertCircle, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../form/FormControls';
-import ConfirmDeleteModal from '../modal/ConfirmDeleteModal';
-import Pagination from '../table/Pagination';
-import SearchInput from '../form/SearchInput';
-import { useBackdropClose } from '../../hooks/useBackdropClose';
-import KategoriExportModal from '../../features/laporan/KategoriExportModal';
+import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
+import ConfirmDeleteModal from '../../../components/modal/ConfirmDeleteModal';
+import Pagination from '../../../components/table/Pagination';
+import SearchInput from '../../../components/form/SearchInput';
+import { useBackdropClose } from '../../../hooks/useBackdropClose';
+import KategoriExportModal from '../../laporan/export/KategoriExportModal';
 import { router, usePage } from '@inertiajs/react';
-import type { Kategori } from '../../types/kategori';
+import type { Kategori } from './types';
 
 // Sekarang full CRUD -- beda dari sebelumnya (read-only 2 baris fix).
 // (REFACTOR KATEGORI BEBAS Fase 4: peringatan lama di sini -- yang bilang

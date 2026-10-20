@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Building2, MapPin, Phone, Map, Plus, Pencil, Trash2, Upload, Download, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../../context/AuthContext';
 import { router, usePage } from '@inertiajs/react';
-import type { Perusahaan } from '../../types/perusahaan';
-import RouteModal from '../modal/Modal';
-import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../form/FormControls';
-import ConfirmDeleteModal from '../modal/ConfirmDeleteModal';
-import Pagination from '../table/Pagination';
-import SearchInput from '../form/SearchInput';
-import { downloadStyledExcel } from '../../utils/excelReport';
+import type { Perusahaan } from './types';
+import RouteModal from '../../../components/modal/Modal';
+import { Field, TextInput, Textarea, ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
+import ConfirmDeleteModal from '../../../components/modal/ConfirmDeleteModal';
+import Pagination from '../../../components/table/Pagination';
+import SearchInput from '../../../components/form/SearchInput';
+import { downloadStyledExcel } from '../../../lib/export/excelReport';
 
 // pagination client-side -- data perusahaan dimuat penuh sekali lewat
 // props.perusahaan dari server, tinggal dipotong per halaman di sini (sama pola yang

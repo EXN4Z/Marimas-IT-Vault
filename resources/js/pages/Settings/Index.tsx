@@ -1,8 +1,8 @@
 import { useForm } from '@inertiajs/react';
 import { User as UserIcon, Mail, Phone, Save, Bell, BellOff, Lock, KeyRound } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../../context/AuthContext';
-import { usePushNotifications } from '../../../features/notifications/hooks/usePushNotifications';
+import { useAuth } from '../../context/AuthContext';
+import { usePushNotifications } from '../../features/notifications/hooks/usePushNotifications';
 
 const roleLabels: Record<string, string> = {
   admin: 'Admin',

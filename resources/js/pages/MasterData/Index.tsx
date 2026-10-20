@@ -1,14 +1,14 @@
 import { router, usePage } from '@inertiajs/react';
 import { Building2, Truck, Package, Tags, Users } from 'lucide-react';
-import ScrollableTabBar from '../../../components/navigation/ScrollableTabBar';
-import InventoryTab from '../../../features/inventory/InventoryTab';
-import KategoriTab from '../../../features/master-data/kategori/KategoriTab';
-import CabangTab from '../../../features/master-data/cabang/CabangTab';
-import PerusahaanTab from '../../../features/master-data/perusahaan/PerusahaanTab';
-import DepartemenTab from '../../../features/master-data/departemen/DepartemenTab';
-import SupplierTab from '../../../features/master-data/supplier/SupplierTab';
-import KaryawanTab from '../../../features/karyawan/KaryawanTab';
-import { useAuth } from '../../../context/AuthContext';
+import ScrollableTabBar from '../../components/navigation/ScrollableTabBar';
+import InventoryTab from '../../features/inventory/InventoryTab';
+import KategoriTab from '../../features/master-data/kategori/KategoriTab';
+import CabangTab from '../../features/master-data/cabang/CabangTab';
+import PerusahaanTab from '../../features/master-data/perusahaan/PerusahaanTab';
+import DepartemenTab from '../../features/master-data/departemen/DepartemenTab';
+import SupplierTab from '../../features/master-data/supplier/SupplierTab';
+import KaryawanTab from '../../features/karyawan/KaryawanTab';
+import { useAuth } from '../../context/AuthContext';
 
 // Halaman Master Data = shell tipis: baca "?tab=", gambar tab bar, render tab
 // yang aktif. Isi tiap tab ada di components/masterData/*:
@@ -49,17 +49,17 @@ function renderTab(tab: TabKey) {
     case 'inventory':
       return <InventoryTab />;
     case 'kategori':
-      return <TabKategori />;
+      return <KategoriTab />;
     case 'karyawan':
-      return <TabKaryawan />;
+      return <KaryawanTab />;
     case 'cabang':
-      return <TabCabang />;
+      return <CabangTab />;
     case 'perusahaan':
-      return <TabPerusahaan />;
+      return <PerusahaanTab />;
     case 'departemen':
-      return <TabDepartemen />;
+      return <DepartemenTab />;
     case 'supplier':
-      return <TabSupplier />;
+      return <SupplierTab />;
   }
 }
 

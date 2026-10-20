@@ -8,10 +8,10 @@ import Pagination from '../../components/table/Pagination';
 import Tooltip from '../../components/feedback/Tooltip';
 import SearchInput from '../../components/form/SearchInput';
 import ConfirmDeleteModal from '../../components/modal/ConfirmDeleteModal';
-import KaryawanExportModal from '../../features/laporan/KaryawanExportModal';
+import KaryawanExportModal from '../laporan/export/KaryawanExportModal';
 import KaryawanFormModal from './modals/KaryawanFormModal';
 import KaryawanDetailModal from './modals/KaryawanDetailModal';
-import type { KaryawanList, KaryawanOpsi, KaryawanRow } from '../../types/karyawan';
+import type { KaryawanList, KaryawanOpsi, KaryawanRow } from './types';
 
 type TabKey = 'semua' | 'user' | 'admin';
 

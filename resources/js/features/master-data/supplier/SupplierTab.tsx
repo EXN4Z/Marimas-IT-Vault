@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Plus, Pencil, Trash2, X, Upload, Download, Loader2, AlertCircle, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../form/FormControls';
-import ConfirmDeleteModal from '../modal/ConfirmDeleteModal';
-import Pagination from '../table/Pagination';
-import SearchInput from '../form/SearchInput';
-import { downloadStyledExcel } from '../../utils/excelReport';
-import { useBackdropClose } from '../../hooks/useBackdropClose';
+import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
+import ConfirmDeleteModal from '../../../components/modal/ConfirmDeleteModal';
+import Pagination from '../../../components/table/Pagination';
+import SearchInput from '../../../components/form/SearchInput';
+import { downloadStyledExcel } from '../../../lib/export/excelReport';
+import { useBackdropClose } from '../../../hooks/useBackdropClose';
 import { router, usePage } from '@inertiajs/react';
-import type { Supplier } from '../../types/supplier';
+import type { Supplier } from './types';
 
 // Tab Supplier = CRUD nama + alamat + telepon. Semua UI & logikanya ada di
 // file ini (tabel, search, pagination, modal tambah/edit, hapus, import/export Excel).

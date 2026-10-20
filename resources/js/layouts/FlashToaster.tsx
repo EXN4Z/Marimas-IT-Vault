@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { router } from '@inertiajs/react';
 import toast from 'react-hot-toast';
-import type { Flash } from '../../types/inertia';
+import type { Flash } from '../types/inertia';
 
 // [F1-INERTIA] Satu-satunya tempat yang menampilkan toast dari flash server (session success/error).
 // Controller cukup `back()->with('success', '...')`; komponen tidak perlu toast manual setelah mutasi.

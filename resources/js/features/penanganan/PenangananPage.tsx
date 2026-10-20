@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import toast from 'react-hot-toast';
 import Pagination from '../../components/table/Pagination';
-import type { InventoryPenanganan } from '../../api/transaksi/inventoryPenanganan';
+import type { InventoryPenanganan } from './types';
 import type { PenangananList, PenangananTab } from './types';
 import {
   formatTanggalId,
@@ -342,7 +342,7 @@ export default function PenangananInventory() {
       )}
 
       {canImportExport && (
-        <InventoryPenangananExportModal
+        <PenangananExportModal
           open={exportModalOpen}
           onClose={() => setExportModalOpen(false)}
           data={pageProps.penangananExport ?? []}

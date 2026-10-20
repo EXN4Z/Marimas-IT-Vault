@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { RotateCcw, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import type { Inventory } from '../../../types/inventory';
+import type { Inventory } from '../types/inventory';
 import { router } from '@inertiajs/react';
-import type { InventoryPemakai } from '../../../types/inventoryPemakai';
+import type { InventoryPemakai } from '../types/inventoryPemakai';
 import type { Flash } from '../../../types/inertia';
 import { namaPemakai } from '../inventoryHelpers';
 import InventoryFotoUpload from '../form/InventoryFotoUpload';

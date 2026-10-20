@@ -1,6 +1,6 @@
 // [F8-INERTIA] Tipe data dashboard (dulu di pages/dashboard/useDashboardData.ts) + bentuk props dari server
 // (DashboardPageController -> DashboardQuery).
-import type { RiwayatInventoryEvent } from './inventoryPemakai';
+import type { RiwayatInventoryEvent } from '../inventory/types/inventoryPemakai';
 
 export interface DepartemenDistribusi {
   departemen: string;
@@ -74,7 +74,7 @@ export type AktivitasInventoryTerbaru = RiwayatInventoryEvent;
 // selalu langsung set status 'disetujui', admin serah-terima langsung tanpa
 // approval), jadi status 'pending' di enum gak pernah kepakai di praktiknya.
 // [F9-INERTIA] Tipe notifikasi dipindah ke types/notification.ts (satu definisi); nama lama tetap bisa diimport.
-export type { AppNotification as NotificationItem, NotificationResponse as NotificationsResponse } from './notification';
+export type { AppNotification as NotificationItem, NotificationResponse as NotificationsResponse } from '../notifications/types';
 
 
 /** Props `analitik` (admin; deferred -> undefined/null selama belum dimuat). */

@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { Images, X, ChevronLeft, ChevronRight, HandCoins, Undo2, Wrench, Eye, Package, ImageOff } from 'lucide-react';
-import Pagination from '../../components/table/Pagination';
-import ScrollableTabBar, { type ScrollableTabItem } from '../../components/navigation/ScrollableTabBar';
-import SearchInput from '../../components/form/SearchInput';
-import Tooltip from '../../components/feedback/Tooltip';
-import type { Inventory } from '../../types/inventory';
-import type { LaporanFotoProps } from '../../types/laporan';
-import type { FotoPemakaiEntry } from '../../types/inventoryPemakai';
-import type { InventoryPenanganan } from '../../types/penanganan';
-import { namaPemakai, namaPelaporPenanganan, formatTanggalWaktuId, formatJenisKerusakan } from '../inventory/inventoryHelpers';
-import { SkeletonTable } from '../../components/skeleton/SkeletonTableRow';
+import Pagination from '../../../components/table/Pagination';
+import ScrollableTabBar, { type ScrollableTabItem } from '../../../components/navigation/ScrollableTabBar';
+import SearchInput from '../../../components/form/SearchInput';
+import Tooltip from '../../../components/feedback/Tooltip';
+import type { Inventory } from '../../inventory/types/inventory';
+import type { LaporanFotoProps } from '../types';
+import type { FotoPemakaiEntry } from '../../inventory/types/inventoryPemakai';
+import type { InventoryPenanganan } from '../../penanganan/types';
+import { namaPemakai, namaPelaporPenanganan, formatTanggalWaktuId, formatJenisKerusakan } from '../../inventory/inventoryHelpers';
+import { SkeletonTable } from '../../../components/skeleton/SkeletonTableRow';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/storage/' : '/storage/');
 const PER_PAGE = 10;
@@ -51,7 +51,7 @@ interface TabState<T> {
 
 const kosong = <T,>(): TabState<T> => ({ entries: [], loading: false, search: '', page: 1, lastPage: 1, total: 0 });
 
-export default function TabFotoInventory() {
+export default function FotoInventoryTab() {
   const foto = (usePage().props as unknown as { foto?: LaporanFotoProps | null }).foto ?? null;
   const activeTab: FotoTab = foto?.sub ?? 'inventory';
   const appliedSearch = foto?.filters.search ?? '';

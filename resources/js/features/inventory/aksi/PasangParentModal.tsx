@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react';
 import { X, Link2, Search, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { router } from '@inertiajs/react';
-import type { Inventory } from '../../../types/inventory';
-import type { InventoryIndukOpsi } from '../../../types/inventory';
+import type { Inventory } from '../types/inventory';
+import type { InventoryIndukOpsi } from '../types/inventory';
 import { ButtonCancel, ButtonSubmit, inputClass } from '../../../components/form/FormControls';
 
 interface Props {
