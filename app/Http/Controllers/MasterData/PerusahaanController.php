@@ -3,29 +3,28 @@
 namespace App\Http\Controllers\MasterData;
 
 use App\Http\Controllers\Controller;
-
 use App\Imports\MasterData\PerusahaanImport;
 use App\Models\MasterData\Perusahaan;
+use Exception;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
-// Mirror dari CabangController -- struktur & validasi field sama persis,
-// tapi TANPA cek "masih ada pegawai/relasi" sebelum hapus, karena
-// Perusahaan sengaja belum dikaitkan ke tabel lain (lihat model Perusahaan).
+// [F1-INERTIA] Versi Inertia dari PerusahaanController (API). Dipanggil lewat routes/web.php (session + CSRF),
+// balasan = redirect back + flash (bukan JSON). Aturan validasi & logika SAMA dengan versi API.
+// PerusahaanController (API) sengaja dibiarkan dulu; dihapus di F10 setelah tidak ada pemakainya.
 class PerusahaanController extends Controller
 {
-    // GET / — daftar perusahaan
-    public function index()
+    // Data tab Perusahaan buat props halaman Master Data (dipakai MasterDataPageController).
+    public static function daftar(): array
     {
-        return Inertia::render('MasterData/Index', [
-            'perusahaans' => Perusahaan::orderBy('nama')->get(),
-            'tab' => 'perusahaan'
-        ]);
+        return Perusahaan::orderBy('nama')->get()->all();
     }
 
-    // POST /
-    public function store(Request $request)
+    // POST /master-data/perusahaan
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'nama' => 'required|string|max:150',
@@ -37,17 +36,17 @@ class PerusahaanController extends Controller
             'alamat.required' => 'Kolom alamat wajib diisi.',
             'telepon.required' => 'Kolom nomor telepon wajib diisi.',
             'link.required' => 'Kolom link wajib diisi.',
-            'alamat.unique' => 'Alamat ini sudah terdaftar.',
-            'link.unique'   => 'Link ini sudah digunakan.',
+            'alamat.unique' => 'Alamat ini sudah terdaftar di cabang lain.',
+            'link.unique'   => 'Link ini sudah digunakan oleh cabang lain.',
         ]);
 
         Perusahaan::create($validated);
 
-        return redirect()->back()->with('success', 'Perusahaan berhasil ditambahkan.');
+        return back()->with('success', 'Perusahaan baru berhasil ditambahkan.');
     }
 
-    // PUT /{id}
-    public function update(Request $request, $id)
+    // PUT /master-data/perusahaan/{id}
+    public function update(Request $request, $id): RedirectResponse
     {
         $perusahaan = Perusahaan::findOrFail($id);
 
@@ -65,21 +64,27 @@ class PerusahaanController extends Controller
 
         $perusahaan->update($validated);
 
-        return redirect()->back()->with('success', 'Perusahaan berhasil diperbarui.');
+        return back()->with('success', 'Data perusahaan berhasil diperbarui.');
     }
 
-    // DELETE /{id}
-    public function destroy($id)
+    // DELETE /master-data/perusahaan/{id}
+    public function destroy($id): RedirectResponse
     {
         Perusahaan::findOrFail($id)->delete();
-        return redirect()->back()->with('success', 'Perusahaan berhasil dihapus.');
+
+        return back()->with('success', 'Perusahaan berhasil dihapus.');
     }
 
-    public function import(Request $request)
+    // POST /master-data/perusahaan/import -- Excel (.xlsx/.xls). Kolom: Nama | Alamat | Telepon | Link.
+    // Gagal -> error bag key "file" (pesan pertama), semua-atau-tidak-sama-sekali (rollback).
+    public function import(Request $request): RedirectResponse
     {
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240',
+            'file' => 'required|file|mimes:xlsx,xls|max:10240', // max 10MB
         ]);
+
+        $pesanError = null;
+        $pesanSukses = null;
 
         DB::beginTransaction();
         try {
@@ -88,16 +93,21 @@ class PerusahaanController extends Controller
 
             if (count($import->getErrors()) > 0) {
                 DB::rollBack();
-                return redirect()->back()->with('error', 'Gagal import: ' . implode(', ', $import->getErrors()));
+                $pesanError = (string) ($import->getErrors()[0] ?? 'Gagal import data perusahaan.');
+            } else {
+                DB::commit();
+                $pesanSukses = "Berhasil import {$import->getCreatedCount()} perusahaan baru"
+                    . ($import->getUpdatedCount() > 0 ? ", {$import->getUpdatedCount()} diperbarui" : '');
             }
-
-            DB::commit();
-            $message = "Berhasil import {$import->getCreatedCount()} perusahaan baru"
-                . ($import->getUpdatedCount() > 0 ? ", {$import->getUpdatedCount()} diperbarui" : '');
-            return redirect()->back()->with('success', $message);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal import: ' . $e->getMessage());
+            $pesanError = 'Gagal import: ' . $e->getMessage();
         }
+
+        if ($pesanError !== null) {
+            throw ValidationException::withMessages(['file' => $pesanError]);
+        }
+
+        return back()->with('success', $pesanSukses);
     }
 }

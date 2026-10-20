@@ -2,99 +2,101 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Http\Controllers\Controller;
-
 use App\Actions\Auth\ResendRegistrationOtp;
-use App\Actions\Profile\UpdatePassword;
-use App\Actions\Profile\UpdateProfile;
-use App\Mail\OtpMail;
+use App\Actions\Auth\ResolveLoginUser;
+use App\Actions\Auth\VerifyRegistrationOtp;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
-use App\Mail\NewPasswordMail;
-use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
+    // true = login web pakai cookie "remember" (panjang umur), jadi user tidak kena logout cuma
+    // karena SESSION_LIFETIME habis -- mirip token lama yang tidak pernah kedaluwarsa.
+    // Ubah ke false kalau mau murni session (logout otomatis setelah idle SESSION_LIFETIME menit).
+    private const REMEMBER = true;
+
+    // GET /login
+    public function showLogin()
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'required|string|unique:users,phone',
-            'password' => 'required|min:6|confirmed',
-        ]);
+        if (Auth::check()) {
+            return redirect('/dashboard');
+        }
 
-        $otp = rand(100000, 999999);
-        $registrationId = Str::uuid()->toString();
-
-        Cache::put("register:{$registrationId}", [
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'password' => Hash::make($request->password),
-            'otp_code' => $otp,
-        ], now()->addMinutes(5));
-
-        $this->sendOtpEmail($request->email, $otp);
-
-        return response()->json([
-            'message' => 'Kode OTP sudah dikirim ke email kamu',
-            'registration_id' => $registrationId,
-        ], 200);
+        return Inertia::render('Auth/Login');
     }
 
+    // POST /login   (error validasi -> props errors.login, halaman Login yang menampilkan)
+    public function login(Request $request)
+    {
+        $request->validate([
+            'login' => 'required|string',
+            'password' => 'required',
+        ]);
+
+        $user = ResolveLoginUser::run((string) $request->input('login'), (string) $request->input('password'));
+
+        Auth::guard('web')->login($user, self::REMEMBER);
+        $request->session()->regenerate();
+
+        return $this->toIntended();
+    }
+
+    // GET /verify-otp?registration_id=...   (tidak ada registration_id -> balik ke /login; belum ada halaman register)
+    public function showVerifyOtp(Request $request)
+    {
+        $registrationId = (string) $request->query('registration_id', '');
+
+        if ($registrationId === '') {
+            return redirect('/login');
+        }
+
+        return Inertia::render('Auth/VerifyOtp', ['registrationId' => $registrationId]);
+    }
+
+    // POST /verify-otp
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'registration_id' => 'required|string',
+            'otp_code' => 'required|string',
+        ]);
+
+        $user = VerifyRegistrationOtp::run($request->input('registration_id'), $request->input('otp_code'));
+
+        Auth::guard('web')->login($user, self::REMEMBER);
+        $request->session()->regenerate();
+
+        return $this->toIntended();
+    }
+
+    // POST /resend-otp   (sesi registrasi kedaluwarsa -> props errors.registration_id, halaman VerifyOtp yang menampilkan)
     public function resendOtp(Request $request)
     {
         $request->validate([
             'registration_id' => 'required|string',
         ]);
 
-        // Logic ada di App\Actions\Auth\ResendRegistrationOtp (dipakai juga WebAuthController::resendOtp).
-        ResendRegistrationOtp::run((string) $request->registration_id);
+        ResendRegistrationOtp::run((string) $request->input('registration_id'));
 
-        return redirect()->back()->with('success', 'Operasi berhasil.');
+        return back()->with('success', 'Kode OTP baru sudah dikirim ke email kamu');
     }
 
-    private function sendOtpEmail(string $email, int $otp): void
-    {
-        Mail::to($email)->send(new OtpMail($otp));
-    }
-
-    public function user(Request $request)
-    {
-        return redirect()->back()->with('success', 'Operasi berhasil.');
-    }
-
-    public function updateProfile(Request $request)
-    {
-        // Validasi + update ada di App\Actions\Profile\UpdateProfile (dipakai juga SettingsController web).
-        return redirect()->back()->with('success', 'Operasi berhasil.');
-    }
-
-    public function updatePassword(Request $request)
-    {
-        // Validasi + ganti password ada di App\Actions\Profile\UpdatePassword.
-        UpdatePassword::run($request);
-
-        return response()->json([
-            'message' => 'Password berhasil diperbarui.',
-        ]);
-    }
-
+    // POST /logout
     public function logout(Request $request)
     {
         Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        if ($request->hasSession()) {
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-        }
+        return Inertia::location('/login');
+    }
 
-        return redirect()->back()->with('success', 'Operasi berhasil.');
+    // Setelah login: full page load ke tujuan semula (intended) atau /dashboard, supaya state SPA
+    // (AuthProvider, koneksi Echo, cache react-query) mulai bersih dengan user yang baru.
+    private function toIntended()
+    {
+        return Inertia::location(redirect()->intended('/dashboard')->getTargetUrl());
     }
 }

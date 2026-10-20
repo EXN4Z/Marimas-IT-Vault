@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * [F3-INERTIA] Logika mutasi karyawan (user), dipakai bareng oleh:
  *  - API : App\Http\Controllers\MasterData\UserController (store/update/destroy) + AdminUserController (set-password)
- *  - Web : App\Http\Controllers\MasterData\KaryawanWebController (modal Tambah/Edit/Hapus/Ubah Password)
+ *  - Web : App\Http\Controllers\MasterData\KaryawanController (modal Tambah/Edit/Hapus/Ubah Password)
  *
  * Aturan validasi dan aturan bisnis dipindah APA ADANYA dari UserController. Pelanggaran dilempar sebagai
  * ValidationException; API membungkusnya jadi JSON 422, web membiarkannya jadi redirect back + error bag.

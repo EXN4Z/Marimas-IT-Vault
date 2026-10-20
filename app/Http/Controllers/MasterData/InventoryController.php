@@ -4,155 +4,316 @@ namespace App\Http\Controllers\MasterData;
 
 use App\Actions\MasterData\InventoryAction;
 use App\Http\Controllers\Controller;
+use App\Imports\MasterData\InventoryBuktiImport;
 use App\Models\MasterData\Inventory;
-use App\Queries\InventoryQuery;
+use App\Queries\MasterData\InventoryQuery;
+use Exception;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Maatwebsite\Excel\Facades\Excel;
 
-// [F4-INERTIA] Controller API inventory. Aturan akses/query dipindah ke App\Queries\InventoryQuery dan logika
-// mutasi ke App\Actions\MasterData\InventoryAction (dipakai bareng InventoryWebController, halaman Inertia).
-// Bentuk response JSON dipertahankan. Sampai F10 yang masih dipanggil frontend: index (Laporan/Dashboard) & foto (Laporan).
+// [F4-INERTIA] Versi Inertia dari InventoryController (API) untuk tab "Inventory" di Master Data.
+// Data baca (daftar/dipakai/export/opsi/detail) dipanggil MasterDataPageController sebagai props; mutasi dipanggil
+// lewat routes/web.php (session + CSRF, admin-only), balasan = redirect back + flash (bukan JSON).
+// Logika mutasi & aturan akses SAMA dengan versi API karena dipakai bareng lewat InventoryAction / InventoryQuery.
+// InventoryController (API) sengaja dibiarkan dulu: GET /api/inventory masih dipakai Laporan (F7) & Dashboard (F8).
 class InventoryController extends Controller
 {
+    private const PER_HALAMAN = 10;
+
+    private const STATUS = ['tersedia', 'dipakai', 'menunggu_perbaikan', 'diperbaiki', 'rusak_berat', 'dijual'];
+
+    // Status yang cuma bisa dipunyai item yang BUKAN child (jual() menolak item yang punya parent_id).
+    private const STATUS_KHUSUS_INDUK = ['dijual'];
+
     public function __construct(private InventoryAction $inventory)
     {
     }
 
-    /**
-     * GET /api/inventory
-     * Admin: daftar SEMUA inventory. Non-admin: dibatasi (lihat InventoryQuery::batasiUntuk()).
-     * Filter opsional: ?kategori_id=, ?posisi=induk|menempel (struktur parent_id), ?parent_id=.
-     */
-    public function index(Request $request)
+    // ================================================================== DATA BACA (props halaman Master Data)
+
+    // Satu halaman data tab Inventory. Pagination, pencarian, filter status, dan filter kategori dijalankan
+    // server; sumber kebenarannya query string (?search=&status=&kategori[]=&page=). Urutan: status
+    // (tersedia, dipakai, penanganan, rusak_berat, dijual) lalu kode_inventory. Tiap baris sudah lengkap
+    // (relasi list + children_count), jadi modal edit cukup pakai baris ini -- tidak perlu request tambahan.
+    public static function daftar(Request $request): array
     {
-        $query = InventoryQuery::dasar()->latest();
+        $f = self::filterEfektif($request);
 
-        if ($kategoriId = $request->query('kategori_id')) {
-            $query->where('kategori_id', $kategoriId);
-        }
+        $query = self::queryTerfilter($request, $f);
 
-        if ($posisi = $request->query('posisi')) {
-            abort_unless(in_array($posisi, ['induk', 'menempel'], true), 422, 'Posisi tidak valid.');
-            $posisi === 'induk' ? $query->indukSendiri() : $query->menempel();
-        }
+        $total = (clone $query)->count();
+        $lastPage = max(1, (int) ceil($total / self::PER_HALAMAN));
+        // halaman di luar jangkauan (mis. habis hapus item terakhir di halaman terakhir) -> geser ke halaman terakhir
+        $page = min(max(1, (int) $request->query('page', 1)), $lastPage);
 
-        if ($request->filled('parent_id')) {
-            $query->where('parent_id', $request->query('parent_id'));
-        }
+        $rows = self::urutkan($query->withCount('children'))
+            ->forPage($page, self::PER_HALAMAN)
+            ->get();
 
-        InventoryQuery::batasiUntuk($query, $request->user());
-
-        return redirect()->back()->with('success', 'Operasi berhasil.');
+        return [
+            'data' => $rows->all(),
+            'total' => $total,
+            'current_page' => $page,
+            'last_page' => $lastPage,
+            'per_page' => self::PER_HALAMAN,
+            // Ada item induk (parent_id kosong) di populasi filter kategori aktif? Menentukan tab status "Dijual" tampil.
+            'ada_induk' => $f['ada_induk'],
+            'filters' => [
+                'search' => $f['search'] ?? '',
+                'status' => $f['status'] ?? '',
+                'kategori' => $f['kategori'],
+            ],
+        ];
     }
 
-    /**
-     * GET /api/inventory/{inventory}
-     * Detail satu item + riwayat lengkap. Non-admin dibatasi (InventoryQuery::bolehDilihat()).
-     */
-    public function show(Request $request, Inventory $inventory)
+    // Non-admin: inventory yang LAGI dia pegang/ditangani (card "Sedang Anda Pakai"). Admin: kosong.
+    public static function dipakai(Request $request): array
     {
-        abort_unless(
-            InventoryQuery::bolehDilihat($inventory, $request->user()),
-            403,
-            'Kamu tidak punya akses untuk melihat detail item ini.'
-        );
+        $user = $request->user();
 
-        $inventory->load(InventoryQuery::relasiDetail());
+        if ($user->isAdmin()) {
+            return [];
+        }
 
-        return redirect()->back()->with('success', 'Operasi berhasil.');
+        return InventoryQuery::batasiUntuk(InventoryQuery::dasar(), $user)
+            ->whereHas('pemakaiSaatIni', fn ($q) => $q->where('user_id', $user->id))
+            ->latest()
+            ->get()
+            ->all();
     }
 
-    /** POST /api/inventory -- kode_inventory digenerate otomatis lewat trigger DB. */
-    public function store(Request $request)
+    // SEMUA hasil filter aktif (bukan cuma halaman yang tampil) buat modal Export. Di MasterDataPageController
+    // dikirim sebagai optional prop: baru dihitung waktu diminta lewat partial reload.
+    public static function untukExport(Request $request): array
+    {
+        $f = self::filterEfektif($request);
+
+        return self::urutkan(self::queryTerfilter($request, $f))->get()->all();
+    }
+
+    // Kandidat induk (item apapun yang berdiri sendiri) buat form "Pasang ke Induk" & modal Pasang ke Induk.
+    // Optional prop: baru dimuat waktu modal dibuka.
+    public static function indukOpsi(): array
+    {
+        return Inventory::indukSendiri()
+            ->orderBy('kode_inventory')
+            ->get(['id', 'kode_inventory', 'nama'])
+            ->all();
+    }
+
+    // Pilihan dropdown form Tambah/Edit & filter kategori. Perilaku lama dipertahankan: kategori/supplier/perusahaan
+    // dulu diambil lewat endpoint admin-only, jadi non-admin menerima daftar kosong.
+    public static function opsi(Request $request): array
+    {
+        $admin = $request->user()->isAdmin();
+
+        return [
+            'kategori' => $admin ? KategoriController::daftar() : [],
+            'supplier' => $admin ? SupplierController::daftar() : [],
+            'perusahaan' => $admin ? PerusahaanController::daftar() : [],
+        ];
+    }
+
+    // Detail satu item (?detail=<id>) lengkap dengan riwayat pemakai/penanganan + kelengkapan anak. null kalau
+    // tidak ada / tidak boleh dilihat user ini (aturan sama dengan InventoryController::show(); tidak abort(403)
+    // supaya visit-nya tidak jadi halaman error -- klien menampilkan toast).
+    public static function detail(Request $request): ?Inventory
+    {
+        $id = (int) $request->query('detail', 0);
+        if ($id <= 0) {
+            return null;
+        }
+
+        $inventory = Inventory::find($id);
+        if (!$inventory || !InventoryQuery::bolehDilihat($inventory, $request->user())) {
+            return null;
+        }
+
+        return $inventory->load(InventoryQuery::relasiDetail());
+    }
+
+    // ================================================================== MUTASI (admin-only, redirect back + flash)
+
+    // POST /master-data/inventory  (multipart: foto)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $this->inventory->validasi($request);
 
-        $inventory = $this->inventory->simpan($request, $validated);
+        $this->inventory->simpan($request, $validated);
 
-        return response()->json(
-            $inventory->load('kategori', 'supplier', 'parent', 'perusahaan'),
-            201
-        );
+        return back()->with('success', 'Inventory baru berhasil ditambahkan.');
     }
 
-    /** POST /api/inventory/{inventory} (+ _method=PUT dari frontend, krn ada file upload) */
-    public function update(Request $request, Inventory $inventory)
+    // PUT /master-data/inventory/{inventory}  (klien kirim POST + _method=put karena ada file; route didaftarkan PUT)
+    public function update(Request $request, Inventory $inventory): RedirectResponse
     {
         $validated = $this->inventory->validasi($request, $inventory);
 
-        $inventory = $this->inventory->perbarui($request, $inventory, $validated);
+        $this->inventory->perbarui($request, $inventory, $validated);
 
-        return response()->json(
-            $inventory->load('kategori', 'supplier', 'parent', 'perusahaan')
-        );
+        return back()->with('success', 'Perubahan inventory berhasil disimpan.');
     }
 
-    /** DELETE /api/inventory/{inventory} -- ?force=1 lewatin guard riwayat. 422 membawa `force_available` kalau masih bisa dipaksa. */
-    public function destroy(Request $request, Inventory $inventory)
+    // DELETE /master-data/inventory/{inventory}   (?force=1 / body force=true -> hapus paksa)
+    // Gagal -> error bag key "delete" (+ "force_available" kalau masih bisa dipaksa), tampil di modal konfirmasi hapus.
+    public function destroy(Request $request, Inventory $inventory): RedirectResponse
     {
+        $kode = $this->inventory->hapus($inventory, $request->boolean('force'));
+
+        return back()->with('success', "Inventory {$kode} berhasil dihapus.");
+    }
+
+    // POST /master-data/inventory/{inventory}/jual -- gagal -> error bag key "jual".
+    public function jual(Request $request, Inventory $inventory): RedirectResponse
+    {
+        $this->inventory->jual($request, $inventory);
+
+        return back()->with('success', 'Inventory berhasil ditandai sebagai dijual.');
+    }
+
+    // POST /master-data/inventory/{inventory}/pasang-ke-induk  (parent_id) -- gagal -> error bag "pasang"/"parent_id"/"foto_penerimaan".
+    public function pasangKeInduk(Request $request, Inventory $inventory): RedirectResponse
+    {
+        $this->inventory->pasangKeInduk($request, $inventory);
+
+        return back()->with('success', "{$inventory->kode_inventory} berhasil dipasang ke induk.");
+    }
+
+    // POST /master-data/inventory/{inventory}/lepas-dari-induk  (keterangan) -- gagal -> error bag key "lepas".
+    public function lepasDariInduk(Request $request, Inventory $inventory): RedirectResponse
+    {
+        $this->inventory->lepasDariInduk($request, $inventory);
+
+        return back()->with('success', "{$inventory->kode_inventory} berhasil dilepas dari induk.");
+    }
+
+    // POST /master-data/inventory/import -- Excel (.xlsx/.xls), semua-atau-tidak-sama-sekali (rollback).
+    // Gagal -> error bag key "file" (pesan pertama, sama seperti tampilan lama).
+    public function import(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:10240', // max 10MB
+        ]);
+
+        $pesanError = null;
+        $pesanSukses = null;
+
+        DB::beginTransaction();
         try {
-            $kodeInventory = $this->inventory->hapus($inventory, $request->boolean('force'));
-        } catch (ValidationException $e) {
-            $errors = $e->errors();
+            $import = new InventoryBuktiImport();
+            Excel::import($import, $request->file('file'));
 
-            $response = ['message' => $errors['delete'][0] ?? $e->getMessage()];
-            if (isset($errors['force_available'])) {
-                $response['force_available'] = true;
+            if (count($import->getErrors()) > 0) {
+                DB::rollBack();
+                $pesanError = (string) ($import->getErrors()[0] ?? 'Gagal mengimport file');
+            } else {
+                DB::commit();
+                $pesanSukses = "Berhasil import {$import->getRowCount()} baris data";
             }
-
-            return redirect()->back()->with('success', 'Operasi berhasil.');
+        } catch (Exception $e) {
+            DB::rollBack();
+            $pesanError = 'Gagal import: ' . $e->getMessage();
         }
 
-        return redirect()->back()->with('success', 'Operasi berhasil.');
+        if ($pesanError !== null) {
+            throw ValidationException::withMessages(['file' => $pesanError]);
+        }
+
+        return back()->with('success', $pesanSukses);
     }
 
-    /** POST /api/inventory/{inventory}/jual */
-    public function jual(Request $request, Inventory $inventory)
-    {
-        $inventory = $this->inventory->jual($request, $inventory);
+    // ================================================================== helper
 
-        return response()->json($inventory->load([
-            'kategori',
-            'supplier',
-            'pemakaiSaatIni',
-            'writeoff.penyetuju:id,name',
-        ]));
+    // Parameter filter dari query string, sudah "efektif":
+    //  - status & kategori[] valid saja (status cuma berlaku buat admin: tab status non-admin disembunyikan);
+    //  - status khusus induk ("dijual") di-reset ke semua kalau populasi filter kategori tidak punya satu pun
+    //    item induk (perilaku lama saat user mencentang kategori).
+    private static function filterEfektif(Request $request): array
+    {
+        $admin = $request->user()->isAdmin();
+
+        $search = trim((string) $request->query('search', ''));
+
+        $status = (string) $request->query('status', '');
+        $status = $admin && in_array($status, self::STATUS, true) ? $status : null;
+
+        $kategori = collect((array) $request->query('kategori', []))
+            ->map(fn ($v) => (int) $v)
+            ->filter(fn ($v) => $v > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        $adaInduk = self::populasi($request, $kategori)->whereNull('parent_id')->exists();
+
+        if ($status !== null && in_array($status, self::STATUS_KHUSUS_INDUK, true) && !$adaInduk) {
+            $status = null;
+        }
+
+        return [
+            'search' => $search !== '' ? $search : null,
+            'status' => $status,
+            'kategori' => $kategori,
+            'ada_induk' => $adaInduk,
+        ];
     }
 
-    /** POST /api/inventory/{inventory}/pasang-pengganti-kelengkapan */
-    public function pasangPenggantiKelengkapan(Request $request, Inventory $inventory)
+    // Populasi yang boleh dilihat user (scoping role) + filter kategori. Non-admin: tabel selalu cuma
+    // item 'tersedia' (yang lagi dia pakai tampil di card terpisah, lihat dipakai()).
+    private static function populasi(Request $request, array $kategori): Builder
     {
-        $inventory = $this->inventory->pasangKeInduk($request, $inventory);
+        $user = $request->user();
 
-        return redirect()->back()->with('success', 'Operasi berhasil.');
+        $query = InventoryQuery::batasiUntuk(InventoryQuery::dasar(), $user);
+
+        if (!$user->isAdmin()) {
+            $query->where('status', 'tersedia');
+        }
+
+        if ($kategori) {
+            $query->whereIn('kategori_id', $kategori);
+        }
+
+        return $query;
     }
 
-    /** POST /api/inventory/{inventory}/lepas-dari-induk */
-    public function lepasDariInduk(Request $request, Inventory $inventory)
+    // populasi + pencarian + filter status. Tanpa orderBy/withCount (supaya aman dipakai count()).
+    private static function queryTerfilter(Request $request, array $f): Builder
     {
-        $inventory = $this->inventory->lepasDariInduk($request, $inventory);
+        $query = self::populasi($request, $f['kategori']);
 
-        return redirect()->back()->with('success', 'Operasi berhasil.');
+        if ($f['status'] !== null) {
+            $query->where('status', $f['status']);
+        }
+
+        if ($f['search'] !== null) {
+            // escape karakter wildcard LIKE supaya yang diketik dianggap teks biasa; LOWER() biar tidak peka huruf besar/kecil
+            $kata = '%' . mb_strtolower(str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $f['search'])) . '%';
+
+            $query->where(function ($q) use ($kata) {
+                $q->whereRaw('LOWER(inventory.kode_inventory) LIKE ?', [$kata])
+                    ->orWhereRaw('LOWER(inventory.serial_number) LIKE ?', [$kata])
+                    ->orWhereRaw('LOWER(inventory.nama) LIKE ?', [$kata])
+                    // nama di kolom "Dipakai Oleh"; status 'dijual' dilewati (kolomnya ditampilkan "-")
+                    ->orWhere(function ($qq) use ($kata) {
+                        $qq->where('inventory.status', '!=', 'dijual')
+                            ->whereHas('pemakaiSaatIni.user', fn ($u) => $u->whereRaw('LOWER(users.name) LIKE ?', [$kata]));
+                    });
+            });
+        }
+
+        return $query;
     }
 
-    /**
-     * GET /api/inventory/foto — daftar item inventory yang punya foto DASAR
-     * (diupload pas nambah/edit barang di Master Data, kolom `inventory.foto`).
-     * Ini beda dari:
-     * - /inventory-pemakai/foto (foto serah-terima & pengembalian)
-     * - /inventory-penanganan/foto (foto laporan kerusakan)
-     * ...yang keduanya foto TRANSAKSI. Ini foto BARANGNYA sendiri, buat tab
-     * "Inventory" paling kiri di halaman Foto Inventory (Laporan).
-     * Admin+hr only, sama kayak akses halaman Laporan di frontend.
-     */
-    // [F7-INERTIA] Query di App\Queries\FotoInventoryQuery (dipakai bareng tab Foto Inventory di halaman Laporan).
-    public function foto(Request $request)
+    private static function urutkan(Builder $query): Builder
     {
-        $query = \App\Queries\FotoInventoryQuery::inventory($request->input('search'));
-
-        $perPage = max(10, (int) $request->input('per_page', 12));
-        $data = $query->paginate($perPage);
-
-        return redirect()->back()->with('success', 'Operasi berhasil.');
+        return $query
+            ->orderByRaw("CASE inventory.status WHEN 'tersedia' THEN 1 WHEN 'dipakai' THEN 2 WHEN 'menunggu_perbaikan' THEN 3 WHEN 'diperbaiki' THEN 4 WHEN 'rusak_berat' THEN 5 WHEN 'dijual' THEN 6 ELSE 7 END")
+            ->orderBy('inventory.kode_inventory')
+            ->orderBy('inventory.id');
     }
 }

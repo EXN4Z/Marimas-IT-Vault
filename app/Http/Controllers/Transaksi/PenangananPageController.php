@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class PenangananInventoryPageController extends Controller
+class PenangananPageController extends Controller
 {
     // GET /penanganan-inventory?tab=menunggu|diperbaiki|diperbaiki_selesai|rusak_berat&search=&jenis=&page=   (middleware: auth; semua role)
     // [F6-INERTIA] Data baca dikirim sebagai props (tadinya axios + polling): satu halaman laporan + jumlah per tab, dan SEMUA
@@ -15,8 +15,8 @@ class PenangananInventoryPageController extends Controller
     public function __invoke(Request $request)
     {
         return Inertia::render('PenangananInventory/Index', [
-            'penanganan' => fn () => InventoryPenangananWebController::daftar($request),
-            'penangananExport' => Inertia::optional(fn () => InventoryPenangananWebController::untukExport($request)),
+            'penanganan' => fn () => InventoryPenangananController::daftar($request),
+            'penangananExport' => Inertia::optional(fn () => InventoryPenangananController::untukExport($request)),
         ]);
     }
 }

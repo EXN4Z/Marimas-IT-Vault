@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\AuditLog;
 
 use App\Http\Controllers\Controller;
-use App\Queries\AuditLogQuery;
+use App\Queries\AuditLog\AuditLogQuery;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 

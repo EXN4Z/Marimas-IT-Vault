@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Legacy;
 
 use App\Imports\MasterData\InventoryBuktiImport;
 use App\Actions\Transaksi\InventoryPenangananAction;
@@ -8,6 +8,7 @@ use App\Imports\MasterData\KaryawanImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Controllers\Controller;
 
 class ImportController extends Controller
 {

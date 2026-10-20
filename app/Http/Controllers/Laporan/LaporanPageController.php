@@ -3,17 +3,17 @@
 namespace App\Http\Controllers\Laporan;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\MasterData\CabangWebController;
-use App\Http\Controllers\MasterData\DepartemenWebController;
-use App\Http\Controllers\MasterData\KategoriWebController;
-use App\Http\Controllers\MasterData\PerusahaanWebController;
-use App\Http\Controllers\MasterData\SupplierWebController;
+use App\Http\Controllers\MasterData\CabangController;
+use App\Http\Controllers\MasterData\DepartemenController;
+use App\Http\Controllers\MasterData\KategoriController;
+use App\Http\Controllers\MasterData\PerusahaanController;
+use App\Http\Controllers\MasterData\SupplierController;
 use App\Models\Transaksi\InventoryPemakai;
 use App\Models\User;
-use App\Queries\FotoInventoryQuery;
-use App\Queries\InventoryQuery;
-use App\Queries\KaryawanQuery;
-use App\Queries\RiwayatInventoryQuery;
+use App\Queries\Laporan\FotoInventoryQuery;
+use App\Queries\MasterData\InventoryQuery;
+use App\Queries\MasterData\KaryawanQuery;
+use App\Queries\Laporan\RiwayatInventoryQuery;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -56,11 +56,11 @@ class LaporanPageController extends Controller
         return [
             'inventory' => InventoryQuery::batasiUntuk(InventoryQuery::dasar()->latest()->indukSendiri(), $request->user())->get()->all(),
             'karyawan' => KaryawanQuery::filter(User::with('departemen', 'lokasiKantor', 'roleRef'))->latest()->get()->all(),
-            'kategori' => KategoriWebController::daftar(),
-            'departemen' => DepartemenWebController::daftar(),
-            'cabang' => CabangWebController::daftar(),
-            'perusahaan' => PerusahaanWebController::daftar(),
-            'supplier' => SupplierWebController::daftar(),
+            'kategori' => KategoriController::daftar(),
+            'departemen' => DepartemenController::daftar(),
+            'cabang' => CabangController::daftar(),
+            'perusahaan' => PerusahaanController::daftar(),
+            'supplier' => SupplierController::daftar(),
             'pemakai' => InventoryPemakai::with(['inventory', 'user'])->orderByDesc('created_at')->get()->all(),
         ];
     }

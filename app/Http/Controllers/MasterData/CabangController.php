@@ -3,45 +3,41 @@
 namespace App\Http\Controllers\MasterData;
 
 use App\Http\Controllers\Controller;
-
 use App\Imports\MasterData\CabangImport;
 use App\Models\MasterData\LokasiKantor;
+use Exception;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Mail;
-Use Illuminate\Mail\Mailable;
-use App\Models\MasterData\Role;
-use App\Mail\BranchCredentials;
 
+// [F1-INERTIA] Versi Inertia dari CabangController (API). Dipanggil lewat routes/web.php (session + CSRF),
+// balasan = redirect back + flash (bukan JSON). Aturan validasi & logika SAMA dengan versi API.
+// CabangController (API) sengaja dibiarkan dulu; dihapus di F10 setelah tidak ada pemakainya.
 class CabangController extends Controller
 {
-    // GET / — daftar cabang
-    public function index()
+    // Data tab Cabang buat props halaman Master Data (dipakai MasterDataPageController).
+    // Bentuk sama dengan CabangController::index() (API).
+    public static function daftar(): array
     {
-        return Inertia::render('MasterData/Index', [
-            'cabangs' => LokasiKantor::withCount(['karyawan as pekerja_count'])
-                ->with('akunCabang')
-                ->get()
-                ->map(function ($item) {
-                    return [
-                        'id' => $item->id,
-                        'nama' => $item->nama,
-                        'alamat' => $item->alamat,
-                        'telepon' => $item->telepon,
-                        'link' => $item->link,
-                        'pekerja_count' => $item->pekerja_count,
-                        'email' => $item->akunCabang?->email,
-                    ];
-                }),
-            'tab' => 'cabang'
-        ]);
+        return LokasiKantor::withCount(['karyawan as pekerja_count'])
+            ->with('akunCabang')
+            ->get()
+            ->map(fn ($item) => [
+                'id' => $item->id,
+                'nama' => $item->nama,
+                'alamat' => $item->alamat,
+                'telepon' => $item->telepon,
+                'link' => $item->link,
+                'pekerja_count' => $item->pekerja_count,
+                'email' => $item->akunCabang?->email,
+            ])
+            ->all();
     }
 
-    // POST /
-    public function store(Request $request)
+    // POST /master-data/cabang
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'nama' => 'required|string|max:150',
@@ -57,11 +53,11 @@ class CabangController extends Controller
 
         LokasiKantor::create($validated);
 
-        return redirect()->back()->with('success', 'Cabang berhasil ditambahkan.');
+        return back()->with('success', 'Cabang baru berhasil ditambahkan.');
     }
 
-    // PUT /{id}
-    public function update(Request $request, $id)
+    // PUT /master-data/cabang/{id}
+    public function update(Request $request, $id): RedirectResponse
     {
         $cabang = LokasiKantor::findOrFail($id);
 
@@ -77,31 +73,41 @@ class CabangController extends Controller
 
         $cabang->update($validated);
 
-        return redirect()->back()->with('success', 'Cabang berhasil diperbarui.');
+        return back()->with('success', 'Data cabang berhasil diperbarui.');
     }
 
-    // DELETE /{id}
-    public function destroy($id)
+    // DELETE /master-data/cabang/{id}
+    // Gagal -> error bag key "delete" (ditampilkan di dalam modal konfirmasi hapus).
+    public function destroy($id): RedirectResponse
     {
         $cabang = LokasiKantor::withCount(['karyawan as pekerja_count'])->findOrFail($id);
 
         if ($cabang->pekerja_count > 0) {
-            return redirect()->back()->with('error', 'Cabang ini masih memiliki ' . $cabang->pekerja_count . ' pegawai. Pindahkan pegawai terlebih dahulu.');
+            throw ValidationException::withMessages([
+                'delete' => 'Cabang ini masih memiliki ' . $cabang->pekerja_count . ' pegawai. Pindahkan pegawai terlebih dahulu sebelum menghapus.',
+            ]);
         }
 
         DB::transaction(function () use ($cabang) {
+            // Hapus akun user (role cabang) yang terhubung ke lokasi ini dulu,
+            // baru hapus cabangnya -- biar gak ada akun "nyantol" tanpa cabang
             $cabang->akunCabang?->delete();
             $cabang->delete();
         });
 
-        return redirect()->back()->with('success', 'Cabang berhasil dihapus.');
+        return back()->with('success', 'Cabang berhasil dihapus.');
     }
 
-    public function import(Request $request)
+    // POST /master-data/cabang/import -- Excel (.xlsx/.xls). Kolom: Nama | Alamat | Telepon | Link.
+    // Gagal -> error bag key "file" (pesan pertama), semua-atau-tidak-sama-sekali (rollback).
+    public function import(Request $request): RedirectResponse
     {
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240',
+            'file' => 'required|file|mimes:xlsx,xls|max:10240', // max 10MB
         ]);
+
+        $pesanError = null;
+        $pesanSukses = null;
 
         DB::beginTransaction();
         try {
@@ -110,16 +116,21 @@ class CabangController extends Controller
 
             if (count($import->getErrors()) > 0) {
                 DB::rollBack();
-                return redirect()->back()->with('error', 'Gagal import: ' . implode(', ', $import->getErrors()));
+                $pesanError = (string) ($import->getErrors()[0] ?? 'Gagal import data cabang.');
+            } else {
+                DB::commit();
+                $pesanSukses = "Berhasil import {$import->getCreatedCount()} cabang baru"
+                    . ($import->getUpdatedCount() > 0 ? ", {$import->getUpdatedCount()} diperbarui" : '');
             }
-
-            DB::commit();
-            $message = "Berhasil import {$import->getCreatedCount()} cabang baru"
-                . ($import->getUpdatedCount() > 0 ? ", {$import->getUpdatedCount()} diperbarui" : '');
-            return redirect()->back()->with('success', $message);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal import: ' . $e->getMessage());
+            $pesanError = 'Gagal import: ' . $e->getMessage();
         }
+
+        if ($pesanError !== null) {
+            throw ValidationException::withMessages(['file' => $pesanError]);
+        }
+
+        return back()->with('success', $pesanSukses);
     }
 }

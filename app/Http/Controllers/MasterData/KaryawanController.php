@@ -6,19 +6,20 @@ use App\Actions\MasterData\KaryawanAction;
 use App\Http\Controllers\Controller;
 use App\Imports\MasterData\KaryawanImport;
 use App\Models\User;
-use App\Queries\KaryawanQuery;
+use App\Queries\MasterData\KaryawanQuery;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Queries\MasterData\RoleQuery;
 
 // [F3-INERTIA] Versi Inertia dari UserController (API) untuk tab "Data User" (Karyawan) di Master Data.
 // Dipanggil lewat routes/web.php (session + CSRF, admin-only), balasan = redirect back + flash (bukan JSON).
 // Aturan validasi & logika bisnis SAMA dengan versi API karena dipakai bareng lewat KaryawanAction / KaryawanQuery.
 // UserController (API) sengaja dibiarkan dulu: GET /api/karyawan masih dipakai autocomplete (inventoryPemakai) & Laporan.
 // Halaman /karyawan/create, /{user}, /{user}/edit sudah dihapus: sekarang modal di dalam tab Karyawan.
-class KaryawanWebController extends Controller
+class KaryawanController extends Controller
 {
     private const PER_HALAMAN = 10;
 
@@ -69,10 +70,10 @@ class KaryawanWebController extends Controller
     public static function opsi(): array
     {
         return [
-            'departemen' => DepartemenWebController::daftar(),
-            'cabang' => CabangWebController::daftar(),
-            'perusahaan' => PerusahaanWebController::daftar(),
-            'roles' => RoleController::daftar()->all(),
+            'departemen' => DepartemenController::daftar(),
+            'cabang' => CabangController::daftar(),
+            'perusahaan' => PerusahaanController::daftar(),
+            'roles' => RoleQuery::daftar()->all(),
         ];
     }
 

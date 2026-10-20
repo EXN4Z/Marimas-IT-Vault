@@ -19,8 +19,8 @@ use Illuminate\Validation\ValidationException;
 /**
  * [F4-INERTIA] Logika mutasi inventory (simpan / perbarui / hapus / jual / pasang ke induk / lepas dari induk),
  * dipakai bareng oleh:
- *  - API : App\Http\Controllers\MasterData\InventoryController (JSON, sampai F10)
- *  - Web : App\Http\Controllers\MasterData\InventoryWebController (redirect back + flash)
+ *  - API : App\Http\Controllers\Legacy\MasterData\InventoryController (JSON, sampai F10)
+ *  - Web : App\Http\Controllers\MasterData\InventoryController (redirect back + flash)
  *
  * Aturan validasi & aturan bisnis dipindah APA ADANYA dari InventoryController. Dulu pelanggaran aturan
  * dilempar lewat abort(422, ...); sekarang ValidationException supaya halaman web bisa menampilkannya

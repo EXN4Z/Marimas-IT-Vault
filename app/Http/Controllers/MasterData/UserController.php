@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Actions\MasterData\KaryawanAction;
 use App\Models\User;
-use App\Queries\KaryawanQuery;
+use App\Queries\MasterData\KaryawanQuery;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 

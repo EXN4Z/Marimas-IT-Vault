@@ -9,7 +9,7 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Kirim ulang OTP registrasi (dipindah apa adanya dari AuthController::resendOtp).
- * Dipakai bareng oleh API (AuthController::resendOtp) dan web (WebAuthController::resendOtp).
+ * Dipakai bareng oleh API (AuthController::resendOtp) dan web (AuthController::resendOtp).
  */
 class ResendRegistrationOtp
 {

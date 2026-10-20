@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\MasterData;
+namespace App\Http\Controllers\Legacy\MasterData;
 
 use App\Http\Controllers\Controller;
 
@@ -24,7 +24,7 @@ class AdminUserController extends Controller
 
         $user = User::findOrFail($id);
 
-        // [F3-INERTIA] logika dipakai bareng halaman web (KaryawanWebController::setPassword)
+        // [F3-INERTIA] logika dipakai bareng halaman web (KaryawanController::setPassword)
         KaryawanAction::ubahPassword($user, $validated['password']);
 
         return response()->json([

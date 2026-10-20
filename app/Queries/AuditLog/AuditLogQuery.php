@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Queries;
+namespace App\Queries\AuditLog;
 
 use App\Models\AuditLog;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 
 /**
  * Logika query Audit Log, dipakai bareng oleh:
- *  - API  : App\Http\Controllers\AuditLog\AuditLogController
+ *  - API  : App\Http\Controllers\Legacy\AuditLog\AuditLogController
  *  - Web  : App\Http\Controllers\AuditLog\AuditLogPageController (Inertia)
  * Bentuk hasil (paginator) sama persis dengan respons /api/audit-log yang lama.
  */

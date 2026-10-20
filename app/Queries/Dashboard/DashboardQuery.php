@@ -1,15 +1,17 @@
 <?php
 
-namespace App\Queries;
+namespace App\Queries\Dashboard;
 
 use App\Models\MasterData\Inventory;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Queries\MasterData\InventoryQuery;
+use App\Queries\Laporan\RiwayatInventoryQuery;
 
 /**
  * [F8-INERTIA] Data dashboard (dulu dihitung di klien dari beberapa request axios), sekarang dihitung server dan dikirim
- * sebagai props oleh App\Http\Controllers\Dashboard\DashboardPageController. Angka & aturan dipindah APA ADANYA dari
+ * sebagai props oleh App\Http\Controllers\Dashboard\DashboardController. Angka & aturan dipindah APA ADANYA dari
  * pages/dashboard/useDashboardData.ts (bucket status, 6 bulan terakhir, garansi <= 30 hari, dst).
  *  - departemen() juga dipakai API lama DashboardController::KaryawanPerDepart (dihapus di F10).
  */

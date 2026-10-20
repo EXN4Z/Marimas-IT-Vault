@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Queries;
+namespace App\Queries\MasterData;
 
 use Illuminate\Database\Eloquent\Builder;
 
 /**
  * [F3-INERTIA] Filter daftar karyawan (role / status / pencarian), dipakai bareng oleh:
  *  - API : App\Http\Controllers\MasterData\UserController::index (GET /api/karyawan, masih dipakai autocomplete)
- *  - Web : App\Http\Controllers\MasterData\KaryawanWebController (props tab Karyawan di Master Data)
+ *  - Web : App\Http\Controllers\MasterData\KaryawanController (props tab Karyawan di Master Data)
  *
  * $abaikanHuruf = true  -> pencarian tidak peka huruf besar/kecil (perilaku filter client-side lama di TabKaryawan).
  * $abaikanHuruf = false -> LIKE biasa, persis perilaku lama endpoint API.

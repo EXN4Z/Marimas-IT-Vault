@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Queries;
+namespace App\Queries\Laporan;
 
 use App\Models\MasterData\Inventory;
 use App\Models\Transaksi\InventoryPemakai;

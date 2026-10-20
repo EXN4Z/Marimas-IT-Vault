@@ -8,7 +8,7 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Cek OTP registrasi lalu bikin user-nya (dipindah apa adanya dari AuthController::verifyOtp).
- * Dipakai bareng oleh API (AuthController::verifyOtp) dan web (WebAuthController::verifyOtp).
+ * Dipakai bareng oleh API (AuthController::verifyOtp) dan web (AuthController::verifyOtp).
  */
 class VerifyRegistrationOtp
 {

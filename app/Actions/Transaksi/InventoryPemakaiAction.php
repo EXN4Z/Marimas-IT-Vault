@@ -14,8 +14,8 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * [F5-INERTIA] Logika transaksi pemakai inventory (serah-terima / kembalikan / hapus riwayat), dipakai bareng oleh:
- *  - API : App\Http\Controllers\Transaksi\InventoryPemakaiController (JSON, sampai F10)
- *  - Web : App\Http\Controllers\Transaksi\InventoryPemakaiWebController (redirect back + flash)
+ *  - API : App\Http\Controllers\Legacy\Transaksi\InventoryPemakaiController (JSON, sampai F10)
+ *  - Web : App\Http\Controllers\Transaksi\InventoryPemakaiController (redirect back + flash)
  *
  * Aturan validasi & aturan bisnis dipindah APA ADANYA dari InventoryPemakaiController. Dulu pelanggaran aturan
  * non-field dibalas response()->json(['message' => ...], 422); sekarang ValidationException supaya halaman web bisa

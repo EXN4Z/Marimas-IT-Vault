@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Queries;
+namespace App\Queries\Transaksi;
 
 use App\Models\Transaksi\InventoryPenanganan;
 use App\Models\User;
@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 /**
  * [F6-INERTIA] Query dasar & aturan akses laporan penanganan inventory, dipakai bareng oleh:
- *  - API : App\Http\Controllers\Transaksi\InventoryPenangananController::index (JSON, sampai F10)
- *  - Web : App\Http\Controllers\Transaksi\InventoryPenangananWebController (props halaman Penanganan Inventory)
+ *  - API : App\Http\Controllers\Legacy\Transaksi\InventoryPenangananController::index (JSON, sampai F10)
+ *  - Web : App\Http\Controllers\Transaksi\InventoryPenangananController (props halaman Penanganan Inventory)
  *
  * Aturan scoping dipindah APA ADANYA dari InventoryPenangananController::index():
  * admin = semua laporan; non-admin = cuma laporan yang terkait pemakaian dia sendiri (inventory_pemakai.user_id == dia).

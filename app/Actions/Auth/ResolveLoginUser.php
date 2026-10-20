@@ -8,7 +8,7 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Cari user dari kredensial login (email / no HP / nama + password).
- * Dipakai bareng oleh API (AuthController::login) dan web (WebAuthController::login).
+ * Dipakai bareng oleh API (AuthController::login) dan web (AuthController::login).
  */
 class ResolveLoginUser
 {
