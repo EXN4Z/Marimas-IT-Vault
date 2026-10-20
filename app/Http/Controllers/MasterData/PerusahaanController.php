@@ -20,12 +20,6 @@ use App\Http\Requests\MasterData\ImportPerusahaanRequest;
 // PerusahaanController (API) sengaja dibiarkan dulu; dihapus di F10 setelah tidak ada pemakainya.
 class PerusahaanController extends Controller
 {
-    // Data tab Perusahaan buat props halaman Master Data (dipakai MasterDataPageController).
-    public static function daftar(): array
-    {
-        return Perusahaan::orderBy('nama')->get()->all();
-    }
-
     // POST /master-data/perusahaan
     public function store(StorePerusahaanRequest $request): RedirectResponse
     {

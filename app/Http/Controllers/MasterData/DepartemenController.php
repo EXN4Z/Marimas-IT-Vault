@@ -21,13 +21,6 @@ use App\Http\Requests\MasterData\ImportDepartemenRequest;
 // Dihapus/dipangkas di F10 setelah tidak ada pemakainya.
 class DepartemenController extends Controller
 {
-    // Data tab Departemen buat props halaman Master Data (dipakai MasterDataPageController).
-    // Bentuk sama dengan DepartemenController::index() (API).
-    public static function daftar(): array
-    {
-        return Departemen::orderBy('nama')->get()->all();
-    }
-
     // POST /master-data/departemen
     public function store(StoreDepartemenRequest $request): RedirectResponse
     {

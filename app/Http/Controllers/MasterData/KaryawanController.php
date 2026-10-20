@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\MasterData;
 
+use App\Queries\MasterData\DepartemenQuery;
+use App\Queries\MasterData\PerusahaanQuery;
+use App\Queries\MasterData\CabangQuery;
 use App\Actions\MasterData\KaryawanAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MasterData\ImportKaryawanRequest;
@@ -72,9 +75,9 @@ class KaryawanController extends Controller
     public static function opsi(): array
     {
         return [
-            'departemen' => DepartemenController::daftar(),
-            'cabang' => CabangController::daftar(),
-            'perusahaan' => PerusahaanController::daftar(),
+            'departemen' => DepartemenQuery::daftar(),
+            'cabang' => CabangQuery::daftar(),
+            'perusahaan' => PerusahaanQuery::daftar(),
             'roles' => RoleQuery::daftar()->all(),
         ];
     }

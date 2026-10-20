@@ -20,25 +20,6 @@ use App\Http\Requests\MasterData\ImportCabangRequest;
 // CabangController (API) sengaja dibiarkan dulu; dihapus di F10 setelah tidak ada pemakainya.
 class CabangController extends Controller
 {
-    // Data tab Cabang buat props halaman Master Data (dipakai MasterDataPageController).
-    // Bentuk sama dengan CabangController::index() (API).
-    public static function daftar(): array
-    {
-        return LokasiKantor::withCount(['karyawan as pekerja_count'])
-            ->with('akunCabang')
-            ->get()
-            ->map(fn ($item) => [
-                'id' => $item->id,
-                'nama' => $item->nama,
-                'alamat' => $item->alamat,
-                'telepon' => $item->telepon,
-                'link' => $item->link,
-                'pekerja_count' => $item->pekerja_count,
-                'email' => $item->akunCabang?->email,
-            ])
-            ->all();
-    }
-
     // POST /master-data/cabang
     public function store(StoreCabangRequest $request): RedirectResponse
     {

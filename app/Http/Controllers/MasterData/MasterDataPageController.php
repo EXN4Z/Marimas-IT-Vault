@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers\MasterData;
 
+use App\Queries\MasterData\SupplierQuery;
+use App\Queries\MasterData\KategoriQuery;
+use App\Queries\MasterData\DepartemenQuery;
+use App\Queries\MasterData\PerusahaanQuery;
+use App\Queries\MasterData\CabangQuery;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -27,11 +32,11 @@ class MasterDataPageController extends Controller
         return Inertia::render('MasterData/Index', [
             'tab' => $tab,
             // Data tab dikirim hanya saat tab itu aktif (closure = lazy; null = tidak dikirim isinya).
-            'cabang' => $tab === 'cabang' ? fn () => CabangController::daftar() : null,
-            'perusahaan' => $tab === 'perusahaan' ? fn () => PerusahaanController::daftar() : null,
-            'departemen' => $tab === 'departemen' ? fn () => DepartemenController::daftar() : null,
-            'kategori' => $tab === 'kategori' ? fn () => KategoriController::daftar() : null,
-            'supplier' => $tab === 'supplier' ? fn () => SupplierController::daftar() : null,
+            'cabang' => $tab === 'cabang' ? fn () => CabangQuery::daftar() : null,
+            'perusahaan' => $tab === 'perusahaan' ? fn () => PerusahaanQuery::daftar() : null,
+            'departemen' => $tab === 'departemen' ? fn () => DepartemenQuery::daftar() : null,
+            'kategori' => $tab === 'kategori' ? fn () => KategoriQuery::daftar() : null,
+            'supplier' => $tab === 'supplier' ? fn () => SupplierQuery::daftar() : null,
             // [F3-INERTIA] Tab Karyawan: satu halaman data (pagination/search/filter role dari query string),
             // pilihan dropdown form, dan SEMUA hasil filter buat Export (optional = baru dihitung saat diminta
             // lewat partial reload `only: ['karyawanExport']`).

@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Laporan;
 
+use App\Queries\MasterData\SupplierQuery;
+use App\Queries\MasterData\KategoriQuery;
+use App\Queries\MasterData\DepartemenQuery;
+use App\Queries\MasterData\PerusahaanQuery;
+use App\Queries\MasterData\CabangQuery;
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\MasterData\CabangController;
-use App\Http\Controllers\MasterData\DepartemenController;
-use App\Http\Controllers\MasterData\KategoriController;
-use App\Http\Controllers\MasterData\PerusahaanController;
-use App\Http\Controllers\MasterData\SupplierController;
 use App\Models\Transaksi\InventoryPemakai;
 use App\Models\User;
 use App\Queries\Laporan\FotoInventoryQuery;
@@ -56,11 +56,11 @@ class LaporanPageController extends Controller
         return [
             'inventory' => InventoryQuery::batasiUntuk(InventoryQuery::dasar()->latest()->indukSendiri(), $request->user())->get()->all(),
             'karyawan' => KaryawanQuery::filter(User::with('departemen', 'lokasiKantor', 'roleRef'))->latest()->get()->all(),
-            'kategori' => KategoriController::daftar(),
-            'departemen' => DepartemenController::daftar(),
-            'cabang' => CabangController::daftar(),
-            'perusahaan' => PerusahaanController::daftar(),
-            'supplier' => SupplierController::daftar(),
+            'kategori' => KategoriQuery::daftar(),
+            'departemen' => DepartemenQuery::daftar(),
+            'cabang' => CabangQuery::daftar(),
+            'perusahaan' => PerusahaanQuery::daftar(),
+            'supplier' => SupplierQuery::daftar(),
             'pemakai' => InventoryPemakai::with(['inventory', 'user'])->orderByDesc('created_at')->get()->all(),
         ];
     }

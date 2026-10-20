@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\MasterData;
 
+use App\Queries\MasterData\SupplierQuery;
+use App\Queries\MasterData\KategoriQuery;
+use App\Queries\MasterData\PerusahaanQuery;
 use App\Actions\MasterData\InventoryAction;
 use App\Http\Controllers\Controller;
 use App\Imports\MasterData\InventoryBuktiImport;
@@ -113,9 +116,9 @@ class InventoryController extends Controller
         $admin = $request->user()->isAdmin();
 
         return [
-            'kategori' => $admin ? KategoriController::daftar() : [],
-            'supplier' => $admin ? SupplierController::daftar() : [],
-            'perusahaan' => $admin ? PerusahaanController::daftar() : [],
+            'kategori' => $admin ? KategoriQuery::daftar() : [],
+            'supplier' => $admin ? SupplierQuery::daftar() : [],
+            'perusahaan' => $admin ? PerusahaanQuery::daftar() : [],
         ];
     }
 

@@ -16,13 +16,6 @@ use App\Http\Requests\MasterData\UpdateKategoriRequest;
 // Dihapus/dipangkas di F10 setelah tidak ada pemakainya.
 class KategoriController extends Controller
 {
-    // Data tab Kategori buat props halaman Master Data (dipakai MasterDataPageController).
-    // Bentuk sama dengan KategoriController::index() (API).
-    public static function daftar(): array
-    {
-        return Kategori::orderBy('nama')->get()->all();
-    }
-
     // POST /master-data/kategori
     public function store(StoreKategoriRequest $request): RedirectResponse
     {

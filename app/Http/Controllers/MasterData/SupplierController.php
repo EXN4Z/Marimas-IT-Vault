@@ -21,13 +21,6 @@ use App\Http\Requests\MasterData\ImportSupplierRequest;
 // Dihapus/dipangkas di F10 setelah tidak ada pemakainya.
 class SupplierController extends Controller
 {
-    // Data tab Supplier buat props halaman Master Data (dipakai MasterDataPageController).
-    // Bentuk sama dengan SupplierController::index() (API).
-    public static function daftar(): array
-    {
-        return Supplier::orderBy('nama')->get()->all();
-    }
-
     // POST /master-data/supplier
     public function store(StoreSupplierRequest $request): RedirectResponse
     {
