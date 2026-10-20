@@ -4,6 +4,8 @@ namespace App\Http\Controllers\MasterData;
 
 use App\Actions\MasterData\KaryawanAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\MasterData\ImportKaryawanRequest;
+use App\Http\Requests\MasterData\SetPasswordKaryawanRequest;
 use App\Imports\MasterData\KaryawanImport;
 use App\Models\User;
 use App\Queries\MasterData\KaryawanQuery;
@@ -113,11 +115,9 @@ class KaryawanController extends Controller
 
     // PUT /master-data/karyawan/{id}/password -- admin menentukan sendiri password baru.
     // Gagal validasi -> error bag key "password".
-    public function setPassword(Request $request, $id): RedirectResponse
+    public function setPassword(SetPasswordKaryawanRequest $request, $id): RedirectResponse
     {
-        $validated = $request->validate([
-            'password' => ['required', 'string', 'confirmed'],
-        ]);
+        $validated = $request->validated();
 
         KaryawanAction::ubahPassword(User::findOrFail($id), $validated['password']);
 
@@ -128,12 +128,8 @@ class KaryawanController extends Controller
     // Sama seperti versi API: tiap baris diproses sendiri-sendiri (baris valid tetap tersimpan walau baris lain
     // dilewati), jadi TIDAK ada rollback global. Kalau ada baris bermasalah -> error bag key "file" berisi daftar
     // pesan dipisah newline (ditampilkan sebagai list di modal import); halaman tetap ter-refresh oleh redirect.
-    public function import(Request $request): RedirectResponse
+    public function import(ImportKaryawanRequest $request): RedirectResponse
     {
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240',
-        ]);
-
         try {
             $import = new KaryawanImport();
             Excel::import($import, $request->file('file'));
