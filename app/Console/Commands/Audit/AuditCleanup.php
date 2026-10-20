@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\Audit;
 
 use App\Models\AuditLog;
 use Illuminate\Console\Command;

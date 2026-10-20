@@ -2,7 +2,7 @@
 
 namespace App\Imports\MasterData;
 
-use App\Http\Controllers\Concerns\GeneratesStrukNumber;
+use App\Support\Concerns\GeneratesStrukNumber;
 use App\Models\MasterData\Inventory;
 use App\Models\MasterData\Kategori;
 use App\Models\MasterData\Departemen;

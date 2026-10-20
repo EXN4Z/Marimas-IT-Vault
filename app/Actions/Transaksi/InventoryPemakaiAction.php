@@ -2,8 +2,8 @@
 
 namespace App\Actions\Transaksi;
 
-use App\Http\Controllers\Concerns\GeneratesStrukNumber;
-use App\Http\Controllers\Concerns\SimpanFotoBukti;
+use App\Support\Concerns\GeneratesStrukNumber;
+use App\Support\Concerns\SimpanFotoBukti;
 use App\Models\MasterData\Inventory;
 use App\Models\Transaksi\InventoryPemakai;
 use App\Models\Transaksi\InventoryPenanganan;

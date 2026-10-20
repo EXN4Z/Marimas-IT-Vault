@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\Maintenance;
 
 use App\Models\MasterData\Inventory;
 use Illuminate\Console\Command;

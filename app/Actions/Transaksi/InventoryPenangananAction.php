@@ -2,7 +2,7 @@
 
 namespace App\Actions\Transaksi;
 
-use App\Http\Controllers\Concerns\GeneratesStrukNumber;
+use App\Support\Concerns\GeneratesStrukNumber;
 use App\Imports\Transaksi\InventoryPenangananImport;
 use App\Models\MasterData\Inventory;
 use App\Models\Transaksi\InventoryPemakai;
