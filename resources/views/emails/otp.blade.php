@@ -5,7 +5,7 @@
 </head>
 <body style="font-family: Arial, sans-serif; background:#f4f4f5; padding:24px;">
     <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px;">
-        <h2 style="color:#1e293b;margin-top:0;">MARIMAS ONE</h2>
+        <h2 style="color:#1e293b;margin-top:0;">MARIMAS IT VAULT</h2>
         <p style="color:#334155;font-size:15px;">
             Kode verifikasi kamu:
         </p>

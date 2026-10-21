@@ -67,7 +67,7 @@ export default function Login() {
         {/* Brand Header */}
         <div className="relative z-10">
           <h2 className="text-2xl font-bold tracking-tight text-white drop-shadow-md">
-            MARIMAS ONE
+            MARIMAS IT VAULT
           </h2>
           <p className="text-xs text-white/90 drop-shadow-sm font-medium mt-0.5">
             Integrated Inventory Management System
@@ -101,7 +101,7 @@ export default function Login() {
           {/* Mobile Brand */}
           <div className="lg:hidden mb-6">
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              MARIMAS ONE
+              MARIMAS IT VAULT
             </h1>
             <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
               Sistem Pengelolaan Inventory Terpadu

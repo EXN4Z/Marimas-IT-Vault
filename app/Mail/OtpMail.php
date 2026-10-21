@@ -16,7 +16,7 @@ class OtpMail extends Mailable
 
     public function build()
     {
-        return $this->subject('Kode Verifikasi MARIMAS ONE')
+        return $this->subject('Kode Verifikasi MARIMAS IT VAULT')
             ->view('emails.otp')
             ->with(['otp' => $this->otp]);
     }

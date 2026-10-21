@@ -133,7 +133,7 @@ function buildPrintableHtml({ title, periodLabel, headers, rows }: PrintReportOp
 </head>
 <body>
   <div class="banner">
-    <img src="/logo.png" alt="Marimas One" onerror="this.style.display='none'" />
+    <img src="/logo.png" alt="Marimas IT Vault" onerror="this.style.display='none'" />
     <div class="titles">
       <h1>${escapeHtml(title)}</h1>
       <p>Periode: ${escapeHtml(periodLabel)}</p>
@@ -146,7 +146,7 @@ function buildPrintableHtml({ title, periodLabel, headers, rows }: PrintReportOp
     <tbody>${tbodyHtml}</tbody>
   </table>
   <footer>
-    <span>Dokumen digenerate otomatis oleh Marimas One — tidak memerlukan tanda tangan basah.</span>
+    <span>Dokumen digenerate otomatis oleh Marimas IT Vault — tidak memerlukan tanda tangan basah.</span>
     <span>Total data: ${rows.length} baris</span>
   </footer>
 </body>

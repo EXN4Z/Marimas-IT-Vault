@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 
 /**
  * Logika query Audit Log, dipakai bareng oleh:
- *  - API  : App\Http\Controllers\Legacy\AuditLog\AuditLogController
  *  - Web  : App\Http\Controllers\AuditLog\AuditLogPageController (Inertia)
  * Bentuk hasil (paginator) sama persis dengan respons /api/audit-log yang lama.
  */

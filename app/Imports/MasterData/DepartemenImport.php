@@ -83,7 +83,7 @@ class DepartemenImport implements ToCollection
 
     /**
      * Deteksi baris footer disclaimer yang otomatis ditambahkan fitur Export
-     * Excel ("Dokumen digenerate otomatis oleh Marimas One ..."). Kalau file
+     * Excel ("Dokumen digenerate otomatis oleh Marimas IT Vault ..."). Kalau file
      * hasil export diimpor balik tanpa diedit, baris ini ikut kebaca sebagai
      * baris data (nyangkut di kolom pertama karena aslinya merged cell) dan
      * bikin entri palsu -- makanya harus disaring.

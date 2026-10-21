@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Builder;
 
 /**
  * [F4-INERTIA] Query dasar & aturan akses inventory, dipakai bareng oleh:
- *  - API : App\Http\Controllers\Legacy\MasterData\InventoryController (index, show -- masih dipakai Laporan/Dashboard sampai F7/F8)
  *  - Web : App\Http\Controllers\MasterData\InventoryController (props tab Inventory di Master Data)
  *
  * Aturan scoping role dipindah APA ADANYA dari InventoryController::index() / show().

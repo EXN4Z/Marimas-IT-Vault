@@ -1,4 +1,4 @@
-// Service Worker buat Web Push notification Marimas ONE.
+// Service Worker buat Web Push notification Marimas IT Vault.
 // Jalan di background browser, kepanggil walau tab/app lagi ketutup.
 
 self.addEventListener('install', () => {
@@ -16,10 +16,10 @@ self.addEventListener('push', (event) => {
   try {
     payload = event.data.json();
   } catch (e) {
-    payload = { title: 'Marimas ONE', body: event.data.text() };
+    payload = { title: 'Marimas IT Vault', body: event.data.text() };
   }
 
-  const title = payload.title || 'Marimas ONE';
+  const title = payload.title || 'Marimas IT Vault';
   const options = {
     body: payload.body || '',
     icon: payload.icon || '/logo.png',

@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Builder;
 
 /**
  * [F6-INERTIA] Query dasar & aturan akses laporan penanganan inventory, dipakai bareng oleh:
- *  - API : App\Http\Controllers\Legacy\Transaksi\InventoryPenangananController::index (JSON, sampai F10)
  *  - Web : App\Http\Controllers\Transaksi\InventoryPenangananController (props halaman Penanganan Inventory)
  *
  * Aturan scoping dipindah APA ADANYA dari InventoryPenangananController::index():

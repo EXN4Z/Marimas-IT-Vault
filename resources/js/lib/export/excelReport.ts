@@ -77,7 +77,7 @@ async function buildStyledWorkbook(opts: StyledExcelOptions): Promise<ExcelJS.Wo
   const { title, subtitle, headers, rows, sheetName, statusColumnIndexes = [] } = opts;
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'Marimas One';
+  workbook.creator = 'Marimas IT Vault';
   workbook.created = new Date();
 
   const sheet = workbook.addWorksheet(sheetName.slice(0, 31), {
@@ -115,7 +115,7 @@ async function buildStyledWorkbook(opts: StyledExcelOptions): Promise<ExcelJS.Wo
   const titleAnchorCol = logoBuffer ? Math.min(3, colCount) : 1;
   sheet.mergeCells(1, titleAnchorCol, 2, colCount);
   const titleTextCell = sheet.getCell(1, titleAnchorCol);
-  titleTextCell.value = `MARIMAS ONE — ${title}`;
+  titleTextCell.value = `MARIMAS IT VAULT — ${title}`;
   titleTextCell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' }, name: 'Calibri' };
   titleTextCell.alignment = { vertical: 'middle', horizontal: 'left' };
 
@@ -199,7 +199,7 @@ async function buildStyledWorkbook(opts: StyledExcelOptions): Promise<ExcelJS.Wo
   const footerRowIndex = headerRowIndex + rows.length + 2;
   sheet.mergeCells(footerRowIndex, 1, footerRowIndex, colCount);
   const footerCell = sheet.getCell(footerRowIndex, 1);
-  footerCell.value = 'Dokumen digenerate otomatis oleh Marimas One — tidak memerlukan tanda tangan basah.';
+  footerCell.value = 'Dokumen digenerate otomatis oleh Marimas IT Vault — tidak memerlukan tanda tangan basah.';
   footerCell.font = { italic: true, size: 8, color: { argb: TEXT_MUTED } };
 
   return workbook;

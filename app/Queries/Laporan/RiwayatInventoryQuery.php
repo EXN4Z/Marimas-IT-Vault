@@ -10,7 +10,6 @@ use Illuminate\Http\Request;
 
 /**
  * [F7-INERTIA] Riwayat aktivitas inventory (pinjam/kembali/lapor_rusak/mulai_perbaikan/selesai_perbaikan/dijual), dipakai bareng oleh:
- *  - API : App\Http\Controllers\Legacy\Transaksi\InventoryPemakaiController::riwayat (JSON, masih dipakai Dashboard sampai F8; dihapus di F10)
  *  - Web : App\Http\Controllers\Laporan\LaporanPageController (props tab Riwayat Inventory)
  *
  * Isi ambil() dipindah APA ADANYA dari InventoryPemakaiController::riwayat():

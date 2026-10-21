@@ -129,7 +129,7 @@ export function printStruk(data: StrukData) {
       </head>
       <body>
         <div class="struk">
-          <p class="brand">MARIMAS ONE</p>
+          <p class="brand">MARIMAS IT VAULT</p>
           <h2>${escapeHtml(data.judul)}</h2>
           <p class="no-struk">${escapeHtml(data.noStruk)}</p>
           <p class="tanggal">${escapeHtml(data.tanggal)}</p>
@@ -137,7 +137,7 @@ export function printStruk(data: StrukData) {
           ${rowsHtml}
           ${totalHtml}
           ${catatanHtml}
-          <p class="footer">Dicetak otomatis oleh sistem Marimas One</p>
+          <p class="footer">Dicetak otomatis oleh sistem Marimas IT Vault</p>
         </div>
         <script>
           window.onload = function () {

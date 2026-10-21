@@ -21,7 +21,6 @@ use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * [F6-INERTIA] Logika penanganan inventory (lapor kerusakan / terima / tandai selesai / hapus / import), dipakai bareng oleh:
- *  - API : App\Http\Controllers\Legacy\Transaksi\InventoryPenangananController + ImportController (JSON, sampai F10)
  *  - Web : App\Http\Controllers\Transaksi\InventoryPenangananController (redirect back + flash)
  *
  * Aturan validasi & aturan bisnis dipindah APA ADANYA. Dulu pelanggaran non-field dibalas
