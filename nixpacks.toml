@@ -1,5 +1,10 @@
 [phases.setup]
 nixPkgs = ["...", "php83Extensions.bcmath", "php83Extensions.gd", "php83Extensions.zip"]
 
+# Vite 8 (rolldown) butuh Node >= 20.19 / 22.12, sedangkan Nixpacks PHP cuma menyediakan Node 18.
+# Build dijalankan lewat Node 22 yang diambil dari npm, tanpa mengganti Node bawaan.
+[phases.build]
+cmds = ["npx --yes node@22 node_modules/vite/bin/vite.js build"]
+
 [start]
 cmd = "php artisan config:clear && php artisan route:clear && php artisan view:clear && php artisan storage:link --force && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
