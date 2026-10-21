@@ -1,13 +1,9 @@
 [phases.setup]
 nixPkgs = ["...", "php83Extensions.bcmath", "php83Extensions.gd", "php83Extensions.zip"]
 
-# Vite 8 (rolldown) butuh Node >= 22.12, sedangkan Nixpacks PHP cuma menyediakan Node 18.
-# Download Node 22 resmi ke /tmp, lalu jalankan vite build lewat binary itu (Node 18 bawaan tidak disentuh).
+# Build frontend lewat scripts/railway-build.sh (Node 22 + install ulang dependency).
 [phases.build]
-cmds = [
-  "curl -fsSL https://nodejs.org/dist/v22.12.0/node-v22.12.0-linux-x64.tar.gz | tar -xz -C /tmp",
-  "/tmp/node-v22.12.0-linux-x64/bin/node node_modules/vite/bin/vite.js build"
-]
+cmds = ["sed -i 's/\\r$//' scripts/railway-build.sh && bash scripts/railway-build.sh"]
 
 [start]
 cmd = "php artisan config:clear && php artisan route:clear && php artisan view:clear && php artisan storage:link --force && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
