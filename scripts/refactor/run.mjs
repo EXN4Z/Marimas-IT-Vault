@@ -291,13 +291,14 @@ function printMoves(moves) {
 
 function finishPhase(label, res, message) {
   const st = loadState();
-  for (const m of res.moves) {
-    st.moves.push({ from: m.from, to: m.to });
-    st.fqcnMap[m.oldFqcn] = m.newFqcn;
-  }
-  // rantai: A->B lalu B->C supaya baseline tetap terpetakan
-  for (const k of Object.keys(st.fqcnMap)) { let v = st.fqcnMap[k]; let n = 0; while (st.fqcnMap[v] && n++ < 5) v = st.fqcnMap[v]; st.fqcnMap[k] = v; }
-  saveState(st);
+  // peta batch ini (TIDAK dirantai satu sama lain, hindari tabrakan XController vs XWebController)
+  const batch = {};
+  for (const m of res.moves) batch[m.oldFqcn] = m.newFqcn;
+  // perpanjang entri fase sebelumnya: k -> v, lalu v -> w di batch ini jadi k -> w
+  for (const k of Object.keys(st.fqcnMap)) if (batch[st.fqcnMap[k]]) st.fqcnMap[k] = batch[st.fqcnMap[k]];
+  for (const m of res.moves) st.moves.push({ from: m.from, to: m.to });
+  Object.assign(st.fqcnMap, batch);
+  saveState(st); // verifyPhp membaca peta ini dari disk
   const changed = [...res.newTexts.keys()].map((f) => res.moves.find((m) => m.from === f)?.to ?? f);
   const all = new Set([...changed, ...res.moves.map((m) => m.to)]);
   verifyPhp(label, [...all]);
