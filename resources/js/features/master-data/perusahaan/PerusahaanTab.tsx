@@ -168,10 +168,10 @@ export default function TabPerusahaan() {
 
   const handleSubmit = async () => {
     const clientErrors: Record<string, string> = {};
-    if (!formNama.trim()) clientErrors.nama = 'Nama perusahaan wajib diisi.';
-    if (!formAlamat.trim()) clientErrors.alamat = 'Alamat perusahaan wajib diisi.';
-    if (!formTelepon.trim()) clientErrors.telepon = 'Nomor telepon perusahaan wajib diisi.';
-    if (!formLink.trim()) clientErrors.link = 'Link lokasi Google Maps wajib diisi.';
+    if (!formNama.trim()) clientErrors.nama = 'Nama perusahaan tidak boleh kosong!';
+    if (!formAlamat.trim()) clientErrors.alamat = 'Alamat perusahaan tidak boleh kosong!';
+    if (!formTelepon.trim()) clientErrors.telepon = 'Nomor telepon perusahaan tidak boleh kosong!';
+    if (!formLink.trim()) clientErrors.link = 'Link lokasi Google Maps tidak boleh kosong!';
     if (Object.keys(clientErrors).length > 0) {
       setFormErrors(clientErrors);
       toast.error('Mohon lengkapi semua kolom yang wajib diisi.');

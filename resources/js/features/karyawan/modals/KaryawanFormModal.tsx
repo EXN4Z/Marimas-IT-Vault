@@ -93,10 +93,11 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
     e.preventDefault();
 
     const clientErrors: Partial<Record<keyof FormFields, string>> = {};
-    if (!data.name.trim()) clientErrors.name = 'Nama lengkap wajib diisi.';
-    if (!isEdit && !data.password.trim()) clientErrors.password = 'Password awal wajib diisi.';
+    if (!data.name.trim()) clientErrors.name = 'Nama lengkap tidak boleh kosong!';
+    if (!isEdit && !data.password.trim()) clientErrors.password = 'Password awal tidak boleh kosong!';
     if (!data.role_id) clientErrors.role_id = 'Role wajib dipilih.';
-    if (!data.nik.trim()) clientErrors.nik = 'NIK karyawan wajib diisi.';
+    if (!data.email.trim()) clientErrors.email = 'Email tidak boleh kosong!';
+    if (!data.nik.trim()) clientErrors.nik = 'NIK karyawan tidak boleh kosong!';
 
     if (Object.keys(clientErrors).length > 0) {
       setError(clientErrors);
@@ -127,7 +128,7 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
       onSuccess: () => onClose(),
       // Pesan spesifik dari server (mis. masih ada pinjaman inventory) ikut ditampilkan sebagai toast.
       onError: (errs: Record<string, string>) => {
-        toast.error(errs.status || 'Ada data yang belum sesuai dengan format server.');
+        toast.error(errs.status || String(Object.values(errs)[0] || 'Ada data yang belum sesuai dengan format server.'));
       },
     };
 
@@ -166,7 +167,7 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
                 />
               </Field>
 
-              <Field label="Alamat Email" error={errors.email}>
+              <Field label="Alamat Email" error={errors.email} required>
                 <TextInput
                   type="email"
                   value={data.email}

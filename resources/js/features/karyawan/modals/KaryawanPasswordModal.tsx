@@ -29,10 +29,10 @@ export default function KaryawanPasswordModal({ userId, userName, onClose }: Pro
 
     const clientErrors: { password?: string; password_confirmation?: string } = {};
     if (!data.password.trim()) {
-      clientErrors.password = 'Password baru wajib diisi.';
+      clientErrors.password = 'Password baru tidak boleh kosong!';
     }
     if (!data.password_confirmation.trim()) {
-      clientErrors.password_confirmation = 'Konfirmasi password wajib diisi.';
+      clientErrors.password_confirmation = 'Konfirmasi password tidak boleh kosong!';
     } else if (data.password && data.password !== data.password_confirmation) {
       clientErrors.password_confirmation = 'Konfirmasi password tidak cocok.';
     }

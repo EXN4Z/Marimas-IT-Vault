@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-// script.mjs -- pasang peringatan (toast) untuk SEMUA jalur error di Marimas IT Vault.
+// script.mjs -- pasang peringatan untuk SEMUA jalur error di Marimas IT Vault:
+//   - toast untuk error server / koneksi / login salah (frontend)
+//   - pesan validasi Bahasa Indonesia, mis. "Email tidak boleh kosong!" (backend + form)
 //
 // Cara pakai (dari root project, folder yang ada package.json):
 //   node script.mjs --dry     # cuma lihat apa yang akan diubah, tidak menulis apa pun
@@ -63,8 +65,8 @@ function relImport(fromFile, toFileNoExt) {
 }
 
 // patch(file, steps): tiap step = { name, done(src)->bool, apply(src)->src|null }
-function patch(relPath, steps) {
-  const p = path.join(JS, relPath);
+function patch(relPath, steps, base = JS) {
+  const p = path.join(base, relPath);
   if (!fs.existsSync(p)) {
     log(rel(p), 'SKIP', 'file tidak ditemukan');
     return;
@@ -155,18 +157,33 @@ export function installGlobalErrorHandlers(): void {
     if (suppressed > 0) return;
     toast.error('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', { id: 'network-error' });
   });
+
+  // Error dari server yang bukan milik field tertentu (kunci "server", lihat bootstrap/app.php).
+  router.on('error', (event) => {
+    const msg = (event.detail.errors as Record<string, string>).server;
+    if (msg) toast.error(msg, { id: 'server-error' });
+  });
 }
 `;
 
-{
+if (!fs.existsSync(path.join(JS, 'lib', 'globalErrors.ts'))) {
   const p = path.join(JS, 'lib', 'globalErrors.ts');
-  if (fs.existsSync(p)) {
-    const { text } = readFile(p);
-    log(rel(p), text.trim() === GLOBAL_ERRORS.trim() ? 'SUDAH' : 'SKIP', text.trim() === GLOBAL_ERRORS.trim() ? '' : 'sudah ada tapi isinya berbeda, tidak ditimpa');
-  } else {
-    writeFile(p, GLOBAL_ERRORS, false);
-    log(rel(p), 'DIBUAT');
-  }
+  writeFile(p, GLOBAL_ERRORS, false);
+  log(rel(p), 'DIBUAT');
+} else {
+  // sudah ada (script versi sebelumnya): tambahkan listener error "server" kalau belum ada
+  patch('lib/globalErrors.ts', [
+    {
+      name: 'listener server',
+      done: (s) => s.includes("id: 'server-error'"),
+      apply: (s) =>
+        replaceOnce(
+          s,
+          `{ id: 'network-error' });\n  });\n}`,
+          `{ id: 'network-error' });\n  });\n\n  // Error dari server yang bukan milik field tertentu (kunci "server", lihat bootstrap/app.php).\n  router.on('error', (event) => {\n    const msg = (event.detail.errors as Record<string, string>).server;\n    if (msg) toast.error(msg, { id: 'server-error' });\n  });\n}`,
+        ),
+    },
+  ]);
 }
 
 const GE = path.join(JS, 'lib', 'globalErrors');
@@ -302,6 +319,267 @@ patch('features/inventory/aksi/SerahTerimaModal.tsx', [
       ),
   },
 ]);
+
+
+// =====================================================================
+// VALIDASI: pesan Indonesia + email wajib diisi (berlaku di semua form)
+// =====================================================================
+
+const PHP = ROOT; // file PHP relatif ke root project
+
+// ---------- 8. lang/id/validation.php (file baru) ----------
+const LANG_ID = `<?php
+
+// Pesan validasi Bahasa Indonesia. Aktif otomatis karena APP_LOCALE=id (config/app.php).
+// Key yang tidak ada di sini jatuh ke bahasa Inggris (fallback_locale).
+return [
+    'accepted' => ':attribute harus disetujui.',
+    'array' => ':attribute harus berupa daftar.',
+    'boolean' => ':attribute harus bernilai benar atau salah.',
+    'confirmed' => 'Konfirmasi :attribute tidak cocok.',
+    'date' => ':attribute bukan tanggal yang valid.',
+    'email' => ':attribute harus berupa alamat email yang valid.',
+    'exists' => ':attribute yang dipilih tidak valid.',
+    'file' => ':attribute harus berupa file.',
+    'image' => ':attribute harus berupa gambar.',
+    'in' => ':attribute yang dipilih tidak valid.',
+    'integer' => ':attribute harus berupa angka bulat.',
+    'max' => [
+        'array' => ':attribute maksimal :max item.',
+        'file' => ':attribute maksimal :max KB.',
+        'numeric' => ':attribute maksimal :max.',
+        'string' => ':attribute maksimal :max karakter.',
+    ],
+    'mimes' => ':attribute harus berupa file bertipe: :values.',
+    'min' => [
+        'array' => ':attribute minimal :min item.',
+        'file' => ':attribute minimal :min KB.',
+        'numeric' => ':attribute minimal :min.',
+        'string' => ':attribute minimal :min karakter.',
+    ],
+    'numeric' => ':attribute harus berupa angka.',
+    'required' => ':attribute tidak boleh kosong!',
+    'string' => ':attribute harus berupa teks.',
+    'unique' => ':attribute sudah digunakan.',
+    'uploaded' => ':attribute gagal diunggah.',
+    'url' => ':attribute harus berupa URL yang valid.',
+
+    // Nama field yang tampil di pesan (tanpa ini jadi "role id", "nama", dst).
+    'attributes' => [
+        'name' => 'Nama',
+        'nama' => 'Nama',
+        'email' => 'Email',
+        'phone' => 'Nomor telepon',
+        'telepon' => 'Nomor telepon',
+        'nik' => 'NIK',
+        'password' => 'Password',
+        'current_password' => 'Password saat ini',
+        'login' => 'Email/No HP/Nama',
+        'otp_code' => 'Kode OTP',
+        'registration_id' => 'ID registrasi',
+        'role_id' => 'Role',
+        'departemen_id' => 'Departemen',
+        'lokasi_kantor_id' => 'Cabang / lokasi kantor',
+        'perusahaan_id' => 'Perusahaan',
+        'supplier_id' => 'Supplier',
+        'kategori_id' => 'Kategori',
+        'inventory_id' => 'Inventory',
+        'parent_id' => 'Barang induk',
+        'user_id' => 'Penerima',
+        'status' => 'Status',
+        'alamat' => 'Alamat',
+        'link' => 'Link',
+        'file' => 'File',
+        'foto' => 'Foto',
+        'foto_penerimaan' => 'Foto penerimaan',
+        'foto_pengembalian' => 'Foto pengembalian',
+        'merk' => 'Merk',
+        'type' => 'Tipe',
+        'warna' => 'Warna',
+        'jumlah' => 'Jumlah',
+        'keterangan' => 'Keterangan',
+        'keluhan' => 'Keluhan',
+        'alasan' => 'Alasan',
+        'catatan' => 'Catatan',
+        'catatan_penerimaan' => 'Catatan penerimaan',
+        'catatan_pengembalian' => 'Catatan pengembalian',
+        'jenis_kerusakan' => 'Jenis kerusakan',
+        'hasil' => 'Hasil',
+        'no_berita_acara' => 'Nomor berita acara',
+        'no_good_receive' => 'Nomor good receive',
+        'no_surat_jalan' => 'Nomor surat jalan',
+        'no_struk_penerimaan' => 'Nomor struk penerimaan',
+        'tanggal_masuk' => 'Tanggal masuk',
+        'tanggal_garansi' => 'Tanggal garansi',
+        'tanggal_input' => 'Tanggal input',
+        'tanggal_invoice' => 'Tanggal invoice',
+        'tanggal_rusak' => 'Tanggal rusak',
+        'tanggal_selesai' => 'Tanggal selesai',
+        'tanggal_penerimaan' => 'Tanggal penerimaan',
+        'tanggal_pengembalian' => 'Tanggal pengembalian',
+        'endpoint' => 'Endpoint',
+        'keys.auth' => 'Kunci autentikasi',
+    ],
+];
+`;
+{
+  const p = path.join(PHP, 'lang', 'id', 'validation.php');
+  if (fs.existsSync(p)) {
+    const { text } = readFile(p);
+    log(rel(p), text.trim() === LANG_ID.trim() ? 'SUDAH' : 'SKIP', text.trim() === LANG_ID.trim() ? '' : 'sudah ada tapi isinya berbeda, tidak ditimpa');
+  } else {
+    writeFile(p, LANG_ID, false);
+    log(rel(p), 'DIBUAT');
+  }
+}
+
+// ---------- 9. config/app.php: bahasa default Indonesia ----------
+patch(
+  'config/app.php',
+  [
+    {
+      name: 'locale id',
+      done: (s) => s.includes("env('APP_LOCALE', 'id')"),
+      apply: (s) => replaceOnce(s, `env('APP_LOCALE', 'en')`, `env('APP_LOCALE', 'id')`),
+    },
+  ],
+  PHP,
+);
+
+// ---------- 10. Email (dan NIK) wajib diisi ----------
+patch(
+  'app/Actions/MasterData/KaryawanAction.php',
+  [
+    {
+      name: 'email buat',
+      done: (s) => s.includes(`'email' => 'required|email|unique:users,email',`),
+      apply: (s) => replaceOnce(s, `'email' => 'nullable|email|unique:users,email',`, `'email' => 'required|email|unique:users,email',`),
+    },
+    {
+      name: 'email ubah',
+      done: (s) => s.includes(`'email' => 'required|email|unique:users,email,' . $user->id,`),
+      apply: (s) =>
+        replaceOnce(s, `'email' => 'nullable|email|unique:users,email,' . $user->id,`, `'email' => 'required|email|unique:users,email,' . $user->id,`),
+    },
+    {
+      name: 'nik buat',
+      done: (s) => s.includes(`'nik' => 'required|string|unique:users,nik',`),
+      apply: (s) => replaceOnce(s, `'nik' => 'nullable|string|unique:users,nik',`, `'nik' => 'required|string|unique:users,nik',`),
+    },
+    {
+      name: 'nik ubah',
+      done: (s) => s.includes(`'nik' => 'required|string|unique:users,nik,' . $user->id,`),
+      apply: (s) =>
+        replaceOnce(s, `'nik' => 'nullable|string|unique:users,nik,' . $user->id,`, `'nik' => 'required|string|unique:users,nik,' . $user->id,`),
+    },
+    {
+      name: 'redaksi',
+      done: (s) => !WAJIB_RE().test(s),
+      apply: (s) => rewriteWajib(s),
+    },
+  ],
+  PHP,
+);
+
+patch(
+  'app/Actions/Profile/UpdateProfile.php',
+  [
+    {
+      name: 'email wajib',
+      done: (s) => s.includes(`'email' => 'required|email|unique:users,email,' . $user->id,`),
+      apply: (s) =>
+        replaceOnce(s, `'email' => 'nullable|email|unique:users,email,' . $user->id,`, `'email' => 'required|email|unique:users,email,' . $user->id,`),
+    },
+  ],
+  PHP,
+);
+
+// Pesan lama "Kolom nama wajib diisi." dihapus -> semua pakai lang/id/validation.php ("Nama tidak boleh kosong!").
+for (const f of ['StorePerusahaanRequest', 'UpdatePerusahaanRequest', 'StoreCabangRequest', 'UpdateCabangRequest']) {
+  patch(
+    `app/Http/Requests/MasterData/${f}.php`,
+    [
+      {
+        name: 'hapus pesan required lama',
+        done: (s) => !/^[ \t]*'(nama|alamat|telepon|link)\.required' => '[^'\n]*',\n/m.test(s),
+        apply: (s) => s.replace(/^[ \t]*'(nama|alamat|telepon|link)\.required' => '[^'\n]*',\n/gm, ''),
+      },
+    ],
+    PHP,
+  );
+}
+
+// ---------- 11. Frontend: email wajib + pesan seragam ----------
+// "Xxx wajib diisi." -> "Xxx tidak boleh kosong!" (kalimat yang berdiri sendiri; "kolom yang wajib diisi" dibiarkan)
+function WAJIB_RE() {
+  return /(['"`])([^'"`\n]*?) wajib diisi\.\1/;
+}
+function rewriteWajib(src) {
+  return src.replace(new RegExp(WAJIB_RE().source, 'g'), (m, q, text) =>
+    /kolom yang/i.test(text) ? m : `${q}${text} tidak boleh kosong!${q}`,
+  );
+}
+const rewriteStep = {
+  name: 'redaksi',
+  done: (s) => !new RegExp(WAJIB_RE().source, 'g').test(s.replace(/(['"`])[^'"`\n]*kolom yang[^'"`\n]*wajib diisi\.\1/g, '')),
+  apply: (s) => rewriteWajib(s),
+};
+
+patch('features/karyawan/modals/KaryawanFormModal.tsx', [
+  {
+    name: 'cek email',
+    done: (s) => s.includes('Email tidak boleh kosong!'),
+    apply: (s) =>
+      replaceOnce(
+        s,
+        `if (!data.role_id) clientErrors.role_id = 'Role wajib dipilih.';`,
+        `if (!data.role_id) clientErrors.role_id = 'Role wajib dipilih.';\n    if (!data.email.trim()) clientErrors.email = 'Email tidak boleh kosong!';`,
+      ),
+  },
+  {
+    name: 'tanda wajib',
+    done: (s) => s.includes('<Field label="Alamat Email" error={errors.email} required>'),
+    apply: (s) => replaceOnce(s, `<Field label="Alamat Email" error={errors.email}>`, `<Field label="Alamat Email" error={errors.email} required>`),
+  },
+  {
+    name: 'toast pesan server',
+    done: (s) => s.includes('Object.values(errs)[0]'),
+    apply: (s) =>
+      replaceOnce(
+        s,
+        `toast.error(errs.status || 'Ada data yang belum sesuai dengan format server.');`,
+        `toast.error(errs.status || String(Object.values(errs)[0] || 'Ada data yang belum sesuai dengan format server.'));`,
+      ),
+  },
+  rewriteStep,
+]);
+
+patch('pages/Settings/Index.tsx', [
+  {
+    name: 'cek email',
+    done: (s) => s.includes('Email tidak boleh kosong!'),
+    apply: (s) =>
+      replaceOnce(
+        s,
+        `toast.error('Nama tidak boleh kosong.');\n      return;\n    }\n`,
+        `toast.error('Nama tidak boleh kosong.');\n      return;\n    }\n    if (!profile.data.email.trim()) {\n      toast.error('Email tidak boleh kosong!');\n      return;\n    }\n`,
+      ),
+  },
+  rewriteStep,
+]);
+
+for (const f of [
+  'features/karyawan/modals/KaryawanPasswordModal.tsx',
+  'features/master-data/supplier/SupplierTab.tsx',
+  'features/master-data/kategori/KategoriTab.tsx',
+  'features/master-data/cabang/CabangTab.tsx',
+  'features/master-data/departemen/DepartemenTab.tsx',
+  'features/master-data/perusahaan/PerusahaanTab.tsx',
+  'features/inventory/form/InventoryFormModal.tsx',
+  'features/inventory/aksi/LaporKerusakanModal.tsx',
+]) {
+  patch(f, [rewriteStep]);
+}
 
 // ---------- laporan ----------
 const icon = { DIBUAT: '+', PATCHED: '~', PARTIAL: '!', GAGAL: 'x', SKIP: '-', SUDAH: '=' };

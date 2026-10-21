@@ -141,7 +141,7 @@ export default function TabSupplier() {
 
   const handleSubmit = async () => {
     if (!formNama.trim()) {
-      setFormError('Nama supplier wajib diisi.');
+      setFormError('Nama supplier tidak boleh kosong!');
       return;
     }
     setSubmitting(true);

@@ -61,6 +61,10 @@ export default function SettingsIndex() {
       toast.error('Nama tidak boleh kosong.');
       return;
     }
+    if (!profile.data.email.trim()) {
+      toast.error('Email tidak boleh kosong!');
+      return;
+    }
 
     // Email/HP kosong tidak dikirim (sama seperti versi axios): dikirim '' akan jadi null di server.
     profile.transform((d) => ({
@@ -79,7 +83,7 @@ export default function SettingsIndex() {
 
   const handlePasswordSubmit = () => {
     if (!password.data.current_password.trim()) {
-      toast.error('Password saat ini wajib diisi.');
+      toast.error('Password saat ini tidak boleh kosong!');
       return;
     }
     if (password.data.password !== password.data.password_confirmation) {

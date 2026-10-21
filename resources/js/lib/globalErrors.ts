@@ -51,4 +51,10 @@ export function installGlobalErrorHandlers(): void {
     if (suppressed > 0) return;
     toast.error('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', { id: 'network-error' });
   });
+
+  // Error dari server yang bukan milik field tertentu (kunci "server", lihat bootstrap/app.php).
+  router.on('error', (event) => {
+    const msg = (event.detail.errors as Record<string, string>).server;
+    if (msg) toast.error(msg, { id: 'server-error' });
+  });
 }

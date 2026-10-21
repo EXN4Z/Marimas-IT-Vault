@@ -25,8 +25,6 @@ class StoreCabangRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'nama.required' => 'Kolom nama wajib diisi.',
-            'alamat.required' => 'Kolom alamat wajib diisi.',
             'alamat.unique' => 'Alamat ini sudah terdaftar di cabang lain.',
             'link.unique'   => 'Link ini sudah digunakan oleh cabang lain.',
         ];

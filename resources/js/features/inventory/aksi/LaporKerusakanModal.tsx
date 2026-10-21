@@ -24,7 +24,7 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
   const handleSubmit = () => {
     const newErrors: { jenis_kerusakan?: string; keluhan?: string; foto?: string } = {};
     if (!jenisKerusakan.trim()) newErrors.jenis_kerusakan = 'Jenis kerusakan wajib dipilih.';
-    if (!keluhan.trim()) newErrors.keluhan = 'Keluhan / kronologi kerusakan wajib diisi.';
+    if (!keluhan.trim()) newErrors.keluhan = 'Keluhan / kronologi kerusakan tidak boleh kosong!';
     if (fotoKerusakan.length === 0) newErrors.foto = 'Unggah minimal 1 foto bukti kerusakan.';
 
     if (Object.keys(newErrors).length > 0) {

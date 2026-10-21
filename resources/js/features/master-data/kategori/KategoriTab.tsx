@@ -82,7 +82,7 @@ export default function TabKategori() {
 
   const handleSubmit = async () => {
     if (!formNama.trim()) {
-      setFormError('Nama kategori wajib diisi.');
+      setFormError('Nama kategori tidak boleh kosong!');
       return;
     }
     setSubmitting(true);

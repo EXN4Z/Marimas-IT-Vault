@@ -131,7 +131,7 @@ export default function TabDepartemen() {
 
   const handleSubmit = async () => {
     if (!formNama.trim()) {
-      setFormError('Nama departemen wajib diisi.');
+      setFormError('Nama departemen tidak boleh kosong!');
       return;
     }
     setSubmitting(true);

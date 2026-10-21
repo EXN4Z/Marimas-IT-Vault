@@ -23,11 +23,11 @@ class KaryawanAction
     {
         return [
             'name' => 'required|string|max:255',
-            'email' => 'nullable|email|unique:users,email',
+            'email' => 'required|email|unique:users,email',
             'phone' => 'nullable|string|unique:users,phone',
             'password' => 'required|string',
             'role_id' => 'required|integer|exists:roles,id',
-            'nik' => 'nullable|string|unique:users,nik',
+            'nik' => 'required|string|unique:users,nik',
             'departemen_id' => 'nullable|exists:departemen,id',
             'lokasi_kantor_id' => 'nullable|exists:lokasi_kantor,id',
             'tanggal_masuk' => 'nullable|date',
@@ -40,10 +40,10 @@ class KaryawanAction
     {
         return [
             'name' => 'required|string|max:255',
-            'email' => 'nullable|email|unique:users,email,' . $user->id,
+            'email' => 'required|email|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|unique:users,phone,' . $user->id,
             'role_id' => 'required|integer|exists:roles,id',
-            'nik' => 'nullable|string|unique:users,nik,' . $user->id,
+            'nik' => 'required|string|unique:users,nik,' . $user->id,
             'departemen_id' => 'nullable|exists:departemen,id',
             'perusahaan_id' => 'nullable|exists:perusahaan,id',
             'lokasi_kantor_id' => 'nullable|exists:lokasi_kantor,id',
@@ -61,7 +61,7 @@ class KaryawanAction
         }
 
         if (empty($validated['nik'])) {
-            throw ValidationException::withMessages(['nik' => 'NIK karyawan wajib diisi.']);
+            throw ValidationException::withMessages(['nik' => 'NIK karyawan tidak boleh kosong!']);
         }
         if (User::where('nik', $validated['nik'])->exists()) {
             throw ValidationException::withMessages(['nik' => 'NIK sudah digunakan.']);
@@ -91,7 +91,7 @@ class KaryawanAction
         }
 
         if (empty($validated['nik'])) {
-            throw ValidationException::withMessages(['nik' => 'NIK karyawan wajib diisi.']);
+            throw ValidationException::withMessages(['nik' => 'NIK karyawan tidak boleh kosong!']);
         }
 
         // Nonaktifkan akun cuma boleh kalau user gak lagi punya pinjaman

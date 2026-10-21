@@ -25,8 +25,6 @@ class UpdateCabangRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'nama.required' => 'Kolom nama wajib diisi.',
-            'alamat.required' => 'Kolom alamat wajib diisi.',
         ];
     }
 }

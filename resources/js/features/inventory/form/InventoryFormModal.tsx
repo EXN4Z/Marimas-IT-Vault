@@ -317,7 +317,7 @@ export default function InventoryFormModal({
   // ================= Validasi & submit =================
   function validate(): boolean {
     const next: Record<string, string> = {};
-    if (!form.nama?.trim()) next.nama = 'Nama inventory wajib diisi.';
+    if (!form.nama?.trim()) next.nama = 'Nama inventory tidak boleh kosong!';
     if (!inventory && form.kategori_id == null) next.kategori_id = 'Kategori barang wajib dipilih.';
     const hasErrors = Object.keys(next).length > 0;
     if (hasErrors) {

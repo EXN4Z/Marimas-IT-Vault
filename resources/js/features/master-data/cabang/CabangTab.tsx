@@ -163,8 +163,8 @@ export default function TabCabang() {
 
   const handleSubmit = async () => {
     const clientErrors: Record<string, string> = {};
-    if (!formNama.trim()) clientErrors.nama = 'Nama cabang wajib diisi.';
-    if (!formAlamat.trim()) clientErrors.alamat = 'Alamat cabang wajib diisi.';
+    if (!formNama.trim()) clientErrors.nama = 'Nama cabang tidak boleh kosong!';
+    if (!formAlamat.trim()) clientErrors.alamat = 'Alamat cabang tidak boleh kosong!';
     if (Object.keys(clientErrors).length > 0) {
       setFormErrors(clientErrors);
       toast.error('Mohon lengkapi semua kolom yang wajib diisi.');

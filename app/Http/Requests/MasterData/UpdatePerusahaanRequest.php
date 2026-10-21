@@ -25,10 +25,6 @@ class UpdatePerusahaanRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'nama.required' => 'Kolom nama wajib diisi.',
-            'alamat.required' => 'Kolom alamat wajib diisi.',
-            'telepon.required' => 'Kolom nomor telepon wajib diisi.',
-            'link.required' => 'Kolom link wajib diisi.',
         ];
     }
 }
