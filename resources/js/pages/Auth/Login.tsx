@@ -11,6 +11,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import toast from 'react-hot-toast';
 
 export default function Login() {
   const [loginId, setLoginId] = useState('');
@@ -40,7 +41,11 @@ export default function Login() {
       { login: loginId, password },
       {
         onStart: () => setLoading(true),
-        onError: (errors) => setError(errors.login || errors.password || 'Email/No HP/Nama atau password salah'),
+        onError: (errors) => {
+          const msg = errors.login || errors.password || 'Email/No HP/Nama atau password salah';
+          setError(msg);
+          toast.error(msg, { id: 'login-error' });
+        },
         onFinish: () => setLoading(false),
       },
     );

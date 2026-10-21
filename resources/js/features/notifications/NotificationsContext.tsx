@@ -3,6 +3,7 @@ import { router } from '@inertiajs/react';
 import { useAuth } from '../../context/AuthContext';
 import { HttpError, requestJson } from '../../lib/http';
 import type { AppNotification, NotificationResponse } from './types';
+import toast from 'react-hot-toast';
 
 // [F9-INERTIA] Satu sumber data notifikasi untuk bell (NotificationDropDown) dan kartu Notifikasi di Dashboard,
 // menggantikan react-query ['notifications'].
@@ -93,6 +94,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       try {
         await requestJson('POST', '/notifications/' + encodeURIComponent(id) + '/read');
       } catch {
+        toast.error('Gagal memperbarui notifikasi. Coba lagi.', { id: 'notif-action' });
         void refresh(); // gagal -> sinkron ulang dari server
       }
     },
@@ -108,6 +110,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     try {
       await requestJson('POST', '/notifications/read-all');
     } catch {
+      toast.error('Gagal memperbarui notifikasi. Coba lagi.', { id: 'notif-action' });
       void refresh();
     }
   }, [mutate, refresh]);
@@ -125,6 +128,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       try {
         await requestJson('DELETE', '/notifications/' + encodeURIComponent(id));
       } catch {
+        toast.error('Gagal memperbarui notifikasi. Coba lagi.', { id: 'notif-action' });
         void refresh();
       }
     },

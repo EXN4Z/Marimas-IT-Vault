@@ -8,10 +8,13 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 import AppLayout from './layouts/AppLayout';
+import { installGlobalErrorHandlers } from './lib/globalErrors';
 
 // Halaman Inertia ditaruh di resources/js/pages/<Menu>/<Halaman>.tsx
 // dan dipanggil dari Laravel: Inertia::render('<Menu>/<Halaman>')
 const pages = import.meta.glob<any>('./pages/**/*.tsx');
+
+installGlobalErrorHandlers();
 
 createInertiaApp({
   resolve: async (name) => {

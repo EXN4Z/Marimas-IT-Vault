@@ -344,6 +344,10 @@ export default function InventoryFormModal({
       preserveState: true,
       // Sukses -> toast dari flash server (FlashToaster).
       onSuccess: () => onSaved(),
+      // Pesan error validasi pertama dari server ikut tampil sebagai toast (selain di field).
+      onError: (errs: Record<string, string>) => {
+        toast.error(Object.values(errs)[0] || 'Gagal menyimpan inventory. Periksa kembali isian Anda.');
+      },
     });
   }
 

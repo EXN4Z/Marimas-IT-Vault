@@ -63,6 +63,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
         setResults(Array.isArray(data) ? data : []);
       } catch {
         setResults([]);
+        toast.error('Gagal mencari karyawan. Coba lagi.', { id: 'cari-karyawan' });
       } finally {
         setSearching(false);
       }

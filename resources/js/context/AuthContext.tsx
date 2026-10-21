@@ -3,6 +3,7 @@ import { router } from '@inertiajs/react';
 import type { User } from '../types/user';
 import { disconnectEcho } from '../lib/echo';
 import { unsubscribeThisDevice } from '../features/notifications/pushNotifications';
+import { suppressGlobalErrorToast } from '../lib/globalErrors';
 
 interface AuthContextType {
   user: User | null;
@@ -28,12 +29,14 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode; i
       // 'httpException' (Inertia v3) = respons non-Inertia (mis. 419 karena sesi sudah habis): jangan tampilkan modal error,
       // tujuannya sama saja (balik ke /login).
       const stopInvalid = router.on('httpException', (event) => event.preventDefault());
+      const restoreToast = suppressGlobalErrorToast();
       router.post(
         '/logout',
         {},
         {
           onFinish: () => {
             stopInvalid();
+            restoreToast();
             resolve();
           },
         },
