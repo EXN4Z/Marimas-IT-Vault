@@ -1,8 +1,0 @@
-{
-  "created": [],
-  "modified": [
-    "routes/web.php",
-    "resources/js/components/masterData/inventory/InventorySerahTerimaModal.tsx"
-  ],
-  "deleted": []
-}

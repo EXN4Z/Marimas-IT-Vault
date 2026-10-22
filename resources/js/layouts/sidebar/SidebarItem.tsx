@@ -1,5 +1,6 @@
 import { ChevronDown } from 'lucide-react';
 import type { NavItem, NavChild } from '../navigation';
+import { matchesPrefix } from '../navigation';
 
 interface SidebarItemProps {
   item: NavItem;
@@ -80,7 +81,7 @@ export default function SidebarItem({
 
   // ITEM BIASA (tanpa dropdown)
   const isActive = item.matchPrefix
-    ? pathname.startsWith(item.matchPrefix as string)
+    ? matchesPrefix(pathname, item.matchPrefix)
     : item.path === pathname;
   const isDisabled = !item.path;
 

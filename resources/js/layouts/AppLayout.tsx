@@ -40,16 +40,30 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [dropdownOverrides, setDropdownOverrides] = useState<Record<string, boolean>>({});
   const contentScrollRef = useRef<HTMLDivElement>(null);
 
-  const visibleNavItems = interleaveByChildren(
-    navItems.filter((item) => {
-      if (item.hidden) return false;
-      if (!item.restricted) return true;
-      if (item.label === 'Master Data') {
-        return INVENTORY_ROLES.includes(user?.role ?? '');
-      }
-      return user?.role === 'admin';
-    })
-  );
+  // [LAYOUT-LAMA] Urutan sidebar sama seperti versi lama: menu utama di-interleave
+  // (Dashboard, Transaksi, Laporan, Master Data), lalu Audit Log (admin) dan Settings SELALU paling bawah.
+  // (Sebelumnya semua item ikut di-interleave sehingga Audit Log & Settings terselip di tengah.)
+  const canSee = (item: NavItem): boolean => {
+    if (item.hidden) return false;
+    if (!item.restricted) return true;
+    if (item.label === 'Master Data') {
+      return INVENTORY_ROLES.includes(user?.role ?? '');
+    }
+    return user?.role === 'admin';
+  };
+  // Dropdown yang semua child-nya terfilter role tidak ditampilkan (biar tidak ada menu kosong).
+  const hasVisibleContent = (item: NavItem): boolean =>
+    !item.children || item.children.some((child) => !child.roles || child.roles.includes(user?.role ?? ''));
+
+  const auditLogItem = navItems.find((i) => i.label === 'Audit Log');
+  const settingsItem = navItems.find((i) => i.label === 'Settings');
+  const mainNavItems = navItems.filter((i) => i.label !== 'Audit Log' && i.label !== 'Settings');
+
+  const visibleNavItems: NavItem[] = [
+    ...interleaveByChildren(mainNavItems).filter(canSee).filter(hasVisibleContent),
+    ...(auditLogItem && canSee(auditLogItem) ? [auditLogItem] : []),
+    ...(settingsItem && canSee(settingsItem) ? [settingsItem] : []),
+  ];
 
   const isParentActive = (item: NavItem): boolean => {
     if (!item.children) return false;
@@ -119,15 +133,31 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     setSidebarOpen(false);
   };
 
+  // [LAYOUT-LAMA] Judul halaman di top bar (diturunkan dari menu yang cocok dengan URL sekarang).
+  const derivedTitle = (() => {
+    for (const item of visibleNavItems) {
+      if (item.children) {
+        const kids = item.children.filter((c) => !c.roles || c.roles.includes(user?.role ?? ''));
+        const match = kids.find((c, idx) => isChildActive(c, idx === 0));
+        if (match) return match.label;
+        if (matchesPrefix(pathname, item.matchPrefix)) return item.label;
+        continue;
+      }
+      if (matchesPrefix(pathname, item.matchPrefix)) return item.label;
+      if (item.path && item.path === pathname) return item.label;
+    }
+    return '';
+  })();
+
   const handleContentScroll = () => {};
 
   return (
     <NotificationsProvider>
-      <div className="flex h-screen bg-slate-50 dark:bg-zinc-950">
+      <div className="h-screen bg-white flex overflow-hidden">
         {sidebarOpen && (
           <div
             onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 bg-black/30 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/40 z-40 lg:hidden"
           />
         )}
 
@@ -145,21 +175,25 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           handleLogout={handleLogout}
         />
 
-        <div className="flex-1 flex flex-col min-w-0">
+        {/* [LAYOUT-LAMA] Kolom kanan: top bar sticky + panel konten melayang (bg-zinc-100 rounded-3xl) seperti versi lama */}
+        <div
+          ref={contentScrollRef}
+          onScroll={handleContentScroll}
+          className="flex-1 min-w-0 h-screen overflow-y-auto flex flex-col"
+        >
           <Header
+            title={derivedTitle}
             onMenuClick={() => setSidebarOpen(true)}
-            navItems={navItems}
+            navItems={visibleNavItems}
             onSearchResultClick={handleSearchResultClick}
           />
 
-          <main
-            ref={contentScrollRef}
-            onScroll={handleContentScroll}
-            className="flex-1 overflow-y-auto p-4 sm:p-6"
-          >
-            <AuthSync />
-            <FlashToaster />
-            {children}
+          <main className="flex-1 p-4 md:p-8">
+            <div className="bg-zinc-100 rounded-3xl min-h-[calc(100vh-6.5rem)] p-4 md:p-8">
+              <AuthSync />
+              <FlashToaster />
+              {children}
+            </div>
           </main>
         </div>
       </div>

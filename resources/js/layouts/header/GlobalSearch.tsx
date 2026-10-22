@@ -1,12 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { Search } from 'lucide-react';
-import type { NavItem, NavChild } from '../navigation';
+import { useAuth } from '../../context/AuthContext';
+import type { NavItem } from '../navigation';
 
+// [LAYOUT-LAMA] Kotak search seperti frontend lama. navItems = menu yang sudah difilter role (visibleNavItems),
+// dan child dropdown ikut difilter per-role, jadi user tidak melihat halaman yang tidak bisa dia buka.
 interface SearchEntry {
   label: string;
   parentLabel?: string;
   path: string;
-  icon: any;
+  icon: NavItem['icon'];
   key: string;
 }
 
@@ -16,32 +19,25 @@ interface GlobalSearchProps {
 }
 
 export default function GlobalSearch({ navItems, onResultClick }: GlobalSearchProps) {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const searchBoxRef = useRef<HTMLDivElement>(null);
 
-  const searchEntries: SearchEntry[] = navItems.flatMap((parent) => {
-    const entries: SearchEntry[] = [];
-    if (parent.path) {
-      entries.push({
-        label: parent.label,
-        path: parent.path,
-        icon: parent.icon,
-        key: parent.label,
-      });
-    }
-    if (parent.children) {
-      parent.children.forEach((child) => {
-        entries.push({
+  const searchEntries: SearchEntry[] = navItems.flatMap((item) => {
+    if (item.children) {
+      return item.children
+        .filter((child) => !child.roles || child.roles.includes(user?.role ?? ''))
+        .map((child) => ({
+          key: `${item.label}-${child.label}`,
           label: child.label,
-          parentLabel: parent.label,
-          path: child.path,
+          parentLabel: item.label,
           icon: child.icon,
-          key: `${parent.label}-${child.label}`,
-        });
-      });
+          path: child.path,
+        }));
     }
-    return entries;
+    if (!item.path) return [];
+    return [{ key: item.label, label: item.label, icon: item.icon, path: item.path }];
   });
 
   const filteredSearchEntries =
@@ -51,10 +47,11 @@ export default function GlobalSearch({ navItems, onResultClick }: GlobalSearchPr
           const q = searchQuery.toLowerCase();
           return (
             entry.label.toLowerCase().includes(q) ||
-            (entry.parentLabel && entry.parentLabel.toLowerCase().includes(q))
+            (entry.parentLabel ? entry.parentLabel.toLowerCase().includes(q) : false)
           );
         });
 
+  // klik di luar kotak search (input + dropdown) menutup dropdown-nya
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
@@ -72,26 +69,24 @@ export default function GlobalSearch({ navItems, onResultClick }: GlobalSearchPr
   };
 
   return (
-    <div ref={searchBoxRef} className="relative flex-1 max-w-md">
-      <div className="relative">
-        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setSearchOpen(true);
-          }}
-          onFocus={() => setSearchOpen(true)}
-          placeholder="Cari halaman..."
-          className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-zinc-600 transition"
-        />
-      </div>
+    <div ref={searchBoxRef} className="flex items-center flex-1 max-w-md mx-6 relative">
+      <Search className="absolute left-3 w-4 h-4 text-slate-400" />
+      <input
+        value={searchQuery}
+        onChange={(e) => {
+          setSearchQuery(e.target.value);
+          setSearchOpen(true);
+        }}
+        onClick={() => setSearchOpen(true)}
+        onFocus={() => setSearchOpen(true)}
+        placeholder="Cari sesuatu..."
+        className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-[#202024] border border-slate-200 dark:border-[#383842] rounded-lg text-sm transition focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-zinc-600 dark:focus:border-[#5c5c68]"
+      />
 
       {searchOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg shadow-lg max-h-80 overflow-y-auto z-40">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-lg max-h-80 overflow-y-auto z-40">
           {filteredSearchEntries.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-slate-400 dark:text-zinc-500">Halaman tidak ditemukan.</p>
+            <p className="px-4 py-3 text-sm text-slate-400">Halaman tidak ditemukan.</p>
           ) : (
             filteredSearchEntries.map((entry) => {
               const EntryIcon = entry.icon;
@@ -99,13 +94,11 @@ export default function GlobalSearch({ navItems, onResultClick }: GlobalSearchPr
                 <button
                   key={entry.key}
                   onClick={() => handleResultClick(entry.path)}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-600 hover:bg-slate-100 transition"
                 >
-                  <EntryIcon size={16} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                  <EntryIcon size={16} className="text-slate-400 shrink-0" />
                   <span className="flex-1 truncate">
-                    {entry.parentLabel && (
-                      <span className="text-slate-400 dark:text-zinc-500">{entry.parentLabel} / </span>
-                    )}
+                    {entry.parentLabel && <span className="text-slate-400">{entry.parentLabel} / </span>}
                     {entry.label}
                   </span>
                 </button>
