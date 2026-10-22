@@ -8,6 +8,7 @@ import type { Flash } from '../../../types/inertia';
 import { namaPemakai } from '../inventoryHelpers';
 import InventoryFotoUpload from '../form/InventoryFotoUpload';
 import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../../../components/form/FormControls';
+import { toastFormErrors } from '../../../lib/toastErrors';
 
 interface InventoryPengembalianModalProps {
   inventory: Inventory;
@@ -44,7 +45,7 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      toast.error('Mohon lengkapi syarat pengembalian.');
+      toastFormErrors(newErrors);
       return;
     }
 

@@ -10,6 +10,7 @@ import ConfirmDeleteModal from '../../../components/modal/ConfirmDeleteModal';
 import Pagination from '../../../components/table/Pagination';
 import SearchInput from '../../../components/form/SearchInput';
 import { downloadStyledExcel } from '../../../lib/export/excelReport';
+import { toastFormErrors } from '../../../lib/toastErrors';
 
 // pagination client-side -- data perusahaan dimuat penuh sekali lewat
 // props.perusahaan dari server, tinggal dipotong per halaman di sini (sama pola yang
@@ -174,7 +175,7 @@ export default function TabPerusahaan() {
     if (!formLink.trim()) clientErrors.link = 'Link lokasi Google Maps tidak boleh kosong!';
     if (Object.keys(clientErrors).length > 0) {
       setFormErrors(clientErrors);
-      toast.error('Mohon lengkapi semua kolom yang wajib diisi.');
+      toastFormErrors(clientErrors);
       return;
     }
 

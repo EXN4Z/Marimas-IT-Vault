@@ -10,6 +10,7 @@ import type { InventoryPemakai, KaryawanUser } from '../types/inventoryPemakai';
 import type { Flash } from '../../../types/inertia';
 import InventoryFotoUpload from '../form/InventoryFotoUpload';
 import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../../../components/form/FormControls';
+import { toastFormErrors } from '../../../lib/toastErrors';
 
 interface InventorySerahTerimaModalProps {
   inventory: Inventory; // inventory utama yang mau diserahkan (mis. laptop) -- diklik dari tabel/detail
@@ -98,7 +99,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      toast.error('Mohon lengkapi seluruh syarat serah-terima.');
+      toastFormErrors(newErrors);
       return;
     }
 

@@ -41,7 +41,7 @@ export default function Sidebar({
     >
       <div className="flex items-center justify-between px-6 h-18 shrink-0">
         <div className="flex p-1 items-center mx-auto gap-2">
-          <img src={`/logo.png`} alt="Marimas IT Vault" className="h-18 w-auto p-1" />
+          <img src={`/logo.png`} alt="Marimas IT Vault" className="h-18 w-auto p-1 relative top-2" />
         </div>
         <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400">
           <X size={20} />

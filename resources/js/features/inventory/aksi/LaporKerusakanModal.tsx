@@ -6,6 +6,7 @@ import type { Inventory } from '../types/inventory';
 import InventoryFotoUpload from '../form/InventoryFotoUpload';
 import { JENIS_KERUSAKAN_OPTIONS } from '../inventoryHelpers';
 import { ButtonCancel, ButtonSubmit, Field, SelectField, Textarea } from '../../../components/form/FormControls';
+import { toastFormErrors } from '../../../lib/toastErrors';
 
 interface Props {
   inventory: Inventory;
@@ -29,7 +30,7 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      toast.error('Mohon lengkapi seluruh data laporan kerusakan.');
+      toastFormErrors(newErrors);
       return;
     }
 

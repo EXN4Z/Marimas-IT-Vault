@@ -8,6 +8,7 @@ import SearchableSelect from '../../../components/form/SearchableSelect';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
 import KaryawanPasswordModal from './KaryawanPasswordModal';
 import type { KaryawanOpsi, KaryawanRow } from '../types';
+import { toastFormErrors } from '../../../lib/toastErrors';
 
 interface Props {
   /** null = mode Tambah, baris user = mode Edit. */
@@ -101,7 +102,7 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
 
     if (Object.keys(clientErrors).length > 0) {
       setError(clientErrors);
-      toast.error('Mohon lengkapi kolom yang bertanda bintang (*).');
+      toastFormErrors(clientErrors);
       return;
     }
 

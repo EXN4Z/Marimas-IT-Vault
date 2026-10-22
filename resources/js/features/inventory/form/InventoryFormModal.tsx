@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import type { InventoryStatus } from '../types/inventory';
 import type { InventoryIndukOpsi, InventoryOpsi, InventoryRow } from '../types/inventory';
 import { ButtonCancel, ButtonSubmit, Field, SelectField, inputClass, inputErrorClass } from '../../../components/form/FormControls';
+import { toastFormErrors } from '../../../lib/toastErrors';
 
 const KETERANGAN_MAX = 255;
 const MAX_FOTO_MB = 4;
@@ -322,7 +323,7 @@ export default function InventoryFormModal({
     const hasErrors = Object.keys(next).length > 0;
     if (hasErrors) {
       formHook.setError(next as Partial<Record<keyof FormState, string>>);
-      toast.error('Mohon lengkapi kolom yang bertanda bintang (*).');
+      toastFormErrors(next);
     }
     return !hasErrors;
   }

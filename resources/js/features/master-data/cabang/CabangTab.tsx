@@ -10,6 +10,7 @@ import ConfirmDeleteModal from '../../../components/modal/ConfirmDeleteModal';
 import Pagination from '../../../components/table/Pagination';
 import SearchInput from '../../../components/form/SearchInput';
 import { downloadStyledExcel } from '../../../lib/export/excelReport';
+import { toastFormErrors } from '../../../lib/toastErrors';
 
 // pagination client-side -- data cabang dimuat penuh sekali lewat
 // props.cabang dari server, tinggal dipotong per halaman di sini (sama pola yang
@@ -167,7 +168,7 @@ export default function TabCabang() {
     if (!formAlamat.trim()) clientErrors.alamat = 'Alamat cabang tidak boleh kosong!';
     if (Object.keys(clientErrors).length > 0) {
       setFormErrors(clientErrors);
-      toast.error('Mohon lengkapi semua kolom yang wajib diisi.');
+      toastFormErrors(clientErrors);
       return;
     }
 
