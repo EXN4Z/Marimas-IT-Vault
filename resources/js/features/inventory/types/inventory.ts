@@ -101,6 +101,8 @@ export interface InventoryList {
   last_page: number;
   per_page: number;
   ada_induk: boolean;
+  /** Jumlah inventory per status di populasi filter kategori aktif (untuk bar ringkasan). */
+  status_counts: Record<InventoryStatus, number>;
   filters: {
     search: string;
     status: InventoryStatus | '';

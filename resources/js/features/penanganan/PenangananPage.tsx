@@ -268,7 +268,7 @@ export default function PenangananInventory() {
 
   const tabs: { key: PenangananTab; label: string }[] = (Object.keys(TAB_LABEL) as PenangananTab[]).map((key) => ({
     key,
-    label: `${TAB_LABEL[key]} (${counts[key]})`,
+    label: TAB_LABEL[key],
   }));
 
   // Laporan aktif (menunggu / dikerjakan) yang sudah lewat batas hari -- dihitung dari baris yang tampil di papan.
@@ -293,7 +293,7 @@ export default function PenangananInventory() {
       </p>
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex-1 min-w-[200px]">{view === 'papan' && <PenangananProgressBar counts={counts} />}</div>
+        <div className="flex-1 min-w-[200px]"><PenangananProgressBar counts={counts} /></div>
         <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden bg-white" role="group" aria-label="Tampilan">
           {(['papan', 'tabel'] as const).map((v) => (
             <button

@@ -23,15 +23,18 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, mem
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Kandidat induk = item berdiri sendiri, KECUALI item yang sedang dipasang ini (tidak boleh menempel ke dirinya sendiri).
+  const kandidat = useMemo(() => indukOptions.filter((p) => p.id !== inventory.id), [indukOptions, inventory.id]);
+
   const filteredOptions = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return indukOptions;
-    return indukOptions.filter(
+    if (!q) return kandidat;
+    return kandidat.filter(
       (p) => p.kode_inventory.toLowerCase().includes(q) || (p.nama || '').toLowerCase().includes(q)
     );
-  }, [indukOptions, search]);
+  }, [kandidat, search]);
 
-  const selected = indukOptions.find((p) => p.id === parentId) || null;
+  const selected = kandidat.find((p) => p.id === parentId) || null;
 
   const handleSubmit = () => {
     if (!parentId) {

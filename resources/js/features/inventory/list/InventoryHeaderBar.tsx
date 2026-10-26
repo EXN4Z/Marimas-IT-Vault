@@ -64,7 +64,7 @@ export default function InventoryHeaderBar({ setExportOpen, exportLoading = fals
               setEditingInventory(null);
               setFormOpen(true);
             }}
-            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs"
+            className="flex items-center gap-2 bg-[#0b3a9a] text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-[#082c75] dark:bg-[#6c97f5] dark:text-[#0c1530] dark:hover:bg-[#8fb0ff] transition shadow-xs"
           >
             <Plus size={16} />
             Tambah Inventory

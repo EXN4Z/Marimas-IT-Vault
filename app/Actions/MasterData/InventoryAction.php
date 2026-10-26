@@ -132,6 +132,13 @@ class InventoryAction
             ? $validated['parent_id']
             : $parentIdLama;
 
+        // Item yang lagi dalam alur penanganan (sudah lapor kerusakan) statusnya ditentukan alur penanganan --
+        // pasang/lepas/edit induk lewat form Edit TIDAK boleh menimpanya (sama seperti lepasDariInduk()).
+        if ($inventory && in_array($inventory->status, ['menunggu_perbaikan', 'diperbaiki', 'rusak_berat'], true)) {
+            unset($validated['status']);
+            return;
+        }
+
         // Baru DIPASANG ke induk (attach) -> paksa 'dipakai'
         if ($parentIdBaru && $parentIdBaru != $parentIdLama) {
             $validated['status'] = 'dipakai';

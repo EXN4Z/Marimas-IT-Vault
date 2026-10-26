@@ -37,6 +37,23 @@ export const STATUS_STYLE: Record<InventoryStatus, string> = {
   dijual: 'bg-purple-50 text-purple-700',
 };
 
+// Warna status gaya Dashboard/Penanganan (terang | gelap). Literal penuh supaya terbaca Tailwind.
+export const STATUS_BAR_CLASS: Record<InventoryStatus, string> = {
+  tersedia: 'bg-[#0b3a9a] dark:bg-[#6c97f5]',
+  dipakai: 'bg-[#9fb3d6] dark:bg-[#46609a]',
+  menunggu_perbaikan: 'bg-[#5c7bc0] dark:bg-[#8fb0ff]',
+  diperbaiki: 'bg-[#101a33] dark:bg-[#eef1f8]',
+  rusak_berat: 'bg-[#b4390a] dark:bg-[#ff8a65]',
+  dijual: 'bg-[#c9d1e3] dark:bg-[#363d57]',
+};
+
+// Garis aksen kiri baris tabel untuk status dalam alur perbaikan.
+export const STATUS_AKSEN: Partial<Record<InventoryStatus, string>> = {
+  menunggu_perbaikan: 'shadow-[inset_3px_0_0_#5c7bc0] dark:shadow-[inset_3px_0_0_#8fb0ff]',
+  diperbaiki: 'shadow-[inset_3px_0_0_#101a33] dark:shadow-[inset_3px_0_0_#eef1f8]',
+  rusak_berat: 'shadow-[inset_3px_0_0_#b4390a] dark:shadow-[inset_3px_0_0_#ff8a65]',
+};
+
 // [F4-INERTIA] Urutan tampil (status lalu kode) dan pagination 10 per halaman sekarang dijalankan server
 // (InventoryWebController), jadi STATUS_PRIORITY & ASET_PER_PAGE tidak dipakai lagi di client.
 

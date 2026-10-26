@@ -38,14 +38,14 @@ export default function InventorySedangDipakai({ myBorrowedItems, openDetail, se
                 <>
                   <button
                     onClick={() => setPengembalianTarget({ inventory: a, pemakai: a.pemakai_saat_ini! })}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-[#0b3a9a] text-white hover:bg-[#082c75] dark:bg-[#6c97f5] dark:text-[#0c1530] dark:hover:bg-[#8fb0ff] transition"
                   >
                     <Undo2 size={13} />
                     Kembalikan
                   </button>
                   <button
                     onClick={() => setPerbaikanInventoryTarget(a)}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition"
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-[#b4390a]/10 text-[#b4390a] hover:bg-[#b4390a]/20 dark:text-[#ff8a65] transition"
                   >
                     <Wrench size={13} />
                     Lapor Kerusakan

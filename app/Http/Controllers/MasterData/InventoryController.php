@@ -48,6 +48,18 @@ class InventoryController extends Controller
 
         $total = (clone $query)->count();
         $lastPage = max(1, (int) ceil($total / self::PER_HALAMAN));
+
+        // Jumlah per status di populasi filter kategori aktif (BUKAN filter status/pencarian) -> bar ringkasan status.
+        $statusCounts = array_fill_keys(self::STATUS, 0);
+        $perStatus = self::populasi($request, $f['kategori'])->toBase()
+            ->selectRaw('inventory.status AS status, COUNT(*) AS n')
+            ->groupBy('inventory.status')
+            ->pluck('n', 'status');
+        foreach ($perStatus as $st => $n) {
+            if (array_key_exists($st, $statusCounts)) {
+                $statusCounts[$st] = (int) $n;
+            }
+        }
         // halaman di luar jangkauan (mis. habis hapus item terakhir di halaman terakhir) -> geser ke halaman terakhir
         $page = min(max(1, (int) $request->query('page', 1)), $lastPage);
 
@@ -63,6 +75,7 @@ class InventoryController extends Controller
             'per_page' => self::PER_HALAMAN,
             // Ada item induk (parent_id kosong) di populasi filter kategori aktif? Menentukan tab status "Dijual" tampil.
             'ada_induk' => $f['ada_induk'],
+            'status_counts' => $statusCounts,
             'filters' => [
                 'search' => $f['search'] ?? '',
                 'status' => $f['status'] ?? '',

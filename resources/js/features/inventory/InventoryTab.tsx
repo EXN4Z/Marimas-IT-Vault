@@ -20,6 +20,7 @@ import InventoryRowActions from './list/InventoryRowActions';
 import InventoryHeaderBar from './list/InventoryHeaderBar';
 import InventorySedangDipakai from './detail/InventorySedangDipakai';
 import InventoryStatusTabs from './list/InventoryStatusTabs';
+import InventoryStatusBar from './list/InventoryStatusBar';
 import InventoryFilterBar from './list/InventoryFilterBar';
 import InventoryTable from './list/InventoryTable';
 import InventoryJualConfirmModal from './aksi/JualConfirmModal';
@@ -451,6 +452,8 @@ export default function TabInventory() {
           setPerbaikanInventoryTarget={setPerbaikanInventoryTarget}
         />
       )}
+
+      {isAdmin && <InventoryStatusBar counts={list?.status_counts} />}
 
       {/* Filter status pakai tab nav (ScrollableTabBar). Cuma buat admin -- tabel non-admin selalu isinya
           inventory 'tersedia' aja. */}

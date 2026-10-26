@@ -5,7 +5,8 @@ import Tooltip from '../../../components/feedback/Tooltip';
 // [F4-INERTIA] Loading/pagination sekarang dari props server: tabel cuma merender halaman yang dikirim.
 import { namaPemakai } from '../inventoryHelpers';
 import type { Inventory } from '../types/inventory';
-import { STATUS_STYLE, STATUS_LABEL } from './helpers';
+import { STATUS_AKSEN } from './helpers';
+import InventoryStatusPill from './InventoryStatusPill';
 
 interface InventoryTableProps {
   pageInventory: Inventory[];
@@ -30,7 +31,7 @@ export default function InventoryTable({ pageInventory, renderAksi, expandedInve
         <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-middle text-xs text-slate-400 uppercase tracking-wide">
+              <tr className="border-b-2 border-slate-900 bg-slate-50 text-[11px] text-slate-500">
                 <th className="px-6 py-3 font-medium">Kode Inventory</th>
                 <th className="px-6 py-3 font-medium">Nama</th>
                 <th className="px-6 py-3 font-medium">Kategori</th>
@@ -46,7 +47,7 @@ export default function InventoryTable({ pageInventory, renderAksi, expandedInve
                 const isChild = a.parent_id !== null;
                 return (
                   <tr key={a.id} className="text-center border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                    <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{a.kode_inventory}</td>
+                    <td className={['px-6 py-3 font-medium text-slate-800 whitespace-nowrap', STATUS_AKSEN[a.status] ?? ''].join(' ')}>{a.kode_inventory}</td>
                     <td className="px-6 py-3 text-slate-600 max-w-[160px]">
                       <Tooltip content={a.nama || '-'}>
                         <p className="truncate">{a.nama || '-'}</p>
@@ -61,13 +62,13 @@ export default function InventoryTable({ pageInventory, renderAksi, expandedInve
                       )}
                     </td>
                     <td className="px-6 py-3 whitespace-nowrap">
-                      <StatusBadge colorClass={isChild ? 'bg-sky-50 text-sky-700' : 'bg-indigo-50 text-indigo-700'}>
+                      <StatusBadge colorClass={isChild ? 'border border-dashed border-slate-300 bg-slate-50 text-slate-600' : 'border border-slate-200 bg-slate-50 text-slate-700'}>
                         {a.kategori?.nama || '-'}
                       </StatusBadge>
                     </td>
                     <td className="px-6 py-3 text-slate-600 whitespace-nowrap">{a.jumlah ?? 1}</td>
                     <td className="px-6 py-3 whitespace-nowrap">
-                      <StatusBadge colorClass={STATUS_STYLE[a.status]}>{STATUS_LABEL[a.status]}</StatusBadge>
+                      <InventoryStatusPill status={a.status} />
                     </td>
                     <td className="px-6 py-3 text-slate-600 max-w-[160px]">
                       <Tooltip content={a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
@@ -116,10 +117,8 @@ export default function InventoryTable({ pageInventory, renderAksi, expandedInve
                       </p>
                     )}
                     <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
-                      <StatusBadge colorClass={STATUS_STYLE[a.status]} size="xs">
-                        {STATUS_LABEL[a.status]}
-                      </StatusBadge>
-                      <StatusBadge colorClass={isChild ? 'bg-sky-50 text-sky-700' : 'bg-indigo-50 text-indigo-700'} size="xs">
+                      <InventoryStatusPill status={a.status} small />
+                      <StatusBadge colorClass={isChild ? 'border border-dashed border-slate-300 bg-slate-50 text-slate-600' : 'border border-slate-200 bg-slate-50 text-slate-700'} size="xs">
                         {a.kategori?.nama || '-'}
                       </StatusBadge>
                     </div>
