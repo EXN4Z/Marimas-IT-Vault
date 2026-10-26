@@ -1,9 +1,12 @@
 [phases.setup]
 nixPkgs = ["...", "php83Extensions.bcmath", "php83Extensions.gd", "php83Extensions.zip", "php83Extensions.pdo_pgsql", "php83Extensions.pgsql"]
 
-# Build frontend langsung lewat npm (Node versi diatur lewat variable NIXPACKS_NODE_VERSION=22 di Railway).
+# Nixpacks (PHP) mengunci Node 18, sedangkan Vite 8 butuh Node >= 20.19 / 22.12.
+# Jadi Node 22 dipasang langsung di fase build, lalu dependency di-install ulang.
 [phases.build]
-cmds = ["npm run build"]
+cmds = [
+  "curl -fsSL https://nodejs.org/dist/v22.12.0/node-v22.12.0-linux-x64.tar.gz | tar -xz -C /opt && export PATH=/opt/node-v22.12.0-linux-x64/bin:$PATH && node -v && rm -rf node_modules && npm ci && npm run build"
+]
 
 [start]
 cmd = "php artisan config:clear && php artisan route:clear && php artisan view:clear && php artisan storage:link --force && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
