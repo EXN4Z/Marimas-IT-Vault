@@ -54,6 +54,8 @@ export interface PenangananList {
   last_page: number;
   per_page: number;
   counts: Record<PenangananTab, number>;
+  // Papan 4 kolom (kanban): total + baris teratas per status.
+  board: Record<PenangananTab, { total: number; data: InventoryPenanganan[] }>;
   filters: {
     tab: PenangananTab;
     search: string;

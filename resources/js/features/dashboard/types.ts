@@ -88,9 +88,18 @@ export interface DashboardAdminData {
   departemen: DepartemenDistribusi[];
 }
 
+/** Inventory yang sedang dipegang user (DashboardQuery::pribadi -> sedangDipegang). */
+export interface InventoryDipegang {
+  id: number;
+  kode_inventory: string | null;
+  nama: string | null;
+  sejak: string | null; // ISO; bisa null kalau tanggal penerimaan tidak tercatat
+}
+
 /** Props `pribadi` (non-admin; deferred). */
 export interface DashboardUserData {
   sedangDipinjam: number;
+  sedangDipegang?: InventoryDipegang[]; // opsional: payload lama (sebelum field ini ada) tetap aman
   totalTersedia: number;
   totalPernahDipinjam: number;
   totalLaporRusak: number;

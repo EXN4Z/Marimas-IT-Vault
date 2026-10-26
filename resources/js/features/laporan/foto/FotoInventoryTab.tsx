@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Images, X, ChevronLeft, ChevronRight, HandCoins, Undo2, Wrench, Eye, Package, ImageOff } from 'lucide-react';
+import { Images, X, ChevronLeft, ChevronRight, HandCoins, Undo2, Wrench, Eye, Package, ImageOff, ZoomIn } from 'lucide-react';
 import Pagination from '../../../components/table/Pagination';
 import ScrollableTabBar, { type ScrollableTabItem } from '../../../components/navigation/ScrollableTabBar';
 import SearchInput from '../../../components/form/SearchInput';
@@ -10,6 +10,7 @@ import type { LaporanFotoProps } from '../types';
 import type { FotoPemakaiEntry } from '../../inventory/types/inventoryPemakai';
 import type { InventoryPenanganan } from '../../penanganan/types';
 import { namaPemakai, namaPelaporPenanganan, formatTanggalWaktuId, formatJenisKerusakan } from '../../inventory/inventoryHelpers';
+import FotoZoomViewer from '../../../components/media/FotoZoomViewer';
 import { SkeletonTable } from '../../../components/skeleton/SkeletonTableRow';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/storage/' : '/storage/');
@@ -426,6 +427,7 @@ export default function FotoInventoryTab() {
 // di atas, keterangan lengkap di bawah. Keyboard: Esc tutup, panah geser foto.
 function FotoDetailModal({ detail, onClose }: { detail: FotoDetail; onClose: () => void }) {
   const [index, setIndex] = useState(0);
+  const [zoomSrc, setZoomSrc] = useState<string | null>(null);
   const total = detail.photos.length;
 
   useEffect(() => {
@@ -463,12 +465,23 @@ function FotoDetailModal({ detail, onClose }: { detail: FotoDetail; onClose: () 
         {/* Slider foto */}
         <div className="relative bg-slate-100 dark:bg-zinc-900 h-64 sm:h-80 flex items-center justify-center">
           {total > 0 ? (
-            <img
-              key={detail.photos[index]}
-              src={STORAGE_BASE_URL + detail.photos[index]}
-              alt={`Foto ${index + 1}`}
-              className="max-h-full max-w-full object-contain"
-            />
+            <button
+              type="button"
+              onClick={() => setZoomSrc(STORAGE_BASE_URL + detail.photos[index])}
+              aria-label="Perbesar foto"
+              className="group relative h-full w-full flex items-center justify-center cursor-zoom-in"
+            >
+              <img
+                key={detail.photos[index]}
+                src={STORAGE_BASE_URL + detail.photos[index]}
+                alt={`Foto ${index + 1}`}
+                className="max-h-full max-w-full object-contain"
+              />
+              <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-[11px] font-medium text-white group-hover:bg-black/70">
+                <ZoomIn size={12} />
+                Perbesar
+              </span>
+            </button>
           ) : (
             <div className="flex flex-col items-center text-slate-400 dark:text-zinc-500">
               <ImageOff size={28} className="mb-1.5" />
@@ -527,6 +540,12 @@ function FotoDetailModal({ detail, onClose }: { detail: FotoDetail; onClose: () 
           ))}
         </dl>
       </div>
+      {zoomSrc && (
+        // stopPropagation: klik di viewer tidak boleh ikut menutup modal detail (root modal ini menutup lewat onClick).
+        <div onClick={(e) => e.stopPropagation()}>
+          <FotoZoomViewer src={zoomSrc} alt="Foto inventory" onClose={() => setZoomSrc(null)} />
+        </div>
+      )}
     </div>
   );
 }

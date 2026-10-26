@@ -136,8 +136,17 @@ class DashboardQuery
 
         $sedangDipinjam = 0;
         $totalTersedia = 0;
+        $sedangDipegang = [];
         foreach ($list as $a) {
-            if ($a->pemakaiSaatIni?->user_id === $user->id) $sedangDipinjam++;
+            if ($a->pemakaiSaatIni?->user_id === $user->id) {
+                $sedangDipinjam++;
+                $sedangDipegang[] = [
+                    'id' => $a->id,
+                    'kode_inventory' => $a->kode_inventory,
+                    'nama' => $a->nama,
+                    'sejak' => ($a->pemakaiSaatIni->diterima_at ?? $a->pemakaiSaatIni->tanggal_penerimaan)?->toIso8601String(),
+                ];
+            }
             if ($a->status === 'tersedia') $totalTersedia++;
         }
 
@@ -145,6 +154,7 @@ class DashboardQuery
 
         return [
             'sedangDipinjam' => $sedangDipinjam,
+            'sedangDipegang' => $sedangDipegang,
             'totalTersedia' => $totalTersedia,
             'totalPernahDipinjam' => RiwayatInventoryQuery::ambil($user, 'pinjam', '', 1, 10)['total'],
             'totalLaporRusak' => RiwayatInventoryQuery::ambil($user, 'lapor_rusak', '', 1, 10)['total'],

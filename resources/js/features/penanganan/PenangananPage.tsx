@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import toast from 'react-hot-toast';
-import Pagination from '../../components/table/Pagination';
 import type { InventoryPenanganan } from './types';
 import type { PenangananList, PenangananTab } from './types';
 import {
@@ -9,17 +8,19 @@ import {
   formatJenisKerusakan,
   formatDurasi,
 } from '../inventory/inventoryHelpers';
-import ScrollableTabBar from '../../components/navigation/ScrollableTabBar';
 import { printStruk } from '../inventory/print/printStruk';
 import PenangananExportModal from './export/PenangananExportModal';
 import { useAuth } from '../../context/AuthContext';
 import { formatRupiah } from './helpers';
+import Pagination from '../../components/table/Pagination';
+import ScrollableTabBar from '../../components/navigation/ScrollableTabBar';
+import PenangananTabel from './list/PenangananTabel';
 import PenangananSkeleton from './list/PenangananSkeleton';
 import PenangananHeader from './list/PenangananHeader';
-import PenangananKpiCards from './list/PenangananKpiCards';
+import PenangananProgressBar from './list/PenangananProgressBar';
+import PenangananBoard from './list/PenangananBoard';
+import { BATAS_TERLAMBAT_HARI, hariSejak } from './list/PenangananBoardCard';
 import PenangananFilterBar from './list/PenangananFilterBar';
-import PenangananCardList from './list/PenangananCardList';
-import PenangananTable from './list/PenangananTable';
 import FormPerbaikanModal from './modals/FormPerbaikanModal';
 import DetailPenangananModal from './modals/DetailPenangananModal';
 import TerimaLaporanModal from './modals/TerimaLaporanModal';
@@ -41,6 +42,7 @@ interface FilterBaru {
   search?: string;
   jenis?: string;
   page?: number;
+  semua?: string;
 }
 
 const TAB_LABEL: Record<PenangananTab, string> = {
@@ -63,12 +65,35 @@ export default function PenangananInventory() {
   const activeTab: PenangananTab = list?.filters.tab ?? 'menunggu';
   const serverSearch = list?.filters.search ?? '';
   const filterKerusakan = list?.filters.jenis ?? 'all';
+  const board = list?.board;
   const currentPage = list?.current_page ?? 1;
   const lastPage = list?.last_page ?? 1;
   const total = list?.total ?? 0;
 
   const [searchInput, setSearchInput] = useState<string>(serverSearch);
   const [listLoading, setListLoading] = useState(false);
+
+  // Tampilan: tabel (4 halaman/tab, default) atau papan (4 kolom). Pilihan diingat di browser (aman kalau storage diblokir).
+  const [view, setView] = useState<'papan' | 'tabel'>(() => {
+    try {
+      return localStorage.getItem('penanganan-view') === 'papan' ? 'papan' : 'tabel';
+    } catch {
+      return 'tabel';
+    }
+  });
+  const gantiView = (v: 'papan' | 'tabel') => {
+    setView(v);
+    try {
+      localStorage.setItem('penanganan-view', v);
+    } catch {
+      /* abaikan */
+    }
+  };
+  // Export: di tabel Selesai / Rusak berat = tab itu; selain itu = laporan yang selesai diperbaiki.
+  const exportTab: PenangananTab =
+    view === 'tabel' && (activeTab === 'diperbaiki_selesai' || activeTab === 'rusak_berat') ? activeTab : 'diperbaiki_selesai';
+  // Kolom papan yang dibuka penuh (?semua=<status>); '' = semua kolom tampil ringkas.
+  const [semuaKolom, setSemuaKolom] = useState<string>('');
 
   // Modals
   const [activePenanganan, setActivePenanganan] = useState<InventoryPenanganan | null>(null);
@@ -82,7 +107,8 @@ export default function PenangananInventory() {
   const [importError, setImportError] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const canImportExport = isAdmin && (activeTab === 'diperbaiki_selesai' || activeTab === 'rusak_berat');
+  // Papan menampilkan 4 kolom sekaligus; Export/Import tetap untuk admin (Export = laporan yang selesai diperbaiki).
+  const canImportExport = isAdmin;
 
   // ------------------------------------------------------------------ request ke server
 
@@ -92,6 +118,7 @@ export default function PenangananInventory() {
     if (f.search) data.search = f.search;
     if (f.jenis && f.jenis !== 'all') data.jenis = f.jenis;
     if (f.page > 1) data.page = f.page;
+    if (f.semua) data.semua = f.semua;
     return data;
   }
 
@@ -102,6 +129,7 @@ export default function PenangananInventory() {
       search: (next.search ?? searchInput).trim(),
       jenis: next.jenis ?? filterKerusakan,
       page: next.page ?? 1,
+      semua: next.semua ?? semuaKolom,
     };
 
     setListLoading(true);
@@ -144,6 +172,11 @@ export default function PenangananInventory() {
     visitList({ tab, page: 1 });
   };
 
+  const handleLihatSemua = (kolom: PenangananTab) => {
+    setSemuaKolom(kolom);
+    visitList({ semua: kolom });
+  };
+
   // ------------------------------------------------------------------ export / import
 
   // Tombol Export: ambil dulu datanya dari server (SEMUA hasil filter tab aktif), baru buka modal.
@@ -154,6 +187,7 @@ export default function PenangananInventory() {
     }
     router.reload({
       only: ['penangananExport'],
+      data: { tab: exportTab },
       onSuccess: () => setExportModalOpen(true),
       onError: () => toast.error('Gagal menyiapkan data export. Coba lagi.'),
     });
@@ -230,12 +264,15 @@ export default function PenangananInventory() {
     });
   };
 
+  if (!list || !board) return <PenangananSkeleton />;
+
   const tabs: { key: PenangananTab; label: string }[] = (Object.keys(TAB_LABEL) as PenangananTab[]).map((key) => ({
     key,
-    label: TAB_LABEL[key],
+    label: `${TAB_LABEL[key]} (${counts[key]})`,
   }));
 
-  if (!list) return <PenangananSkeleton />;
+  // Laporan aktif (menunggu / dikerjakan) yang sudah lewat batas hari -- dihitung dari baris yang tampil di papan.
+  const terlambat = [...board.menunggu.data, ...board.diperbaiki.data].filter((p) => hariSejak(p.tanggal_lapor) > BATAS_TERLAMBAT_HARI).length;
 
   return (
     <div className="space-y-6">
@@ -249,70 +286,76 @@ export default function PenangananInventory() {
         importLoading={importLoading}
       />
 
-      {/* KPI Overview Cards */}
-      <PenangananKpiCards handleTabChange={handleTabChange} activeTab={activeTab} counts={counts} />
+      <p className="text-sm text-slate-500 -mt-3">
+        {terlambat > 0
+          ? `${terlambat} laporan sudah lewat ${BATAS_TERLAMBAT_HARI} hari dan belum selesai.`
+          : `Tidak ada laporan yang lewat ${BATAS_TERLAMBAT_HARI} hari.`}
+      </p>
+
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex-1 min-w-[200px]">{view === 'papan' && <PenangananProgressBar counts={counts} />}</div>
+        <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden bg-white" role="group" aria-label="Tampilan">
+          {(['papan', 'tabel'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => gantiView(v)}
+              aria-pressed={view === v}
+              className={`h-9 px-4 text-sm font-semibold capitalize transition ${view === v ? 'bg-[#0b3a9a] text-white' : 'text-slate-500 hover:bg-slate-50'}`}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {importError && <p className="text-sm text-red-600">{importError}</p>}
 
-      {/* Main Content Box */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-        {/* Navigation Tabs */}
-        <ScrollableTabBar className="mb-5" activeTab={activeTab} onChange={handleTabChange} tabs={tabs} />
+      {view === 'tabel' && <ScrollableTabBar activeTab={activeTab} onChange={handleTabChange} tabs={tabs} />}
 
-        {/* Filter & Search Bar */}
-        <PenangananFilterBar
-          search={searchInput}
-          setSearch={setSearchInput}
-          filterKerusakan={filterKerusakan}
-          setFilterKerusakan={handleJenisChange}
-          onReset={handleResetFilter}
+      {/* Filter & Search Bar */}
+      <PenangananFilterBar
+        search={searchInput}
+        setSearch={setSearchInput}
+        filterKerusakan={filterKerusakan}
+        setFilterKerusakan={handleJenisChange}
+        onReset={handleResetFilter}
+      />
+
+      {view === 'papan' ? (
+        <PenangananBoard
+          board={board}
+          isAdmin={isAdmin}
+          loading={listLoading}
+          onDetail={setDetailModalTarget}
+          onTerima={setTerimaTarget}
+          onSelesaikan={setActivePenanganan}
+          onPrint={handlePrintStruk}
+          onLihatSemua={handleLihatSemua}
         />
-
-        <p className="text-xs text-slate-500 mb-4">
-          Total {TAB_LABEL[activeTab]}: <span className="font-semibold text-slate-900">{total}</span> laporan
-        </p>
-
-        <div className={`transition-opacity ${listLoading ? 'opacity-60' : ''}`}>
-          {/* Tab 1 & Tab 2: Work Order Cards */}
-          {activeTab === 'menunggu' || activeTab === 'diperbaiki' ? (
-            <PenangananCardList
-              displayedList={rows}
-              activeTab={activeTab}
-              search={serverSearch}
-              filterKerusakan={filterKerusakan}
-              paginatedList={rows}
-              setDetailModalTarget={setDetailModalTarget}
-              isAdmin={isAdmin}
-              setTerimaTarget={setTerimaTarget}
-              setActivePenanganan={setActivePenanganan}
-            />
-          ) : (
-            /* Tab 3 & Tab 4: Clean Data Table */
-            <PenangananTable
-              paginatedList={rows}
-              handlePrintStruk={handlePrintStruk}
-              setDetailModalTarget={setDetailModalTarget}
-              displayedList={rows}
-              search={serverSearch}
-              filterKerusakan={filterKerusakan}
-              activeTab={activeTab}
-            />
-          )}
-        </div>
-
-        {/* Pagination (server) */}
-        {total > list.per_page && (
-          <div className="mt-6 pt-4 border-t border-slate-100">
+      ) : (
+        <div className={`space-y-4 transition-opacity ${listLoading ? 'opacity-60' : ''}`}>
+          <PenangananTabel
+            rows={rows}
+            tab={activeTab}
+            isAdmin={isAdmin}
+            filtered={!!serverSearch || filterKerusakan !== 'all'}
+            onDetail={setDetailModalTarget}
+            onTerima={setTerimaTarget}
+            onSelesaikan={setActivePenanganan}
+            onPrint={handlePrintStruk}
+          />
+          {total > list.per_page && (
             <Pagination
               currentPage={currentPage}
               totalPages={lastPage}
-              onPageChange={(p) => visitList({ page: p })}
+              onPageChange={(pg) => visitList({ page: pg })}
               totalItems={total}
               itemLabel="laporan"
             />
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Modals */}
       {activePenanganan && (
@@ -345,7 +388,7 @@ export default function PenangananInventory() {
           open={exportModalOpen}
           onClose={() => setExportModalOpen(false)}
           data={pageProps.penangananExport ?? []}
-          tabLabel={TAB_LABEL[activeTab]}
+          tabLabel={TAB_LABEL[exportTab]}
         />
       )}
     </div>

@@ -1,4 +1,6 @@
-import { X, Wrench, Printer, ImageOff } from 'lucide-react';
+import { useState } from 'react';
+import { X, Wrench, Printer, ImageOff, ZoomIn } from 'lucide-react';
+import FotoZoomViewer from '../../../components/media/FotoZoomViewer';
 import type { InventoryPenanganan } from '../types';
 import {
   formatTanggalWaktuId,
@@ -18,6 +20,7 @@ export default function DetailPenangananModal({
   onClose: () => void;
   onPrint: (p: InventoryPenanganan) => void;
 }) {
+  const [zoomFoto, setZoomFoto] = useState(false);
   const rusakBerat = penanganan.hasil === 'rusak_berat';
   const totalBiaya = (Number(penanganan.harga_jasa) || 0) + (Number(penanganan.biaya_komponen) || 0);
 
@@ -54,11 +57,22 @@ export default function DetailPenangananModal({
         <div className="px-6 py-5 overflow-y-auto space-y-4">
           <div className="w-full h-44 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center border border-slate-200">
             {(penanganan as any).foto ? (
-              <img
-                src={STORAGE_BASE_URL + (penanganan as any).foto}
-                alt="Foto kerusakan"
-                className="w-full h-full object-cover"
-              />
+              <button
+                type="button"
+                onClick={() => setZoomFoto(true)}
+                aria-label="Perbesar foto kerusakan"
+                className="relative w-full h-full group cursor-zoom-in"
+              >
+                <img
+                  src={STORAGE_BASE_URL + (penanganan as any).foto}
+                  alt="Foto kerusakan"
+                  className="w-full h-full object-cover"
+                />
+                <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-[11px] font-medium text-white opacity-90 group-hover:bg-black/70">
+                  <ZoomIn size={12} />
+                  Perbesar
+                </span>
+              </button>
             ) : (
               <div className="flex flex-col items-center gap-1.5 text-slate-400">
                 <ImageOff size={24} />
@@ -173,6 +187,13 @@ export default function DetailPenangananModal({
           </button>
         </div>
       </div>
+      {zoomFoto && (penanganan as any).foto && (
+        <FotoZoomViewer
+          src={STORAGE_BASE_URL + (penanganan as any).foto}
+          alt="Foto kerusakan"
+          onClose={() => setZoomFoto(false)}
+        />
+      )}
     </div>
   );
 }

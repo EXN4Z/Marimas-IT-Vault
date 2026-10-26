@@ -18,6 +18,8 @@ use App\Http\Requests\Transaksi\ImportInventoryPenangananRequest;
 class InventoryPenangananController extends Controller
 {
     private const PER_HALAMAN = 8;
+    private const BOARD_LIMIT = 5;
+    private const BOARD_MAX = 50;
 
     public function __construct(private InventoryPenangananAction $penanganan)
     {
@@ -49,12 +51,37 @@ class InventoryPenangananController extends Controller
             'last_page' => $lastPage,
             'per_page' => self::PER_HALAMAN,
             'counts' => InventoryPenangananQuery::hitungSegmen($user),
+            // Papan 4 kolom sekaligus (tampilan kanban): cuma BOARD_LIMIT teratas per kolom, atau BOARD_MAX kalau ?semua=<kolom>.
+            'board' => self::papan($request, $f),
             'filters' => [
                 'tab' => $f['tab'],
                 'search' => $f['search'] ?? '',
                 'jenis' => $f['jenis'] ?? 'all',
             ],
         ];
+    }
+
+    // Isi papan: tiap kolom (status) = total sesuai pencarian/filter jenis + baris teratas. Scoping role tetap lewat populasi().
+    private static function papan(Request $request, array $f): array
+    {
+        $semua = (string) $request->query('semua', '');
+        $papan = [];
+
+        foreach (InventoryPenangananQuery::STATUS as $status) {
+            $query = InventoryPenangananQuery::populasi($request->user());
+            InventoryPenangananQuery::segmen($query, $status);
+            InventoryPenangananQuery::filter($query, $f['search'], $f['jenis']);
+
+            $total = (clone $query)->count();
+            $batas = $semua === $status ? self::BOARD_MAX : self::BOARD_LIMIT;
+
+            $papan[$status] = [
+                'total' => $total,
+                'data' => InventoryPenangananQuery::muat($query)->limit($batas)->get()->all(),
+            ];
+        }
+
+        return $papan;
     }
 
     // SEMUA hasil filter aktif di tab aktif (bukan cuma halaman yang tampil) buat modal Export. Di PageController dikirim

@@ -1,26 +1,24 @@
-import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { usePage } from '@inertiajs/react';
+import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { useSharedProps } from '../../hooks/useSharedProps';
 import { useDashboardNotifications } from './hooks/useDashboardNotifications';
 import type { DashboardAdminData } from './types';
-import { Boxes, Package, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { DashboardSkeleton } from './widgets/_shared';
 import {
-  WelcomeHeader,
-  KpiCard,
-  RingkasanInventoryCard,
-  HeroTrenPembelianInventoryChart,
-  StatusInventoryDonutCard,
-  TopInventoryCard,
-  InventoryPerhatianCard,
-  DepartemenDistribusiCard,
-  RiwayatAktivitasTableCard,
-  CalendarCard,
-  NotifikasiCard,
-  DashboardSkeleton,
-} from './widgets/_shared';
+  Panel,
+  LedgerHeader,
+  StatusLedger,
+  PerluTindakan,
+  TrenPembelian,
+  DepartemenKaryawan,
+  AktivitasRows,
+  NotifikasiLedger,
+  KalenderLedger,
+} from './widgets/ledger';
 
-// [F8-INERTIA] Data dari props `analitik` (deferred; DashboardPageController -> DashboardQuery::admin), bukan axios/useQuery.
-// Selama belum datang -> skeleton. User dari shared props (auth.user). Notifikasi masih hook sendiri (F9).
+// Dashboard admin, gaya "ledger" (tema & variabel warna: kelas .dv di index.css; terang/gelap otomatis).
+// [F8-INERTIA] Data dari props `analitik` (deferred; DashboardPageController -> DashboardQuery::admin).
+// Selama belum datang -> skeleton. Notifikasi tetap lewat hook sendiri.
 export default function DashboardAdmin() {
   const navigate = useAppNavigate();
   const { auth } = useSharedProps();
@@ -32,109 +30,54 @@ export default function DashboardAdmin() {
     return <DashboardSkeleton variant="full" />;
   }
 
-  const {
-    ringkasanInventory,
-    trenPembelianInventory,
-    inventoryPerhatian,
-    statusInventoryDistribusi,
-    inventoryPerMerek,
-    aktivitasKalender: aktivitasInventoryKalender,
-    departemen,
-  } = analitik;
+  const { ringkasanInventory, trenPembelianInventory, inventoryPerhatian, aktivitasKalender, departemen } = analitik;
 
-  const inventoryTotal = ringkasanInventory?.total ?? 0;
-  const tersediaCount = ringkasanInventory?.tersedia ?? 0;
-  const dipakaiCount = ringkasanInventory?.dipakai ?? 0;
-  const rusakBeratCount = ringkasanInventory?.rusakBerat ?? 0;
+  const rusak = inventoryPerhatian?.rusak ?? 0;
+  const dalamPenanganan = inventoryPerhatian?.dalamPenanganan ?? 0;
+  const garansi = inventoryPerhatian?.garansiSegeraHabis ?? 0;
+  const totalPerhatian = rusak + dalamPenanganan + garansi;
 
-  const tersediaPct = inventoryTotal > 0 ? Math.round((tersediaCount / inventoryTotal) * 100) : 0;
-  const dipakaiPct = inventoryTotal > 0 ? Math.round((dipakaiCount / inventoryTotal) * 100) : 0;
-  const rusakBeratPct = inventoryTotal > 0 ? Math.round((rusakBeratCount / inventoryTotal) * 100) : 0;
-
-  const totalPerhatian =
-    (inventoryPerhatian?.rusak ?? 0) +
-    (inventoryPerhatian?.dalamPenanganan ?? 0) +
-    (inventoryPerhatian?.garansiSegeraHabis ?? 0);
+  const kalimat =
+    totalPerhatian > 0
+      ? `${totalPerhatian} aset perlu perhatian: ${rusak} rusak berat, ${dalamPenanganan} sedang ditangani, dan ${garansi} garansinya habis dalam 30 hari.`
+      : 'Tidak ada aset yang perlu perhatian hari ini.';
 
   return (
-    <div className="space-y-3">
-      {/* Header + primary action (DEGO "+ Add Product" pattern) */}
-      <WelcomeHeader
-        user={user}
+    <div className="dv flex flex-col gap-8">
+      <LedgerHeader
+        name={user?.name}
+        sentence={kalimat}
+        actions={
+          <>
+            <button type="button" className="dv-btn" onClick={() => navigate('/laporan?tab=export_data')}>
+              Ekspor laporan
+            </button>
+            <button type="button" className="dv-btn dv-btn-primary" onClick={() => navigate('/master-data?tab=inventory')}>
+              Kelola inventory
+            </button>
+          </>
+        }
       />
 
-      {/* Row 1: High-Density Bento KPIs, each with a "Lihat detail" footer link */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-        <KpiCard
-          icon={Boxes}
-          label="Total Inventory"
-          value={inventoryTotal}
-          tone="default"
-          badge={`${tersediaPct}% Ready`}
-          detailLabel={`${tersediaCount} unit siap pakai`}
-          onClick={() => navigate('/master-data?tab=inventory')}
-        />
-        <KpiCard
-          icon={Package}
-          label="Sedang Dipakai"
-          value={dipakaiCount}
-          tone="sky"
-          badge={`${dipakaiPct}% Use`}
-          detailLabel={`${dipakaiPct}% dari total aset`}
-          onClick={() => navigate('/master-data?tab=inventory&status=dipakai')}
-        />
-        <KpiCard
-          icon={AlertTriangle}
-          label="Butuh Perhatian"
-          value={totalPerhatian}
-          tone={totalPerhatian > 0 ? 'amber' : 'emerald'}
-          badge={totalPerhatian > 0 ? 'Urgent' : 'Aman'}
-          detailLabel={`${inventoryPerhatian?.garansiSegeraHabis ?? 0} garansi < 30 hr`}
-          onClick={() => navigate('/penanganan-inventory')}
-        />
-        <KpiCard
-          icon={ShieldAlert}
-          label="Rusak Berat"
-          value={rusakBeratCount}
-          tone="rose"
-          badge={`${rusakBeratPct}%`}
-          detailLabel={`${rusakBeratPct}% aset tidak aktif`}
-          onClick={() => navigate('/master-data?tab=inventory&status=rusak_berat')}
-        />
+      <StatusLedger ringkasan={ringkasanInventory} />
+
+      <div className="dv-cols lg:grid-cols-3">
+        <PerluTindakan perhatian={inventoryPerhatian} dijual={ringkasanInventory?.dijual ?? 0} />
+        <TrenPembelian data={trenPembelianInventory} />
+        <DepartemenKaryawan data={departemen} />
       </div>
 
-      {/* Row 2: Hero Trends & Status Breakdown (Sales Analytics + Top Cities pattern) */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-2.5 sm:gap-3 items-stretch">
-        <div className="xl:col-span-7 flex flex-col">
-          <HeroTrenPembelianInventoryChart trenPembelianInventory={trenPembelianInventory} className="h-full" />
-        </div>
-        <div className="xl:col-span-5 flex flex-col">
-          <StatusInventoryDonutCard statusInventoryDistribusi={statusInventoryDistribusi} className="h-full" />
-        </div>
+      <div className="dv-cols lg:grid-cols-[3fr_2fr]">
+        <Panel title="Aktivitas terbaru" subtitle="Pinjam, kembali, dan laporan kerusakan.">
+          <AktivitasRows events={(aktivitasKalender ?? []).slice(0, 5)} />
+        </Panel>
+        <NotifikasiLedger notifications={notifications} onMarkAsRead={handleMarkAsRead} />
       </div>
 
-      {/* Row 3: Full-width searchable/sortable/paginated table (DEGO "Information by stores" pattern) */}
-      <div>
-        <RiwayatAktivitasTableCard aktivitas={aktivitasInventoryKalender} />
-      </div>
-
-      {/* Row 4: 3-Column Asset Operations Matrix */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3 items-stretch">
-        <RingkasanInventoryCard ringkasanInventory={ringkasanInventory} />
-        <TopInventoryCard inventoryPerMerek={inventoryPerMerek} />
-        <InventoryPerhatianCard inventoryPerhatian={inventoryPerhatian} />
-      </div>
-
-      {/* Row 5: Organization & Notifications */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 items-stretch">
-        <DepartemenDistribusiCard departemen={departemen} />
-        <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
-      </div>
-
-      {/* Row 6: Operational Calendar */}
-      <div>
-        <CalendarCard aktivitas={aktivitasInventoryKalender} />
-      </div>
+      <KalenderLedger
+        aktivitas={aktivitasKalender}
+        subtitle="Titik menandai tanggal yang ada mutasi. Titik merah berarti ada laporan kerusakan. Pilih tanggal untuk melihat lognya."
+      />
     </div>
   );
 }

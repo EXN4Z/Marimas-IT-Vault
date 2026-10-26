@@ -2,28 +2,14 @@ import { usePage } from '@inertiajs/react';
 import { useSharedProps } from '../../hooks/useSharedProps';
 import { useDashboardNotifications } from './hooks/useDashboardNotifications';
 import type { DashboardUserData } from './types';
-import { Package, History, AlertTriangle, Boxes } from 'lucide-react';
-import {
-  WelcomeHeader,
-  KpiCard,
-  AktivitasInventoryCard,
-  CalendarCard,
-  NotifikasiCard,
-  DashboardSkeleton,
-} from './widgets/_shared';
+import { DashboardSkeleton } from './widgets/_shared';
+import { Panel, LedgerHeader, DiTanganmu, AktivitasRows, NotifikasiLedger, KalenderLedger } from './widgets/ledger';
 
-// Dashboard user = halaman "home" personal -- cuma nampilin data milik si
-// user sendiri (inventory yang lagi dia pinjam, riwayat & kalender pemakaian
-// dia, notifikasi dia). Sengaja TIDAK ada data organisasi-lebar (total
-// karyawan, distribusi departemen, dst) -- role ini gak berhak lihat itu,
-// jadi useDashboardCore dipanggil dengan includeDepartemen: false biar
-// query-nya juga gak pernah di-fetch, bukan cuma disembunyiin di UI.
-//
-// Semua 4 KPI di sini murni angka personal/faktual & real (gak ada kartu
-// "Menunggu Persetujuan" -- app ini gak punya alur request/approve buat
-// pinjam inventory, admin serah-terima langsung -- dan gak ada kartu status
-// akun statis kayak "Verified" yang isinya bukan data beneran).
-// [F8-INERTIA] Data dari props `pribadi` (deferred; DashboardPageController -> DashboardQuery::pribadi), bukan axios/useQuery.
+// Dashboard user = halaman "home" personal -- cuma data milik si user sendiri (inventory yang dipegang,
+// riwayat & kalender pemakaian, notifikasi). Sengaja TIDAK ada data organisasi-lebar; role ini tidak berhak
+// melihatnya, jadi query-nya pun tidak pernah di-fetch (lihat DashboardQuery::pribadi).
+// Tidak ada kartu "Menunggu Persetujuan": app ini tidak punya alur request/approve pinjam, admin serah-terima langsung.
+// [F8-INERTIA] Data dari props `pribadi` (deferred; DashboardPageController -> DashboardQuery::pribadi).
 export default function DashboardUser() {
   const { auth } = useSharedProps();
   const user = auth?.user ?? null;
@@ -34,58 +20,52 @@ export default function DashboardUser() {
     return <DashboardSkeleton variant="simple" />;
   }
 
-  const { sedangDipinjam, totalTersedia, totalPernahDipinjam, totalLaporRusak, aktivitasTerbaru: aktivitasInventoryTerbaru, aktivitasKalender: aktivitasInventoryKalender } = pribadi;
+  const { sedangDipinjam, sedangDipegang, totalTersedia, totalPernahDipinjam, totalLaporRusak, aktivitasTerbaru, aktivitasKalender } = pribadi;
+
+  const kalimat =
+    sedangDipinjam > 0
+      ? `Kamu sedang memegang ${sedangDipinjam} inventory. Kalau ada yang bermasalah, laporkan dari sini.`
+      : 'Kamu belum memegang inventory. Hubungi admin IT untuk serah terima.';
 
   return (
-    <div className="space-y-3">
-      <WelcomeHeader user={user} />
+    <div className="dv flex flex-col gap-8">
+      <LedgerHeader name={user?.name} greeting="Halo" sentence={kalimat} />
 
-      {/* KPI Cards -- semuanya personal & real, gak ada angka lintas-organisasi */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-        <KpiCard
-          icon={Package}
-          label="Sedang Dipinjam"
-          value={sedangDipinjam}
-          tone={sedangDipinjam > 0 ? 'emerald' : 'default'}
-          badge={sedangDipinjam > 0 ? 'Aktif' : 'Kosong'}
-          hint="Inventory di tangan kamu"
-        />
-        <KpiCard
-          icon={History}
-          label="Total Pernah Dipinjam"
-          value={totalPernahDipinjam}
-          tone="sky"
-          badge="Riwayat"
-          hint="Sepanjang waktu"
-        />
-        <KpiCard
-          icon={AlertTriangle}
-          label="Laporan Kerusakan"
-          value={totalLaporRusak}
-          tone={totalLaporRusak > 0 ? 'amber' : 'default'}
-          badge={totalLaporRusak > 0 ? 'Pernah Lapor' : 'Nol'}
-          hint="Yang pernah kamu buat"
-        />
-        <KpiCard
-          icon={Boxes}
-          label="Total Inventory Tersedia"
-          value={totalTersedia}
-          tone="default"
-          badge="Siap Pinjam"
-          hint="Bisa kamu ajukan pinjam"
-        />
+      <div className="dv-cols lg:grid-cols-[2fr_1fr]">
+        <div className="flex flex-col gap-8">
+          <DiTanganmu items={sedangDipegang} jumlah={sedangDipinjam} />
+          <Panel title="Riwayat terbaru" subtitle="Aktivitas inventory milikmu.">
+            <AktivitasRows events={aktivitasTerbaru} />
+          </Panel>
+        </div>
+
+        <div className="flex flex-col gap-8">
+          <Panel title="Ringkasan" subtitle="Angka milikmu sendiri.">
+            <div className="dv-row" style={{ alignItems: 'center' }}>
+              <span>Pernah dipinjam</span>
+              <b className="dv-g text-[30px]">{totalPernahDipinjam}</b>
+            </div>
+            <div className="dv-row" style={{ alignItems: 'center' }}>
+              <span>Laporan kerusakan dibuat</span>
+              <b className="dv-g text-[30px]">{totalLaporRusak}</b>
+            </div>
+            <div className="dv-row" style={{ alignItems: 'center', borderBottom: '1px solid var(--dv-line)' }}>
+              <span>
+                Inventory tersedia
+                <br />
+                <span className="dv-side">Bisa kamu ajukan ke admin</span>
+              </span>
+              <b className="dv-g text-[30px] dv-primary">{totalTersedia}</b>
+            </div>
+          </Panel>
+          <NotifikasiLedger notifications={notifications} onMarkAsRead={handleMarkAsRead} />
+        </div>
       </div>
 
-      {/* Main Grid: aktivitas & notifikasi milik sendiri */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 items-stretch">
-        <AktivitasInventoryCard aktivitasInventoryTerbaru={aktivitasInventoryTerbaru} />
-        <NotifikasiCard notifications={notifications} onMarkAsRead={handleMarkAsRead} />
-      </div>
-
-      {/* Kalender aktivitas pemakaian inventory milik sendiri */}
-      <div>
-        <CalendarCard aktivitas={aktivitasInventoryKalender} />
-      </div>
+      <KalenderLedger
+        aktivitas={aktivitasKalender}
+        subtitle="Titik menandai tanggal ada mutasi pada inventory milikmu. Titik merah berarti kamu membuat laporan."
+      />
     </div>
   );
 }
