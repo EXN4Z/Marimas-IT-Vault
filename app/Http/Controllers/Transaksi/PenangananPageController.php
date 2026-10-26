@@ -14,6 +14,11 @@ class PenangananPageController extends Controller
     // Scoping non-admin (hanya laporan terkait pemakaiannya) ada di InventoryPenangananQuery::populasi() dan TIDAK diubah.
     public function __invoke(Request $request)
     {
+        // Tanpa ?tab= -> arahkan ke ?tab=menunggu (tab default), query lain (search/jenis/page) ikut dibawa.
+        if (!$request->query->has('tab')) {
+            return redirect($request->url().'?'.http_build_query(array_merge(['tab' => 'menunggu'], $request->query())));
+        }
+
         return Inertia::render('PenangananInventory/Index', [
             'penanganan' => fn () => InventoryPenangananController::daftar($request),
             'penangananExport' => Inertia::optional(fn () => InventoryPenangananController::untukExport($request)),

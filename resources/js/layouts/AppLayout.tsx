@@ -89,7 +89,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
     if (childNoQuery !== currentNoQuery) return false;
 
-    if (!hasChildQuery) return false;
+    // Child tanpa query (mis. Penanganan Inventory) aktif di semua query path yang sama (?tab=...), bukan cuma tanpa query.
+    if (!hasChildQuery) return true;
 
     const childParams = new URLSearchParams(child.path.split('?')[1]);
     const childTab = childParams.get('tab');

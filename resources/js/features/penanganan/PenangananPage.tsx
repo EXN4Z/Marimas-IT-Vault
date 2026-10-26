@@ -86,10 +86,9 @@ export default function PenangananInventory() {
 
   // ------------------------------------------------------------------ request ke server
 
-  // Query string dari filter. Nilai default (tab menunggu, search kosong, jenis semua, halaman 1) tidak ikut di URL.
+  // Query string dari filter. Tab selalu ikut di URL (termasuk ?tab=menunggu); default lain (search kosong, jenis semua, halaman 1) tidak.
   function bangunData(f: Required<FilterBaru>): Record<string, string | number> {
-    const data: Record<string, string | number> = {};
-    if (f.tab !== 'menunggu') data.tab = f.tab;
+    const data: Record<string, string | number> = { tab: f.tab };
     if (f.search) data.search = f.search;
     if (f.jenis && f.jenis !== 'all') data.jenis = f.jenis;
     if (f.page > 1) data.page = f.page;
