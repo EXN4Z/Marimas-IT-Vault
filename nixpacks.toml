@@ -1,9 +1,9 @@
 [phases.setup]
-nixPkgs = ["...", "php83Extensions.bcmath", "php83Extensions.gd", "php83Extensions.zip"]
+nixPkgs = ["...", "php83Extensions.bcmath", "php83Extensions.gd", "php83Extensions.zip", "php83Extensions.pdo_pgsql", "php83Extensions.pgsql"]
 
-# Build frontend lewat scripts/railway-build.sh (Node 22 + install ulang dependency).
+# Build frontend langsung lewat npm (Node versi diatur lewat variable NIXPACKS_NODE_VERSION=22 di Railway).
 [phases.build]
-cmds = ["sed -i 's/\\r$//' scripts/railway-build.sh && bash scripts/railway-build.sh"]
+cmds = ["npm run build"]
 
 [start]
 cmd = "php artisan config:clear && php artisan route:clear && php artisan view:clear && php artisan storage:link --force && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
