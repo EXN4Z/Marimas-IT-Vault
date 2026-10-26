@@ -36,6 +36,7 @@ Route::middleware(['role:admin', LogActivity::class])->prefix('master-data')->gr
     Route::put('/departemen/{id}', [DepartemenController::class, 'update'])->whereNumber('id');
     Route::delete('/departemen/{id}', [DepartemenController::class, 'destroy'])->whereNumber('id');
 
+    Route::post('/kategori/import', [KategoriController::class, 'import']);
     Route::post('/kategori', [KategoriController::class, 'store']);
     Route::put('/kategori/{id}', [KategoriController::class, 'update'])->whereNumber('id');
     Route::delete('/kategori/{id}', [KategoriController::class, 'destroy'])->whereNumber('id');

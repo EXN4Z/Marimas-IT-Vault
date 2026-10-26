@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, X, Tags, AlertCircle, Download } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Plus, Pencil, Trash2, X, Tags, AlertCircle, Download, Upload, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
 import ConfirmDeleteModal from '../../../components/modal/ConfirmDeleteModal';
@@ -42,6 +42,10 @@ export default function TabKategori() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [search, setSearch] = useState('');
 
+  // Import Excel (kolom: Nama / Nama Kategori; nama yang sudah ada dilewati).
+  const [importLoading, setImportLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const filteredItems = items.filter((item) => item.nama.toLowerCase().includes(search.toLowerCase().trim()));
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / ITEMS_PER_PAGE));
@@ -58,6 +62,25 @@ export default function TabKategori() {
   useEffect(() => {
     setCurrentPage(1);
   }, [search]);
+
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportLoading(true);
+    // Sukses -> toast dari flash server (FlashToaster). Gagal -> error bag "file".
+    router.post('/master-data/kategori/import', { file }, {
+      forceFormData: true,
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => setCurrentPage(1),
+      onError: (errors) => toast.error(errors.file || 'Gagal import data kategori.'),
+      onFinish: () => {
+        setImportLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = ''; // reset biar bisa upload file yang sama lagi
+      },
+    });
+  };
 
   const openCreateModal = () => {
     setEditing(null);
@@ -133,6 +156,22 @@ export default function TabKategori() {
           >
             <Download size={16} />
             Export Excel
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleFileSelected}
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importLoading}
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
+          >
+            {importLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+            Import Excel
           </button>
           <button
             type="button"

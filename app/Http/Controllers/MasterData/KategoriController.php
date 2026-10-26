@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\MasterData;
 
+use App\Actions\Shared\ImportExcel;
 use App\Http\Controllers\Controller;
+use App\Imports\MasterData\KategoriImport;
 use App\Models\MasterData\Kategori;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use App\Http\Requests\MasterData\StoreKategoriRequest;
+use App\Http\Requests\MasterData\ImportKategoriRequest;
 use App\Http\Requests\MasterData\UpdateKategoriRequest;
 
 // [F2-INERTIA] Versi Inertia dari KategoriController (API). Dipanggil lewat routes/web.php (session + CSRF),
@@ -54,5 +57,20 @@ class KategoriController extends Controller
         $kategori->delete();
 
         return back()->with('success', 'Kategori berhasil dihapus.');
+    }
+
+    // POST /master-data/kategori/import -- Excel (.xlsx/.xls). Kolom: Nama. Nama yang sudah ada dilewati.
+    // Gagal -> error bag key "file" (pesan pertama), semua-atau-tidak-sama-sekali (rollback).
+    public function import(ImportKategoriRequest $request): RedirectResponse
+    {
+        $pesan = ImportExcel::dalamTransaksi(
+            KategoriImport::class,
+            $request->file('file'),
+            'Gagal import data kategori.',
+            fn ($import) => "Berhasil import {$import->getCreatedCount()} kategori baru"
+            . ($import->getSkippedCount() > 0 ? ", {$import->getSkippedCount()} dilewati (sudah ada)" : '')
+        );
+
+        return back()->with('success', $pesan);
     }
 }
