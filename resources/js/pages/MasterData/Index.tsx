@@ -82,7 +82,9 @@ export default function MasterData() {
 
   const setActiveTab = (tab: TabKey) => {
     if (tab === activeTab) return;
-    router.get('/master-data', { tab }, { replace: true, preserveState: true, preserveScroll: true });
+    // Tab inventory selalu bawa status (default 'semua-status'), tab lain cuma ?tab=.
+    const data = tab === 'inventory' ? { status: 'semua-status', tab } : { tab };
+    router.get('/master-data', data, { replace: true, preserveState: true, preserveScroll: true });
   };
 
   return (

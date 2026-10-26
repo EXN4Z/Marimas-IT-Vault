@@ -133,11 +133,11 @@ export default function TabInventory() {
 
   // ------------------------------------------------------------------ request ke server
 
-  // Query string dari filter. Nilai default (search kosong, status semua, kategori kosong, halaman 1) tidak ikut di URL.
+  // Query string dari filter. Status selalu ikut di URL ('semua-status' = tanpa filter status, urutan: status dulu baru tab);
+  // nilai default lain (search kosong, kategori kosong, halaman 1) tidak ikut di URL.
   function bangunData(f: Required<FilterBaru>, detailParam?: number | null): Record<string, string | number | number[]> {
-    const data: Record<string, string | number | number[]> = { tab: 'inventory' };
+    const data: Record<string, string | number | number[]> = { status: f.status || 'semua-status', tab: 'inventory' };
     if (f.search) data.search = f.search;
-    if (f.status) data.status = f.status;
     if (f.kategori.length > 0) data.kategori = f.kategori;
     if (f.page > 1) data.page = f.page;
     if (detailParam) data.detail = detailParam;

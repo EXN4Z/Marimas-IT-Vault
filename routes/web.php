@@ -11,7 +11,7 @@ Route::redirect('/', '/dashboard'); // belum login -> middleware 'auth' di /dash
 // melempar ke /login.
 Route::redirect('/dashboard-analytics', '/dashboard?tab=analytics');
 Route::redirect('/inventaris', '/laporan');
-Route::redirect('/inventory', '/master-data?tab=inventory');
+Route::redirect('/inventory', '/master-data?status=semua-status&tab=inventory');
 Route::redirect('/karyawan', '/master-data?tab=karyawan'); // alias lama [F3-INERTIA]: create/detail/edit sekarang modal di tab Karyawan, bukan route
 Route::redirect('/cabang', '/master-data?tab=cabang');
 
