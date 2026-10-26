@@ -1,8 +1,16 @@
 [phases.setup]
 nixPkgs = ["...", "php83Extensions.bcmath", "php83Extensions.gd", "php83Extensions.zip", "php83Extensions.pdo_pgsql", "php83Extensions.pgsql"]
 
+# Install PHP cuma paket production (--no-dev) supaya lebih ringan. npm ci sengaja tidak di sini:
+# dependency JS di-install di fase build memakai Node 22.
+[phases.install]
+cmds = [
+  "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx",
+  "composer install --ignore-platform-reqs --no-dev --no-interaction --optimize-autoloader"
+]
+
 # Nixpacks (PHP) mengunci Node 18, sedangkan Vite 8 butuh Node >= 20.19 / 22.12.
-# Jadi Node 22 dipasang langsung di fase build, lalu dependency di-install ulang.
+# Jadi Node 22 dipasang langsung di fase build, lalu dependency di-install.
 [phases.build]
 cmds = [
   "curl -fsSL https://nodejs.org/dist/v22.12.0/node-v22.12.0-linux-x64.tar.gz | tar -xz -C /opt && export PATH=/opt/node-v22.12.0-linux-x64/bin:$PATH && node -v && rm -rf node_modules && npm ci && npm run build"
