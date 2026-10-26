@@ -498,13 +498,8 @@ export default function InventoryFormModal({
               />
             </Field>
 
-            <Field label="Tanggal Garansi" error={errors.tanggal_garansi}>
-              <input
-                type="date"
-                className={`${inputClass} ${errors.tanggal_garansi ? inputErrorClass : ''}`}
-                value={form.tanggal_garansi}
-                onChange={(e) => setField('tanggal_garansi', e.target.value)}
-              />
+            <Field label="Tanggal Input">
+              <input type="date" className={inputClass} value={form.tanggal_input || ''} onChange={(e) => setField('tanggal_input', e.target.value)} />
             </Field>
           </Section>
 
@@ -647,8 +642,13 @@ export default function InventoryFormModal({
               <input type="date" className={inputClass} value={form.tanggal_invoice || ''} onChange={(e) => setField('tanggal_invoice', e.target.value)} />
             </Field>
 
-            <Field label="Tanggal Input">
-              <input type="date" className={inputClass} value={form.tanggal_input || ''} onChange={(e) => setField('tanggal_input', e.target.value)} />
+            <Field label="Tanggal Garansi" error={errors.tanggal_garansi}>
+              <input
+                type="date"
+                className={`${inputClass} ${errors.tanggal_garansi ? inputErrorClass : ''}`}
+                value={form.tanggal_garansi}
+                onChange={(e) => setField('tanggal_garansi', e.target.value)}
+              />
             </Field>
 
             <Field label="No Surat Jalan">
