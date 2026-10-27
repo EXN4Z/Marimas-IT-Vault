@@ -1,12 +1,13 @@
 import { Trash2, CheckCircle2, PlayCircle, Printer, Eye, ChevronDown } from 'lucide-react';
 import Pagination from '../../../components/table/Pagination';
-import StatusBadge from '../../../components/feedback/StatusBadge';
 import { namaPelaporPenanganan, formatJenisKerusakan, formatDurasi, formatTanggalId, formatRupiah } from '../inventoryHelpers';
 import type { Inventory } from '../types/inventory';
 import type { InventoryPenanganan } from '../../penanganan/types';
 import { handlePrintPenanganan } from '../print/printHelpers';
+import { STATUS_BAR_CLASS } from '../list/helpers';
+import { SectionHead, StatusDot } from './detailUi';
 
-const RIWAYAT_PERBAIKAN_PER_PAGE = 5;
+const RIWAYAT_PERBAIKAN_PER_PAGE = 3;
 
 interface InventoryRiwayatPerbaikanProps {
   detail: Inventory;
@@ -23,12 +24,8 @@ interface InventoryRiwayatPerbaikanProps {
 
 export default function InventoryRiwayatPerbaikan({ detail, penangananPage, expandedPenangananId, isAdmin, handleTerimaPenanganan, terimaLoadingId, setPenangananSelesaiTarget, handleDeletePenanganan, setExpandedPenangananId, setPenangananPage }: InventoryRiwayatPerbaikanProps) {
   return (
-    <div className="border-t border-slate-100 dark:border-zinc-800 pt-4">
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-          Riwayat Perbaikan & Kerusakan
-        </h4>
-      </div>
+    <div>
+      <SectionHead title="Riwayat perbaikan & kerusakan" meta={(detail.penanganan?.length ?? 0) > 0 ? `${detail.penanganan!.length} catatan` : undefined} />
       {(() => {
         const semuaPenanganan = detail.penanganan || [];
         const totalPenangananPage = Math.max(1, Math.ceil(semuaPenanganan.length / RIWAYAT_PERBAIKAN_PER_PAGE));
@@ -38,37 +35,34 @@ export default function InventoryRiwayatPerbaikan({ detail, penangananPage, expa
         );
         return (
           <>
-            <ul className="flex flex-col gap-2">
+            <ul>
               {halamanPenanganan.map((p) => {
                 const totalBiaya = (Number(p.harga_jasa) || 0) + (Number(p.biaya_komponen) || 0);
                 const selesai = !!p.tanggal_selesai;
                 const diterima = !!p.tanggal_diterima;
                 const statusLabel = selesai ? 'Selesai' : diterima ? 'Sedang Diperbaiki' : 'Menunggu Diterima';
-                const statusStyle = selesai
-                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
-                  : diterima
-                  ? 'bg-orange-50 dark:bg-amber-950/40 text-orange-700 dark:text-amber-300'
-                  : 'bg-yellow-50 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300';
+                const statusDot = selesai ? STATUS_BAR_CLASS.tersedia : diterima ? STATUS_BAR_CLASS.diperbaiki : STATUS_BAR_CLASS.menunggu_perbaikan;
                 const namaPelapor = namaPelaporPenanganan(p);
                 const expanded = expandedPenangananId === p.id;
                 return (
-                  <li key={p.id} className="text-xs bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/60 dark:border-zinc-800 rounded-xl p-3">
+                  <li key={p.id} className="dv-item">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <StatusBadge colorClass={statusStyle} size="xs" className="mb-1">
+                        <b>{p.keluhan}</b>{' '}
+                        <span className="dv-muted dv-g">— {formatTanggalId(p.tanggal_lapor)}</span>
+                        <span className="mt-0.5 flex items-center text-xs dv-soft">
+                          <StatusDot className={statusDot} />
                           {statusLabel}
-                        </StatusBadge>{' '}
-                        <span className="font-semibold text-slate-900 dark:text-zinc-100">{p.keluhan}</span>{' '}
-                        <span className="text-slate-500 dark:text-zinc-400">— {formatTanggalId(p.tanggal_lapor)}</span>
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
+                      <div className="flex items-center gap-0.5 flex-shrink-0">
                         {isAdmin && !selesai && !diterima && (
                           <button
                             type="button"
                             onClick={() => handleTerimaPenanganan(p.id)}
                             disabled={terimaLoadingId === p.id}
                             title="Terima & mulai tangani laporan ini"
-                            className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition disabled:opacity-50"
+                            className="dv-icon-btn is-primary disabled:opacity-50"
                           >
                             <PlayCircle size={14} />
                           </button>
@@ -78,7 +72,7 @@ export default function InventoryRiwayatPerbaikan({ detail, penangananPage, expa
                             type="button"
                             onClick={() => setPenangananSelesaiTarget({ inventory: detail, penanganan: p })}
                             title="Tandai selesai"
-                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition"
+                            className="dv-icon-btn is-primary"
                           >
                             <CheckCircle2 size={14} />
                           </button>
@@ -88,7 +82,7 @@ export default function InventoryRiwayatPerbaikan({ detail, penangananPage, expa
                             type="button"
                             onClick={() => handlePrintPenanganan(detail, p)}
                             title="Cetak struk"
-                            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-800 transition"
+                            className="dv-icon-btn"
                           >
                             <Printer size={13} />
                           </button>
@@ -98,7 +92,7 @@ export default function InventoryRiwayatPerbaikan({ detail, penangananPage, expa
                             type="button"
                             onClick={() => handleDeletePenanganan(p.id)}
                             title="Hapus"
-                            className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+                            className="dv-icon-btn is-alert"
                           >
                             <Trash2 size={13} />
                           </button>
@@ -107,7 +101,7 @@ export default function InventoryRiwayatPerbaikan({ detail, penangananPage, expa
                           type="button"
                           onClick={() => setExpandedPenangananId(expanded ? null : p.id)}
                           title={expanded ? 'Sembunyikan detail' : 'Lihat detail'}
-                          className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-800 transition"
+                          className="dv-icon-btn"
                         >
                           {expanded ? <ChevronDown size={14} className="rotate-180 transition-transform" /> : <Eye size={14} />}
                         </button>
@@ -115,27 +109,25 @@ export default function InventoryRiwayatPerbaikan({ detail, penangananPage, expa
                     </div>
 
                     {expanded && (
-                      <div className="mt-2.5 pt-2.5 border-t border-slate-200 dark:border-zinc-800 text-[11px] text-slate-500 dark:text-zinc-400 space-y-1">
-                        <StatusBadge colorClass="bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400" size="xs" className="mb-1 w-fit">
-                          {formatJenisKerusakan(p.jenis_kerusakan)}
-                        </StatusBadge>
-                        {p.hasil && <p>Hasil: <span className="font-semibold text-slate-700 dark:text-zinc-300">{p.hasil}</span></p>}
+                      <div className="mt-2 text-xs dv-muted space-y-1">
+                        <span className="dv-tag">{formatJenisKerusakan(p.jenis_kerusakan)}</span>
+                        {p.hasil && <p>Hasil: <span className="font-semibold dv-soft">{p.hasil}</span></p>}
                         <p>
-                          Pelapor: <span className="font-semibold text-slate-700 dark:text-zinc-300">{namaPelapor}</span>
+                          Pelapor: <span className="font-semibold dv-soft">{namaPelapor}</span>
                         </p>
-                        <p>Lapor: <span className="font-semibold text-slate-700 dark:text-zinc-300">{formatTanggalId(p.tanggal_lapor)}</span></p>
+                        <p>Lapor: <span className="font-semibold dv-soft">{formatTanggalId(p.tanggal_lapor)}</span></p>
                         {p.tanggal_diterima && (
-                          <p>Diterima: <span className="font-semibold text-slate-700 dark:text-zinc-300">{formatTanggalId(p.tanggal_diterima)}</span></p>
+                          <p>Diterima: <span className="font-semibold dv-soft">{formatTanggalId(p.tanggal_diterima)}</span></p>
                         )}
                         {p.tanggal_selesai && (
-                          <p>Selesai: <span className="font-semibold text-slate-700 dark:text-zinc-300">{formatTanggalId(p.tanggal_selesai)}</span></p>
+                          <p>Selesai: <span className="font-semibold dv-soft">{formatTanggalId(p.tanggal_selesai)}</span></p>
                         )}
                         {p.durasi_detik != null && (
-                          <p>Durasi: <span className="font-semibold text-slate-700 dark:text-zinc-300">{formatDurasi(p.durasi_detik)}</span></p>
+                          <p>Durasi: <span className="font-semibold dv-soft">{formatDurasi(p.durasi_detik)}</span></p>
                         )}
                         {(p.harga_jasa != null || p.biaya_komponen != null) && (
                           <p>
-                            Biaya: Komponen {formatRupiah(p.biaya_komponen)} + Jasa {formatRupiah(p.harga_jasa)} = <span className="font-bold text-slate-800 dark:text-zinc-200">{formatRupiah(totalBiaya)}</span>
+                            Biaya: Komponen {formatRupiah(p.biaya_komponen)} + Jasa {formatRupiah(p.harga_jasa)} = <span className="font-bold dv-ink">{formatRupiah(totalBiaya)}</span>
                           </p>
                         )}
                         {p.no_struk && <p>Struk: {p.no_struk}</p>}
@@ -146,7 +138,7 @@ export default function InventoryRiwayatPerbaikan({ detail, penangananPage, expa
                 );
               })}
               {!semuaPenanganan.length && (
-                <p className="text-xs text-slate-400 dark:text-zinc-500 italic py-2">Belum ada riwayat perbaikan.</p>
+                <p className="dv-item text-xs dv-muted italic">Belum ada riwayat perbaikan.</p>
               )}
             </ul>
 

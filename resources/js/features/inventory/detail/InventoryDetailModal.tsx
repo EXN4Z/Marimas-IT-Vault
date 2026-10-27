@@ -1,16 +1,17 @@
-import { Boxes, X, Eye, Unlink } from 'lucide-react';
-import StatusBadge from '../../../components/feedback/StatusBadge';
+import { X, Eye, Unlink } from 'lucide-react';
 import { Skeleton } from '../../../components/skeleton';
 import { useAuth } from '../../../context/AuthContext';
 import type { Inventory } from '../types/inventory';
 import type { InventoryPemakai } from '../types/inventoryPemakai';
 import type { InventoryPenanganan } from '../../penanganan/types';
-import { STATUS_STYLE, STATUS_LABEL } from '../list/helpers';
+import { STATUS_LABEL, STATUS_BAR_CLASS } from '../list/helpers';
+import InventoryStatusPill from '../list/InventoryStatusPill';
 import { formatTanggalId } from '../inventoryHelpers';
 import InventoryDetailHero from './InventoryDetailHero';
 import InventoryDetailAksi from './InventoryDetailAksi';
 import InventoryRiwayatPemakai from './InventoryRiwayatPemakai';
 import InventoryRiwayatPerbaikan from './InventoryRiwayatPerbaikan';
+import { SectionHead, StatusDot } from './detailUi';
 
 interface InventoryDetailModalProps {
   closeDetail: () => void;
@@ -45,231 +46,183 @@ interface InventoryDetailModalProps {
 export default function InventoryDetailModal({ closeDetail, detail, detailLoading, isAdmin, setSerahTerimaInventory, setPengembalianTarget, setPerbaikanInventoryTarget, setPasangIndukTarget, openJual, user, openDetail, setLepasTarget, pemakaiPage, expandedPemakaiId, handleDeletePemakai, deletingPemakaiId, setExpandedPemakaiId, setPemakaiPage, historyActionError, penangananPage, expandedPenangananId, handleTerimaPenanganan, terimaLoadingId, setPenangananSelesaiTarget, handleDeletePenanganan, setExpandedPenangananId, setPenangananPage }: InventoryDetailModalProps) {
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 backdrop-blur-[2px] p-4 animate-[fadeIn_150ms_ease-out]"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-[2px] p-4 animate-[fadeIn_150ms_ease-out]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) closeDetail();
       }}
     >
-      <div className="bg-white dark:bg-[#18181b] rounded-2xl shadow-2xl border border-slate-200/80 dark:border-zinc-800 w-full max-w-3xl max-h-[92vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)] overflow-hidden">
+      <div className="dv dv-modal w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-zinc-800 shrink-0 bg-slate-50/50 dark:bg-zinc-900/50">
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-11 h-11 rounded-xl bg-slate-900 text-white dark:bg-blue-600 flex items-center justify-center shadow-sm shrink-0">
-              <Boxes size={22} />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100 leading-tight truncate">
-                  {detail?.nama || detail?.kode_inventory || 'Detail Inventory'}
-                </h3>
-                {detail?.status && (
-                  <StatusBadge colorClass={STATUS_STYLE[detail.status]}>
-                    {STATUS_LABEL[detail.status]}
-                  </StatusBadge>
-                )}
-              </div>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 flex items-center gap-1.5 font-medium">
-                <span className="font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-semibold text-[11px]">
-                  {detail?.kode_inventory || '-'}
-                </span>
-                {detail?.kategori?.nama && (
-                  <>
-                    <span className="text-slate-300 dark:text-zinc-600">·</span>
-                    <span className="text-slate-600 dark:text-zinc-400">{detail.kategori.nama}</span>
-                  </>
-                )}
-              </p>
-            </div>
+        <div className="flex items-start justify-between gap-4 px-5 pt-3.5 pb-3 shrink-0" style={{ borderBottom: '1px solid var(--dv-line)' }}>
+          <div className="min-w-0">
+            <p className="dv-label !tracking-[.06em]">
+              {detail?.kode_inventory || '-'}
+              {detail?.kategori?.nama ? ` · ${detail.kategori.nama}` : ''}
+            </p>
+            <h3 className="dv-g text-xl leading-[1.1] font-bold mt-0.5 mb-1.5 truncate">
+              {detail?.nama || detail?.kode_inventory || 'Detail Inventory'}
+            </h3>
+            {detail?.status && <InventoryStatusPill status={detail.status} />}
           </div>
           <button
             type="button"
             onClick={closeDetail}
             aria-label="Tutup"
-            className="text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+            className="dv-btn !w-9 !px-0 inline-grid place-items-center shrink-0"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 overflow-y-auto space-y-6">
-        {detailLoading && (
-          <div className="flex flex-col gap-5 py-4">
-            <div className="flex gap-4">
-              <Skeleton className="w-28 h-28 rounded-xl flex-shrink-0" />
-              <div className="flex-1 min-w-0 space-y-2">
-                <Skeleton className="h-5 w-24 rounded-full" />
-                <Skeleton className="h-4 w-3/4 rounded" />
-                <Skeleton className="h-3 w-1/2 rounded" />
-                <Skeleton className="h-3 w-2/3 rounded" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="p-3 rounded-xl border border-slate-100 dark:border-zinc-800 space-y-1.5">
-                  <Skeleton className="h-3 w-16 rounded" />
-                  <Skeleton className="h-4 w-24 rounded" />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {!detailLoading && detail && (
-          <div className="space-y-6">
-            {/* TOP HERO & SPECS */}
-            <InventoryDetailHero detail={detail} />
-
-            {/* AKSI CEPAT / QUICK ACTIONS */}
-            <InventoryDetailAksi
-              isAdmin={isAdmin}
-              detail={detail}
-              setSerahTerimaInventory={setSerahTerimaInventory}
-              setPengembalianTarget={setPengembalianTarget}
-              setPerbaikanInventoryTarget={setPerbaikanInventoryTarget}
-              setPasangIndukTarget={setPasangIndukTarget}
-              openJual={openJual}
-              user={user}
-            />
-
-            {/* DETAIL SPESIFIKASI & PENGADAAN */}
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-2.5">
-                Informasi Pengadaan & Lokasi
-              </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                <div className="p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40">
-                  <p className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase">Perusahaan Pemilik</p>
-                  <p className="font-semibold text-slate-800 dark:text-zinc-200 mt-1">{detail.perusahaan?.nama || '-'}</p>
-                </div>
-
-                <div className="p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40">
-                  <p className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase">Supplier / Vendor</p>
-                  <p className="font-semibold text-slate-800 dark:text-zinc-200 mt-1">{detail.supplier?.nama || '-'}</p>
-                </div>
-
-                <div className="p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40">
-                  <p className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase">No. Surat Jalan / GR</p>
-                  <p className="font-semibold text-slate-800 dark:text-zinc-200 mt-1">
-                    {detail.no_surat_jalan || '-'} / {detail.no_good_receive || '-'}
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40">
-                  <p className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase">Tanggal Pembelian</p>
-                  <p className="font-semibold text-slate-800 dark:text-zinc-200 mt-1">{formatTanggalId(detail.tanggal_invoice)}</p>
-                </div>
-
-                <div className="p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40">
-                  <p className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase">Tanggal Input Sistem</p>
-                  <p className="font-semibold text-slate-800 dark:text-zinc-200 mt-1">{formatTanggalId(detail.tanggal_input)}</p>
-                </div>
-
-                <div className="p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40">
-                  <p className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase">Garansi Berakhir</p>
-                  <p className="font-semibold text-slate-800 dark:text-zinc-200 mt-1">{formatTanggalId(detail.tanggal_garansi)}</p>
+        <div className="px-5 py-3.5 overflow-y-auto space-y-3.5">
+          {detailLoading && (
+            <div className="flex flex-col gap-4 py-2">
+              <div className="flex gap-6">
+                <Skeleton className="w-24 h-24 rounded-md flex-shrink-0" />
+                <div className="flex-1 min-w-0 space-y-3 pt-1">
+                  <Skeleton className="h-4 w-full rounded" />
+                  <Skeleton className="h-4 w-full rounded" />
+                  <Skeleton className="h-4 w-full rounded" />
+                  <Skeleton className="h-4 w-full rounded" />
                 </div>
               </div>
-
-              {detail.keterangan && (
-                <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 text-xs">
-                  <p className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase mb-1">Catatan Tambahan</p>
-                  <p className="text-slate-700 dark:text-zinc-300 leading-relaxed">{detail.keterangan}</p>
-                </div>
-              )}
+              <Skeleton className="h-16 w-full rounded-lg" />
             </div>
+          )}
 
-            {/* KELENGKAPAN / CHILDREN */}
-            {detail.children && detail.children.length > 0 && (
+          {!detailLoading && detail && (
+            <>
+              {/* Ringkasan + blok sedang dipinjam */}
+              <InventoryDetailHero detail={detail} />
+
+              {/* Aksi */}
+              <InventoryDetailAksi
+                isAdmin={isAdmin}
+                detail={detail}
+                setSerahTerimaInventory={setSerahTerimaInventory}
+                setPengembalianTarget={setPengembalianTarget}
+                setPerbaikanInventoryTarget={setPerbaikanInventoryTarget}
+                setPasangIndukTarget={setPasangIndukTarget}
+                openJual={openJual}
+                user={user}
+              />
+
+              <div className="space-y-4 min-w-0">
+              <div className="space-y-4 min-w-0">
+              {/* Pengadaan & lokasi */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-2.5">
-                  Kelengkapan Terpasang ({detail.children.length})
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <SectionHead title="Pengadaan & lokasi" />
+                <div className="grid md:grid-cols-2 md:gap-x-8 [&>.dv-row:first-child]:border-t-0 md:[&>.dv-row:nth-child(2)]:border-t-0">
+                  <div className="dv-row">
+                    <span>Perusahaan</span>
+                    <b className="text-right">{detail.perusahaan?.nama || '-'}</b>
+                  </div>
+                  <div className="dv-row">
+                    <span>Supplier</span>
+                    <b className="text-right">{detail.supplier?.nama || '-'}</b>
+                  </div>
+                  <div className="dv-row">
+                    <span>Surat Jalan / GR</span>
+                    <b className="dv-g text-right">
+                      {detail.no_surat_jalan || '-'} / {detail.no_good_receive || '-'}
+                    </b>
+                  </div>
+                  <div className="dv-row">
+                    <span>Tanggal pembelian</span>
+                    <b className="dv-g text-right">{formatTanggalId(detail.tanggal_invoice)}</b>
+                  </div>
+                  <div className="dv-row">
+                    <span>Tanggal input</span>
+                    <b className="dv-g text-right">{formatTanggalId(detail.tanggal_input)}</b>
+                  </div>
+                  {detail.keterangan && (
+                    <div className="dv-row">
+                      <span>Catatan</span>
+                      <b className="text-right font-medium">{detail.keterangan}</b>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Kelengkapan terpasang */}
+              {detail.children && detail.children.length > 0 && (
+                <div>
+                  <SectionHead title="Kelengkapan terpasang" meta={`${detail.children.length} item`} />
                   {detail.children.map((k: Inventory) => (
-                    <div
-                      key={k.id}
-                      className="flex items-center justify-between gap-3 bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-xl p-3 text-xs"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-slate-900 dark:text-zinc-100 font-semibold truncate">
-                          {k.nama || k.kode_inventory}
-                        </p>
-                        <p className="text-[11px] text-slate-400 dark:text-zinc-500 truncate font-mono mt-0.5">
-                          {k.kode_inventory} {k.serial_number ? `· S/N: ${k.serial_number}` : ''}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <StatusBadge colorClass={STATUS_STYLE[k.status] || 'bg-slate-100 text-slate-600'}>
+                    <div key={k.id} className="dv-row !items-center">
+                      <span className="min-w-0 truncate">
+                        <b>{k.nama || k.kode_inventory}</b>
+                        <span className="dv-muted">
+                          {' '}· {k.kode_inventory}
+                          {k.serial_number ? ` · S/N ${k.serial_number}` : ''}
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-1 shrink-0">
+                        <span className="inline-flex items-center text-xs mr-2">
+                          <StatusDot className={STATUS_BAR_CLASS[k.status]} />
                           {STATUS_LABEL[k.status] || k.status}
-                        </StatusBadge>
-                        <button
-                          type="button"
-                          onClick={() => openDetail(k.id)}
-                          title="Lihat Detail"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
-                        >
+                        </span>
+                        <button type="button" onClick={() => openDetail(k.id)} title="Lihat detail" aria-label="Lihat detail" className="dv-icon-btn">
                           <Eye size={14} />
                         </button>
                         {isAdmin && (
-                          <button
-                            type="button"
-                            onClick={() => setLepasTarget(k)}
-                            title="Lepas dari Induk"
-                            className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition"
-                          >
+                          <button type="button" onClick={() => setLepasTarget(k)} title="Lepas dari induk" aria-label="Lepas dari induk" className="dv-icon-btn is-alert">
                             <Unlink size={14} />
                           </button>
                         )}
-                      </div>
+                      </span>
                     </div>
                   ))}
                 </div>
+              )}
+
               </div>
-            )}
 
-            {/* RIWAYAT PEMAKAI / PEMINJAMAN */}
-            <InventoryRiwayatPemakai
-              detail={detail}
-              pemakaiPage={pemakaiPage}
-              expandedPemakaiId={expandedPemakaiId}
-              isAdmin={isAdmin}
-              handleDeletePemakai={handleDeletePemakai}
-              deletingPemakaiId={deletingPemakaiId}
-              setExpandedPemakaiId={setExpandedPemakaiId}
-              setPemakaiPage={setPemakaiPage}
-            />
+              <div className="space-y-4 min-w-0">
+              {/* Riwayat pemakai / peminjaman */}
+              <InventoryRiwayatPemakai
+                detail={detail}
+                pemakaiPage={pemakaiPage}
+                expandedPemakaiId={expandedPemakaiId}
+                isAdmin={isAdmin}
+                handleDeletePemakai={handleDeletePemakai}
+                deletingPemakaiId={deletingPemakaiId}
+                setExpandedPemakaiId={setExpandedPemakaiId}
+                setPemakaiPage={setPemakaiPage}
+              />
 
-            {historyActionError && (
-              <p className="text-xs text-red-600 bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-900/60 rounded-xl px-3 py-2">
-                {historyActionError}
-              </p>
-            )}
+              {historyActionError && (
+                <p className="text-xs dv-alert rounded-md px-3 py-2" style={{ border: '1px solid var(--dv-alert)' }}>
+                  {historyActionError}
+                </p>
+              )}
 
-            {/* RIWAYAT PERBAIKAN / PENANGANAN */}
-            <InventoryRiwayatPerbaikan
-              detail={detail}
-              penangananPage={penangananPage}
-              expandedPenangananId={expandedPenangananId}
-              isAdmin={isAdmin}
-              handleTerimaPenanganan={handleTerimaPenanganan}
-              terimaLoadingId={terimaLoadingId}
-              setPenangananSelesaiTarget={setPenangananSelesaiTarget}
-              handleDeletePenanganan={handleDeletePenanganan}
-              setExpandedPenangananId={setExpandedPenangananId}
-              setPenangananPage={setPenangananPage}
-            />
-          </div>
-        )}
+              {/* Riwayat perbaikan / penanganan */}
+              <InventoryRiwayatPerbaikan
+                detail={detail}
+                penangananPage={penangananPage}
+                expandedPenangananId={expandedPenangananId}
+                isAdmin={isAdmin}
+                handleTerimaPenanganan={handleTerimaPenanganan}
+                terimaLoadingId={terimaLoadingId}
+                setPenangananSelesaiTarget={setPenangananSelesaiTarget}
+                handleDeletePenanganan={handleDeletePenanganan}
+                setExpandedPenangananId={setExpandedPenangananId}
+                setPenangananPage={setPenangananPage}
+              />
+              </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end px-6 py-3.5 border-t border-slate-100 dark:border-zinc-800 shrink-0 bg-slate-50/50 dark:bg-zinc-900/50">
-          <button
-            type="button"
-            onClick={closeDetail}
-            className="text-xs font-semibold px-5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-700 shadow-xs transition cursor-pointer"
-          >
+        <div
+          className="flex items-center justify-end px-5 py-2 shrink-0"
+          style={{ borderTop: '1px solid var(--dv-line)', background: 'var(--dv-surface)' }}
+        >
+          <button type="button" onClick={closeDetail} className="dv-btn">
             Tutup
           </button>
         </div>

@@ -31,6 +31,10 @@ class InventoryPemakaiAction
     use GeneratesStrukNumber;
     use SimpanFotoBukti;
 
+    // Status child yang sedang ditangani: dipertahankan walau induknya dipinjam/dikembalikan (status gak ketergantungan
+    // sama peminjaman). Peminjamnya tetap tercatat sama seperti induk.
+    private const STATUS_DITANGANI = ['rusak', 'menunggu_perbaikan', 'diperbaiki', 'rusak_berat'];
+
     // ------------------------------------------------------------------ otorisasi
 
     /**
@@ -113,7 +117,7 @@ class InventoryPemakaiAction
             // status: status kelengkapan bisa sudah 'dipakai' karena structural attach ke induk yang belum
             // dipinjamkan siapa-siapa. Item yang lagi dalam penanganan/rusak tetap dikecualikan.
             $inventory->children()
-                ->whereNotIn('status', ['rusak', 'menunggu_perbaikan', 'diperbaiki', 'rusak_berat'])
+                ->where('status', '!=', 'rusak_berat') // child rusak ikut dipinjam; hanya rusak_berat yang dikecualikan
                 ->whereDoesntHave('pemakaiSaatIni')
                 ->get()
                 ->each(function ($anak) use ($validated, $fotoPaths, $request) {
@@ -131,11 +135,68 @@ class InventoryPemakaiAction
                         'foto_penerimaan' => $fotoPaths,
                     ]);
 
-                    $anak->update(['status' => 'dipakai']);
+                    // child yang lagi rusak/diperbaiki tetap di statusnya, cuma peminjamnya yang tercatat
+                    if (!in_array($anak->status, self::STATUS_DITANGANI, true)) {
+                        $anak->update(['status' => 'dipakai']);
+                    }
                 });
 
             return $pemakai;
         });
+    }
+
+    // ------------------------------------------------------------------ sinkron kelengkapan
+
+    /**
+     * Pastikan tiap kelengkapan yang menempel ke $induk punya pemakaian aktif yang SAMA dengan induknya (peminjam
+     * kelengkapan selalu ngikut induk). Kelengkapan yang belum punya dibikinin otomatis; yang rusak_berat dilewati.
+     * Status child yang lagi rusak/menunggu_perbaikan/diperbaiki TIDAK diubah; yang 'tersedia' jadi 'dipakai'.
+     * Induk yang gak lagi dipinjam -> gak ngapa-ngapain. $dryRun = cuma balikin daftar yang bakal dibikinin.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, Inventory> kelengkapan yang dibikinin (atau bakal dibikinin)
+     */
+    public function sinkronkanKelengkapan(Inventory $induk, bool $dryRun = false)
+    {
+        $pemakaiInduk = InventoryPemakai::where('inventory_id', $induk->id)
+            ->where('status', 'disetujui')
+            ->whereNull('tanggal_pengembalian')
+            ->latest('tanggal_penerimaan')
+            ->first();
+
+        if (!$pemakaiInduk) {
+            return $induk->newCollection();
+        }
+
+        $anakYatim = $induk->children()
+            ->where('status', '!=', 'rusak_berat')
+            ->whereDoesntHave('pemakaiSaatIni')
+            ->get();
+
+        if ($dryRun || $anakYatim->isEmpty()) {
+            return $anakYatim;
+        }
+
+        DB::transaction(function () use ($anakYatim, $pemakaiInduk) {
+            foreach ($anakYatim as $anak) {
+                InventoryPemakai::create([
+                    'inventory_id' => $anak->id,
+                    'user_id' => $pemakaiInduk->user_id,
+                    'status' => 'disetujui',
+                    'requested_by_user_id' => auth()->id(),
+                    'no_struk_penerimaan' => $this->generateNoStruk('STJ', 'inventory_pemakai', 'no_struk_penerimaan'),
+                    'tanggal_penerimaan' => $pemakaiInduk->tanggal_penerimaan,
+                    'diterima_at' => now(),
+                    'catatan_penerimaan' => 'Disinkronkan otomatis -- mengikuti peminjam barang utama.',
+                    'foto_penerimaan' => $pemakaiInduk->foto_penerimaan ?? [],
+                ]);
+
+                if (!in_array($anak->status, ['rusak', 'menunggu_perbaikan', 'diperbaiki', 'rusak_berat'], true)) {
+                    $anak->update(['status' => 'dipakai']);
+                }
+            }
+        });
+
+        return $anakYatim;
     }
 
     // ------------------------------------------------------------------ kembalikan
@@ -233,7 +294,7 @@ class InventoryPemakaiAction
                         'foto_pengembalian' => $fotoPaths,
                     ]);
 
-                    $anakPemakai->inventory()->update(['status' => 'tersedia']);
+                    $anakPemakai->inventory()->where('status', 'dipakai')->update(['status' => 'tersedia']);
                 });
         });
 
@@ -280,7 +341,7 @@ class InventoryPemakaiAction
                             'dikembalikan_at' => now(),
                             'catatan_pengembalian' => 'Dikembalikan otomatis -- riwayat pinjam barang utama dihapus.',
                         ]);
-                        $anakPemakai->inventory()->update(['status' => 'tersedia']);
+                        $anakPemakai->inventory()->where('status', 'dipakai')->update(['status' => 'tersedia']);
                     });
             }
             $inventoryPemakai->delete();

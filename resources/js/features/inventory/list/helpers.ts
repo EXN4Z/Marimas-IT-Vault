@@ -37,22 +37,19 @@ export const STATUS_STYLE: Record<InventoryStatus, string> = {
   dijual: 'bg-purple-50 text-purple-700',
 };
 
-// Warna status gaya Dashboard/Penanganan (terang | gelap). Literal penuh supaya terbaca Tailwind.
+// Warna status (terang | gelap). Keluarga biru dibuat berjauhan (navy / biru cerah / cyan) supaya mudah dibedakan.
+// Literal penuh supaya terbaca Tailwind.
 export const STATUS_BAR_CLASS: Record<InventoryStatus, string> = {
-  tersedia: 'bg-[#0b3a9a] dark:bg-[#6c97f5]',
-  dipakai: 'bg-[#9fb3d6] dark:bg-[#46609a]',
-  menunggu_perbaikan: 'bg-[#5c7bc0] dark:bg-[#8fb0ff]',
+  tersedia: 'bg-[#0b3a9a] dark:bg-[#4d7cf0]',
+  dipakai: 'bg-[#3b9cff] dark:bg-[#8fd0ff]',
+  menunggu_perbaikan: 'bg-[#14b8c4] dark:bg-[#22d3c5]',
   diperbaiki: 'bg-[#101a33] dark:bg-[#eef1f8]',
   rusak_berat: 'bg-[#b4390a] dark:bg-[#ff8a65]',
-  dijual: 'bg-[#c9d1e3] dark:bg-[#363d57]',
+  dijual: 'bg-[#c9d1e3] dark:bg-[#5b6585]',
 };
 
-// Garis aksen kiri baris tabel untuk status dalam alur perbaikan.
-export const STATUS_AKSEN: Partial<Record<InventoryStatus, string>> = {
-  menunggu_perbaikan: 'shadow-[inset_3px_0_0_#5c7bc0] dark:shadow-[inset_3px_0_0_#8fb0ff]',
-  diperbaiki: 'shadow-[inset_3px_0_0_#101a33] dark:shadow-[inset_3px_0_0_#eef1f8]',
-  rusak_berat: 'shadow-[inset_3px_0_0_#b4390a] dark:shadow-[inset_3px_0_0_#ff8a65]',
-};
+// Garis aksen kiri baris tabel dimatikan (tidak ada garis di baris status perbaikan).
+export const STATUS_AKSEN: Partial<Record<InventoryStatus, string>> = {};
 
 // [F4-INERTIA] Urutan tampil (status lalu kode) dan pagination 10 per halaman sekarang dijalankan server
 // (InventoryWebController), jadi STATUS_PRIORITY & ASET_PER_PAGE tidak dipakai lagi di client.

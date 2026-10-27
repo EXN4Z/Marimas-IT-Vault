@@ -62,7 +62,7 @@ export default function InventoryTable({ pageInventory, renderAksi, expandedInve
                       )}
                     </td>
                     <td className="px-6 py-3 whitespace-nowrap">
-                      <StatusBadge colorClass={isChild ? 'border border-dashed border-slate-300 bg-slate-50 text-slate-600' : 'border border-slate-200 bg-slate-50 text-slate-700'}>
+                      <StatusBadge colorClass={'border border-slate-200 bg-slate-50 text-slate-700'}>
                         {a.kategori?.nama || '-'}
                       </StatusBadge>
                     </td>
@@ -118,7 +118,7 @@ export default function InventoryTable({ pageInventory, renderAksi, expandedInve
                     )}
                     <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
                       <InventoryStatusPill status={a.status} small />
-                      <StatusBadge colorClass={isChild ? 'border border-dashed border-slate-300 bg-slate-50 text-slate-600' : 'border border-slate-200 bg-slate-50 text-slate-700'} size="xs">
+                      <StatusBadge colorClass={'border border-slate-200 bg-slate-50 text-slate-700'} size="xs">
                         {a.kategori?.nama || '-'}
                       </StatusBadge>
                     </div>

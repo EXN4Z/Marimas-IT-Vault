@@ -25,7 +25,8 @@ class UserController extends Controller
             $request->filled('search') ? (string) $request->search : null,
         );
 
-        return redirect()->back()->with('success', 'Operasi berhasil.');
+        // Autocomplete modal Serah-Terima: WAJIB JSON (bukan redirect), karena dipanggil via fetch per ketikan.
+        return response()->json($query->orderBy('name')->get());
     }
 
     public function edit(User $user)

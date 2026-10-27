@@ -4,8 +4,9 @@ import { namaPemakai } from '../inventoryHelpers';
 import type { Inventory } from '../types/inventory';
 import { formatTanggalId } from '../inventoryHelpers';
 import { handlePrintSerahTerima } from '../print/printHelpers';
+import { SectionHead } from './detailUi';
 
-const RIWAYAT_PEMAKAI_PER_PAGE = 5;
+const RIWAYAT_PEMAKAI_PER_PAGE = 3;
 
 interface InventoryRiwayatPemakaiProps {
   detail: Inventory;
@@ -20,12 +21,8 @@ interface InventoryRiwayatPemakaiProps {
 
 export default function InventoryRiwayatPemakai({ detail, pemakaiPage, expandedPemakaiId, isAdmin, handleDeletePemakai, deletingPemakaiId, setExpandedPemakaiId, setPemakaiPage }: InventoryRiwayatPemakaiProps) {
   return (
-    <div className="border-t border-slate-100 dark:border-zinc-800 pt-4">
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-          Riwayat Pemakai & Peminjaman
-        </h4>
-      </div>
+    <div>
+      <SectionHead title="Riwayat pemakai & peminjaman" meta={(detail.pemakai?.length ?? 0) > 0 ? `${detail.pemakai!.length} catatan` : undefined} />
       {(() => {
         const semuaPemakai = detail.pemakai || [];
         const totalPemakaiPage = Math.max(1, Math.ceil(semuaPemakai.length / RIWAYAT_PEMAKAI_PER_PAGE));
@@ -35,26 +32,26 @@ export default function InventoryRiwayatPemakai({ detail, pemakaiPage, expandedP
         );
         return (
           <>
-            <ul className="flex flex-col gap-2">
+            <ul>
               {halamanPemakai.map((p) => {
                 const expanded = expandedPemakaiId === p.id;
                 return (
-                  <li key={p.id} className="text-xs bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/60 dark:border-zinc-800 rounded-xl p-3">
+                  <li key={p.id} className="dv-item">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <span className="font-semibold text-slate-900 dark:text-zinc-100">{namaPemakai(p)}</span>{' '}
-                        <span className="text-slate-500 dark:text-zinc-400">
+                        <b>{namaPemakai(p)}</b>{' '}
+                        <span className="dv-muted dv-g">
                           — {formatTanggalId(p.tanggal_penerimaan)}
                           {p.tanggal_pengembalian ? ` s/d ${formatTanggalId(p.tanggal_pengembalian)}` : ' (sedang digunakan)'}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
+                      <div className="flex items-center gap-0.5 flex-shrink-0">
                         {isAdmin && p.no_struk_penerimaan && (
                           <button
                             type="button"
                             onClick={() => handlePrintSerahTerima([{ inventory: detail, pemakai: p }])}
                             title="Cetak struk penerimaan"
-                            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-800 transition"
+                            className="dv-icon-btn"
                           >
                             <Printer size={13} />
                           </button>
@@ -65,7 +62,7 @@ export default function InventoryRiwayatPemakai({ detail, pemakaiPage, expandedP
                             onClick={() => handleDeletePemakai(p.id)}
                             disabled={deletingPemakaiId === p.id}
                             title="Hapus riwayat"
-                            className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition disabled:opacity-50"
+                            className="dv-icon-btn is-alert disabled:opacity-50"
                           >
                             <Trash2 size={13} />
                           </button>
@@ -74,7 +71,7 @@ export default function InventoryRiwayatPemakai({ detail, pemakaiPage, expandedP
                           type="button"
                           onClick={() => setExpandedPemakaiId(expanded ? null : p.id)}
                           title={expanded ? 'Sembunyikan detail' : 'Lihat detail'}
-                          className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-800 transition"
+                          className="dv-icon-btn"
                         >
                           {expanded ? <ChevronDown size={14} className="rotate-180 transition-transform" /> : <Eye size={14} />}
                         </button>
@@ -82,11 +79,11 @@ export default function InventoryRiwayatPemakai({ detail, pemakaiPage, expandedP
                     </div>
 
                     {expanded && (
-                      <div className="mt-2.5 pt-2.5 border-t border-slate-200 dark:border-zinc-800 text-[11px] text-slate-500 dark:text-zinc-400 space-y-1">
+                      <div className="mt-2 text-xs dv-muted space-y-1">
                         {p.user && (
                           <p>
-                            NIK: <span className="font-semibold text-slate-700 dark:text-zinc-300">{p.user.nik || '-'}</span> · Divisi:{' '}
-                            <span className="font-semibold text-slate-700 dark:text-zinc-300">{p.user.departemen?.nama || '-'}</span>
+                            NIK: <span className="font-semibold dv-soft">{p.user.nik || '-'}</span> · Divisi:{' '}
+                            <span className="font-semibold dv-soft">{p.user.departemen?.nama || '-'}</span>
                           </p>
                         )}
                         {p.catatan_penerimaan && <p>Catatan terima: {p.catatan_penerimaan}</p>}
@@ -99,7 +96,7 @@ export default function InventoryRiwayatPemakai({ detail, pemakaiPage, expandedP
                 );
               })}
               {!semuaPemakai.length && (
-                <p className="text-xs text-slate-400 dark:text-zinc-500 italic py-2">Belum ada riwayat pemakai.</p>
+                <p className="dv-item text-xs dv-muted italic">Belum ada riwayat pemakai.</p>
               )}
             </ul>
 

@@ -678,8 +678,10 @@ html.dark .bg-\[\#f0f1f7\] {
   border: 1px solid #383842 !important;
 }
 
-/* Status indicator dots (Online / Live pulse): Vibrant Glowing Green in dark mode */
-html.dark .w-1\.5.h-1\.5.rounded-full,
+/* Status indicator dots (Online / Live pulse): Vibrant Glowing Green in dark mode.
+   Hanya titik yang memang hijau -- titik status lain (mis. status inventory) memakai warnanya sendiri. */
+html.dark .w-1\.5.h-1\.5.rounded-full.bg-emerald-400,
+html.dark .w-1\.5.h-1\.5.rounded-full.bg-emerald-500,
 html.dark .w-2.h-2.rounded-full.bg-emerald-400,
 html.dark .w-2.h-2.rounded-full.bg-emerald-500,
 html.dark .w-2.h-2.rounded-full.bg-\[\#34A853\],
@@ -1053,3 +1055,29 @@ html.dark .dv {
 .dv .dv-dot.is-alert { background: var(--dv-alert); }
 .dv .is-today .dv-dot { background: var(--dv-today-dot); }
 .dv .is-today .dv-dot.is-alert { background: var(--dv-today-alert); }
+
+/* ===== DV DETAIL MODAL (modal detail inventory, gaya ledger; token --dv-* di atas) ===== */
+.dv-modal { --dv-panel: #FFFFFF; background: var(--dv-panel); border: 1px solid var(--dv-line); border-radius: 12px; }
+html.dark .dv-modal {
+  --dv-panel: #18181B; --dv-surface: #1F1F23; --dv-line: #2E2E34; --dv-track: #2A2A30;
+  --dv-ink: #F4F4F5; --dv-soft: #D4D4D8; --dv-muted: #A1A1AA;
+}
+.dv .dv-label { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--dv-muted); }
+.dv .dv-ink { color: var(--dv-ink); }
+.dv .dv-item { padding: 10px 0; border-top: 1px solid var(--dv-line); font-size: 13px; color: var(--dv-soft); }
+.dv .dv-item b { font-weight: 600; color: var(--dv-ink); }
+.dv .dv-band { background: var(--dv-today-bg); color: var(--dv-today-fg); border-radius: 8px; padding: 16px 20px; }
+.dv .dv-band-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--dv-today-dot); }
+.dv .dv-band-sub { opacity: .78; }
+.dv .dv-btn-danger { color: var(--dv-alert); border-color: var(--dv-alert); }
+.dv .dv-btn-danger:hover { border-color: var(--dv-alert); filter: brightness(1.08); }
+.dv .dv-icon-btn { width: 32px; height: 32px; display: inline-grid; place-items: center; border-radius: 6px; color: var(--dv-muted); background: none; cursor: pointer; }
+.dv .dv-icon-btn:hover { background: var(--dv-surface); color: var(--dv-ink); }
+.dv .dv-icon-btn.is-alert { color: var(--dv-alert); }
+.dv .dv-icon-btn.is-primary { color: var(--dv-primary); }
+.dv .dv-tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border: 1px solid var(--dv-line); border-radius: 999px; color: var(--dv-soft); }
+.dv-modal .dv-row { padding: 7px 0; }
+.dv-modal .dv-item { padding: 7px 0; }
+.dv-modal .dv-btn { height: 36px; padding: 0 14px; font-size: 13px; }
+.dv-modal .dv-band { padding: 12px 16px; }
+.dv-modal .dv-icon-btn { width: 28px; height: 28px; }

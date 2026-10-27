@@ -241,6 +241,14 @@ class InventoryPenangananAction
 
                     Inventory::whereKey($inventoryPenanganan->inventory_id)
                         ->update(['status' => $masihDipakai ? 'dipakai' : 'tersedia']);
+
+                    // peminjam kelengkapan harus tetap ngikut induk: kalau item ini kelengkapan (atau induk yang punya
+                    // kelengkapan) dan ada yang belum punya pemakaian padahal induknya lagi dipinjam, dibikinin otomatis.
+                    $itemSelesai = Inventory::find($inventoryPenanganan->inventory_id);
+                    $induk = $itemSelesai?->parent_id ? $itemSelesai->parent : $itemSelesai;
+                    if ($induk) {
+                        app(InventoryPemakaiAction::class)->sinkronkanKelengkapan($induk);
+                    }
                 }
             }
         });

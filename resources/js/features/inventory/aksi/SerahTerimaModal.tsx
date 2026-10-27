@@ -46,7 +46,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
   // backend otomatis ikut serahkan semua kelengkapan miliknya yang masih
   // 'tersedia' (satu struk & foto yang sama). Di sini kita cuma tampilkan
   // daftarnya sebagai info, tidak ada checklist/pilihan manual lagi.
-  const kelengkapanTersedia = (inventory.children ?? []).filter((k) => k.status === 'tersedia');
+  const kelengkapanTersedia = (inventory.children ?? []).filter((k) => k.status !== 'rusak_berat');
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -269,6 +269,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
                     className="text-[11px] font-medium bg-white border border-slate-200 text-slate-700 px-2 py-0.5 rounded-md shadow-2xs"
                   >
                     {k.kode_inventory} · {k.nama}
+                    {k.status !== 'tersedia' && k.status !== 'dipakai' ? ` (${String(k.status).replace(/_/g, ' ')})` : ''}
                   </span>
                 ))}
               </div>
