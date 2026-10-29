@@ -141,49 +141,43 @@ export default function FotoInventoryTab() {
     if (activeTab === 'inventory') {
       if (inventory.loading) {
         return (
-          <div className="border border-slate-200 bg-white rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[640px]">
-                <tbody>
-                  <SkeletonTable columns={4} rows={5} />
-                </tbody>
-              </table>
-            </div>
+          <div className="pn-scroll">
+            <table className="pn-table">
+              <tbody>
+                <SkeletonTable columns={4} rows={5} />
+              </tbody>
+            </table>
           </div>
         );
       }
 
       if (inventory.entries.length === 0) {
         return (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-            <Images size={32} className="mb-2" />
-            <p className="text-sm">
-              {inventory.search ? `Tidak ada hasil untuk "${inventory.search}".` : 'Belum ada foto barang yang diunggah.'}
-            </p>
+          <div className="pn-empty">
+            {inventory.search ? `Tidak ada hasil untuk "${inventory.search}".` : 'Belum ada foto barang yang diunggah.'}
           </div>
         );
       }
 
       return (
-        <div className="border border-slate-200 bg-white rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px]">
-              <thead>
-                <tr className="border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wide">
-                  <th className="px-4 py-3 font-medium text-left">Inventory</th>
-                  <th className="px-4 py-3 font-medium text-left">Kategori</th>
-                  <th className="px-4 py-3 font-medium text-left">Tgl Input</th>
-                  <th className="px-4 py-3 font-medium text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {inventory.entries.map((item) => (
-                  <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                    <td className="px-4 py-3 whitespace-nowrap">{inventoryLabel(item)}</td>
-                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{item.kategori?.nama || '-'}</td>
-                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(null, item.tanggal_input)}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end">
+        <div className="pn-scroll">
+          <table className="pn-table">
+            <thead>
+              <tr>
+                <th>Inventory</th>
+                <th>Kategori</th>
+                <th>Tgl Input</th>
+                <th className="pn-r">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {inventory.entries.map((item) => (
+                <tr key={item.id}>
+                  <td className="whitespace-nowrap">{inventoryLabel(item)}</td>
+                  <td className="text-slate-600 whitespace-nowrap">{item.kategori?.nama || '-'}</td>
+                  <td className="text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(null, item.tanggal_input)}</td>
+                  <td>
+                    <div className="flex items-center justify-end">
                         {tombolDetail(() =>
                           bukaDetail({
                             judul: item.kode_inventory,
@@ -203,11 +197,10 @@ export default function FotoInventoryTab() {
                         )}
                       </div>
                     </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       );
     }
@@ -221,61 +214,55 @@ export default function FotoInventoryTab() {
 
       if (state.loading) {
         return (
-          <div className="border border-slate-200 bg-white rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[640px]">
-                <tbody>
-                  <SkeletonTable columns={5} rows={5} />
-                </tbody>
-              </table>
-            </div>
+          <div className="pn-scroll">
+            <table className="pn-table">
+              <tbody>
+                <SkeletonTable columns={5} rows={5} />
+              </tbody>
+            </table>
           </div>
         );
       }
 
       if (state.entries.length === 0) {
         return (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-            <Images size={32} className="mb-2" />
-            <p className="text-sm">
-              {state.search ? `Tidak ada hasil untuk "${state.search}".` : 'Belum ada foto bukti yang diunggah.'}
-            </p>
+          <div className="pn-empty">
+            {state.search ? `Tidak ada hasil untuk "${state.search}".` : 'Belum ada foto bukti yang diunggah.'}
           </div>
         );
       }
 
       return (
-        <div className="border border-slate-200 bg-white rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px]">
-              <thead>
-                <tr className="border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wide">
-                  <th className="px-4 py-3 font-medium text-left">Inventory</th>
-                  <th className="px-4 py-3 font-medium text-left">Pemakai</th>
-                  <th className="px-4 py-3 font-medium text-left">{tanggalLabel}</th>
-                  <th className="px-4 py-3 font-medium text-left">Jumlah Foto</th>
-                  <th className="px-4 py-3 font-medium text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {state.entries.map((e) => {
-                  const foto = e[fotoKey] as string[] | null;
-                  const tanggal = e[tanggalKey] as string | null;
-                  const waktuAkurat = e[waktuAkuratKey] as string | null;
-                  return (
-                    <tr key={e.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                      <td className="px-4 py-3 whitespace-nowrap">{inventoryLabel(e.inventory)}</td>
-                      <td className="px-4 py-3 text-slate-600">
-                        <div className="max-w-[160px]">
-                          <Tooltip content={namaPemakai({ user: e.user })}>
-                            <p className="truncate">{namaPemakai({ user: e.user })}</p>
-                          </Tooltip>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(waktuAkurat, tanggal)}</td>
-                      <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{foto?.length ?? 0} foto</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end">
+        <div className="pn-scroll">
+          <table className="pn-table">
+            <thead>
+              <tr>
+                <th>Inventory</th>
+                <th>Pemakai</th>
+                <th>{tanggalLabel}</th>
+                <th>Jumlah Foto</th>
+                <th className="pn-r">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {state.entries.map((e) => {
+                const foto = e[fotoKey] as string[] | null;
+                const tanggal = e[tanggalKey] as string | null;
+                const waktuAkurat = e[waktuAkuratKey] as string | null;
+                return (
+                  <tr key={e.id}>
+                    <td className="whitespace-nowrap">{inventoryLabel(e.inventory)}</td>
+                    <td className="text-slate-600">
+                      <div className="max-w-[160px]">
+                        <Tooltip content={namaPemakai({ user: e.user })}>
+                          <p className="truncate">{namaPemakai({ user: e.user })}</p>
+                        </Tooltip>
+                      </div>
+                    </td>
+                    <td className="text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(waktuAkurat, tanggal)}</td>
+                    <td className="text-slate-600 whitespace-nowrap">{foto?.length ?? 0} foto</td>
+                    <td>
+                      <div className="flex items-center justify-end">
                           {tombolDetail(() =>
                             bukaDetail({
                               judul: e.inventory?.kode_inventory || '-',
@@ -294,11 +281,10 @@ export default function FotoInventoryTab() {
                         </div>
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       );
     }
@@ -306,59 +292,53 @@ export default function FotoInventoryTab() {
     // ==== Tab Rusak ====
     if (rusak.loading) {
       return (
-        <div className="border border-slate-200 bg-white rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px]">
-              <tbody>
-                <SkeletonTable columns={5} rows={5} />
-              </tbody>
-            </table>
-          </div>
+        <div className="pn-scroll">
+          <table className="pn-table">
+            <tbody>
+              <SkeletonTable columns={5} rows={5} />
+            </tbody>
+          </table>
         </div>
       );
     }
 
     if (rusak.entries.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-          <Images size={32} className="mb-2" />
-          <p className="text-sm">
-            {rusak.search ? `Tidak ada hasil untuk "${rusak.search}".` : 'Belum ada foto laporan kerusakan.'}
-          </p>
+        <div className="pn-empty">
+          {rusak.search ? `Tidak ada hasil untuk "${rusak.search}".` : 'Belum ada foto laporan kerusakan.'}
         </div>
       );
     }
 
     return (
-      <div className="border border-slate-200 bg-white rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[640px]">
-            <thead>
-              <tr className="border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wide">
-                <th className="px-4 py-3 font-medium text-left">Inventory</th>
-                <th className="px-4 py-3 font-medium text-left">Pelapor</th>
-                <th className="px-4 py-3 font-medium text-left">Kerusakan</th>
-                <th className="px-4 py-3 font-medium text-left">Tgl Lapor</th>
-                <th className="px-4 py-3 font-medium text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rusak.entries.map((p) => (
-                <tr key={p.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                  <td className="px-4 py-3 whitespace-nowrap">{inventoryLabel(p.inventory)}</td>
-                  <td className="px-4 py-3 text-slate-600">
-                    <div className="max-w-[160px]">
-                      <Tooltip content={namaPelaporPenanganan(p)}>
-                        <p className="truncate">{namaPelaporPenanganan(p)}</p>
-                      </Tooltip>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-slate-800 font-medium whitespace-nowrap">
-                    {formatJenisKerusakan(p.jenis_kerusakan)}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(p.lapor_at, p.tanggal_lapor)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end">
+      <div className="pn-scroll">
+        <table className="pn-table">
+          <thead>
+            <tr>
+              <th>Inventory</th>
+              <th>Pelapor</th>
+              <th>Kerusakan</th>
+              <th>Tgl Lapor</th>
+              <th className="pn-r">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rusak.entries.map((p) => (
+              <tr key={p.id}>
+                <td className="whitespace-nowrap">{inventoryLabel(p.inventory)}</td>
+                <td className="text-slate-600">
+                  <div className="max-w-[160px]">
+                    <Tooltip content={namaPelaporPenanganan(p)}>
+                      <p className="truncate">{namaPelaporPenanganan(p)}</p>
+                    </Tooltip>
+                  </div>
+                </td>
+                <td className="font-medium whitespace-nowrap">
+                  {formatJenisKerusakan(p.jenis_kerusakan)}
+                </td>
+                <td className="text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(p.lapor_at, p.tanggal_lapor)}</td>
+                <td>
+                  <div className="flex items-center justify-end">
                       {tombolDetail(() =>
                         bukaDetail({
                           judul: p.inventory?.kode_inventory || '-',
@@ -382,7 +362,6 @@ export default function FotoInventoryTab() {
             </tbody>
           </table>
         </div>
-      </div>
     );
   };
 

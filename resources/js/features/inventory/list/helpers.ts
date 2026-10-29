@@ -37,15 +37,14 @@ export const STATUS_STYLE: Record<InventoryStatus, string> = {
   dijual: 'bg-purple-50 text-purple-700',
 };
 
-// Warna status (terang | gelap). Keluarga biru dibuat berjauhan (navy / biru cerah / cyan) supaya mudah dibedakan.
-// Literal penuh supaya terbaca Tailwind.
+// Warna titik status (terang | gelap), palet sama dengan dashboard. Literal penuh supaya terbaca Tailwind.
 export const STATUS_BAR_CLASS: Record<InventoryStatus, string> = {
-  tersedia: 'bg-[#0b3a9a] dark:bg-[#4d7cf0]',
-  dipakai: 'bg-[#3b9cff] dark:bg-[#8fd0ff]',
-  menunggu_perbaikan: 'bg-[#14b8c4] dark:bg-[#22d3c5]',
-  diperbaiki: 'bg-[#101a33] dark:bg-[#eef1f8]',
-  rusak_berat: 'bg-[#b4390a] dark:bg-[#ff8a65]',
-  dijual: 'bg-[#c9d1e3] dark:bg-[#5b6585]',
+  tersedia: 'bg-[#2FA45E] dark:bg-[#4CC77D]',
+  dipakai: 'bg-[#5B4A9B] dark:bg-[#A594F5]',
+  menunggu_perbaikan: 'bg-[#F5B83D] dark:bg-[#F5B83D]',
+  diperbaiki: 'bg-[#EF8A80] dark:bg-[#F2877C]',
+  rusak_berat: 'bg-[#C4411F] dark:bg-[#FF8A65]',
+  dijual: 'bg-[#A1A1AA] dark:bg-[#6B6B75]',
 };
 
 // Garis aksen kiri baris tabel dimatikan (tidak ada garis di baris status perbaikan).

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { AktivitasInventoryTerbaru } from '../../types';
 import { AktivitasRows } from './AktivitasLedger';
@@ -24,12 +24,15 @@ function buildGrid(year: number, month: number) {
   return cells;
 }
 
+// `aside` = kartu tambahan di bawah log harian (kolom kanan), mis. notifikasi.
 export function KalenderLedger({
   aktivitas = [],
   subtitle,
+  aside,
 }: {
   aktivitas?: AktivitasInventoryTerbaru[];
   subtitle: string;
+  aside?: ReactNode;
 }) {
   const today = useMemo(() => new Date(), []);
   const [view, setView] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
@@ -63,35 +66,44 @@ export function KalenderLedger({
   const judulLog = selected.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
-    <div className="dv-cols lg:grid-cols-[2fr_1fr]">
-      <Panel
-        title="Kalender operasional"
-        subtitle={subtitle}
-        right={
-          <div className="flex items-center gap-2">
-            <button type="button" className="dv-btn" style={{ padding: 0, width: 44 }} aria-label="Bulan sebelumnya" onClick={() => geser(-1)}>
-              <ChevronLeft size={18} className="mx-auto" />
-            </button>
-            <b className="dv-g text-[17px] text-center" style={{ minWidth: 124 }} aria-live="polite">
-              {BULAN[view.getMonth()]} {view.getFullYear()}
-            </b>
-            <button type="button" className="dv-btn" style={{ padding: 0, width: 44 }} aria-label="Bulan berikutnya" onClick={() => geser(1)}>
-              <ChevronRight size={18} className="mx-auto" />
-            </button>
-            <button type="button" className="dv-btn ml-1.5" onClick={kembaliKeHariIni}>Hari ini</button>
-          </div>
-        }
-      >
-        <div className="dv-cal" role="group" aria-label={`Kalender ${BULAN[view.getMonth()]} ${view.getFullYear()}`}>
+    <div className="dd-split">
+      <Panel title="Kalender operasional" subtitle={subtitle} className="dd-calcard">
+        <div className="dd-cal-head">
+          <button type="button" className="dd-pa is-back" aria-label="Bulan sebelumnya" onClick={() => geser(-1)}>
+            <ChevronLeft size={16} />
+          </button>
+          <b className="dv-g dd-cal-mn" aria-live="polite">
+            {BULAN[view.getMonth()]} {view.getFullYear()}
+          </b>
+          <button type="button" className="dd-pa" aria-label="Bulan berikutnya" onClick={() => geser(1)}>
+            <ChevronRight size={16} />
+          </button>
+          <button type="button" className="dd-btn dd-btn-sm" onClick={kembaliKeHariIni}>
+            Hari ini
+          </button>
+        </div>
+
+        <div className="dd-dow" aria-hidden="true">
           {HARI.map((h) => (
-            <span key={h} className="text-[12px] dv-muted px-2.5 pb-2">{h}</span>
+            <span key={h}>{h}</span>
           ))}
+        </div>
+        <div className="dd-days" role="group" aria-label={`Kalender ${BULAN[view.getMonth()]} ${view.getFullYear()}`}>
           {cells.map(({ date, inMonth }) => {
             const events = perTanggal.get(keyOf(date)) ?? [];
             const adaLapor = events.some((e) => e.type === 'lapor_rusak');
             const isToday = sameDay(date, today);
             const isSel = sameDay(date, selected);
-            const cls = ['dv-cell', !inMonth && 'is-out', isToday && 'is-today', isSel && 'is-sel'].filter(Boolean).join(' ');
+            const cls = [
+              'dd-cell',
+              !inMonth && 'is-out',
+              events.length > 0 && 'is-ev',
+              adaLapor && 'is-al',
+              isToday && 'is-today',
+              isSel && 'is-sel',
+            ]
+              .filter(Boolean)
+              .join(' ');
             return (
               <button
                 key={keyOf(date)}
@@ -101,28 +113,40 @@ export function KalenderLedger({
                 aria-label={`${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })}, ${events.length} mutasi${adaLapor ? ', ada laporan kerusakan' : ''}`}
                 onClick={() => setSelected(date)}
               >
-                <b className="dv-g">{date.getDate()}</b>
-                {events.length > 0 && (
-                  <span className="dv-dots" aria-hidden="true">
-                    <span className="dv-dot" />
-                    {adaLapor && <span className="dv-dot is-alert" />}
-                  </span>
-                )}
+                <span className="dv-g">{String(date.getDate()).padStart(2, '0')}</span>
               </button>
             );
           })}
         </div>
-      </Panel>
-
-      <Panel title={judulLog} subtitle={log.length > 0 ? `${log.length} mutasi pada tanggal ini` : 'Pilih tanggal untuk melihat lognya.'}>
-        <div className="max-h-[380px] overflow-y-auto">
-          <AktivitasRows
-            events={log}
-            kosong="Tidak ada mutasi pada tanggal ini."
-            timeFormatter={(w) => new Date(w).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-          />
+        <div className="dd-legend">
+          <span>
+            <i className="lg-today" />
+            Hari ini
+          </span>
+          <span>
+            <i className="lg-ev" />
+            Ada mutasi
+          </span>
+          <span>
+            <i className="lg-al" />
+            Ada laporan rusak
+          </span>
         </div>
       </Panel>
+
+      <div className="dd-aside">
+        <Panel title={judulLog} subtitle={log.length > 0 ? `${log.length} mutasi pada tanggal ini` : 'Pilih tanggal untuk melihat lognya.'}>
+          <div className="dd-logscroll">
+            <AktivitasRows
+              events={log}
+              variant="ikon"
+              kosong="Tidak ada mutasi pada tanggal ini."
+              timeFormatter={(w) => new Date(w).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+            />
+          </div>
+        </Panel>
+        {aside}
+      </div>
     </div>
   );
 }

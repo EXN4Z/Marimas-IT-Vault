@@ -176,7 +176,7 @@ export default function TabKategori() {
           <button
             type="button"
             onClick={openCreateModal}
-            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
+            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs dark:!bg-white dark:!text-slate-900 dark:hover:!bg-gray-100"
           >
             <Plus size={16} />
             Tambah Kategori
@@ -184,48 +184,53 @@ export default function TabKategori() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder="Cari nama kategori..."
-            className="flex-1"
-          />
-        </div>
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Cari nama kategori..."
+          className="flex-1"
+        />
+      </div>
 
-        <p className="text-xs text-slate-500 mb-4">
-          Total Semua: <span className="font-semibold text-slate-900">{filteredItems.length}</span> kategori
-        </p>
+      <p className="text-xs text-slate-500 mb-4">
+        Total Semua: <span className="font-semibold text-slate-900">{filteredItems.length}</span> kategori
+      </p>
 
-        <div className="border border-slate-200 rounded-lg overflow-hidden">
-          {items.length === 0 && (
-            <p className="text-sm text-slate-400 text-center py-8">Belum ada data kategori.</p>
-          )}
+      <div className="pn-card">
+        {items.length === 0 && (
+          <p className="pn-empty">Belum ada data kategori.</p>
+        )}
 
-          {items.length > 0 && filteredItems.length === 0 && (
-            <p className="text-sm text-slate-400 text-center py-8">Kategori tidak ditemukan.</p>
-          )}
+        {items.length > 0 && filteredItems.length === 0 && (
+          <p className="pn-empty">Kategori tidak ditemukan.</p>
+        )}
 
-          {filteredItems.length > 0 && (
-            <>
-              {/* Desktop Table */}
-              <div className="hidden sm:block overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
-                      <th className="px-6 py-3.5 font-medium">Nama Kategori</th>
-                      <th className="px-6 py-3.5 font-medium text-right">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedItems.map((item) => (
-                      <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                        <td className="px-6 py-3.5 text-slate-800 font-medium">
-                          {item.nama}
-                        </td>
-                        <td className="px-6 py-3.5">
-                          <div className="flex items-center justify-end gap-1">
+        {filteredItems.length > 0 && (
+          <>
+            {/* Desktop Table */}
+            <div className="hidden sm:block pn-scroll">
+              <table className="pn-table">
+                <thead>
+                  <tr>
+                    <th>Nama Kategori</th>
+                    <th className="text-center">Jumlah Inventory</th>
+                    <th className="pn-r">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedItems.map((item) => (
+                    <tr key={item.id}>
+                      <td className="font-medium">
+                        {item.nama}
+                      </td>
+                      <td className="text-center">
+                        <span className="text-slate-700 text-sm font-semibold">
+                          {item.inventory_count ?? 0}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="flex items-center justify-end gap-1">
                             <button
                               type="button"
                               onClick={() => openEditModal(item)}
@@ -247,14 +252,14 @@ export default function TabKategori() {
                             </button>
                           </div>
                         </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-              {/* Mobile Card View */}
-              <div className="sm:hidden flex flex-col divide-y divide-slate-100">
+            {/* Mobile Card View */}
+            <div className="sm:hidden flex flex-col divide-y divide-slate-100">
                 {paginatedItems.map((item) => (
                   <div key={item.id} className="p-4 flex items-center justify-between gap-3">
                     <div className="min-w-0">
@@ -283,23 +288,22 @@ export default function TabKategori() {
                     </div>
                   </div>
                 ))}
-              </div>
+            </div>
 
-              {totalPages > 1 && (
-                <div className="px-6 py-3 border-t border-slate-100">
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                    totalItems={filteredItems.length}
-                    itemLabel="kategori"
-                    className="pt-0 mt-0 border-t-0"
-                  />
-                </div>
-              )}
-            </>
-          )}
-        </div>
+            {totalPages > 1 && (
+              <div className="-mx-[18px] -mb-3 mt-1 px-6 py-3 border-t border-slate-100">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  totalItems={filteredItems.length}
+                  itemLabel="kategori"
+                  className="pt-0 mt-0 border-t-0"
+                />
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* MODAL TAMBAH / EDIT */}

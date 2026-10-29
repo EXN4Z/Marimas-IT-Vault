@@ -1,3 +1,4 @@
+import { Wrench, Check, AlertTriangle } from 'lucide-react';
 import type { InventoryPenanganan, PenangananTab } from '../types';
 import {
   formatJenisKerusakan,
@@ -10,10 +11,10 @@ import { BATAS_TERLAMBAT_HARI, hariSejak } from './PenangananBoardCard';
 const BATAS_BAR_HARI = 10;
 
 const KOLOM: Record<PenangananTab, string[]> = {
-  menunggu: ['Aset', 'Unit', 'Keluhan', 'Pelapor', 'Tanggal lapor', 'Lama', ''],
-  diperbaiki: ['Aset', 'Unit', 'Keluhan', 'Pelapor', 'Diterima', 'Lama', ''],
-  diperbaiki_selesai: ['Aset', 'Unit', 'Keluhan', 'Selesai', 'Total biaya', 'No. struk', ''],
-  rusak_berat: ['Aset', 'Unit', 'Keluhan', 'Pelapor', 'Ditutup', ''],
+  menunggu: ['Inventory', 'Unit', 'Keluhan', 'Pelapor', 'Tanggal lapor', 'Lama', ''],
+  diperbaiki: ['Inventory', 'Unit', 'Keluhan', 'Pelapor', 'Diterima', 'Lama', ''],
+  diperbaiki_selesai: ['Inventory', 'Unit', 'Keluhan', 'Selesai', 'Total biaya', 'No. struk', ''],
+  rusak_berat: ['Inventory', 'Unit', 'Keluhan', 'Pelapor', 'Ditutup', ''],
 };
 
 const KOSONG: Record<PenangananTab, string> = {
@@ -21,6 +22,14 @@ const KOSONG: Record<PenangananTab, string> = {
   diperbaiki: 'Tidak ada inventory yang sedang diperbaiki.',
   diperbaiki_selesai: 'Belum ada laporan yang selesai diperbaiki.',
   rusak_berat: 'Tidak ada laporan rusak berat.',
+};
+
+// Warna lingkaran ikon per status (token dashboard). Laporan terlambat selalu merah.
+const WARNA_IKON: Record<PenangananTab, string> = {
+  menunggu: 'var(--dd-yellow-ink)',
+  diperbaiki: 'var(--dv-primary)',
+  diperbaiki_selesai: 'var(--dd-green-ink)',
+  rusak_berat: 'var(--dv-alert)',
 };
 
 interface Props {
@@ -34,43 +43,32 @@ interface Props {
   onPrint: (p: InventoryPenanganan) => void;
 }
 
-const btnOutline = 'h-7 px-2.5 rounded-md border border-slate-300 bg-white text-xs font-semibold text-slate-800 hover:bg-slate-50 transition';
-const btnPrimary = 'h-7 px-2.5 rounded-md bg-[#0b3a9a] text-xs font-semibold text-white hover:bg-[#082c75] transition';
-
 function Lama({ hari, terlambat }: { hari: number; terlambat: boolean }) {
   return (
-    <div className="flex items-center gap-2">
-      <div className="w-14 h-[5px] rounded-full bg-slate-200 overflow-hidden">
-        <div
-          className={`h-full ${terlambat ? 'bg-[#b53a12]' : 'bg-[#0b3a9a]'}`}
-          style={{ width: `${Math.min(100, Math.round((hari / BATAS_BAR_HARI) * 100))}%` }}
-        />
+    <div className={`pn-lama ${terlambat ? 'is-late' : ''}`}>
+      <div className="pn-lama-t">
+        <div className="pn-lama-f" style={{ width: `${Math.min(100, Math.round((hari / BATAS_BAR_HARI) * 100))}%` }} />
       </div>
-      <span className={`text-xs font-semibold ${terlambat ? 'text-[#b53a12]' : 'text-slate-700'}`}>{hari} hari</span>
+      <span className="pn-lama-n">{hari} hari</span>
     </div>
   );
 }
 
 export default function PenangananTabel({ rows, tab, isAdmin, filtered, onDetail, onTerima, onSelesaikan, onPrint }: Props) {
+  const aktif = tab === 'menunggu' || tab === 'diperbaiki';
+  const Ikon = tab === 'diperbaiki_selesai' ? Check : tab === 'rusak_berat' ? AlertTriangle : Wrench;
+
   if (rows.length === 0) {
-    return (
-      <div className="text-center py-12 px-4 border border-dashed border-slate-200 rounded-xl text-sm text-slate-500">
-        {filtered ? 'Tidak ada laporan yang cocok dengan filter.' : KOSONG[tab]}
-      </div>
-    );
+    return <div className="pn-empty">{filtered ? 'Tidak ada laporan yang cocok dengan filter.' : KOSONG[tab]}</div>;
   }
 
-  const aktif = tab === 'menunggu' || tab === 'diperbaiki';
-
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200">
-      <table className="w-full text-sm">
+    <div className="pn-scroll">
+      <table className="pn-table">
         <thead>
-          <tr className="bg-slate-50 border-b-2 border-slate-900">
+          <tr>
             {KOLOM[tab].map((k, i) => (
-              <th key={i} className="text-left text-[11px] font-semibold text-slate-500 px-3 py-2.5 whitespace-nowrap">
-                {k}
-              </th>
+              <th key={i} className={i === KOLOM[tab].length - 1 ? 'pn-r' : undefined}>{k}</th>
             ))}
           </tr>
         </thead>
@@ -81,50 +79,55 @@ export default function PenangananTabel({ rows, tab, isAdmin, filtered, onDetail
             const total = (Number(p.harga_jasa) || 0) + (Number(p.biaya_komponen) || 0);
 
             return (
-              <tr key={p.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
-                <td className={`px-3 py-2.5 ${terlambat ? 'shadow-[inset_3px_0_0_#b53a12]' : ''}`}>
-                  <p className="font-bold text-slate-900">{p.inventory?.kode_inventory || 'INV-UNKNOWN'}</p>
-                  <p className="text-xs text-slate-500">{formatJenisKerusakan(p.jenis_kerusakan)}</p>
+              <tr key={p.id} className={terlambat ? 'is-late' : ''}>
+                <td>
+                  <div className="pn-aset">
+                    <span className="pn-ico" style={{ ['--c' as string]: terlambat ? 'var(--dv-alert)' : WARNA_IKON[tab] }}>
+                      <Ikon size={15} />
+                    </span>
+                    <div>
+                      <p className="pn-kode">{p.inventory?.kode_inventory || 'INV-UNKNOWN'}</p>
+                      <p className="pn-jenis">{formatJenisKerusakan(p.jenis_kerusakan)}</p>
+                    </div>
+                  </div>
                 </td>
-                <td className="px-3 py-2.5 font-semibold text-slate-900">{p.inventory?.nama || '-'}</td>
-                <td className="px-3 py-2.5 text-slate-700 max-w-[240px] truncate">{p.keluhan}</td>
+                <td className="pn-strong">{p.inventory?.nama || '-'}</td>
+                <td className="pn-trunc">{p.keluhan}</td>
 
-                {(tab === 'menunggu' || tab === 'diperbaiki' || tab === 'rusak_berat') && (
-                  <td className="px-3 py-2.5 text-slate-700">{namaPelaporPenanganan(p)}</td>
-                )}
-                {tab === 'menunggu' && <td className="px-3 py-2.5 text-slate-700 whitespace-nowrap">{formatTanggalId(p.tanggal_lapor)}</td>}
-                {tab === 'diperbaiki' && <td className="px-3 py-2.5 text-slate-700 whitespace-nowrap">{formatTanggalId(p.tanggal_diterima)}</td>}
+                {(tab === 'menunggu' || tab === 'diperbaiki' || tab === 'rusak_berat') && <td>{namaPelaporPenanganan(p)}</td>}
+                {tab === 'menunggu' && <td className="pn-nowrap">{formatTanggalId(p.tanggal_lapor)}</td>}
+                {tab === 'diperbaiki' && <td className="pn-nowrap">{formatTanggalId(p.tanggal_diterima)}</td>}
                 {tab === 'diperbaiki_selesai' && (
                   <>
-                    <td className="px-3 py-2.5 text-slate-700 whitespace-nowrap">{formatTanggalId(p.tanggal_selesai)}</td>
-                    <td className="px-3 py-2.5 font-bold text-slate-900 whitespace-nowrap">{formatRupiah(total)}</td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-slate-700">{p.no_struk || '-'}</td>
+                    <td className="pn-nowrap">{formatTanggalId(p.tanggal_selesai)}</td>
+                    <td className="pn-strong pn-nowrap">{formatRupiah(total)}</td>
+                    <td className="pn-mono">{p.no_struk || '-'}</td>
                   </>
                 )}
-                {tab === 'rusak_berat' && <td className="px-3 py-2.5 text-slate-700 whitespace-nowrap">{formatTanggalId(p.tanggal_selesai)}</td>}
+                {tab === 'rusak_berat' && <td className="pn-nowrap">{formatTanggalId(p.tanggal_selesai)}</td>}
                 {aktif && (
-                  <td className="px-3 py-2.5">
+                  <td>
                     <Lama hari={hari} terlambat={terlambat} />
                   </td>
                 )}
 
-                <td className="px-3 py-2.5">
-                  <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                    <button type="button" onClick={() => onDetail(p)} className={btnOutline}>
+                <td>
+                  <div className="pn-act">
+                    <button type="button" onClick={() => onDetail(p)} className="pn-btn">
                       Detail
                     </button>
                     {isAdmin && tab === 'menunggu' && (
-                      <button type="button" onClick={() => onTerima(p)} className={btnPrimary}>
+                      <button type="button" onClick={() => onTerima(p)} className="pn-btn pn-btn-primary">
                         Terima laporan
                       </button>
                     )}
                     {isAdmin && tab === 'diperbaiki' && (
-                      <button type="button" onClick={() => onSelesaikan(p)} className={btnPrimary}>
+                      <button type="button" onClick={() => onSelesaikan(p)} className="pn-btn pn-btn-primary">
                         Selesaikan
                       </button>
                     )}
                     {tab === 'diperbaiki_selesai' && p.no_struk && (
-                      <button type="button" onClick={() => onPrint(p)} className={btnOutline}>
+                      <button type="button" onClick={() => onPrint(p)} className="pn-btn pn-btn-primary">
                         Cetak struk
                       </button>
                     )}

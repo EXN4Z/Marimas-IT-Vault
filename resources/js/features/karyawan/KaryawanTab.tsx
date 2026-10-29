@@ -20,10 +20,10 @@ type TabKey = 'semua' | 'user' | 'admin';
 type User = KaryawanRow;
 
 const roleStyles: Record<string, string> = {
-    admin: 'bg-red-50 text-red-700',
-    user: 'bg-teal-50 text-teal-700',
+    admin: 'bg-[#C4411F] dark:bg-[#FF8A65]',
+    user: 'bg-[#5B4A9B] dark:bg-[#A594F5]',
 };
-const defaultRoleStyle = 'bg-slate-50 text-slate-700';
+const defaultRoleStyle = 'bg-[#A1A1AA] dark:bg-[#6B6B75]';
 
 // status kosong (data lama / belum ke-load) dianggap aktif, sama seperti
 // default di database.
@@ -31,15 +31,12 @@ function StatusBadge({ status, small = false }: { status?: string; small?: boole
     const nonaktif = status === 'nonaktif';
     return (
         <span
-            className={`inline-flex items-center gap-1.5 rounded-full font-semibold ${
-                small ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs'
-            } ${nonaktif ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700'}`}
+            className={[
+                'inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 font-semibold text-slate-800 whitespace-nowrap',
+                small ? 'text-[10px] px-2 py-0.5' : 'text-xs px-2.5 py-1',
+            ].join(' ')}
         >
-            {/* Ukuran titik nonaktif sengaja w-[7px] h-[7px], BUKAN w-1.5 h-1.5:
-                di index.css ada rule dark mode yang maksa semua .w-1.5.h-1.5.rounded-full
-                jadi hijau (!important) buat indikator "online", jadi titik nonaktif
-                ikut ke-hijau-in kalau pakai ukuran itu. */}
-            <span className={nonaktif ? 'w-[7px] h-[7px] rounded-full bg-red-500' : 'w-1.5 h-1.5 rounded-full bg-emerald-500'} />
+            <span className={`w-1.5 h-1.5 rounded-full ${nonaktif ? 'bg-[#C4411F] dark:bg-[#FF8A65]' : 'bg-[#2FA45E] dark:bg-[#4CC77D]'}`} />
             {nonaktif ? 'Nonaktif' : 'Aktif'}
         </span>
     );
@@ -266,8 +263,8 @@ export default function TabKaryawan() {
                         </button>
                         <button
                             type="button"
-                            onClick={openCreate}
-                            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs"
+                            onClick={() => setFormModal({ user: null })}
+                            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs dark:!bg-white dark:!text-slate-900 dark:hover:!bg-gray-100"
                         >
                             <Plus size={16} />
                             Tambah User
@@ -276,7 +273,18 @@ export default function TabKaryawan() {
                 )}
             </div>
 
-            <div>
+            {importErrors.length > 0 && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm font-semibold text-red-800 mb-2">Import gagal untuk beberapa baris:</p>
+                    <ul className="text-xs text-red-700 list-disc list-inside space-y-1">
+                        {importErrors.map((err, i) => (
+                            <li key={i}>{err}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {isAdmin && (
                 <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
                     {/* Tab navigation role */}
                     <ScrollableTabBar
@@ -299,103 +307,101 @@ export default function TabKaryawan() {
                         Total {activeTabLabel}: <span className="font-semibold text-slate-900">{totalUsers}</span> user
                     </p>
 
-                    <div className={`border border-slate-200 rounded-lg overflow-hidden transition-opacity ${listLoading ? 'opacity-60' : ''}`}>
-                        {!list && <p className="text-center text-sm text-red-500 py-8">Gagal memuat data. Coba lagi.</p>}
+                    <div className="pn-card">
+                        {!list && <p className="pn-empty">Gagal memuat data. Coba lagi.</p>}
 
                         {list && users.length === 0 && (
-                            <p className="text-center text-sm text-slate-400 py-8">Tidak ada user yang cocok dengan pencarian / filter ini.</p>
+                            <p className="pn-empty">Tidak ada user yang cocok dengan pencarian / filter ini.</p>
                         )}
 
                         {list && users.length > 0 && (
                             <>
                                 {/* Desktop Table */}
-                                <div className="hidden sm:block overflow-x-auto">
-                                    <table className="w-full text-sm">
-                                        <thead>
-                                            <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
-                                                <th className="px-6 py-3.5 font-medium">Nama Karyawan</th>
-                                                <th className="px-6 py-3.5 font-medium">Email</th>
-                                                <th className="px-6 py-3.5 font-medium">Departemen</th>
-                                                <th className="px-6 py-3.5 font-medium">Role</th>
-                                                <th className="px-6 py-3.5 font-medium">Status</th>
-                                                <th className="px-6 py-3.5 font-medium text-right">Aksi</th>
+                                <div className={`hidden sm:block pn-scroll transition-opacity ${listLoading ? 'opacity-60' : ''}`}>
+                                    <table className="pn-table">
+                                    <thead>
+                                        <tr>
+                                            <th>NIK</th>
+                                            <th>Nama</th>
+                                            <th>Email</th>
+                                            <th>Departemen</th>
+                                            <th className="text-center">Role</th>
+                                            <th className="text-center">Status</th>
+                                            <th className="pn-r">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {users.map((user) => (
+                                            <tr key={user.id}>
+                                                <td>
+                                                    <span className="pn-kode">{user.nik}</span>
+                                                </td>
+                                                <td>
+                                                    <div className="max-w-[200px]">
+                                                        <Tooltip content={user.name}>
+                                                            <p className="pn-strong pn-trunc-s">{user.name}</p>
+                                                        </Tooltip>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="max-w-[220px]">
+                                                        <Tooltip content={user.email || '-'}>
+                                                            <p className="pn-trunc-s">{user.email || '-'}</p>
+                                                        </Tooltip>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {user.departemen?.nama || '-'}
+                                                </td>
+                                                <td className="text-center">
+                                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 font-semibold text-slate-800 whitespace-nowrap text-xs px-2.5 py-1">
+                                                        <span className={`w-1.5 h-1.5 rounded-full ${roleStyles[user.role ?? ''] || defaultRoleStyle}`} />
+                                                        {roleLabels[user.role ?? ''] || user.role || '-'}
+                                                    </span>
+                                                </td>
+                                                <td className="text-center">
+                                                    <StatusBadge status={user.status} />
+                                                </td>
+                                                <td>
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setDetailUser(user)}
+                                                            title="Detail"
+                                                            className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                                                        >
+                                                            <Eye size={15} />
+                                                        </button>
+                                                        {isAdmin && (
+                                                            <>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => openEdit(user)}
+                                                                    title="Edit"
+                                                                    className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                                                                >
+                                                                    <Pencil size={15} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => requestDelete(user)}
+                                                                    title="Hapus"
+                                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                                                                >
+                                                                    <Trash2 size={15} />
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </td>
                                             </tr>
-                                        </thead>
-                                        <tbody>
-                                            {users.map((user) => (
-                                                <tr key={user.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                                                    <td className="px-6 py-3.5 text-slate-800">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-700 shrink-0">
-                                                                {initials(user.name)}
-                                                            </div>
-                                                            <div className="min-w-0 max-w-[200px]">
-                                                                <Tooltip content={user.name}>
-                                                                    <p className="font-semibold text-slate-900 truncate">{user.name}</p>
-                                                                </Tooltip>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-3.5 text-slate-600">
-                                                        <div className="max-w-[220px]">
-                                                            <Tooltip content={user.email || '-'}>
-                                                                <p className="truncate text-slate-700">{user.email || '-'}</p>
-                                                            </Tooltip>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-3.5 text-slate-600">
-                                                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700">
-                                                            {user.departemen?.nama || 'Belum diatur'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-3.5">
-                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${roleStyles[user.role ?? ''] || defaultRoleStyle}`}>
-                                                            {roleLabels[user.role ?? ''] || user.role || '-'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-3.5">
-                                                        <StatusBadge status={user.status} />
-                                                    </td>
-                                                    <td className="px-6 py-3.5">
-                                                        <div className="flex items-center justify-end gap-1">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setDetailUser(user)}
-                                                                title="Detail User"
-                                                                className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                                                            >
-                                                                <Eye size={15} />
-                                                            </button>
-                                                            {isAdmin && (
-                                                                <>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => openEdit(user)}
-                                                                        title="Edit User"
-                                                                        className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                                                                    >
-                                                                        <Pencil size={15} />
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => requestDelete(user)}
-                                                                        title="Hapus User"
-                                                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                                                                    >
-                                                                        <Trash2 size={15} />
-                                                                    </button>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
 
-                                {/* Mobile List View */}
-                                <div className="sm:hidden flex flex-col divide-y divide-slate-100">
+                            {/* Mobile List View */}
+                            <div className={`sm:hidden flex flex-col divide-y divide-slate-100 transition-opacity ${listLoading ? 'opacity-60' : ''}`}>
                                     {users.map((user) => (
                                         <div key={user.id} className="p-4 flex flex-col gap-2.5">
                                             <div className="flex items-start justify-between gap-2">
@@ -451,26 +457,26 @@ export default function TabKaryawan() {
                                                 </div>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
+                                ))}
+                            </div>
 
-                                {totalPages > 1 && (
-                                    <div className="px-6 py-3 border-t border-slate-100">
-                                        <Pagination
-                                            currentPage={currentPage}
-                                            totalPages={totalPages}
-                                            onPageChange={(page) => visitList({ page })}
-                                            totalItems={totalUsers}
-                                            itemLabel="user"
-                                            className="pt-0 mt-0 border-t-0"
-                                        />
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
+                            {totalPages > 1 && (
+                                <div className="-mx-[18px] -mb-3 mt-1 px-6 py-3 border-t border-slate-100">
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        onPageChange={(page) => visitList({ page })}
+                                        totalItems={totalUsers}
+                                        itemLabel="user"
+                                        className="pt-0 mt-0 border-t-0"
+                                    />
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
             </div>
+            )}
 
             {/* MODAL TAMBAH / EDIT */}
             {formModal && pageProps.karyawanOpsi && (

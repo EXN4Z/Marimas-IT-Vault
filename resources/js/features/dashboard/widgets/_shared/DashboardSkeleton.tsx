@@ -49,7 +49,7 @@ export function DashboardSkeleton({ variant = 'simple' }: { variant?: 'simple' |
           {/* Tabel riwayat aktivitas full-width */}
           <div className={cardClass}>
             <Skeleton className="h-4 w-40 rounded mb-4" />
-            <table className="w-full text-sm">
+            <table className="pn-table">
               <tbody>
                 <SkeletonTable columns={4} rows={5} />
               </tbody>

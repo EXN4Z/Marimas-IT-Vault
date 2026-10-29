@@ -1,4 +1,4 @@
-export { Panel, EmptyNote, LedgerHeader } from './primitives';
+export { Panel, EmptyNote, LedgerHeader, HeroBanner } from './primitives';
 export { StatusLedger } from './StatusLedger';
 export { PerluTindakan } from './PerluTindakan';
 export { TrenPembelian } from './TrenPembelian';

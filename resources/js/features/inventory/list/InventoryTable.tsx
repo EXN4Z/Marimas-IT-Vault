@@ -5,7 +5,6 @@ import Tooltip from '../../../components/feedback/Tooltip';
 // [F4-INERTIA] Loading/pagination sekarang dari props server: tabel cuma merender halaman yang dikirim.
 import { namaPemakai } from '../inventoryHelpers';
 import type { Inventory } from '../types/inventory';
-import { STATUS_AKSEN } from './helpers';
 import InventoryStatusPill from './InventoryStatusPill';
 
 interface InventoryTableProps {
@@ -20,25 +19,25 @@ interface InventoryTableProps {
   totalItems: number;
 }
 
+// [INVENTORY-V2] Tabel dalam kartu (.pn-card / .pn-table), gaya sama dengan halaman Penanganan.
+// Pagination memakai pembungkus aslinya (px-6 py-3 border-t); margin negatif hanya membatalkan padding kartu.
 export default function InventoryTable({ pageInventory, renderAksi, expandedInventoryId, setExpandedInventoryId, inventoryLastPage, inventoryPageClamped, setInventoryPage, totalItems }: InventoryTableProps) {
   return (
-    <div className="border border-slate-200 rounded-lg overflow-hidden">
-      {pageInventory.length === 0 && (
-        <p className="text-sm text-slate-400 text-center py-8">Belum ada inventory.</p>
-      )}
+    <div className="pn-card">
+      {pageInventory.length === 0 && <p className="pn-empty">Belum ada inventory.</p>}
 
       {pageInventory.length > 0 && (
-        <div className="hidden sm:block overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="hidden sm:block pn-scroll">
+          <table className="pn-table">
             <thead>
-              <tr className="border-b-2 border-slate-900 bg-slate-50 text-[11px] text-slate-500">
-                <th className="px-6 py-3 font-medium">Kode Inventory</th>
-                <th className="px-6 py-3 font-medium">Nama</th>
-                <th className="px-6 py-3 font-medium">Kategori</th>
-                <th className="px-6 py-3 font-medium">Jumlah</th>
-                <th className="px-6 py-3 font-medium">Status</th>
-                <th className="px-6 py-3 font-medium">Dipakai Oleh</th>
-                <th className="px-6 py-3 font-medium">Aksi</th>
+              <tr>
+                <th>Kode Inventory</th>
+                <th>Nama</th>
+                <th className="text-center">Kategori</th>
+                <th className="text-center">Jumlah</th>
+                <th className="text-center">Status</th>
+                <th>Dipakai Oleh</th>
+                <th className="pn-r">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -46,41 +45,36 @@ export default function InventoryTable({ pageInventory, renderAksi, expandedInve
                 // isChild: item menempel ke induk (parent_id terisi)
                 const isChild = a.parent_id !== null;
                 return (
-                  <tr key={a.id} className="text-center border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                    <td className={['px-6 py-3 font-medium text-slate-800 whitespace-nowrap', STATUS_AKSEN[a.status] ?? ''].join(' ')}>{a.kode_inventory}</td>
-                    <td className="px-6 py-3 text-slate-600 max-w-[160px]">
+                  <tr key={a.id}>
+                    <td className="pn-kode pn-nowrap">{a.kode_inventory}</td>
+                    <td style={{ maxWidth: 200 }}>
                       <Tooltip content={a.nama || '-'}>
-                        <p className="truncate">{a.nama || '-'}</p>
+                        <p className="pn-strong pn-trunc-s">{a.nama || '-'}</p>
                       </Tooltip>
-                      {/* Indikator "Menempel ke ..." untuk item yang parent_id-nya
-                          terisi -- data a.parent sudah dari eager-load backend. */}
+                      {/* Indikator "Menempel ke ..." untuk item yang parent_id-nya terisi -- data a.parent dari eager-load backend. */}
                       {isChild && a.parent && (
-                        <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
+                        <p className="pn-jenis flex items-center gap-1 mt-0.5">
                           <Link2 size={11} className="shrink-0" />
                           Menempel ke {a.parent.kode_inventory}
                         </p>
                       )}
                     </td>
-                    <td className="px-6 py-3 whitespace-nowrap">
+                    <td className="pn-nowrap text-center">
                       <StatusBadge colorClass={'border border-slate-200 bg-slate-50 text-slate-700'}>
                         {a.kategori?.nama || '-'}
                       </StatusBadge>
                     </td>
-                    <td className="px-6 py-3 text-slate-600 whitespace-nowrap">{a.jumlah ?? 1}</td>
-                    <td className="px-6 py-3 whitespace-nowrap">
+                    <td className="pn-nowrap text-center">{a.jumlah ?? 1}</td>
+                    <td className="pn-nowrap text-center">
                       <InventoryStatusPill status={a.status} />
                     </td>
-                    <td className="px-6 py-3 text-slate-600 max-w-[160px]">
+                    <td style={{ maxWidth: 180 }}>
                       <Tooltip content={a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
-                        <p className="truncate">
-                          {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini) || '-'}
-                        </p>
+                        <p className="pn-trunc-s">{a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini) || '-'}</p>
                       </Tooltip>
                     </td>
-                    <td className="px-6 py-3">
-                      <div className="flex items-center justify-end gap-1 flex-nowrap">
-                        {renderAksi(a)}
-                      </div>
+                    <td>
+                      <div className="pn-act">{renderAksi(a)}</div>
                     </td>
                   </tr>
                 );
@@ -90,28 +84,26 @@ export default function InventoryTable({ pageInventory, renderAksi, expandedInve
         </div>
       )}
 
-      {/* MOBILE: list card dengan dropdown expand-in-place per baris,
-          gantiin tabel yang kepenuhan di layar sempit. Pola sama kayak
-          "Dropdown detail" Riwayat Pemakai/Perbaikan di panel detail. */}
+      {/* MOBILE: list card dengan dropdown expand-in-place per baris, gantiin tabel yang kepenuhan di layar sempit. */}
       {pageInventory.length > 0 && (
         <div className="sm:hidden flex flex-col divide-y divide-slate-100">
           {pageInventory.map((a) => {
             const expanded = expandedInventoryId === a.id;
             const isChild = a.parent_id !== null;
             return (
-              <div key={a.id} className="px-4 py-3">
+              <div key={a.id} className="py-3">
                 <button
                   type="button"
                   onClick={() => setExpandedInventoryId(expanded ? null : a.id)}
                   className="w-full flex items-start justify-between gap-2 text-left"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-800">{a.kode_inventory}</p>
+                    <p className="pn-kode">{a.kode_inventory}</p>
                     <p className="text-xs text-slate-500 truncate">
                       {`${a.nama || '-'} · Jumlah: ${a.jumlah ?? 1}`}
                     </p>
                     {isChild && a.parent && (
-                      <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
+                      <p className="pn-jenis flex items-center gap-1 mt-0.5">
                         <Link2 size={11} className="shrink-0" />
                         Menempel ke {a.parent.kode_inventory}
                       </p>
@@ -137,9 +129,7 @@ export default function InventoryTable({ pageInventory, renderAksi, expandedInve
                         {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini) || '-'}
                       </span>
                     </p>
-                    <div className="flex items-center flex-wrap gap-1.5">
-                      {renderAksi(a)}
-                    </div>
+                    <div className="flex items-center flex-wrap gap-1.5">{renderAksi(a)}</div>
                   </div>
                 )}
               </div>
@@ -148,9 +138,9 @@ export default function InventoryTable({ pageInventory, renderAksi, expandedInve
         </div>
       )}
 
-      {/* Pagination */}
+      {/* Pagination (komponen yang sekarang, tidak diubah) */}
       {pageInventory.length > 0 && inventoryLastPage > 1 && (
-        <div className="px-6 py-3 border-t border-slate-100">
+        <div className="-mx-[18px] -mb-3 mt-1 px-6 py-3 border-t border-slate-100">
           <Pagination
             currentPage={inventoryPageClamped}
             totalPages={inventoryLastPage}

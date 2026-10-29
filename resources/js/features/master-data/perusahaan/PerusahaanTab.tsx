@@ -269,7 +269,7 @@ export default function TabPerusahaan() {
           <button
             type="button"
             onClick={openCreateModal}
-            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs flex-shrink-0"
+            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs flex-shrink-0 dark:!bg-white dark:!text-slate-900 dark:hover:!bg-gray-100"
           >
             <Plus size={16} />
             Tambah Perusahaan

@@ -20,7 +20,6 @@ import InventoryRowActions from './list/InventoryRowActions';
 import InventoryHeaderBar from './list/InventoryHeaderBar';
 import InventorySedangDipakai from './detail/InventorySedangDipakai';
 import InventoryStatusTabs from './list/InventoryStatusTabs';
-import InventoryStatusBar from './list/InventoryStatusBar';
 import InventoryFilterBar from './list/InventoryFilterBar';
 import InventoryTable from './list/InventoryTable';
 import InventoryJualConfirmModal from './aksi/JualConfirmModal';
@@ -426,7 +425,7 @@ export default function TabInventory() {
   );
 
   return (
-    <>
+    <div className="pn">
       <InventoryHeaderBar
         setExportOpen={bukaExport}
         exportLoading={exportLoading}
@@ -440,7 +439,7 @@ export default function TabInventory() {
 
       {importError && <p className="text-sm mb-4 -mt-2 text-red-600">{importError}</p>}
 
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+      <div>
 
       {/* Section card "Sedang Anda Pakai" -- cuma buat karyawan/cabang (non-admin), berisi inventory yang lagi dia
           pakai/lagi ditangani sendiri. Tabel utama non-admin murni daftar inventory 'tersedia'. */}
@@ -453,13 +452,12 @@ export default function TabInventory() {
         />
       )}
 
-      {isAdmin && <InventoryStatusBar counts={list?.status_counts} />}
-
       {/* Filter status pakai tab nav (ScrollableTabBar). Cuma buat admin -- tabel non-admin selalu isinya
           inventory 'tersedia' aja. */}
       {isAdmin && (
         <InventoryStatusTabs
           statusFilter={statusFilter}
+          statusCounts={list?.status_counts}
           setStatusFilter={setStatusFilter}
           adaIndukDiFilterAktif={adaIndukDiFilterAktif}
         />
@@ -661,6 +659,6 @@ export default function TabInventory() {
         />
       )}
     </div>
-    </>
+    </div>
   );
 }

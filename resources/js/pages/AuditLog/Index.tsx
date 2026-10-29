@@ -139,7 +139,7 @@ export default function AuditLogIndex({ tab, filters, logs: paginator }: Props) 
         Total {tab === 'aktif' ? 'Log Aktif' : 'Trash'}: <span className="font-semibold text-slate-900">{total}</span> log
       </p>
 
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+      <div className="pn-card">
         {loading && (
           <div className="flex flex-col gap-1">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -158,7 +158,7 @@ export default function AuditLogIndex({ tab, filters, logs: paginator }: Props) 
         )}
 
         {!loading && logs.length === 0 && (
-          <p className="text-sm text-slate-400 text-center py-8">
+          <p className="pn-empty">
             {filters.search
               ? <>Tidak ada hasil untuk "{filters.search}".</>
               : tab === 'aktif' ? 'Belum ada aktivitas.' : 'Trash kosong.'}
@@ -204,13 +204,16 @@ export default function AuditLogIndex({ tab, filters, logs: paginator }: Props) 
         )}
 
         {!loading && logs.length > 0 && lastPage > 1 && (
-          <Pagination
-            currentPage={page}
-            totalPages={lastPage}
-            onPageChange={gantiHalaman}
-            totalItems={total}
-            itemLabel="log"
-          />
+          <div className="-mx-[18px] -mb-3 mt-1 px-6 py-3 border-t border-slate-100">
+            <Pagination
+              currentPage={page}
+              totalPages={lastPage}
+              onPageChange={gantiHalaman}
+              totalItems={total}
+              itemLabel="log"
+              className="pt-0 mt-0 border-t-0"
+            />
+          </div>
         )}
       </div>
     </>

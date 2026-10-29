@@ -37,9 +37,9 @@ class InventoryController extends Controller
     // ================================================================== DATA BACA (props halaman Master Data)
 
     // Satu halaman data tab Inventory. Pagination, pencarian, filter status, dan filter kategori dijalankan
-    // server; sumber kebenarannya query string (?search=&status=&kategori[]=&page=). Urutan: status
-    // (tersedia, dipakai, penanganan, rusak_berat, dijual) lalu kode_inventory. Tiap baris sudah lengkap
-    // (relasi list + children_count), jadi modal edit cukup pakai baris ini -- tidak perlu request tambahan.
+    // server; sumber kebenarannya query string (?search=&status=&kategori[]=&page=). Urutan: kode_inventory
+    // menaik. Tiap baris sudah lengkap (relasi list + children_count), jadi modal edit cukup pakai baris ini --
+    // tidak perlu request tambahan.
     public static function daftar(Request $request): array
     {
         $f = self::filterEfektif($request);
@@ -305,7 +305,6 @@ class InventoryController extends Controller
     private static function urutkan(Builder $query): Builder
     {
         return $query
-            ->orderByRaw("CASE inventory.status WHEN 'tersedia' THEN 1 WHEN 'dipakai' THEN 2 WHEN 'menunggu_perbaikan' THEN 3 WHEN 'diperbaiki' THEN 4 WHEN 'rusak_berat' THEN 5 WHEN 'dijual' THEN 6 ELSE 7 END")
             ->orderBy('inventory.kode_inventory')
             ->orderBy('inventory.id');
     }

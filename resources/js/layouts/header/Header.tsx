@@ -15,7 +15,7 @@ interface HeaderProps {
   onSearchResultClick: (path: string) => void;
 }
 
-export default function Header({ title, onMenuClick, navItems, onSearchResultClick }: HeaderProps) {
+export default function Header({ onMenuClick, navItems, onSearchResultClick }: HeaderProps) {
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
 
@@ -25,7 +25,6 @@ export default function Header({ title, onMenuClick, navItems, onSearchResultCli
         <button onClick={onMenuClick} className="lg:hidden text-slate-600">
           <Menu size={22} />
         </button>
-        <h1 className="text-xl font-bold text-slate-900 hidden sm:block">{title}</h1>
       </div>
 
       <GlobalSearch navItems={navItems} onResultClick={onSearchResultClick} />
@@ -40,7 +39,7 @@ export default function Header({ title, onMenuClick, navItems, onSearchResultCli
           className="p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors flex items-center justify-center cursor-pointer"
         >
           {isDark ? (
-            <Sun size={20} className="text-amber-400 hover:rotate-45 transition-transform" />
+            <Sun size={20} className="text-slate-600 hover:rotate-45 transition-transform" />
           ) : (
             <Moon size={20} className="text-slate-600 hover:-rotate-12 transition-transform" />
           )}

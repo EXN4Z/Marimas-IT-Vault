@@ -127,8 +127,8 @@ export default function Laporan() {
           {activeTab === 'export_data'
             ? 'Pilih modul data yang ingin diexport ke format Excel (.xlsx) atau dokumen PDF.'
             : activeTab === 'foto_inventory'
-              ? 'Kelola dan unduh dokumentasi foto aset inventory perusahaan.'
-              : 'Pantau dan unduh seluruh riwayat pergerakan aset dan serah terima inventory.'}
+              ? 'Kelola dan unduh dokumentasi foto inventory perusahaan.'
+              : 'Pantau dan unduh seluruh riwayat pergerakan dan serah terima inventory.'}
         </p>
       </div>
 

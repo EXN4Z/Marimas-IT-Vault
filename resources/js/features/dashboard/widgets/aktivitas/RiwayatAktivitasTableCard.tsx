@@ -100,7 +100,7 @@ export function RiwayatAktivitasTableCard({
         <p className="text-xs text-[#A9A9C6] py-10 text-center">Tidak ada aktivitas yang cocok.</p>
       ) : (
         <div className="overflow-x-auto -mx-1">
-          <table className="w-full text-xs min-w-[560px]">
+          <table className="pn-table min-w-[560px]">
             <thead>
               <tr className="text-left text-[10px] uppercase font-bold text-[#A9A9C6] tracking-wider">
                 <th className="px-3 py-2">Kode Inventory</th>

@@ -13,11 +13,11 @@ import PenangananExportModal from './export/PenangananExportModal';
 import { useAuth } from '../../context/AuthContext';
 import { formatRupiah } from './helpers';
 import Pagination from '../../components/table/Pagination';
+import { AlertTriangle, Download, Upload, Loader2 } from 'lucide-react';
 import ScrollableTabBar from '../../components/navigation/ScrollableTabBar';
 import PenangananTabel from './list/PenangananTabel';
 import PenangananSkeleton from './list/PenangananSkeleton';
 import PenangananHeader from './list/PenangananHeader';
-import PenangananProgressBar from './list/PenangananProgressBar';
 import PenangananBoard from './list/PenangananBoard';
 import { BATAS_TERLAMBAT_HARI, hariSejak } from './list/PenangananBoardCard';
 import PenangananFilterBar from './list/PenangananFilterBar';
@@ -74,21 +74,7 @@ export default function PenangananInventory() {
   const [listLoading, setListLoading] = useState(false);
 
   // Tampilan: tabel (4 halaman/tab, default) atau papan (4 kolom). Pilihan diingat di browser (aman kalau storage diblokir).
-  const [view, setView] = useState<'papan' | 'tabel'>(() => {
-    try {
-      return localStorage.getItem('penanganan-view') === 'papan' ? 'papan' : 'tabel';
-    } catch {
-      return 'tabel';
-    }
-  });
-  const gantiView = (v: 'papan' | 'tabel') => {
-    setView(v);
-    try {
-      localStorage.setItem('penanganan-view', v);
-    } catch {
-      /* abaikan */
-    }
-  };
+  const view = 'tabel' as 'papan' | 'tabel'; // papan dihapus -> selalu tabel
   // Export: di tabel Selesai / Rusak berat = tab itu; selain itu = laporan yang selesai diperbaiki.
   const exportTab: PenangananTab =
     view === 'tabel' && (activeTab === 'diperbaiki_selesai' || activeTab === 'rusak_berat') ? activeTab : 'diperbaiki_selesai';
@@ -275,41 +261,42 @@ export default function PenangananInventory() {
   const terlambat = [...board.menunggu.data, ...board.diperbaiki.data].filter((p) => hariSejak(p.tanggal_lapor) > BATAS_TERLAMBAT_HARI).length;
 
   return (
-    <div className="space-y-6">
+    <div className="pn space-y-6">
       {/* Page Header */}
       <PenangananHeader
         isAdmin={isAdmin}
-        canImportExport={canImportExport}
+        canImportExport={false}
         setExportModalOpen={bukaExport}
         fileInputRef={fileInputRef}
         handleFileSelected={handleFileSelected}
         importLoading={importLoading}
       />
 
-      <p className="text-sm text-slate-500 -mt-3">
-        {terlambat > 0
-          ? `${terlambat} laporan sudah lewat ${BATAS_TERLAMBAT_HARI} hari dan belum selesai.`
-          : `Tidak ada laporan yang lewat ${BATAS_TERLAMBAT_HARI} hari.`}
-      </p>
+      <div className="flex items-center justify-between gap-4">
+        <p className={`pn-warn ${terlambat > 0 ? '' : 'is-ok'}`}>
+          {terlambat > 0 && <AlertTriangle size={13} />}
+          {terlambat > 0
+            ? `${terlambat} laporan sudah lewat ${BATAS_TERLAMBAT_HARI} hari dan belum selesai.`
+            : `Tidak ada laporan yang lewat ${BATAS_TERLAMBAT_HARI} hari.`}
+        </p>
 
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex-1 min-w-[200px]"><PenangananProgressBar counts={counts} /></div>
-        <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden bg-white" role="group" aria-label="Tampilan">
-          {(['papan', 'tabel'] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => gantiView(v)}
-              aria-pressed={view === v}
-              className={`h-9 px-4 text-sm font-semibold capitalize transition ${view === v ? 'bg-[#0b3a9a] text-white' : 'text-slate-500 hover:bg-slate-50'}`}
-            >
-              {v}
+        {canImportExport && (
+          <div className="pn-head-act">
+            <button type="button" onClick={() => bukaExport(true)} className="dd-btn">
+              <Download size={15} />
+              Export Excel
             </button>
-          ))}
-        </div>
+
+            <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileSelected} className="hidden" />
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={importLoading} className="dd-btn">
+              {importLoading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
+              Import Excel
+            </button>
+          </div>
+        )}
       </div>
 
-      {importError && <p className="text-sm text-red-600">{importError}</p>}
+      {importError && <p className="pn-err">{importError}</p>}
 
       {view === 'tabel' && <ScrollableTabBar activeTab={activeTab} onChange={handleTabChange} tabs={tabs} />}
 
@@ -321,6 +308,10 @@ export default function PenangananInventory() {
         setFilterKerusakan={handleJenisChange}
         onReset={handleResetFilter}
       />
+
+      <p className="text-xs text-slate-500 mb-4">
+        Total {TAB_LABEL[activeTab]}: <span className="font-semibold text-slate-900">{counts[activeTab]}</span>
+      </p>
 
       {view === 'papan' ? (
         <PenangananBoard
@@ -335,6 +326,7 @@ export default function PenangananInventory() {
         />
       ) : (
         <div className={`space-y-4 transition-opacity ${listLoading ? 'opacity-60' : ''}`}>
+          <div className="pn-card">
           <PenangananTabel
             rows={rows}
             tab={activeTab}
@@ -345,6 +337,7 @@ export default function PenangananInventory() {
             onSelesaikan={setActivePenanganan}
             onPrint={handlePrintStruk}
           />
+          </div>
           {total > list.per_page && (
             <Pagination
               currentPage={currentPage}

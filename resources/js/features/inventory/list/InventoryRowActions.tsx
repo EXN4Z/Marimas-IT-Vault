@@ -66,7 +66,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
           <button
             onClick={() => setPerbaikanInventoryTarget(a)}
             title="Lapor Kerusakan"
-            className="p-2 text-[#b4390a] bg-[#b4390a]/10 rounded-lg hover:bg-[#b4390a]/20 dark:text-[#ff8a65] transition"
+            className="p-2 text-[#C4411F] bg-[#C4411F]/10 rounded-lg hover:bg-[#C4411F]/20 dark:text-[#ff8a65] transition"
           >
             <Wrench size={15} />
           </button>
@@ -172,7 +172,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
           <button
             onClick={() => setPasangIndukTarget(a)}
             title="Pasang ke Induk"
-            className="p-2 text-[#0b3a9a] bg-[#0b3a9a]/10 rounded-lg hover:bg-[#0b3a9a]/20 dark:text-[#8fb0ff] dark:bg-[#6c97f5]/15 transition"
+            className="p-2 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition"
           >
             <Link2 size={15} />
           </button>
@@ -190,7 +190,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
           <button
             onClick={() => setPengembalianTarget({ inventory: a, pemakai: a.pemakai_saat_ini! })}
             title="Terima Kembali"
-            className="p-2 text-white bg-[#0b3a9a] rounded-lg hover:bg-[#082c75] dark:bg-[#6c97f5] dark:text-[#0c1530] dark:hover:bg-[#8fb0ff] transition"
+            className="p-2 text-white bg-[#18181B] rounded-lg hover:opacity-90 dark:bg-[#F4F4F5] dark:text-[#17151F] transition"
           >
             <Undo2 size={15} />
           </button>
@@ -200,7 +200,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
           <button
             onClick={() => setPerbaikanInventoryTarget(a)}
             title="Lapor Kerusakan"
-            className="p-2 text-[#b4390a] bg-[#b4390a]/10 rounded-lg hover:bg-[#b4390a]/20 dark:text-[#ff8a65] transition"
+            className="p-2 text-[#C4411F] bg-[#C4411F]/10 rounded-lg hover:bg-[#C4411F]/20 dark:text-[#ff8a65] transition"
           >
             <Wrench size={15} />
           </button>

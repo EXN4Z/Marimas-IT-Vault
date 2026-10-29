@@ -7,16 +7,16 @@ import { DashboardSkeleton } from './widgets/_shared';
 import {
   Panel,
   LedgerHeader,
+  HeroBanner,
   StatusLedger,
   PerluTindakan,
   TrenPembelian,
-  DepartemenKaryawan,
   AktivitasRows,
   NotifikasiLedger,
   KalenderLedger,
 } from './widgets/ledger';
 
-// Dashboard admin, gaya "ledger" (tema & variabel warna: kelas .dv di index.css; terang/gelap otomatis).
+// Dashboard admin [DASHBOARD-V2] (tema & variabel warna: kelas .dv / .dd-* di index.css; terang/gelap otomatis).
 // [F8-INERTIA] Data dari props `analitik` (deferred; DashboardPageController -> DashboardQuery::admin).
 // Selama belum datang -> skeleton. Notifikasi tetap lewat hook sendiri.
 export default function DashboardAdmin() {
@@ -30,7 +30,7 @@ export default function DashboardAdmin() {
     return <DashboardSkeleton variant="full" />;
   }
 
-  const { ringkasanInventory, trenPembelianInventory, inventoryPerhatian, aktivitasKalender, departemen } = analitik;
+  const { ringkasanInventory, trenPembelianInventory, inventoryPerhatian, aktivitasKalender } = analitik;
 
   const rusak = inventoryPerhatian?.rusak ?? 0;
   const dalamPenanganan = inventoryPerhatian?.dalamPenanganan ?? 0;
@@ -39,44 +39,76 @@ export default function DashboardAdmin() {
 
   const kalimat =
     totalPerhatian > 0
-      ? `${totalPerhatian} aset perlu perhatian: ${rusak} rusak berat, ${dalamPenanganan} sedang ditangani, dan ${garansi} garansinya habis dalam 30 hari.`
-      : 'Tidak ada aset yang perlu perhatian hari ini.';
+      ? `${totalPerhatian} inventory perlu perhatian: ${rusak} rusak berat, ${dalamPenanganan} sedang ditangani, dan ${garansi} garansinya habis dalam 30 hari.`
+      : 'Tidak ada inventory yang perlu perhatian hari ini.';
 
   return (
-    <div className="dv flex flex-col gap-8">
+    <div className="dv dd-page">
       <LedgerHeader
         name={user?.name}
         sentence={kalimat}
         actions={
           <>
-            <button type="button" className="dv-btn" onClick={() => navigate('/laporan?tab=export_data')}>
+            <button type="button" className="dd-btn" onClick={() => navigate('/laporan?tab=export_data')}>
               Ekspor laporan
             </button>
-            <button type="button" className="dv-btn dv-btn-primary" onClick={() => navigate('/master-data?tab=inventory')}>
+            <button type="button" className="dd-btn dd-btn-primary" onClick={() => navigate('/master-data?tab=inventory')}>
               Kelola inventory
             </button>
           </>
+        }
+        banner={
+          <HeroBanner
+            title={
+              totalPerhatian > 0 ? (
+                <>
+                  Perlu perhatian
+                  <br />
+                  hari ini
+                </>
+              ) : (
+                <>
+                  Semua aman
+                  <br />
+                  hari ini
+                </>
+              )
+            }
+            text="Inventory rusak, dalam penanganan, dan garansi yang segera berakhir."
+            cta="Buka penanganan"
+            onCta={() => navigate('/penanganan-inventory')}
+            stats={[
+              { value: rusak, label: 'Rusak berat', alert: true },
+              { value: dalamPenanganan, label: 'Ditangani' },
+              { value: garansi, label: 'Garansi' },
+            ]}
+          />
         }
       />
 
       <StatusLedger ringkasan={ringkasanInventory} />
 
-      <div className="dv-cols lg:grid-cols-3">
-        <PerluTindakan perhatian={inventoryPerhatian} dijual={ringkasanInventory?.dijual ?? 0} />
+      <div className="dd-row2">
         <TrenPembelian data={trenPembelianInventory} />
-        <DepartemenKaryawan data={departemen} />
-      </div>
-
-      <div className="dv-cols lg:grid-cols-[3fr_2fr]">
-        <Panel title="Aktivitas terbaru" subtitle="Pinjam, kembali, dan laporan kerusakan.">
+        <Panel
+          title="Aktivitas terbaru"
+          subtitle="Pinjam, kembali, dan laporan kerusakan."
+          right={
+            <button type="button" className="dd-pill" onClick={() => navigate('/laporan?tab=riwayat_inventory')}>
+              Lihat semua
+            </button>
+          }
+        >
           <AktivitasRows events={(aktivitasKalender ?? []).slice(0, 5)} />
         </Panel>
-        <NotifikasiLedger notifications={notifications} onMarkAsRead={handleMarkAsRead} />
       </div>
+
+      <PerluTindakan perhatian={inventoryPerhatian} dijual={ringkasanInventory?.dijual ?? 0} />
 
       <KalenderLedger
         aktivitas={aktivitasKalender}
-        subtitle="Titik menandai tanggal yang ada mutasi. Titik merah berarti ada laporan kerusakan. Pilih tanggal untuk melihat lognya."
+        subtitle="Lingkaran menandai tanggal yang ada mutasi. Kuning berarti ada laporan kerusakan. Pilih tanggal untuk melihat lognya."
+        aside={<NotifikasiLedger notifications={notifications} onMarkAsRead={handleMarkAsRead} />}
       />
     </div>
   );

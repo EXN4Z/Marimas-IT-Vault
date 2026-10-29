@@ -20,34 +20,30 @@ export function DiTanganmu({ items, jumlah }: { items?: InventoryDipegang[]; jum
   return (
     <Panel title="Di tanganmu" subtitle="Diserahkan oleh admin IT.">
       {list.length > 0 ? (
-        list.map((it, i) => {
+        list.map((it) => {
           const lama = lamaHari(it.sejak);
           return (
-            <div
-              key={it.id}
-              className="flex items-center justify-between gap-4 flex-wrap py-5"
-              style={{ borderTop: i === 0 ? '2px solid var(--dv-ink)' : '1px solid var(--dv-line)' }}
-            >
-              <div>
-                <div className="dv-g text-[26px] font-bold leading-tight">{it.kode_inventory ?? '-'}</div>
+            <div key={it.id} className="dd-hold">
+              <div className="min-w-0">
+                <div className="dv-g text-[22px] font-bold leading-tight">{it.kode_inventory ?? '-'}</div>
                 <div className="text-sm mt-0.5">{it.nama ?? ''}</div>
                 {lama && <div className="dv-sub" style={{ margin: '4px 0 0' }}>{lama.teks}</div>}
               </div>
-              <button type="button" className="dv-btn" onClick={() => navigate('/master-data?tab=inventory')}>
+              <button type="button" className="dd-btn dd-btn-sm" onClick={() => navigate('/master-data?tab=inventory')}>
                 Lapor kerusakan
               </button>
             </div>
           );
         })
       ) : jumlah > 0 ? (
-        <div className="flex items-center justify-between gap-4 flex-wrap py-5" style={{ borderTop: '2px solid var(--dv-ink)' }}>
+        <div className="dd-hold">
           <div className="text-sm">Kamu memegang {jumlah} inventory.</div>
-          <button type="button" className="dv-btn" onClick={() => navigate('/master-data?tab=inventory')}>Lihat inventory</button>
+          <button type="button" className="dd-btn dd-btn-sm" onClick={() => navigate('/master-data?tab=inventory')}>
+            Lihat inventory
+          </button>
         </div>
       ) : (
-        <div style={{ borderTop: '2px solid var(--dv-ink)' }}>
-          <EmptyNote>Kamu belum memegang inventory. Hubungi admin IT untuk serah terima.</EmptyNote>
-        </div>
+        <EmptyNote>Kamu belum memegang inventory. Hubungi admin IT untuk serah terima.</EmptyNote>
       )}
     </Panel>
   );

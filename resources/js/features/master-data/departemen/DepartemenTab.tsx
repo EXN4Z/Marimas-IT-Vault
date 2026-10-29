@@ -206,7 +206,7 @@ export default function TabDepartemen() {
             <button
               type="button"
               onClick={openCreateModal}
-              className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs"
+              className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs dark:!bg-white dark:!text-slate-900 dark:hover:!bg-gray-100"
             >
               <Plus size={16} />
               Tambah Departemen
@@ -214,74 +214,79 @@ export default function TabDepartemen() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-          <div className="flex flex-col sm:flex-row gap-3 mb-4">
-            <SearchInput
-              value={search}
-              onChange={setSearch}
-              placeholder="Cari nama departemen..."
-              className="flex-1"
-            />
-          </div>
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Cari nama departemen..."
+            className="flex-1"
+          />
+        </div>
 
-          <p className="text-xs text-slate-500 mb-4">
-            Total Semua: <span className="font-semibold text-slate-900">{filteredItems.length}</span> departemen
-          </p>
+        <p className="text-xs text-slate-500 mb-4">
+          Total Semua: <span className="font-semibold text-slate-900">{filteredItems.length}</span> departemen
+        </p>
 
-          <div className="border border-slate-200 rounded-lg overflow-hidden">
-            {items.length === 0 && (
-              <p className="text-sm text-slate-400 text-center py-8">Belum ada data departemen.</p>
-            )}
+        <div className="pn-card">
+          {items.length === 0 && (
+            <p className="pn-empty">Belum ada data departemen.</p>
+          )}
 
-            {items.length > 0 && filteredItems.length === 0 && (
-              <p className="text-sm text-slate-400 text-center py-8">Departemen tidak ditemukan.</p>
-            )}
+          {items.length > 0 && filteredItems.length === 0 && (
+            <p className="pn-empty">Departemen tidak ditemukan.</p>
+          )}
 
-            {filteredItems.length > 0 && (
-              <>
-                {/* Desktop Table */}
-                <div className="hidden sm:block overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
-                        <th className="px-6 py-3.5 font-medium">Nama</th>
-                        <th className="px-6 py-3.5 font-medium text-right">Aksi</th>
+          {filteredItems.length > 0 && (
+            <>
+              {/* Desktop Table */}
+              <div className="hidden sm:block pn-scroll">
+                <table className="pn-table">
+                  <thead>
+                    <tr>
+                      <th>Nama Departemen</th>
+                      <th className="text-center">Jumlah User</th>
+                      <th className="pn-r">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedItems.map((item) => (
+                      <tr key={item.id}>
+                        <td className="font-medium">{item.nama}</td>
+                        <td className="text-center">
+                          <span className="text-slate-700 text-sm font-semibold">
+                            {item.karyawan_count ?? 0}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(item)}
+                              title="Edit"
+                              className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteTarget(item)}
+                              title="Hapus"
+                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedItems.map((item) => (
-                        <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                          <td className="px-6 py-3.5 text-slate-800 font-medium">{item.nama}</td>
-                          <td className="px-6 py-3.5">
-                            <div className="flex items-center justify-end gap-1">
-                              <button
-                                type="button"
-                                onClick={() => openEditModal(item)}
-                                title="Edit"
-                                className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                              >
-                                <Pencil size={15} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setDeleteTarget(item)}
-                                title="Hapus"
-                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-                {/* Mobile List View */}
-                <div className="sm:hidden flex flex-col divide-y divide-slate-100">
-                  {paginatedItems.map((item) => (
-                    <div key={item.id} className="p-4 flex flex-col gap-2">
+              {/* Mobile List View */}
+              <div className="sm:hidden flex flex-col divide-y divide-slate-100">
+                {paginatedItems.map((item) => (
+                  <div key={item.id} className="py-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-slate-900 truncate">{item.nama}</p>
@@ -305,25 +310,24 @@ export default function TabDepartemen() {
                           </button>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-
-                {totalPages > 1 && (
-                  <div className="px-6 py-3 border-t border-slate-100">
-                    <Pagination
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={setCurrentPage}
-                      totalItems={filteredItems.length}
-                      itemLabel="departemen"
-                      className="pt-0 mt-0 border-t-0"
-                    />
                   </div>
-                )}
-              </>
-            )}
-          </div>
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="-mx-[18px] -mb-3 mt-1 px-6 py-3 border-t border-slate-100">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    totalItems={filteredItems.length}
+                    itemLabel="departemen"
+                    className="pt-0 mt-0 border-t-0"
+                  />
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 

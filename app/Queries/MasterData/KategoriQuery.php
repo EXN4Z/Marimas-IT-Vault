@@ -10,6 +10,6 @@ class KategoriQuery
 {
     public static function daftar(): array
     {
-        return Kategori::orderBy('nama')->get()->all();
+        return Kategori::withCount('inventory')->orderBy('nama')->get()->all();
     }
 }

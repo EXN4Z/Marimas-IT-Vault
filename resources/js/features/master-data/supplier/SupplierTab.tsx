@@ -221,7 +221,7 @@ export default function TabSupplier() {
             <button
               type="button"
               onClick={openCreateModal}
-              className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs"
+              className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs dark:!bg-white dark:!text-slate-900 dark:hover:!bg-gray-100"
             >
               <Plus size={16} />
               Tambah Supplier
@@ -229,50 +229,49 @@ export default function TabSupplier() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-          <div className="flex flex-col sm:flex-row gap-3 mb-4">
-            <SearchInput
-              value={search}
-              onChange={setSearch}
-              placeholder="Cari nama, alamat, atau telepon supplier..."
-              className="flex-1"
-            />
-          </div>
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Cari nama, alamat, atau telepon supplier..."
+            className="flex-1"
+          />
+        </div>
 
-          <p className="text-xs text-slate-500 mb-4">
-            Total Semua: <span className="font-semibold text-slate-900">{filteredItems.length}</span> supplier
-          </p>
+        <p className="text-xs text-slate-500 mb-4">
+          Total Semua: <span className="font-semibold text-slate-900">{filteredItems.length}</span> supplier
+        </p>
 
-          <div className="border border-slate-200 rounded-lg overflow-hidden">
-            {items.length === 0 && (
-              <p className="text-sm text-slate-400 text-center py-8">Belum ada data supplier.</p>
-            )}
+        <div className="pn-card">
+          {items.length === 0 && (
+            <p className="pn-empty">Belum ada data supplier.</p>
+          )}
 
-            {items.length > 0 && filteredItems.length === 0 && (
-              <p className="text-sm text-slate-400 text-center py-8">Supplier tidak ditemukan.</p>
-            )}
+          {items.length > 0 && filteredItems.length === 0 && (
+            <p className="pn-empty">Supplier tidak ditemukan.</p>
+          )}
 
-            {filteredItems.length > 0 && (
-              <>
-                {/* Desktop Table */}
-                <div className="hidden sm:block overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-100 text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
-                        <th className="px-6 py-3.5 font-medium">Nama</th>
-                        <th className="px-6 py-3.5 font-medium">Alamat</th>
-                        <th className="px-6 py-3.5 font-medium">Telepon</th>
-                        <th className="px-6 py-3.5 font-medium text-right">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedItems.map((item) => (
-                        <tr key={item.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition">
-                          <td className="px-6 py-3.5 text-slate-800 font-medium">{item.nama}</td>
-                          <td className="px-6 py-3.5 text-slate-600 max-w-[240px] truncate">{item.alamat || '-'}</td>
-                          <td className="px-6 py-3.5 text-slate-600 whitespace-nowrap">{item.telepon || '-'}</td>
-                          <td className="px-6 py-3.5">
-                            <div className="flex items-center justify-end gap-1">
+          {filteredItems.length > 0 && (
+            <>
+              {/* Desktop Table */}
+              <div className="hidden sm:block pn-scroll">
+                <table className="pn-table">
+                  <thead>
+                    <tr>
+                      <th>Nama</th>
+                      <th>Alamat</th>
+                      <th>Telepon</th>
+                      <th className="pn-r">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedItems.map((item) => (
+                      <tr key={item.id}>
+                        <td className="font-medium">{item.nama}</td>
+                        <td className="text-slate-600 max-w-[240px] truncate">{item.alamat || '-'}</td>
+                        <td className="text-slate-600 whitespace-nowrap">{item.telepon || '-'}</td>
+                        <td>
+                          <div className="flex items-center justify-end gap-1">
                               <button
                                 type="button"
                                 onClick={() => openEditModal(item)}
@@ -293,12 +292,12 @@ export default function TabSupplier() {
                           </td>
                         </tr>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
+                  </tbody>
+                </table>
+              </div>
 
-                {/* Mobile List View */}
-                <div className="sm:hidden flex flex-col divide-y divide-slate-100">
+              {/* Mobile List View */}
+              <div className="sm:hidden flex flex-col divide-y divide-slate-100">
                   {paginatedItems.map((item) => (
                     <div key={item.id} className="p-4 flex flex-col gap-2">
                       <div className="flex items-start justify-between gap-2">
@@ -332,23 +331,22 @@ export default function TabSupplier() {
                       )}
                     </div>
                   ))}
-                </div>
+              </div>
 
-                {totalPages > 1 && (
-                  <div className="px-6 py-3 border-t border-slate-100">
-                    <Pagination
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={setCurrentPage}
-                      totalItems={filteredItems.length}
-                      itemLabel="supplier"
-                      className="pt-0 mt-0 border-t-0"
-                    />
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+              {totalPages > 1 && (
+                <div className="-mx-[18px] -mb-3 mt-1 px-6 py-3 border-t border-slate-100">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    totalItems={filteredItems.length}
+                    itemLabel="supplier"
+                    className="pt-0 mt-0 border-t-0"
+                  />
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 

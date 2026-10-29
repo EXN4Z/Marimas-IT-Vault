@@ -97,17 +97,17 @@ class LogActivity
         $kodeAset = $this->kodeAsetDariRoute($route);
 
         return match (true) {
-            ($uri === 'inventory' || $uri === 'aset') && $method === 'POST' => "{$nama} menambahkan aset baru" . ($request->input('nama') ? " ({$request->input('nama')})" : ''),
-            ($uri === 'inventory/{inventory}' || $uri === 'aset/{aset}') && $method === 'POST' => "{$nama} mengubah data aset" . ($kodeAset ? " {$kodeAset}" : ''),
-            ($uri === 'inventory/{inventory}' || $uri === 'aset/{aset}') && $method === 'DELETE' => "{$nama} menghapus aset" . ($kodeAset ? " {$kodeAset}" : ''),
-            $uri === 'inventory/{inventory}/pemakai' || $uri === 'aset/{aset}/pemakai' => "{$nama} meminjamkan aset" . ($kodeAset ? " {$kodeAset}" : '') . " ke " . $this->namaPenerima($request),
-            $uri === 'inventory-pemakai/{inventoryPemakai}/kembalikan' || $uri === 'aset-pemakai/{asetPemakai}/kembalikan' => "{$nama} mencatat pengembalian aset dari peminjam",
-            ($uri === 'inventory-pemakai/{inventoryPemakai}' || $uri === 'aset-pemakai/{asetPemakai}') && $method === 'DELETE' => "{$nama} menghapus riwayat pemakaian aset",
-            ($uri === 'inventory-penanganan' || $uri === 'aset-penanganan') && $method === 'POST' => "{$nama} melaporkan kerusakan aset" . ($request->input('keluhan') ? ": {$request->input('keluhan')}" : ''),
-            $uri === 'inventory-penanganan/{inventoryPenanganan}/terima' || $uri === 'aset-penanganan/{asetPenanganan}/terima' => "{$nama} mulai menangani laporan kerusakan aset",
-            ($uri === 'inventory-penanganan/{inventoryPenanganan}' || $uri === 'aset-penanganan/{asetPenanganan}') && in_array($method, ['POST', 'PUT', 'PATCH'], true) => "{$nama} memperbarui status penanganan aset" . ($request->input('hasil') ? " (hasil: {$request->input('hasil')})" : ''),
-            ($uri === 'inventory-penanganan/{inventoryPenanganan}' || $uri === 'aset-penanganan/{asetPenanganan}') && $method === 'DELETE' => "{$nama} menghapus laporan penanganan aset",
-            $uri === 'inventory/{inventory}/jual' || $uri === 'aset/{aset}/jual' => "{$nama} menjual/writeoff aset" . ($kodeAset ? " {$kodeAset}" : ''),
+            ($uri === 'inventory' || $uri === 'aset') && $method === 'POST' => "{$nama} menambahkan inventory baru" . ($request->input('nama') ? " ({$request->input('nama')})" : ''),
+            ($uri === 'inventory/{inventory}' || $uri === 'aset/{aset}') && $method === 'POST' => "{$nama} mengubah data inventory" . ($kodeAset ? " {$kodeAset}" : ''),
+            ($uri === 'inventory/{inventory}' || $uri === 'aset/{aset}') && $method === 'DELETE' => "{$nama} menghapus inventory" . ($kodeAset ? " {$kodeAset}" : ''),
+            $uri === 'inventory/{inventory}/pemakai' || $uri === 'aset/{aset}/pemakai' => "{$nama} meminjamkan inventory" . ($kodeAset ? " {$kodeAset}" : '') . " ke " . $this->namaPenerima($request),
+            $uri === 'inventory-pemakai/{inventoryPemakai}/kembalikan' || $uri === 'aset-pemakai/{asetPemakai}/kembalikan' => "{$nama} mencatat pengembalian inventory dari peminjam",
+            ($uri === 'inventory-pemakai/{inventoryPemakai}' || $uri === 'aset-pemakai/{asetPemakai}') && $method === 'DELETE' => "{$nama} menghapus riwayat pemakaian inventory",
+            ($uri === 'inventory-penanganan' || $uri === 'aset-penanganan') && $method === 'POST' => "{$nama} melaporkan kerusakan inventory" . ($request->input('keluhan') ? ": {$request->input('keluhan')}" : ''),
+            $uri === 'inventory-penanganan/{inventoryPenanganan}/terima' || $uri === 'aset-penanganan/{asetPenanganan}/terima' => "{$nama} mulai menangani laporan kerusakan inventory",
+            ($uri === 'inventory-penanganan/{inventoryPenanganan}' || $uri === 'aset-penanganan/{asetPenanganan}') && in_array($method, ['POST', 'PUT', 'PATCH'], true) => "{$nama} memperbarui status penanganan inventory" . ($request->input('hasil') ? " (hasil: {$request->input('hasil')})" : ''),
+            ($uri === 'inventory-penanganan/{inventoryPenanganan}' || $uri === 'aset-penanganan/{asetPenanganan}') && $method === 'DELETE' => "{$nama} menghapus laporan penanganan inventory",
+            $uri === 'inventory/{inventory}/jual' || $uri === 'aset/{aset}/jual' => "{$nama} menjual/writeoff inventory" . ($kodeAset ? " {$kodeAset}" : ''),
             default => null,
         };
     }

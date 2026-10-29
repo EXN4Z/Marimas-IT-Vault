@@ -24,7 +24,7 @@ class PasswordAkunBaru extends Notification implements \Illuminate\Contracts\Que
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Akun Sistem Aset Kamu Sudah Dibuat')
+            ->subject('Akun Sistem Inventory Kamu Sudah Dibuat')
             ->greeting('Halo, ' . $notifiable->name)
             ->line('Akun kamu sudah dibuat oleh admin.')
             ->line('Email login: ' . $notifiable->email)

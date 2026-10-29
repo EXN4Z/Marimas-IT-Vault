@@ -88,7 +88,7 @@ export default function MasterData() {
   };
 
   return (
-    <>
+    <div className="pn">
       <div className="mb-4">
         <p className="text-sm text-slate-500">
           {isAdmin
@@ -105,6 +105,6 @@ export default function MasterData() {
       />
 
       {renderTab(activeTab)}
-    </>
+    </div>
   );
 }

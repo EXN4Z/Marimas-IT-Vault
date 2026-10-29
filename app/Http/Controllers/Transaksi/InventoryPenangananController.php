@@ -107,7 +107,7 @@ class InventoryPenangananController extends Controller
     {
         $this->penanganan->terima($inventoryPenanganan);
 
-        return back()->with('success', 'Laporan diterima, aset ditandai sedang diperbaiki.');
+        return back()->with('success', 'Laporan diterima, inventory ditandai sedang diperbaiki.');
     }
 
     // PUT /penanganan-inventory/{inventoryPenanganan}  -- admin-only. Tandai selesai + hasil/biaya. Gagal -> error bag

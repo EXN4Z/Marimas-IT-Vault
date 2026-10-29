@@ -84,7 +84,7 @@ export default function PenangananKpiCards({ handleTabChange, activeTab, counts 
           </span>
         </div>
         <div className="text-2xl font-bold text-slate-900">{counts.rusak_berat}</div>
-        <p className="text-xs text-slate-500 mt-1">Afkir / write-off aset</p>
+        <p className="text-xs text-slate-500 mt-1">Afkir / write-off inventory</p>
       </button>
     </div>
   );

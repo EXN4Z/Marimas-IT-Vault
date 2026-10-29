@@ -1,46 +1,94 @@
+import type { CSSProperties, ReactNode } from 'react';
+import { Package, Check, Users, AlertTriangle } from 'lucide-react';
 import type { RingkasanInventory } from '../../types';
 
-// Hero admin: total aset + satu bar bersegmen (tersedia / dipakai / rusak berat / dijual).
+type Tone = 'green' | 'yellow' | 'salmon';
+
+function KpiRing({
+  icon,
+  label,
+  value,
+  caption,
+  pct,
+  tone,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: number;
+  caption: string;
+  pct: number;
+  tone: Tone;
+}) {
+  return (
+    <div className={`dd-k dd-k-${tone}`}>
+      <span className="dd-k-blob" aria-hidden="true" />
+      <span className="dd-k-blob2" aria-hidden="true" />
+      <div className="dd-k-ic">{icon}</div>
+      <div className="dd-k-tx">
+        <small>{label}</small>
+        <b className="dv-g">{value}</b>
+        <em>{caption}</em>
+      </div>
+      <div className="dd-k-rg" style={{ '--p': pct } as CSSProperties} role="img" aria-label={`${pct}% dari total inventory`}>
+        <span>{pct}%</span>
+      </div>
+    </div>
+  );
+}
+
+// 4 kartu KPI admin: total aset (hero + bar bersegmen) dan 3 kartu ber-ring (tersedia / dipakai / rusak berat).
 export function StatusLedger({ ringkasan }: { ringkasan: RingkasanInventory }) {
   const total = ringkasan?.total ?? 0;
-  const segs = [
-    { label: 'Tersedia', value: ringkasan?.tersedia ?? 0, color: 'var(--dv-primary)', alert: false },
-    { label: 'Dipakai', value: ringkasan?.dipakai ?? 0, color: 'var(--dv-seg-dipakai)', alert: false },
-    { label: 'Rusak berat', value: ringkasan?.rusakBerat ?? 0, color: 'var(--dv-alert)', alert: true },
-    { label: 'Dijual', value: ringkasan?.dijual ?? 0, color: 'var(--dv-seg-dijual)', alert: false },
-  ];
+  const tersedia = ringkasan?.tersedia ?? 0;
+  const dipakai = ringkasan?.dipakai ?? 0;
+  const rusak = ringkasan?.rusakBerat ?? 0;
+  const dijual = ringkasan?.dijual ?? 0;
   const pct = (v: number) => (total > 0 ? Math.round((v / total) * 100) : 0);
+
+  const segs = [
+    { label: 'Tersedia', value: tersedia, color: '#5EE09A' },
+    { label: 'Dipakai', value: dipakai, color: '#F5B83D' },
+    { label: 'Rusak', value: rusak, color: '#FF8A7A' },
+    { label: 'Dijual', value: dijual, color: 'rgba(255,255,255,.55)' },
+  ];
   const summary = segs.map((s) => `${s.value} ${s.label.toLowerCase()}`).join(', ');
 
   return (
-    <section aria-label="Status inventory" className="grid gap-6 lg:gap-10 lg:grid-cols-[260px_1fr] items-end">
-      <div>
-        <div className="dv-g text-[72px] sm:text-[96px] leading-[0.9] font-bold">{total}</div>
-        <p className="dv-soft text-sm mt-2">aset terdata</p>
-      </div>
-      <div>
-        <div className="flex gap-[3px] h-[26px]" role="img" aria-label={`Dari ${total} aset: ${summary}`}>
-          {total === 0 ? (
-            <div className="flex-1 dv-track" style={{ height: '100%' }} />
-          ) : (
-            segs.filter((s) => s.value > 0).map((s) => (
-              <div key={s.label} style={{ flex: s.value, minWidth: 4, background: s.color }} />
-            ))
-          )}
+    <section aria-label="Status inventory" className="dd-kpis">
+      <div className="dd-k dd-k-hero">
+        <span className="dd-k-r1" aria-hidden="true" />
+        <span className="dd-k-r2" aria-hidden="true" />
+        <div className="dd-k-top">
+          <div className="dd-k-ic">
+            <Package size={23} />
+          </div>
+          <div className="dd-k-tx">
+            <small>Total inventory</small>
+            <b className="dv-g">{total}</b>
+          </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-3 text-[13px] dv-soft">
-          {segs.map((s) => (
-            <div key={s.label}>
-              <b className={`dv-g text-[22px] ${s.alert && s.value > 0 ? 'dv-alert' : ''}`} style={s.alert && s.value > 0 ? undefined : { color: 'var(--dv-ink)' }}>
-                {s.value}
-              </b>
-              <br />
-              {s.label}
-              {s.label !== 'Rusak berat' && total > 0 ? ` (${pct(s.value)}%)` : ''}
-            </div>
-          ))}
+        <div>
+          <div className="dd-seg" role="img" aria-label={`Dari ${total} inventory: ${summary}`}>
+            {total === 0 ? (
+              <i style={{ flex: 1, background: 'rgba(255,255,255,.25)' }} />
+            ) : (
+              segs.filter((s) => s.value > 0).map((s) => <i key={s.label} style={{ flex: s.value, minWidth: 6, background: s.color }} />)
+            )}
+          </div>
+          <div className="dd-seg-cap">
+            {segs.map((s) => (
+              <span key={s.label}>
+                <u style={{ background: s.color }} />
+                {s.label}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
+
+      <KpiRing tone="green" icon={<Check size={23} />} label="Tersedia" value={tersedia} caption="siap dipinjam" pct={pct(tersedia)} />
+      <KpiRing tone="yellow" icon={<Users size={23} />} label="Dipakai" value={dipakai} caption="sedang dipakai" pct={pct(dipakai)} />
+      <KpiRing tone="salmon" icon={<AlertTriangle size={23} />} label="Rusak berat" value={rusak} caption="belum ditangani" pct={pct(rusak)} />
     </section>
   );
 }

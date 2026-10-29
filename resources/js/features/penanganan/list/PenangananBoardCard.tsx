@@ -33,9 +33,9 @@ interface Props {
 
 function Baris({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-3 pb-1 border-b border-slate-100">
-      <span className="text-slate-500">{label}</span>
-      <span className={`text-right ${bold ? 'font-bold text-slate-900' : 'font-medium text-slate-800'}`}>{value}</span>
+    <div className="pn-brow">
+      <span>{label}</span>
+      <span className={bold ? 'pn-strong' : ''}>{value}</span>
     </div>
   );
 }
@@ -54,50 +54,47 @@ export default function PenangananBoardCard({ p, status, isAdmin, onDetail, onTe
     <div
       draggable={draggable}
       onDragStart={(e) => e.dataTransfer.setData('text/penanganan-id', String(p.id))}
-      className={`bg-white rounded-md border text-xs ${terlambat ? 'border-[#b53a12]' : 'border-slate-200'} ${draggable ? 'cursor-grab' : ''}`}
+      className={`pn-bcard ${terlambat ? 'is-late' : ''} ${draggable ? 'is-drag' : ''}`}
     >
-      <div className="px-2.5 py-2 space-y-0.5">
-        <div className="flex items-center justify-between gap-2">
-          <p className="font-bold text-slate-900 truncate">
+      <div className="pn-bcard-in">
+        <div className="pn-bcard-top">
+          <p className="pn-kode pn-trunc-s">
             {p.inventory?.kode_inventory || 'INV-UNKNOWN'}
-            <span className="font-normal text-slate-500"> · {formatJenisKerusakan(p.jenis_kerusakan)}</span>
+            <span className="pn-jenis"> · {formatJenisKerusakan(p.jenis_kerusakan)}</span>
           </p>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-label={open ? 'Ciutkan' : 'Lebarkan'}
-            className="w-6 h-6 shrink-0 inline-flex items-center justify-center rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50"
+            className="pn-chev"
           >
             <ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
           </button>
         </div>
-        <p className="text-sm font-semibold text-slate-900 truncate">{p.inventory?.nama || 'Nama unit tidak tertera'}</p>
-        <p className="text-slate-600 truncate">{p.keluhan}</p>
+        <p className="pn-strong pn-trunc-s">{p.inventory?.nama || 'Nama unit tidak tertera'}</p>
+        <p className="pn-trunc-s">{p.keluhan}</p>
 
-        <div className="flex items-center justify-between gap-2 pt-1">
+        <div className="pn-bcard-foot">
           {aktif ? (
-            <div className="flex items-center gap-2">
-              <div className="w-16 h-[5px] rounded-full bg-slate-200 overflow-hidden">
-                <div
-                  className={`h-full ${terlambat ? 'bg-[#b53a12]' : 'bg-[#0b3a9a]'}`}
-                  style={{ width: `${Math.min(100, Math.round((hari / BATAS_BAR_HARI) * 100))}%` }}
-                />
+            <div className={`pn-lama ${terlambat ? 'is-late' : ''}`}>
+              <div className="pn-lama-t">
+                <div className="pn-lama-f" style={{ width: `${Math.min(100, Math.round((hari / BATAS_BAR_HARI) * 100))}%` }} />
               </div>
-              <span className={`font-semibold ${terlambat ? 'text-[#b53a12]' : 'text-slate-700'}`}>{hari} hari</span>
+              <span className="pn-lama-n">{hari} hari</span>
             </div>
           ) : (
             // Nominal sengaja tidak tampil di card tertutup; muncul di dropdown.
-            <span className="text-slate-500">Selesai {formatTanggalId(p.tanggal_selesai)}</span>
+            <span className="pn-jenis">Selesai {formatTanggalId(p.tanggal_selesai)}</span>
           )}
 
           {isAdmin && status === 'menunggu' && (
-            <button type="button" onClick={() => onTerima(p)} className="font-semibold text-[#0b3a9a] underline">
+            <button type="button" onClick={() => onTerima(p)} className="pn-link">
               Terima laporan
             </button>
           )}
           {isAdmin && status === 'diperbaiki' && (
-            <button type="button" onClick={() => onSelesaikan(p)} className="font-semibold text-[#0b3a9a] underline">
+            <button type="button" onClick={() => onSelesaikan(p)} className="pn-link">
               Selesaikan
             </button>
           )}
@@ -105,7 +102,7 @@ export default function PenangananBoardCard({ p, status, isAdmin, onDetail, onTe
       </div>
 
       {open && (
-        <div className="border-t border-slate-200 px-2.5 py-2 space-y-1.5">
+        <div className="pn-bcard-x">
           <Baris label="Pelapor" value={namaPelaporPenanganan(p)} />
           <Baris label="Tanggal lapor" value={formatTanggalWaktuId(p.lapor_at, p.tanggal_lapor)} />
           {p.tanggal_diterima && (
@@ -122,21 +119,13 @@ export default function PenangananBoardCard({ p, status, isAdmin, onDetail, onTe
           )}
           {p.no_struk && <Baris label="No. struk" value={p.no_struk} />}
 
-          <div className="flex justify-end gap-2 pt-1">
+          <div className="pn-act">
             {p.no_struk && (
-              <button
-                type="button"
-                onClick={() => onPrint(p)}
-                className="h-7 px-3 rounded-md border border-slate-300 bg-white text-slate-800 font-semibold hover:bg-slate-50 transition"
-              >
+              <button type="button" onClick={() => onPrint(p)} className="pn-btn">
                 Cetak struk
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => onDetail(p)}
-              className="h-7 px-3 rounded-md bg-[#0b3a9a] text-white font-semibold hover:bg-[#082c75] transition"
-            >
+            <button type="button" onClick={() => onDetail(p)} className="pn-btn pn-btn-primary">
               Detail
             </button>
           </div>

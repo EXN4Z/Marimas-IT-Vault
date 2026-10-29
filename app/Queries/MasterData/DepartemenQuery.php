@@ -10,6 +10,6 @@ class DepartemenQuery
 {
     public static function daftar(): array
     {
-        return Departemen::orderBy('nama')->get()->all();
+        return Departemen::withCount('karyawan')->orderBy('nama')->get()->all();
     }
 }

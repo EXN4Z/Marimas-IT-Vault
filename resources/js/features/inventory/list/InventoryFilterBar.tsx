@@ -16,7 +16,7 @@ interface InventoryFilterBarProps {
 
 export default function InventoryFilterBar({ search, setSearch, kategoriDropdownRef, setKategoriDropdownOpen, selectedKategoriIds, kategoriOptions, kategoriDropdownOpen, setSelectedKategoriIds, handleToggleKategori }: InventoryFilterBarProps) {
   return (
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
+    <div className="flex flex-col sm:flex-row gap-3 mb-6">
       <SearchInput
         value={search}
         onChange={setSearch}
@@ -26,11 +26,15 @@ export default function InventoryFilterBar({ search, setSearch, kategoriDropdown
       {/* Filter Kategori -- dropdown checklist dinamis dari getKategori().
           Multi-select: bisa pilih lebih dari 1 kategori sekaligus.
           Array kosong = semua kategori lolos (default). */}
-      <div className="relative sm:w-56" ref={kategoriDropdownRef}>
+      <div className="relative w-full sm:w-56 shrink-0" ref={kategoriDropdownRef}>
         <button
           type="button"
           onClick={() => setKategoriDropdownOpen((v) => !v)}
-          className="w-full flex items-center justify-between rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition hover:border-slate-400 focus:border-slate-900 focus:ring-4 focus:ring-slate-900/[0.06]"
+          className={`w-full flex items-center justify-between rounded-lg border bg-white dark:bg-[#222226] px-3 py-2.5 text-sm text-slate-700 dark:text-zinc-200 shadow-sm outline-none transition-all duration-150 cursor-pointer ${
+            kategoriDropdownOpen
+              ? 'border-slate-900 dark:border-zinc-400 hover:border-slate-900 dark:hover:border-zinc-400'
+              : 'border-slate-300 dark:border-[#383842] hover:border-slate-400 dark:hover:border-zinc-500'
+          }`}
         >
           <span className="truncate">
             {selectedKategoriIds.length === 0
@@ -81,11 +85,11 @@ export default function InventoryFilterBar({ search, setSearch, kategoriDropdown
         <button
           type="button"
           onClick={() => setSelectedKategoriIds([])}
-          className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 text-sm font-medium transition shadow-2xs shrink-0"
+          className="px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition inline-flex items-center gap-1.5 shrink-0 self-center"
           title="Reset filter kategori"
         >
-          <RotateCcw size={14} />
-          <span>Reset Filter</span>
+          <RotateCcw size={13} />
+          Reset Filter
         </button>
       )}
     </div>

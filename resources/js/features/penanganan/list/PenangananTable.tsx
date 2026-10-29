@@ -112,8 +112,8 @@ export default function PenangananTable({ paginatedList, handlePrintStruk, setDe
             {search || filterKerusakan !== 'all'
               ? 'Tidak ditemukan riwayat yang sesuai kriteria pencarian.'
               : activeTab === 'diperbaiki_selesai'
-                ? 'Belum ada aset yang selesai diperbaiki.'
-                : 'Belum ada aset yang dinyatakan rusak berat.'}
+                ? 'Belum ada inventory yang selesai diperbaiki.'
+                : 'Belum ada inventory yang dinyatakan rusak berat.'}
           </p>
         </div>
       )}

@@ -48,10 +48,10 @@ class AsetKerusakanDilaporkan extends Notification
     {
         $item = $this->penanganan->inventory;
         if (!$item) {
-            return 'Aset';
+            return 'Inventory';
         }
 
-        return trim(($item->kode_inventory ?? '') . ' ' . ($item->nama ?? '')) ?: 'Aset';
+        return trim(($item->kode_inventory ?? '') . ' ' . ($item->nama ?? '')) ?: 'Inventory';
     }
 
     public function toDatabase($notifiable): array
@@ -80,7 +80,7 @@ class AsetKerusakanDilaporkan extends Notification
     public function toWebPush($notifiable, $notification): WebPushMessage
     {
         return (new WebPushMessage())
-            ->title('Laporan Kerusakan Aset')
+            ->title('Laporan Kerusakan Inventory')
             ->icon('/logo.png')
             ->body("{$this->namaPelapor()} melaporkan kerusakan {$this->penanganan->jenis_kerusakan} pada {$this->namaAset()}.")
             ->data(['url' => '/penanganan-inventory'])
