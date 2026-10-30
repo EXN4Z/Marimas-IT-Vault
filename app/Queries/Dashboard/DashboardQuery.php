@@ -123,7 +123,28 @@ class DashboardQuery
             'statusInventoryDistribusi' => $statusDistribusi,
             'aktivitasKalender' => self::aktivitas($user),
             'departemen' => self::departemen()->all(),
+            'terbanyakDipegang' => self::terbanyakDipegang(),
         ];
+    }
+
+    /**
+     * Karyawan yang SAAT INI memegang inventory terbanyak (pemakai aktif = status 'disetujui' & belum dikembalikan,
+     * aturan yang sama dengan Inventory::pemakaiSaatIni()). Dipakai kartu "Barang terbanyak di pegang" di dashboard admin.
+     */
+    public static function terbanyakDipegang(int $limit = 5): array
+    {
+        return DB::table('inventory_pemakai as ip')
+            ->join('users as u', 'u.id', '=', 'ip.user_id')
+            ->where('ip.status', 'disetujui')
+            ->whereNull('ip.tanggal_pengembalian')
+            ->select('u.id', 'u.name', DB::raw('COUNT(DISTINCT ip.inventory_id) as jumlah'))
+            ->groupBy('u.id', 'u.name')
+            ->orderByDesc('jumlah')
+            ->orderBy('u.name')
+            ->limit($limit)
+            ->get()
+            ->map(fn ($r) => ['id' => (int) $r->id, 'nama' => (string) $r->name, 'jumlah' => (int) $r->jumlah])
+            ->all();
     }
 
     /**

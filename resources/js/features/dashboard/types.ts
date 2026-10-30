@@ -77,6 +77,13 @@ export type AktivitasInventoryTerbaru = RiwayatInventoryEvent;
 export type { AppNotification as NotificationItem, NotificationResponse as NotificationsResponse } from '../notifications/types';
 
 
+// Karyawan yang saat ini memegang inventory terbanyak (DashboardQuery::terbanyakDipegang).
+export interface PemegangTeratas {
+  id: number;
+  nama: string;
+  jumlah: number;
+}
+
 /** Props `analitik` (admin; deferred -> undefined/null selama belum dimuat). */
 export interface DashboardAdminData {
   ringkasanInventory: RingkasanInventory;
@@ -86,6 +93,7 @@ export interface DashboardAdminData {
   statusInventoryDistribusi: StatusInventoryDistribusi[];
   aktivitasKalender: AktivitasInventoryTerbaru[];
   departemen: DepartemenDistribusi[];
+  terbanyakDipegang?: PemegangTeratas[]; // opsional: payload lama tetap aman
 }
 
 /** Inventory yang sedang dipegang user (DashboardQuery::pribadi -> sedangDipegang). */

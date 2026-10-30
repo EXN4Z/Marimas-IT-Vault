@@ -29,6 +29,24 @@ export function Panel({
   );
 }
 
+// Meter titik (dot-matrix): `pct` persen kolom terisi. Warna lewat token CSS supaya ikut tema terang/gelap.
+export function DotMeter({ pct, cols = 12, rows = 3, color = 'var(--dv-primary)', label }: { pct: number; cols?: number; rows?: number; color?: string; label?: string }) {
+  const p = Math.max(0, Math.min(100, pct));
+  const filled = Math.max(p > 0 ? 1 : 0, Math.round((p / 100) * cols));
+  const step = 6;
+  const dots = [];
+  for (let c = 0; c < cols; c++) {
+    for (let r = 0; r < rows; r++) {
+      dots.push(<circle key={`${c}-${r}`} cx={c * step + step / 2} cy={r * step + step / 2} r={2} fill={c < filled ? color : 'var(--dv-track)'} />);
+    }
+  }
+  return (
+    <svg className="dd-dm" width={cols * step} height={rows * step} viewBox={`0 0 ${cols * step} ${rows * step}`} role="img" aria-label={label ?? `${Math.round(p)}%`}>
+      {dots}
+    </svg>
+  );
+}
+
 export function EmptyNote({ children }: { children: ReactNode }) {
   return <p className="dd-empty">{children}</p>;
 }

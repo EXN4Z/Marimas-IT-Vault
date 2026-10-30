@@ -1,31 +1,36 @@
 import { useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppNavigate } from '../../../../hooks/useAppNavigate';
 import type { NotificationItem } from '../../types';
 import { formatWaktuSingkat } from '../aktivitas/aktivitas';
+import { Pager } from './Pager';
 import { Panel, EmptyNote } from './primitives';
 
-const PAGE_SIZE = 3;
+const PAGE_SIZE = 3; // default (DashboardUser); admin memakai pageSize lebih besar + fill
 const SWIPE_MIN = 40; // px
 
-// Notifikasi dengan paginasi: tinggi kartu tetap (3 item per halaman), jadi tidak melar ke bawah
-// kalau notifikasinya banyak. Geser lewat panah, titik halaman, atau swipe di layar sentuh.
+// Notifikasi dengan paginasi: item per halaman tetap, jadi kartu tidak melar ke bawah kalau notifikasinya banyak.
+// Geser lewat Pager atau swipe di layar sentuh.
+//  - fill: daftar mengisi sisa tinggi kartu (dipakai dashboard admin supaya bawahnya sejajar dengan kolom kiri).
 export function NotifikasiLedger({
   notifications = [],
   onMarkAsRead,
+  pageSize = PAGE_SIZE,
+  fill = false,
 }: {
   notifications?: NotificationItem[];
   onMarkAsRead: (id: string) => void;
+  pageSize?: number;
+  fill?: boolean;
 }) {
   const navigate = useAppNavigate();
   const all = Array.isArray(notifications) ? notifications : [];
   const unread = all.filter((n) => !n?.read_at);
 
-  const pageCount = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(all.length / pageSize));
   const [page, setPage] = useState(0);
   const [dir, setDir] = useState<1 | -1>(1);
   const cur = Math.min(page, pageCount - 1); // aman kalau notifikasi berkurang (auto-hapus / dibaca)
-  const list = all.slice(cur * PAGE_SIZE, cur * PAGE_SIZE + PAGE_SIZE);
+  const list = all.slice(cur * pageSize, cur * pageSize + pageSize);
 
   const touchX = useRef<number | null>(null);
 
@@ -41,30 +46,22 @@ export function NotifikasiLedger({
     if (n.data?.url) navigate(n.data.url);
   };
 
-  const pager =
-    pageCount > 1 ? (
-      <div className="dd-pg">
-        <button type="button" className="dd-pa" aria-label="Halaman sebelumnya" disabled={cur === 0} onClick={() => go(cur - 1)}>
-          <ChevronLeft size={15} />
-        </button>
-        <b aria-live="polite">
-          {cur + 1} / {pageCount}
-        </b>
-        <button type="button" className="dd-pa" aria-label="Halaman berikutnya" disabled={cur >= pageCount - 1} onClick={() => go(cur + 1)}>
-          <ChevronRight size={15} />
-        </button>
-      </div>
-    ) : null;
-
   return (
     <Panel
       className="flex-1"
       title="Notifikasi"
       subtitle={`${unread.length > 0 ? `${unread.length} belum dibaca` : 'Semua sudah dibaca'} \u00b7 ${all.length} total`}
-      right={pager}
+      right={
+        unread.length > 0 ? (
+          <button type="button" className="dd-link" onClick={() => unread.forEach((n) => onMarkAsRead(n.id))}>
+            Tandai semua dibaca
+          </button>
+        ) : undefined
+      }
     >
       <div
-        className="dd-nlist"
+        className={`dd-nlist ${fill ? 'is-fill' : ''}`}
+        style={fill ? undefined : { height: pageSize * 66 }}
         onTouchStart={(e) => {
           touchX.current = e.touches[0].clientX;
         }}
@@ -92,22 +89,7 @@ export function NotifikasiLedger({
         )}
       </div>
 
-      <div className="dd-nfoot">
-        {pageCount > 1 && pageCount <= 7 ? (
-          <span className="dd-dots" role="tablist" aria-label="Halaman notifikasi">
-            {Array.from({ length: pageCount }, (_, i) => (
-              <button key={i} type="button" role="tab" aria-selected={i === cur} aria-label={`Halaman ${i + 1}`} className={i === cur ? 'on' : ''} onClick={() => go(i)} />
-            ))}
-          </span>
-        ) : (
-          <span />
-        )}
-        {unread.length > 0 && (
-          <button type="button" className="dd-link" onClick={() => unread.forEach((n) => onMarkAsRead(n.id))}>
-            Tandai semua dibaca
-          </button>
-        )}
-      </div>
+      <Pager total={all.length} perPage={pageSize} page={cur + 1} onPage={(p) => go(p - 1)} />
     </Panel>
   );
 }

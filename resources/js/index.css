@@ -1472,3 +1472,92 @@ html.dark .pn-bcard { box-shadow: none; }
 html.dark .pn-cta { box-shadow: none; }
 .pn-table th.pn-r { text-align: right; }
 /* ===== END INVENTORY V2 ===== */
+
+/* ===== DASHBOARD V3 (admin): .dd-main .dd-hv .dd-kp .dd-pair .dd-mc .dd-hl .dd-pager =====
+   Tata letak: kolom kiri (hero, KPI, aktivitas + kalender) dan kolom kanan (pemegang teratas, notifikasi).
+   Kartu terakhir di tiap kolom `flex: 1`, jadi sisi bawah kedua kolom selalu sejajar (tidak ada sisa ruang kosong).
+   Semua warna lewat token --dv-* / --dd-* di dalam .dv, jadi mode terang/gelap ikut otomatis (html.dark).
+   Catatan: jangan pakai nama kelas berisi "-control", "-menu", "-option", atau "-input" (kena override react-select di atas). */
+.dd-main { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+@media (min-width: 1180px) { .dd-main { grid-template-columns: minmax(0, 1fr) 320px; } .dd-mcol > :last-child { flex: 1; } }
+.dd-mcol { display: flex; flex-direction: column; gap: 20px; min-width: 0; container-type: inline-size; }
+
+/* hero: ringkasan + chart garis */
+.dd-hv { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr); }
+@container (min-width: 640px) { .dd-hv { grid-template-columns: 250px minmax(0, 1fr); } }
+.dd-hv-l { display: flex; flex-direction: column; min-width: 0; }
+.dd-hv-k { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--dv-soft); }
+.dd-hv-big { font-size: 46px; line-height: 1; font-weight: 700; letter-spacing: -.02em; margin-top: 14px; color: var(--dv-ink); }
+.dd-hv-sub { font-size: 12px; color: var(--dv-muted); margin-top: 4px; }
+.dd-hv-d { font-size: 13px; margin-top: 10px; color: var(--dv-soft); }
+.dd-hv-d b.is-up { color: var(--dd-green-ink); font-weight: 700; }
+.dd-hv-two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+.dd-hv-two > div { min-width: 0; }
+.dd-hv-two small { display: block; font-size: 10.5px; color: var(--dv-muted); }
+.dd-hv-two b { display: block; font-size: 12.5px; font-weight: 700; color: var(--dv-ink); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-hv-note { font-size: 12px; line-height: 1.5; color: var(--dv-muted); margin-top: 16px; }
+.dd-hv-act { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; padding-top: 16px; }
+.dd-hv-r { min-width: 0; display: flex; flex-direction: column; }
+.dd-hv-rh { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.dd-hv-rh b { font-size: 14px; color: var(--dv-ink); }
+.dd-hv-rh span { font-size: 12px; color: var(--dv-muted); }
+.dd-lc { width: 100%; height: auto; display: block; cursor: crosshair; touch-action: pan-y; }
+
+/* 4 kartu angka + meter titik */
+.dd-kp { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@container (min-width: 700px) { .dd-kp { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.dd-kc { text-align: left; min-width: 0; display: flex; flex-direction: column; gap: 14px; padding: 16px 18px; border-radius: 18px; background: var(--dd-card); box-shadow: var(--dd-shadow); border: 1px solid transparent; cursor: pointer; transition: transform .15s; }
+html.dark .dd-kc { border-color: var(--dv-line); box-shadow: none; }
+.dd-kc:hover { transform: translateY(-2px); }
+.dd-kc-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; font-weight: 700; color: var(--dv-ink); }
+.dd-kc-h i { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--dv-line); display: grid; place-items: center; color: var(--dv-soft); flex: none; }
+.dd-kc-b { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.dd-kc-b > span { min-width: 0; }
+.dd-kc-b b { display: block; font-size: 30px; line-height: 1; letter-spacing: -.02em; color: var(--dv-ink); }
+.dd-kc-b em { display: block; font-style: normal; font-size: 11px; line-height: 1.3; color: var(--dv-muted); margin-top: 6px; }
+.dd-dm { flex: none; }
+
+/* aktivitas + kalender (sejajar, tinggi sama) */
+.dd-pair { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); }
+@container (min-width: 760px) { .dd-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.dd-fill { flex: 1; display: flex; flex-direction: column; min-height: 0; margin-bottom: 12px; }
+.dd-fill > div { flex: 1; display: flex; flex-direction: column; }
+.dd-fill .dd-li { flex: 1 1 0; min-height: 58px; max-height: 88px; }
+.dd-mc-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.dd-mc-head > b { font-size: 15px; font-weight: 700; color: var(--dv-ink); }
+.dd-mc-head > div { display: flex; align-items: center; gap: 6px; }
+.dd-mc-dow { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); text-align: center; font-size: 10.5px; font-weight: 600; color: var(--dv-muted); padding-bottom: 6px; }
+.dd-mc-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-auto-rows: minmax(42px, 1fr); gap: 3px; flex: 1; }
+.dd-mc { border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: none; color: var(--dv-ink); cursor: pointer; font-size: 12.5px; font-weight: 600; }
+.dd-mc:hover { background: var(--dd-chip); }
+.dd-mc.is-out { color: var(--dv-muted); opacity: .5; }
+.dd-mc.is-ev { background: var(--dd-chip); }
+.dd-mc.is-today { background: var(--dv-primary); color: var(--dv-on-primary); }
+.dd-mc.is-sel { box-shadow: inset 0 0 0 2px var(--dv-ink) !important; } /* !important: aturan global :focus { box-shadow: none !important } */
+.dd-mc-dots { display: flex; gap: 3px; height: 5px; }
+.dd-mc-dots i { width: 5px; height: 5px; border-radius: 50%; }
+.dd-mc-dots .t-primary { background: var(--dv-primary); } .dd-mc-dots .t-green { background: var(--dd-green); }
+.dd-mc-dots .t-alert { background: var(--dv-alert); } .dd-mc-dots .t-yellow { background: var(--dd-yellow); } .dd-mc-dots .t-slate { background: var(--dv-muted); }
+.dd-mc.is-today .dd-mc-dots i { background: var(--dv-on-primary); }
+.dd-legend .lg-pri { background: var(--dv-primary); } .dd-legend .lg-grn { background: var(--dd-green); }
+.dd-legend .lg-red { background: var(--dv-alert); } .dd-legend .lg-yel { background: var(--dd-yellow); }
+
+/* barang terbanyak di pegang */
+.dd-hl { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--dv-line); font-size: 13px; }
+.dd-hl:first-child { border-top: 0; }
+.dd-hl-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--dv-ink); }
+.dd-hl > b { font-size: 12.5px; font-weight: 700; color: var(--dv-ink); white-space: nowrap; text-align: right; min-width: 76px; }
+
+/* paginasi bersama + notifikasi mode isi (fill) */
+.dd-pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--dv-line); }
+.dd-pager-i { font-size: 11.5px; color: var(--dv-muted); font-variant-numeric: tabular-nums; }
+.dd-pager-b { display: flex; align-items: center; gap: 4px; }
+.dd-pager-b button { min-width: 28px; height: 28px; padding: 0 6px; border-radius: 8px; border: 1px solid var(--dv-line); display: inline-grid; place-items: center; font-size: 12px; font-weight: 600; color: var(--dv-soft); background: none; cursor: pointer; }
+.dd-pager-b button:hover:not(:disabled):not(.is-on) { background: var(--dd-chip); }
+.dd-pager-b button.is-on { background: var(--dv-primary); border-color: var(--dv-primary); color: var(--dv-on-primary); }
+.dd-pager-b button:disabled { opacity: .4; cursor: default; }
+.dd-pager-b span { min-width: 18px; text-align: center; font-size: 12px; color: var(--dv-muted); }
+.dd-nlist.is-fill { height: auto; flex: 1; display: flex; flex-direction: column; min-height: 0; margin-bottom: 12px; }
+.dd-nlist.is-fill > div { flex: 1; display: flex; flex-direction: column; }
+.dd-nlist.is-fill .dd-nt { flex: 1 1 0; height: auto; min-height: 60px; max-height: 92px; }
+/* ===== END DASHBOARD V3 ===== */

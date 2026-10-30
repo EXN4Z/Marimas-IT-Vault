@@ -4,21 +4,14 @@ import { useSharedProps } from '../../hooks/useSharedProps';
 import { useDashboardNotifications } from './hooks/useDashboardNotifications';
 import type { DashboardAdminData } from './types';
 import { DashboardSkeleton } from './widgets/_shared';
-import {
-  Panel,
-  LedgerHeader,
-  HeroBanner,
-  StatusLedger,
-  PerluTindakan,
-  TrenPembelian,
-  AktivitasRows,
-  NotifikasiLedger,
-  KalenderLedger,
-} from './widgets/ledger';
+import { HeroInventory, KpiDots, AktivitasKalender, TerbanyakDipegang, NotifikasiLedger } from './widgets/ledger';
 
-// Dashboard admin [DASHBOARD-V2] (tema & variabel warna: kelas .dv / .dd-* di index.css; terang/gelap otomatis).
-// [F8-INERTIA] Data dari props `analitik` (deferred; DashboardPageController -> DashboardQuery::admin).
-// Selama belum datang -> skeleton. Notifikasi tetap lewat hook sendiri.
+// Dashboard admin [DASHBOARD-V3] (tema & variabel warna: kelas .dv / .dd-* di index.css; terang/gelap otomatis lewat html.dark).
+// Tata letak dua kolom:
+//   kiri  = hero (ringkasan + chart pembelian) -> 4 kartu angka -> aktivitas terbaru + kalender
+//   kanan = barang terbanyak di pegang -> notifikasi
+// Kartu terakhir tiap kolom mengisi sisa tinggi, jadi sisi bawah kedua kolom sejajar.
+// [F8-INERTIA] Data dari props `analitik` (deferred; DashboardController -> DashboardQuery::admin). Selama belum datang -> skeleton.
 export default function DashboardAdmin() {
   const navigate = useAppNavigate();
   const { auth } = useSharedProps();
@@ -30,7 +23,7 @@ export default function DashboardAdmin() {
     return <DashboardSkeleton variant="full" />;
   }
 
-  const { ringkasanInventory, trenPembelianInventory, inventoryPerhatian, aktivitasKalender } = analitik;
+  const { ringkasanInventory, trenPembelianInventory, inventoryPerhatian, inventoryPerMerek, aktivitasKalender, terbanyakDipegang } = analitik;
 
   const rusak = inventoryPerhatian?.rusak ?? 0;
   const dalamPenanganan = inventoryPerhatian?.dalamPenanganan ?? 0;
@@ -44,72 +37,27 @@ export default function DashboardAdmin() {
 
   return (
     <div className="dv dd-page">
-      <LedgerHeader
-        name={user?.name}
-        sentence={kalimat}
-        actions={
-          <>
-            <button type="button" className="dd-btn" onClick={() => navigate('/laporan?tab=export_data')}>
-              Ekspor laporan
-            </button>
-            <button type="button" className="dd-btn dd-btn-primary" onClick={() => navigate('/master-data?tab=inventory')}>
-              Kelola inventory
-            </button>
-          </>
-        }
-        banner={
-          <HeroBanner
-            title={
-              totalPerhatian > 0 ? (
-                <>
-                  Perlu perhatian
-                  <br />
-                  hari ini
-                </>
-              ) : (
-                <>
-                  Semua aman
-                  <br />
-                  hari ini
-                </>
-              )
+      <div className="dd-main">
+        <div className="dd-mcol">
+          <HeroInventory
+            total={ringkasanInventory?.total ?? 0}
+            tren={trenPembelianInventory}
+            perMerek={inventoryPerMerek}
+            kalimat={kalimat}
+            actions={
+              <>
+              </>
             }
-            text="Inventory rusak, dalam penanganan, dan garansi yang segera berakhir."
-            cta="Buka penanganan"
-            onCta={() => navigate('/penanganan-inventory')}
-            stats={[
-              { value: rusak, label: 'Rusak berat', alert: true },
-              { value: dalamPenanganan, label: 'Ditangani' },
-              { value: garansi, label: 'Garansi' },
-            ]}
           />
-        }
-      />
+          <KpiDots ringkasan={ringkasanInventory} perhatian={inventoryPerhatian} />
+          <AktivitasKalender aktivitas={aktivitasKalender} onLihatSemua={() => navigate('/laporan?tab=riwayat_inventory')} />
+        </div>
 
-      <StatusLedger ringkasan={ringkasanInventory} />
-
-      <div className="dd-row2">
-        <TrenPembelian data={trenPembelianInventory} />
-        <Panel
-          title="Aktivitas terbaru"
-          subtitle="Pinjam, kembali, dan laporan kerusakan."
-          right={
-            <button type="button" className="dd-pill" onClick={() => navigate('/laporan?tab=riwayat_inventory')}>
-              Lihat semua
-            </button>
-          }
-        >
-          <AktivitasRows events={(aktivitasKalender ?? []).slice(0, 5)} />
-        </Panel>
+        <div className="dd-mcol">
+          <TerbanyakDipegang data={terbanyakDipegang} />
+          <NotifikasiLedger notifications={notifications} onMarkAsRead={handleMarkAsRead} pageSize={5} fill />
+        </div>
       </div>
-
-      <PerluTindakan perhatian={inventoryPerhatian} dijual={ringkasanInventory?.dijual ?? 0} />
-
-      <KalenderLedger
-        aktivitas={aktivitasKalender}
-        subtitle="Lingkaran menandai tanggal yang ada mutasi. Kuning berarti ada laporan kerusakan. Pilih tanggal untuk melihat lognya."
-        aside={<NotifikasiLedger notifications={notifications} onMarkAsRead={handleMarkAsRead} />}
-      />
     </div>
   );
 }

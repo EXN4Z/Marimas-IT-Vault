@@ -1,4 +1,9 @@
-export { Panel, EmptyNote, LedgerHeader, HeroBanner } from './primitives';
+export { Panel, EmptyNote, LedgerHeader, HeroBanner, DotMeter } from './primitives';
+export { Pager } from './Pager';
+export { HeroInventory } from './HeroInventory';
+export { KpiDots } from './KpiDots';
+export { AktivitasKalender } from './AktivitasKalender';
+export { TerbanyakDipegang } from './TerbanyakDipegang';
 export { StatusLedger } from './StatusLedger';
 export { PerluTindakan } from './PerluTindakan';
 export { TrenPembelian } from './TrenPembelian';
