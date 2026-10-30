@@ -1,23 +1,31 @@
+import { useAppNavigate } from '../../../../hooks/useAppNavigate';
 import type { PemegangTeratas } from '../../types';
-import { Panel, EmptyNote, DotMeter } from './primitives';
+import { Panel, EmptyNote, DotBars } from './primitives';
 
-// [DASHBOARD-V3] Karyawan yang saat ini memegang inventory terbanyak (data: DashboardQuery::terbanyakDipegang).
+// [DASHBOARD-V4] Karyawan yang saat ini memegang inventory terbanyak (data: DashboardQuery::terbanyakDipegang).
 export function TerbanyakDipegang({ data = [] }: { data?: PemegangTeratas[] }) {
-  const rows = Array.isArray(data) ? data : [];
-  const max = Math.max(1, ...rows.map((r) => r.jumlah));
+  const navigate = useAppNavigate();
+  const rows = Array.isArray(data) ? data.slice(0, 5) : [];
 
   return (
-    <Panel title="Barang terbanyak di pegang" subtitle="Karyawan dengan inventory aktif terbanyak.">
+    <Panel
+      title="Barang Terbanyak Di Pegang"
+      right={
+        <button type="button" className="dd-pill" onClick={() => navigate('/master-data?tab=inventory&status=dipakai')}>
+          View All
+        </button>
+      }
+    >
       {rows.length === 0 ? (
         <EmptyNote>Belum ada inventory yang sedang dipegang.</EmptyNote>
       ) : (
         <div>
-          {rows.map((r) => (
+          {rows.map((r, i) => (
             <div key={r.id} className="dd-hl">
               <span className="dd-hl-n" title={r.nama}>
                 {r.nama}
               </span>
-              <DotMeter pct={(r.jumlah / max) * 100} cols={10} rows={2} label={`${r.jumlah} inventory`} />
+              <DotBars color="#ef4444" w={60} h={16} seed={i + 5} />
               <b className="dv-g">{r.jumlah} Inventory</b>
             </div>
           ))}

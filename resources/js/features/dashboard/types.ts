@@ -38,7 +38,9 @@ export interface InventoryPerMerek {
 // — dipakai hero chart "Tren Pembelian Inventory per Bulan" di dashboard admin.
 export interface TrenPembelianInventory {
   bulan: string;
-  jumlah: number;
+  tahun?: number; // tooltip chart: "Okt 2026"
+  jumlah: number; // unit baru pada bulan itu
+  total?: number; // total unit s/d akhir bulan itu (kumulatif) -> yang digambar di chart hero
 }
 
 // Distribusi jumlah inventory per status (tersedia/dipakai/dst) — dipakai

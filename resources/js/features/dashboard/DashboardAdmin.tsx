@@ -3,6 +3,7 @@ import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { useSharedProps } from '../../hooks/useSharedProps';
 import { useDashboardNotifications } from './hooks/useDashboardNotifications';
 import type { DashboardAdminData } from './types';
+import './dashboard-v4.css';
 import { DashboardSkeleton } from './widgets/_shared';
 import { HeroInventory, KpiDots, AktivitasKalender, TerbanyakDipegang, NotifikasiLedger } from './widgets/ledger';
 
@@ -25,37 +26,18 @@ export default function DashboardAdmin() {
 
   const { ringkasanInventory, trenPembelianInventory, inventoryPerhatian, inventoryPerMerek, aktivitasKalender, terbanyakDipegang } = analitik;
 
-  const rusak = inventoryPerhatian?.rusak ?? 0;
-  const dalamPenanganan = inventoryPerhatian?.dalamPenanganan ?? 0;
-  const garansi = inventoryPerhatian?.garansiSegeraHabis ?? 0;
-  const totalPerhatian = rusak + dalamPenanganan + garansi;
-
-  const kalimat =
-    totalPerhatian > 0
-      ? `${totalPerhatian} inventory perlu perhatian: ${rusak} rusak berat, ${dalamPenanganan} sedang ditangani, dan ${garansi} garansinya habis dalam 30 hari.`
-      : 'Tidak ada inventory yang perlu perhatian hari ini.';
-
   return (
-    <div className="dv dd-page">
+    <div className="dv dd-page dd-v4">
       <div className="dd-main">
         <div className="dd-mcol">
-          <HeroInventory
-            total={ringkasanInventory?.total ?? 0}
-            tren={trenPembelianInventory}
-            perMerek={inventoryPerMerek}
-            kalimat={kalimat}
-            actions={
-              <>
-              </>
-            }
-          />
+          <HeroInventory total={ringkasanInventory?.total ?? 0} tren={trenPembelianInventory} perMerek={inventoryPerMerek} />
           <KpiDots ringkasan={ringkasanInventory} perhatian={inventoryPerhatian} />
           <AktivitasKalender aktivitas={aktivitasKalender} onLihatSemua={() => navigate('/laporan?tab=riwayat_inventory')} />
         </div>
 
         <div className="dd-mcol">
           <TerbanyakDipegang data={terbanyakDipegang} />
-          <NotifikasiLedger notifications={notifications} onMarkAsRead={handleMarkAsRead} pageSize={5} fill />
+          <NotifikasiLedger notifications={notifications} onMarkAsRead={handleMarkAsRead} pageSize={5} fill v4 />
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-export { Panel, EmptyNote, LedgerHeader, HeroBanner, DotMeter } from './primitives';
+export { Panel, EmptyNote, LedgerHeader, HeroBanner, DotMeter, DotBars } from './primitives';
 export { Pager } from './Pager';
 export { HeroInventory } from './HeroInventory';
 export { KpiDots } from './KpiDots';

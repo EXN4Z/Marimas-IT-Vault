@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
 
 // [DASHBOARD-V2] Blok dasar dashboard: kartu (judul + subjudul + isi). Warna lewat kelas .dd-* / .dv-* (index.css).
@@ -136,5 +136,31 @@ export function LedgerHeader({
       </div>
       {banner}
     </header>
+  );
+}
+
+// [DASHBOARD-V4] Dot-matrix bar chart dekoratif: kolom tiap 4px, tumpukan titik dari bawah, tinggi acak tapi stabil (seeded) dan cenderung naik ke kanan.
+export function DotBars({ color, w = 44, h = 26, seed = 1 }: { color: string; w?: number; h?: number; seed?: number }) {
+  const dots = useMemo(() => {
+    let s = seed * 37;
+    const rnd = () => {
+      s = (s * 9301 + 49297) % 233280;
+      return s / 233280;
+    };
+    const cols = Math.floor(w / 4);
+    const rows = Math.floor(h / 4);
+    const out: [number, number][] = [];
+    for (let i = 0; i < cols; i++) {
+      const n = Math.max(1, Math.round(rows * (0.25 + 0.75 * rnd() * (0.5 + i / cols / 2))));
+      for (let j = 0; j < n; j++) out.push([i * 4 + 2, h - j * 4 - 2]);
+    }
+    return out;
+  }, [seed, w, h]);
+  return (
+    <svg className="dd-dm" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+      {dots.map(([cx, cy], k) => (
+        <circle key={k} cx={cx} cy={cy} r={1.4} fill={color} />
+      ))}
+    </svg>
   );
 }

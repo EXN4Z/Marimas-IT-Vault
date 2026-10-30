@@ -63,11 +63,15 @@ class DashboardQuery
         $now = time();
         $batas = self::GARANSI_WARNING_HARI * 24 * 60 * 60;
 
-        // 6 bulan terakhir (termasuk bulan ini), jumlah inventory yang tanggal_invoice-nya jatuh di bulan itu
+        // 12 bulan terakhir (termasuk bulan ini).
+        //  - jumlah = unit yang tanggal_invoice-nya jatuh di bulan itu
+        //  - total  = total unit s/d akhir bulan itu (kumulatif; unit tanpa tanggal invoice / sebelum rentang jadi titik awal)
+        $awalRentang = Carbon::now()->startOfMonth()->subMonthsNoOverflow(11);
+        $sebelumRentang = 0;
         $bulan = [];
-        for ($i = 5; $i >= 0; $i--) {
+        for ($i = 11; $i >= 0; $i--) {
             $d = Carbon::now()->startOfMonth()->subMonthsNoOverflow($i);
-            $bulan[$d->format('Y-n')] = ['bulan' => self::BULAN_ID[$d->month - 1], 'jumlah' => 0];
+            $bulan[$d->format('Y-n')] = ['bulan' => self::BULAN_ID[$d->month - 1], 'tahun' => $d->year, 'jumlah' => 0, 'total' => 0];
         }
 
         foreach ($list as $a) {
@@ -93,9 +97,19 @@ class DashboardQuery
             $perStatus[$label] = ($perStatus[$label] ?? 0) + 1;
 
             if ($a->tanggal_invoice) {
-                $key = Carbon::parse($a->tanggal_invoice)->format('Y-n');
+                $tgl = Carbon::parse($a->tanggal_invoice);
+                $key = $tgl->format('Y-n');
                 if (isset($bulan[$key])) $bulan[$key]['jumlah']++;
+                elseif ($tgl->lt($awalRentang)) $sebelumRentang++;
+            } else {
+                $sebelumRentang++;
             }
+        }
+
+        $berjalan = $sebelumRentang;
+        foreach ($bulan as $key => $row) {
+            $berjalan += $row['jumlah'];
+            $bulan[$key]['total'] = $berjalan;
         }
 
         arsort($perNama); // urutan stabil: yang jumlahnya sama tetap urut kemunculan

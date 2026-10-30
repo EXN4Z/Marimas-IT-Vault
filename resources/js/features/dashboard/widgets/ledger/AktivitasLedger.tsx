@@ -2,6 +2,7 @@ import { Users, Check, CheckCircle2, AlertTriangle, Wrench, Tag } from 'lucide-r
 import type { LucideIcon } from 'lucide-react';
 import type { AktivitasInventoryTerbaru } from '../../types';
 import { AKTIVITAS_ASET_STYLE, formatWaktuSingkat } from '../aktivitas/aktivitas';
+import { labelAktivitas, toneAktivitas, waktuRingkas } from './aktivitasMeta';
 import { EmptyNote } from './primitives';
 
 // Warna lingkaran + ikon per jenis aktivitas.
@@ -15,7 +16,8 @@ const TAMPIL: Record<AktivitasInventoryTerbaru['type'], { tone: string; Icon: Lu
 };
 
 // Daftar baris aktivitas (kartu "Aktivitas terbaru" dan log harian di kalender).
-// variant 'tanggal' = lingkaran berisi tanggal; 'ikon' = lingkaran berisi ikon jenis aktivitas.
+// variant 'tanggal' = lingkaran berisi tanggal; 'ikon' = lingkaran berisi ikon jenis aktivitas;
+// 'ringkas' [DASHBOARD-V4] = titik status + kode : nama, pelaku + aksi, dan jam + tanggal di kanan.
 export function AktivitasRows({
   events = [],
   timeFormatter = formatWaktuSingkat,
@@ -25,10 +27,42 @@ export function AktivitasRows({
   events?: AktivitasInventoryTerbaru[];
   timeFormatter?: (waktu: string) => string;
   kosong?: string;
-  variant?: 'tanggal' | 'ikon';
+  variant?: 'tanggal' | 'ikon' | 'ringkas';
 }) {
   const list = Array.isArray(events) ? events : [];
   if (list.length === 0) return <EmptyNote>{kosong}</EmptyNote>;
+
+  if (variant === 'ringkas') {
+    return (
+      <div>
+        {list.map((ev, i) => {
+          const kode = ev.inventory?.kode_inventory || '-';
+          const nama = (ev.inventory?.nama ?? '').toUpperCase();
+          const pelaku = ev.nama ?? (ev.type === 'mulai_perbaikan' || ev.type === 'selesai_perbaikan' ? 'Admin' : null);
+          const w = waktuRingkas(ev.waktu);
+          return (
+            <div key={`${ev.type}-${ev.waktu}-${i}`} className="dd-ra">
+              <div className="dd-ra-l">
+                <div className="dd-ra-n">
+                  <i className={`t-${toneAktivitas(ev)}`} aria-hidden="true" />
+                  <span>{nama ? `${kode} : ${nama}` : kode}</span>
+                </div>
+                <div className="dd-ra-m">
+                  {pelaku ? `${pelaku} ` : ''}
+                  {labelAktivitas(ev)}
+                </div>
+              </div>
+              <div className="dd-ra-t">
+                {w.jam}
+                <b>{w.tanggal}</b>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div>
       {list.map((ev, i) => {

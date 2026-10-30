@@ -1,0 +1,120 @@
+/* ===== DASHBOARD V4 (admin) =====
+   Tampilan padat: Inter 12px, kartu putih radius 12 / padding 14 / border 1px tanpa bayangan, satu aksen ungu #6d5bf6.
+   Semua aturan di-scope lewat .dd-v4 (dipasang di DashboardAdmin) supaya DashboardUser & halaman lain tidak berubah.
+   Warna tetap lewat token --dv-* / --dd-* sehingga mode gelap (html.dark) ikut jalan. */
+.dv.dd-v4 {
+  --dv-ink: #0f1115; --dv-soft: #374151; --dv-muted: #6b7280; --dv-line: #eef0f3; --dv-track: #eef0f3; --dv-surface: #f7f8fb;
+  --dv-primary: #6d5bf6; --dv-on-primary: #fff; --dv-alert: #e11d2e;
+  --dv-today-bg: #111; --dv-today-fg: #fff;
+  --dd-card: #fff; --dd-chip: #f7f8fb; --dd-shadow: none;
+  --dd-green: #12b76a; --dd-green-ink: #12b76a; --dd-yellow: #f5b301; --dd-tip-delta: #34d399;
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 12px; line-height: 1.4;
+}
+html.dark .dv.dd-v4 { --dv-primary: #8b7cf8; --dv-on-primary: #fff; --dv-alert: #ff6b6b; --dd-tip-delta: #12b76a; }
+.dd-v4 .dv-g { font-family: inherit; }
+
+/* tata letak: kolom kiri fleksibel + kolom kanan 252px, jarak antar kartu 8px */
+.dd-v4.dd-page, .dd-v4 .dd-main, .dd-v4 .dd-mcol, .dd-v4 .dd-pair, .dd-v4 .dd-kp { gap: 8px; }
+@media (min-width: 1180px) { .dd-v4 .dd-main { grid-template-columns: minmax(0, 1fr) 252px; } }
+.dd-v4 .dd-card { border-radius: 12px; padding: 14px; box-shadow: none; border: 1px solid #f0f1f4; }
+html.dark .dd-v4 .dd-card { border-color: var(--dv-line); }
+
+/* judul kartu + tautan sekunder */
+.dd-v4 .dd-ch { align-items: center; flex-wrap: nowrap; margin-bottom: 10px; }
+.dd-v4 .dv-h2 { font-size: 11px; font-weight: 600; line-height: 1.3; }
+.dd-v4 .dd-pill { border: 0; border-radius: 0; padding: 0; background: none; font-size: 11px; font-weight: 500; color: var(--dv-soft); }
+.dd-v4 .dd-pill:hover { background: none; text-decoration: underline; }
+.dd-v4 .dd-link { font-size: 11px; font-weight: 500; color: var(--dv-muted); background: none; cursor: pointer; }
+.dd-v4 .dd-link:disabled { opacity: .6; cursor: default; }
+.dd-v4 .dd-empty { border-top: 0; padding: 34px 0; text-align: center; font-size: 11px; }
+.dd-v4 .dd-fill { margin-bottom: 8px; }
+.dd-v4 .dd-fill > .dd-empty { flex: 1; display: grid; place-items: center; padding: 0; }
+
+/* hero */
+.dd-v4 .dd-hv { gap: 20px; }
+@container (min-width: 640px) { .dd-v4 .dd-hv { grid-template-columns: 230px minmax(0, 1fr); } }
+.dd-v4 .dd-hv-k { font-size: 11px; font-weight: 600; color: var(--dv-ink); }
+.dd-v4 .dd-hv-big { font-size: 34px; line-height: 1.1; margin-top: 14px; }
+.dd-v4 .dd-hv-chg { display: block; font-size: 18px; font-weight: 600; line-height: 1.2; margin-top: 8px; color: var(--dd-green); }
+.dd-v4 .dd-hv-chg.is-flat { color: var(--dv-muted); }
+.dd-v4 .dd-hv-cap { font-size: 11px; color: var(--dv-muted); margin-top: 2px; }
+.dd-v4 .dd-hv-two { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: 20px; }
+.dd-v4 .dd-hv-two small { font-size: 10px; white-space: nowrap; }
+.dd-v4 .dd-hv-two b { font-size: 12px; font-weight: 600; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; line-height: 1.35; }
+.dd-v4 .dd-rng { display: flex; justify-content: flex-end; gap: 4px; margin-bottom: 6px; }
+.dd-v4 .dd-rng button { font-size: 10px; padding: 3px 8px; border-radius: 6px; color: var(--dv-muted); background: none; cursor: pointer; }
+.dd-v4 .dd-rng button.is-on { background: var(--dd-chip); color: var(--dv-ink); font-weight: 600; }
+.dd-v4 .dd-rng button:disabled { opacity: .55; cursor: not-allowed; }
+html.dark .dd-v4 .dd-rng button.is-on { background: var(--dd-chip); }
+
+/* 4 kartu angka */
+@container (min-width: 700px) { .dd-v4 .dd-kp { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.dd-v4 .dd-kc { border-radius: 12px; padding: 14px; gap: 12px; box-shadow: none; border: 1px solid #f0f1f4; transition: none; }
+.dd-v4 .dd-kc:hover { transform: none; border-color: #e5e7eb; }
+html.dark .dd-v4 .dd-kc { border-color: var(--dv-line); }
+.dd-v4 .dd-kc-h { font-size: 11px; font-weight: 600; }
+.dd-v4 .dd-kc-n { display: flex; align-items: baseline; gap: 4px; }
+.dd-v4 .dd-kc-b b { display: inline; font-size: 22px; font-weight: 600; line-height: 1.2; letter-spacing: 0; }
+.dd-v4 .dd-kc-n u { text-decoration: none; font-size: 13px; font-weight: 600; color: var(--dd-green); }
+.dd-v4 .dd-kc-b em { font-size: 10px; margin-top: 2px; }
+
+/* aktivitas terbaru */
+.dd-v4 .dd-ra { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; border-top: 1px solid var(--dv-line); }
+.dd-v4 .dd-ra:first-child { border-top: 0; }
+.dd-v4 .dd-fill .dd-ra { flex: 1 1 0; min-height: 44px; max-height: 88px; }
+.dd-v4 .dd-ra-l { min-width: 0; }
+.dd-v4 .dd-ra-n { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; }
+.dd-v4 .dd-ra-n span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-v4 .dd-ra-n i { flex: none; width: 6px; height: 6px; border-radius: 50%; }
+.dd-v4 .dd-ra-m { font-size: 10px; color: var(--dv-muted); padding-left: 12px; }
+.dd-v4 .dd-ra-t { flex: none; font-size: 13px; font-weight: 500; white-space: nowrap; }
+.dd-v4 .dd-ra-t b { font-size: 10px; font-weight: 600; margin-left: 6px; }
+.dd-v4 .dd-ra-n .t-primary, .dd-v4 .dd-mc-dots .t-primary, .dd-v4 .dd-legend .lg-pri { background: #8b5cf6; }
+.dd-v4 .dd-ra-n .t-green { background: var(--dd-green); }
+.dd-v4 .dd-ra-n .t-yellow { background: var(--dd-yellow); }
+.dd-v4 .dd-ra-n .t-alert { background: var(--dv-alert); }
+.dd-v4 .dd-ra-n .t-slate { background: var(--dv-muted); }
+
+/* kalender */
+.dd-v4 .dd-mc-head { margin: 0; flex-wrap: nowrap; gap: 8px; }
+.dd-v4 .dd-mc-head > b { font-size: 12px; font-weight: 600; }
+.dd-v4 .dd-mc-head > div { gap: 4px; }
+.dd-v4 .dd-pa { width: 22px; height: 22px; border-radius: 6px; border: 1px solid #e5e7eb; background: none; }
+html.dark .dd-v4 .dd-pa { border-color: var(--dv-line); }
+.dd-v4 .dd-mc-dow { font-size: 9px; font-weight: 500; padding-bottom: 4px; }
+.dd-v4 .dd-mc-grid { grid-auto-rows: 30px; gap: 2px; flex: none; }
+.dd-v4 .dd-mc { border-radius: 8px; font-size: 11px; font-weight: 500; gap: 2px; }
+.dd-v4 .dd-mc.is-out { color: #c4c8d0; opacity: 1; }
+.dd-v4 .dd-mc.is-today { font-weight: 700; }
+.dd-v4 .dd-mc.is-today:hover { background: var(--dv-primary); }
+.dd-v4 .dd-mc.is-sel { box-shadow: inset 0 0 0 1.5px var(--dv-primary) !important; }
+.dd-v4 .dd-mc-dots { height: 4px; gap: 2px; }
+.dd-v4 .dd-mc-dots i { width: 4px; height: 4px; }
+.dd-v4 .dd-legend { gap: 12px; font-size: 9px; margin-top: 8px; }
+.dd-v4 .dd-legend i { width: 6px; height: 6px; margin-right: 4px; }
+.dd-v4 .dd-legend-end { margin-top: auto; padding-top: 8px; }
+
+/* barang terbanyak di pegang */
+.dd-v4 .dd-hl { grid-template-columns: minmax(0, 1fr) 70px 70px; gap: 0; padding: 9px 0; font-size: 10px; font-weight: 500; }
+.dd-v4 .dd-hl-n { font-weight: 500; }
+.dd-v4 .dd-hl > b { min-width: 0; font-size: 10px; font-weight: 700; }
+
+/* notifikasi */
+.dd-v4 .dd-nt.is-row { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; }
+.dd-v4 .dd-nlist.is-fill .dd-nt { min-height: 44px; max-height: none; }
+.dd-v4 .dd-nt-l b { display: flex; align-items: center; font-size: 11px; font-weight: 600; color: var(--dv-ink); }
+.dd-v4 .dd-nt-l small { display: block; font-size: 10px; color: var(--dv-muted); }
+.dd-v4 .dd-nt-r { text-align: right; }
+.dd-v4 .dd-nt-r b { display: block; font-size: 11px; font-weight: 600; color: var(--dv-ink); }
+.dd-v4 .dd-nt-r em { display: block; font-style: normal; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.dd-v4 .dd-nt-r em.sg { color: var(--dd-green); }
+.dd-v4 .dd-nt-r em.sy { color: var(--dd-yellow); }
+.dd-v4 .dd-nt-r em.sr { color: var(--dv-alert); }
+.dd-v4 .dd-nt:hover .dd-nt-l b { text-decoration: underline; }
+
+/* paginasi */
+.dd-v4 .dd-pager { padding-top: 8px; }
+.dd-v4 .dd-pager-i { font-size: 10px; }
+.dd-v4 .dd-pager-b button { min-width: 22px; height: 22px; padding: 0 4px; border-radius: 6px; border-color: #e5e7eb; font-size: 10px; font-weight: 500; }
+html.dark .dd-v4 .dd-pager-b button { border-color: var(--dv-line); }
+.dd-v4 .dd-pager-b button.is-on { border-color: var(--dv-primary); }
