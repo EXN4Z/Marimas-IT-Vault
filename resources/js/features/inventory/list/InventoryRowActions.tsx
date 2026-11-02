@@ -1,12 +1,12 @@
 import { Pencil, Trash2, HandCoins, Undo2, Wrench, Eye, Link2, Unlink } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { userIdPemakai } from '../inventoryHelpers';
-import type { Inventory } from '../types/inventory';
+import type { Inventory, InventoryRow } from '../types/inventory';
 import type { InventoryPemakai } from '../types/inventoryPemakai';
 import InventoryLaporStatus from './InventoryLaporStatus';
 
 interface InventoryRowActionsProps {
-  a: Inventory;
+  a: InventoryRow;
   isAdmin: boolean;
   openDetail: (id: number) => void | Promise<void>;
   setPerbaikanInventoryTarget: React.Dispatch<React.SetStateAction<Inventory | null>>;
@@ -160,8 +160,10 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
 
         {/* Item manapun yang berdiri sendiri (parent_id null) &
             tersedia bisa dipasang ke item lain sebagai child -- tidak terbatas
-            ke kategori tertentu lagi. */}
-        {!a.parent_id && a.status === 'tersedia' && (
+            ke kategori tertentu lagi. Kalau item ini sendiri sudah jadi induk
+            (punya children), tombol disembunyikan -- induk tidak boleh
+            dipasang ke item lain (aturan server juga menolak). */}
+        {!a.parent_id && a.status === 'tersedia' && (a.children_count ?? 0) === 0 && (
           <button
             onClick={() => setPasangIndukTarget(a)}
             title="Pasang ke Induk"

@@ -60,7 +60,7 @@ export default function InventoryDetailAksi({ isAdmin, detail, setSerahTerimaInv
             </span>
           )}
 
-          {!detail.parent_id && detail.status === 'tersedia' && (
+          {!detail.parent_id && detail.status === 'tersedia' && (detail.children?.length ?? 0) === 0 && (
             <button
               type="button"
               onClick={() => setPasangIndukTarget(detail)}

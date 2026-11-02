@@ -65,7 +65,7 @@ class DashboardQuery
 
         // 12 bulan terakhir (termasuk bulan ini).
         //  - jumlah = unit yang tanggal_invoice-nya jatuh di bulan itu
-        //  - total  = total unit s/d akhir bulan itu (kumulatif; unit tanpa tanggal invoice / sebelum rentang jadi titik awal)
+        //  - total  = total unit s/d akhir bulan itu (kumulatif; unit sebelum rentang jadi titik awal; unit tanpa tanggal invoice tidak dihitung)
         $awalRentang = Carbon::now()->startOfMonth()->subMonthsNoOverflow(11);
         $sebelumRentang = 0;
         $bulan = [];
@@ -101,9 +101,8 @@ class DashboardQuery
                 $key = $tgl->format('Y-n');
                 if (isset($bulan[$key])) $bulan[$key]['jumlah']++;
                 elseif ($tgl->lt($awalRentang)) $sebelumRentang++;
-            } else {
-                $sebelumRentang++;
             }
+            // tanggal_invoice null = tanggal pembelian tidak diketahui -> tidak dihitung di grafik.
         }
 
         $berjalan = $sebelumRentang;

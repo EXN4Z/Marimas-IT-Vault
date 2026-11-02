@@ -405,7 +405,7 @@ export default function TabInventory() {
   };
 
   // Tombol aksi per baris (tabel desktop & card mobile) -- isinya di InventoryRowActions.tsx
-  const renderAksi = (a: Inventory) => (
+  const renderAksi = (a: InventoryRow) => (
     <InventoryRowActions
       a={a}
       isAdmin={isAdmin}

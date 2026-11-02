@@ -49,10 +49,10 @@ class Inventory extends Model
     ];
 
     /**
-     * tanggal_input & tanggal_invoice (tanggal pembelian) yang kosong otomatis diisi tanggal data ini dibuat:
-     * saat create = hari ini, saat edit (dikosongkan) = tanggal created_at record. Dashboard "Pertumbuhan
-     * inventory" menghitung per bulan dari tanggal_invoice, jadi tanpa ini item tanpa tanggal selalu
-     * dianggap "sebelum rentang" dan membuat grafik tidak mulai dari 0.
+     * tanggal_input yang kosong otomatis diisi tanggal data ini dibuat:
+     * saat create = hari ini, saat edit (dikosongkan) = tanggal created_at record.
+     * tanggal_invoice (tanggal pembelian) SENGAJA tidak ikut diisi otomatis: kalau kosong tetap null,
+     * dan dashboard tidak menghitungnya di grafik tren pembelian.
      */
     protected static function booted(): void
     {
@@ -61,9 +61,6 @@ class Inventory extends Model
 
             if (empty($inventory->tanggal_input)) {
                 $inventory->tanggal_input = $fallback;
-            }
-            if (empty($inventory->tanggal_invoice)) {
-                $inventory->tanggal_invoice = $fallback;
             }
         });
     }

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 class BackfillTanggalInventory extends Command
 {
     protected $signature = 'inventory:backfill-tanggal';
-    protected $description = 'Isi tanggal_input & tanggal_invoice yang masih kosong dengan tanggal created_at inventory';
+    protected $description = 'Isi tanggal_input yang masih kosong dengan tanggal created_at inventory';
 
     public function handle(): int
     {
@@ -17,12 +17,7 @@ class BackfillTanggalInventory extends Command
             ->whereNotNull('created_at')
             ->update(['tanggal_input' => DB::raw('CAST(created_at AS DATE)')]);
 
-        $invoice = DB::table('inventory')
-            ->whereNull('tanggal_invoice')
-            ->whereNotNull('created_at')
-            ->update(['tanggal_invoice' => DB::raw('CAST(created_at AS DATE)')]);
-
-        $this->info("tanggal_input diisi: {$input} baris. tanggal_invoice diisi: {$invoice} baris.");
+        $this->info("tanggal_input diisi: {$input} baris.");
 
         return self::SUCCESS;
     }
