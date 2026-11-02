@@ -370,7 +370,9 @@ export default function FotoInventoryTab() {
   const activeTabLabel = TABS.find((t) => t.key === activeTab)?.label ?? 'Foto';
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+    // Kelas `pn` dibutuhkan: token --dv-line / --dv-surface (garis & header .pn-table) didefinisikan di .pn,
+    // halaman Laporan tidak dibungkus .pn seperti Master Data / Penanganan, jadi tanpa ini garis tabel hilang.
+    <div className="pn bg-white rounded-xl p-6 shadow-sm border border-slate-200">
       <ScrollableTabBar className="mb-4" tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
 
       <SearchInput

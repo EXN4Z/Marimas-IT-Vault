@@ -1,4 +1,6 @@
-import { ImageOff } from 'lucide-react';
+import { useState } from 'react';
+import { ImageOff, ZoomIn } from 'lucide-react';
+import FotoZoomViewer from '../../../components/media/FotoZoomViewer';
 import { namaPemakai } from '../inventoryHelpers';
 import type { Inventory } from '../types/inventory';
 import { STORAGE_BASE_URL } from '../list/helpers';
@@ -10,6 +12,8 @@ interface InventoryDetailHeroProps {
 
 // Ringkasan: foto + spesifikasi inti (baris ledger), lalu blok "sedang dipinjam" kalau status dipakai.
 export default function InventoryDetailHero({ detail }: InventoryDetailHeroProps) {
+  const [zoomFoto, setZoomFoto] = useState(false);
+
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-[96px_1fr]">
@@ -19,7 +23,17 @@ export default function InventoryDetailHero({ detail }: InventoryDetailHeroProps
             style={{ border: '1px solid var(--dv-line)', background: 'var(--dv-surface)' }}
           >
             {detail.foto ? (
-              <img src={STORAGE_BASE_URL + detail.foto} alt={detail.kode_inventory} className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => setZoomFoto(true)}
+                aria-label="Perbesar foto inventory"
+                className="relative w-full h-full group cursor-zoom-in"
+              >
+                <img src={STORAGE_BASE_URL + detail.foto} alt={detail.kode_inventory} className="w-full h-full object-cover" />
+                <span className="absolute bottom-1 right-1 grid place-items-center rounded-full bg-black/55 p-1 text-white opacity-90 group-hover:bg-black/70">
+                  <ZoomIn size={12} />
+                </span>
+              </button>
             ) : (
               <div className="flex flex-col items-center gap-1 dv-muted">
                 <ImageOff size={20} />
@@ -70,6 +84,13 @@ export default function InventoryDetailHero({ detail }: InventoryDetailHeroProps
             <p className="dv-g text-base font-semibold mt-0.5">{formatTanggalId(detail.pemakai_saat_ini.tanggal_penerimaan)}</p>
           </div>
         </div>
+      )}
+      {zoomFoto && detail.foto && (
+        <FotoZoomViewer
+          src={STORAGE_BASE_URL + detail.foto}
+          alt={detail.kode_inventory}
+          onClose={() => setZoomFoto(false)}
+        />
       )}
     </>
   );

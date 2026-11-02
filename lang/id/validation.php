@@ -45,8 +45,6 @@ return [
         'password' => 'Password',
         'current_password' => 'Password saat ini',
         'login' => 'Email/No HP/Nama',
-        'otp_code' => 'Kode OTP',
-        'registration_id' => 'ID registrasi',
         'role_id' => 'Role',
         'departemen_id' => 'Departemen',
         'lokasi_kantor_id' => 'Cabang / lokasi kantor',

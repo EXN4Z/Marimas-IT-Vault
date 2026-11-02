@@ -22,7 +22,7 @@ createInertiaApp({
     if (!loader) throw new Error(`Halaman Inertia tidak ditemukan: ${name}`);
     const page = await loader();
     // Persistent layout: halaman yang TIDAK mendefinisikan Page.layout otomatis dibungkus
-    // AppLayout. Halaman tanpa sidebar/header (Login, VerifyOtp di P13) cukup set
+    // AppLayout. Halaman tanpa sidebar/header (Login) cukup set
     // `Page.layout = null` (atau fungsi yang return page apa adanya).
     if (page.default.layout === undefined) {
       page.default.layout = (node: ReactNode) => <AppLayout>{node}</AppLayout>;

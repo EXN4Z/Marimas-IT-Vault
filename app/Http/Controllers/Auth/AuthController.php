@@ -2,16 +2,12 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Actions\Auth\ResendRegistrationOtp;
 use App\Actions\Auth\ResolveLoginUser;
-use App\Actions\Auth\VerifyRegistrationOtp;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Http\Requests\Auth\LoginAuthRequest;
-use App\Http\Requests\Auth\VerifyOtpAuthRequest;
-use App\Http\Requests\Auth\ResendOtpAuthRequest;
 
 class AuthController extends Controller
 {
@@ -39,37 +35,6 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         return $this->toIntended();
-    }
-
-    // GET /verify-otp?registration_id=...   (tidak ada registration_id -> balik ke /login; belum ada halaman register)
-    public function showVerifyOtp(Request $request)
-    {
-        $registrationId = (string) $request->query('registration_id', '');
-
-        if ($registrationId === '') {
-            return redirect('/login');
-        }
-
-        return Inertia::render('Auth/VerifyOtp', ['registrationId' => $registrationId]);
-    }
-
-    // POST /verify-otp
-    public function verifyOtp(VerifyOtpAuthRequest $request)
-    {
-        $user = VerifyRegistrationOtp::run($request->input('registration_id'), $request->input('otp_code'));
-
-        Auth::guard('web')->login($user, self::REMEMBER);
-        $request->session()->regenerate();
-
-        return $this->toIntended();
-    }
-
-    // POST /resend-otp   (sesi registrasi kedaluwarsa -> props errors.registration_id, halaman VerifyOtp yang menampilkan)
-    public function resendOtp(ResendOtpAuthRequest $request)
-    {
-        ResendRegistrationOtp::run((string) $request->input('registration_id'));
-
-        return back()->with('success', 'Kode OTP baru sudah dikirim ke email kamu');
     }
 
     // POST /logout

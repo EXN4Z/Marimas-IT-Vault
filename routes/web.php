@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Login, verifikasi OTP, logout: routes/web/auth.php (publik, di luar grup 'auth').
+// Login & logout: routes/web/auth.php (publik, di luar grup 'auth').
 require __DIR__.'/web/auth.php';
 
 Route::redirect('/', '/dashboard'); // belum login -> middleware 'auth' di /dashboard melempar ke /login
