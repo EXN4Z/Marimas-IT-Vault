@@ -1284,46 +1284,138 @@ html.dark .dd-pod.g { background: #2F9658; color: #fff; } html.dark .dd-pod.p { 
 .dd-drow .tr i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--dv-primary), color-mix(in srgb, var(--dv-primary) 60%, #fff)); }
 .dd-drow b { color: var(--dv-ink); text-align: right; font-variant-numeric: tabular-nums; }
 
-/* ===== SIDEBAR V2 (.sb-*) =====
-   Netral: putih di mode terang, graphite di mode gelap. Sengaja tidak pakai kelas warna Tailwind
-   (biar tidak kena override `html.dark .bg-white` dst). Catatan: di atas ada aturan global
-   `html.dark aside nav button:not(...)` yang memaksa background tombol sidebar transparan (!important),
-   jadi state aktif mode gelap di bawah juga pakai !important + selector lebih spesifik. */
-.sb { background: #FFFFFF; color: #52525B; border-right: 1px solid #E8E8EC; }
-html.dark .sb { background: linear-gradient(170deg, #1B1B1E, #0E0E10); border-right: 1px solid #27272A; color: #D4D4D8; }
-.sb-brand { display: flex; align-items: center; gap: 10px; padding: 26px 22px 10px; font-weight: 700; font-size: 17px; color: #1D1A3B; letter-spacing: -.01em; flex-shrink: 0; }
-html.dark .sb-brand { color: #FFFFFF; }
-.sb-x { margin-left: auto; color: #71717A; cursor: pointer; }
-html.dark .sb-x { color: rgba(255, 255, 255, .7); }
-.sb-nav { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 12px; }
-.sb-item { position: relative; width: 100%; display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 14px; font-size: 14px; font-weight: 600; color: #52525B; cursor: pointer; transition: background .15s, color .15s; }
-.sb-item:hover:not(:disabled) { background: #F4F4F6; color: #18181B; }
-.sb-item.is-active { background: #EDEDF1; color: #18181B; }
-/* Garis kuning pakai ::before, BUKAN box-shadow: aturan global `:focus { box-shadow: none !important }` di atas
-   menghapus box-shadow saat tombol difokus (mis. habis diklik buat buka/tutup dropdown). */
-.sb-item.is-active::before { content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: 0 3px 3px 0; background: #18181B; }
-html.dark .sb-item.is-active::before { background: #FFFFFF; }
-.sb-item.is-disabled { opacity: .4; cursor: not-allowed; }
-.sb-children { margin: 4px 0 0 18px; padding-left: 10px; border-left: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 2px; }
-.sb-child { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 10px; font-size: 13.5px; color: #71717A; cursor: pointer; }
-.sb-child:hover { background: #F4F4F6; color: #18181B; }
-.sb-child.is-active { background: #EDEDF1; color: #18181B; font-weight: 600; }
-.sb-sep { height: 1px; background: #ECECF0; margin: 10px 14px; }
-.sb-foot { padding: 14px 16px 18px; border-top: 1px solid #ECECF0; flex-shrink: 0; }
-.sb-logout { width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; font-size: 14px; font-weight: 600; color: #DC2626; cursor: pointer; }
-.sb-logout:hover { background: #FEF2F2; }
-/* mode gelap */
-html.dark .sb-item { color: #D4D4D8; }
-html.dark aside.sb nav.sb-nav button.sb-item:hover:not(:disabled) { background-color: #2A2A30 !important; color: #FFFFFF !important; }
-html.dark aside.sb nav.sb-nav button.sb-item.is-active { background-color: #3A3A42 !important; color: #FFFFFF !important; }
-html.dark .sb-children { border-left-color: rgba(255, 255, 255, .14); }
-html.dark .sb-child { color: #A1A1AA; }
-html.dark aside.sb nav.sb-nav button.sb-child:hover { background-color: #2A2A30 !important; color: #FFFFFF !important; }
-html.dark aside.sb nav.sb-nav button.sb-child.is-active { background-color: #34343B !important; color: #FFFFFF !important; }
-html.dark .sb-sep { background: rgba(255, 255, 255, .1); }
-html.dark .sb-foot { border-top-color: rgba(255, 255, 255, .1); }
-html.dark .sb-logout { color: #FFB9AD; }
-html.dark .sb-logout:hover { background: #2A2A30; color: #FFD3CB; }
+/* ===== MV SHELL: sidebar gabungan (rail + panel) + topbar =====
+   Dipasang di root AppLayout (.mv). Nilai visual disalin apa adanya dari sidebar-gabungan.html.
+   Catatan penyesuaian terhadap project (tanpa mengubah nilai visual shell):
+   - Aturan generik (font/warna dasar, reset <button>, ikon <svg>, outline fokus, reduced-motion) di-scope ke
+     .side / .top saja, supaya TIDAK bocor ke konten halaman (.sheet). Style tak berlapis (unlayered) selalu
+     mengalahkan utilitas Tailwind (@layer utilities), jadi `.mv button` / `.mv svg` yang global akan merusak halaman lain.
+   - Bagian "PENETRAL" di akhir blok menetralkan aturan global index.css (html.dark aside nav button, html.dark input,
+     :where(...):focus outline none !important, placeholder). */
+.mv{--bg:#fff;--rail:#FAFAFB;--line:#E8E8EC;--ink:#18181B;--txt:#52525B;--mut:#71717A;--hov:#F4F4F6;--act:#EDEDF1;--page:#F4F4F5;--alert:#C4411F;--pri:#5B4A9B;--out:#DC2626;--outbg:#FEF2F2;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+display:flex;height:100vh;height:100dvh;overflow:hidden;
+background:var(--bg)}
+html.dark .mv{--bg:#121214;--rail:#0E0E10;--line:#27272A;--ink:#fff;--txt:#D4D4D8;--mut:#A1A1AA;--hov:#2A2A30;--act:#3A3A42;--page:#18181B;--alert:#FF8A65;--pri:#A594F5;--out:#FFB9AD;--outbg:#2A2A30;color-scheme:dark}
+.mv,.mv *{box-sizing:border-box}
+.mv .side,.mv .top{color:var(--txt);font:14px/1.4 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+@layer base{
+.mv .side button,.mv .top button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0;text-align:left}
+}
+.mv .side button:focus-visible,.mv .tg:focus-visible,.mv .search input:focus-visible,.mv .res button:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+.mv .side svg,.mv .tg svg,.mv .search svg,.mv .res svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ---------- SIDEBAR GABUNGAN ---------- */
+.mv .side{display:flex;flex:none;height:100%;z-index:50}
+.mv .rail{flex:none;width:48px;background:var(--rail);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:6px}
+.mv .logo{width:30px;height:30px;border-radius:8px;background:#1D1A3B;color:#fff;font-weight:700;font-size:11px;letter-spacing:-.02em;display:grid;place-items:center;margin-bottom:8px}
+html.dark .mv .logo{background:#fff;color:#121214}
+.mv .rb{position:relative;width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:var(--mut);transition:background .15s,color .15s}
+.mv .rb:hover{background:var(--hov);color:var(--ink)}
+.mv .rb.on{background:var(--act);color:var(--ink)}
+.mv .rb[data-tip]:hover::after,.mv .rb[data-tip]:focus-visible::after{content:attr(data-tip);position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--ink);color:var(--bg);font-size:12px;font-weight:600;padding:5px 9px;border-radius:8px;white-space:nowrap;z-index:70;pointer-events:none;animation:mvTip .15s ease-out}
+@keyframes mvTip{from{opacity:0;transform:translateY(-50%) translateX(-4px)}}
+@keyframes mvPg{from{opacity:0;transform:translateY(4px)}}
+.mv .grow{flex:1}
+.mv .rb.out:hover{background:var(--outbg);color:var(--out)}
+
+.mv .panel{flex:none;width:248px;background:var(--bg);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;transition:width .22s ease,opacity .18s}
+.mv.collapsed .panel{width:0;opacity:0;border-right-width:0}
+.mv .pin{flex:none;width:248px;min-width:248px;display:flex;flex-direction:column;height:100%}
+.mv .brand{padding:16px 16px 10px}
+.mv .brand b{display:block;font-size:14px;letter-spacing:-.01em;color:var(--ink)}
+.mv .brand span{font-size:11.5px;color:var(--mut)}
+.mv .nav{flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:6px 10px 12px}
+.mv .nav::-webkit-scrollbar{display:none}
+.mv .lbl{font-size:11.5px;color:var(--mut);padding:14px 10px 6px;font-weight:500}
+.mv .it{position:relative;width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;font-size:13px;font-weight:500;white-space:nowrap;color:var(--txt);transition:background .15s,color .15s,transform .1s;margin-bottom:4px}
+.mv .it:hover{background:var(--hov);color:var(--ink)}
+.mv .it.on{background:var(--ink);color:var(--bg);font-weight:600}
+.mv .it.on::before{content:none}
+.mv .it:active,.mv .rb:active{transform:scale(.97)}
+.mv .it .t{flex:1}
+.mv .it .chev{width:14px;height:14px;transition:transform .2s}
+.mv .it.open .chev{transform:rotate(180deg)}
+.mv .kids{margin-left:15px;padding-left:8px;border-left:1px solid var(--line);display:grid;grid-template-rows:0fr;visibility:hidden;transition:grid-template-rows .26s ease,visibility 0s .26s}
+.mv .ki{overflow:hidden;min-height:0;display:flex;flex-direction:column;gap:3px}
+.mv .kids.open{grid-template-rows:1fr;visibility:visible;transition:grid-template-rows .26s ease,visibility 0s}
+.mv .kid:first-child{margin-top:6px}
+.mv .kid:last-child{margin-bottom:10px}
+.mv .kids.open .kid{opacity:1;transform:none}
+.mv .kids:not(.open) .kid{transition:opacity .1s}
+.mv .kid{display:flex;align-items:center;gap:9px;padding:7px 6px;border-radius:6px;font-size:12.5px;color:var(--mut);width:100%;white-space:nowrap;opacity:0;transform:translateX(-5px);transition:opacity .2s calc(var(--i)*30ms),transform .2s calc(var(--i)*30ms),background .15s,color .15s}
+.mv .kid svg{width:14px;height:14px}
+.mv .kid:hover{background:var(--hov);color:var(--ink)}
+.mv .kid.on{background:var(--act);color:var(--ink);font-weight:600}
+.mv .foot{padding:12px 10px;border-top:1px solid var(--line)}
+.mv .user{display:flex;align-items:center;gap:10px;padding:2px 6px 10px}
+.mv .av{width:28px;height:28px;border-radius:50%;background:#1D1A3B;color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;flex:none}
+html.dark .mv .av{background:#fff;color:#121214}
+.mv .user p{margin:0;line-height:1.25}
+.mv .user p b{display:block;color:var(--ink);font-size:13.5px}
+.mv .user p span{font-size:12px;color:var(--mut)}
+.mv .so{width:100%;display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;font-size:13px;font-weight:500;color:var(--out)}
+.mv .so:hover{background:var(--outbg)}
+
+/* ---------- KOLOM KANAN ---------- */
+.mv .main{flex:1;min-width:0;display:flex;flex-direction:column;height:100%;overflow-y:auto}
+.mv .top{position:sticky;top:0;z-index:30;height:48px;flex:none;background:var(--bg);display:flex;align-items:center;gap:8px;padding:0 12px}
+.mv .tg{width:28px;height:28px;border-radius:6px;display:grid;place-items:center;color:var(--txt)}
+.mv .tg:hover{background:var(--hov)}
+.mv .sep{width:1px;height:18px;background:var(--line)}
+.mv .crumb{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--mut);white-space:nowrap;overflow:hidden}
+.mv .crumb b{color:var(--ink);font-weight:600}
+.mv .search{position:relative;margin:0 auto;width:min(380px,36vw)}
+.mv .search>svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--mut)}
+.mv .search input{width:100%;height:30px;border-radius:6px;font-size:13px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:0 12px 0 36px;font:inherit}
+.mv .res{position:absolute;top:36px;left:0;right:0;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:4px;box-shadow:0 12px 30px rgba(0,0,0,.14);display:none;z-index:40}
+.mv .res.show{display:block}
+.mv .res button{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;border-radius:6px;font-size:13px}
+.mv .res button:hover{background:var(--hov)}
+.mv .res small{margin-left:auto;color:var(--mut);font-size:12px}
+.mv .res p{margin:0;padding:10px;color:var(--mut)}
+.mv .acts{display:flex;align-items:center;gap:6px;margin-left:auto}
+.mv .search+.acts{margin-left:0}
+.mv .nt{position:relative}
+.mv .nt i{position:absolute;top:5px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--alert)}
+.mv .me{display:flex;align-items:center;gap:9px;padding-left:6px}
+.mv .me p{margin:0;line-height:1.2}
+.mv .me b{display:block;color:var(--ink);font-size:13px}
+.mv .me span{font-size:12px;color:var(--mut)}
+.mv .page{flex:1;padding:0 8px 8px}
+.mv .sheet{background:var(--page);border-radius:12px;min-height:calc(100vh - 64px);padding:12px}
+.mv .pg{animation:mvPg .22s ease-out both}
+.mv .scrim{display:none}
+
+@media (max-width:900px){
+ .mv .side{position:fixed;inset:0 auto 0 0;transform:translateX(-100%);transition:transform .25s;padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
+ .mv .side.open{transform:none}
+ .mv.collapsed .panel{width:248px;opacity:1;border-right-width:1px}
+ .mv .scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:45}
+ .mv .side.open~.scrim,.mv .scrim.show{display:block}
+ .mv .search,.mv .me p{display:none}
+ .mv .top{padding:0 12px}
+}
+@media (prefers-reduced-motion:reduce){.mv .side,.mv .side *,.mv .top,.mv .top *,.mv .pg{transition:none!important;animation:none!important}}
+
+/* ---------- PENETRAL: aturan global index.css yang menimpa shell (nilai tetap = nilai di atas) ---------- */
+/* 1) `html.dark aside nav button:not(.bg-slate-900):not(.bg-slate-100)` (+ :hover) memaksa background transparan/#27272a (!important) */
+html.dark .mv aside.side nav button.it:hover,
+html.dark .mv aside.side nav button.kid:hover,
+html.dark .mv aside.side nav button.rb:hover{background-color:var(--hov)!important}
+html.dark .mv aside.side nav button.kid.on,
+html.dark .mv aside.side nav button.kid.on:hover,
+html.dark .mv aside.side nav button.rb.on,
+html.dark .mv aside.side nav button.rb.on:hover{background-color:var(--act)!important}
+html.dark .mv aside.side nav button.it.on,
+html.dark .mv aside.side nav button.it.on:hover{background-color:var(--ink)!important}
+html.dark .mv aside.side nav button.rb.out:hover{background-color:var(--outbg)!important}
+/* 2) `html.dark input:not([type=checkbox])...` memaksa background/warna/border input (!important) */
+html.dark .mv .top .search input{background-color:var(--bg)!important;color:var(--ink)!important;border-color:var(--line)!important}
+/* 3) Placeholder: pakai default browser seperti preview (Tailwind preflight mengubahnya) */
+.mv .search input::placeholder{color:revert;opacity:revert}
+/* 4) `:where(...):focus-visible{outline:none!important}` sudah ditangani dengan !important di aturan outline di atas */
+.mv .side button:focus-visible,.mv .tg:focus-visible,.mv .search input:focus-visible,.mv .res button:focus-visible{outline:2px solid var(--pri)!important;outline-offset:2px}
 
 /* ===== DV DETAIL MODAL (modal detail inventory, gaya ledger; token --dv-* di atas) ===== */
 .dv-modal { --dv-panel: #FFFFFF; background: var(--dv-panel); border: 1px solid var(--dv-line); border-radius: 12px; }

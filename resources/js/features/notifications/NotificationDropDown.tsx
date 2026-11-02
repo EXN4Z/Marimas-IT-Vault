@@ -87,16 +87,9 @@ export default function NotificationDropdown() {
 
   return (
     <div className="relative" ref={wrapperRef}>
-      <button
-        onClick={handleToggle}
-        className="relative w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition"
-      >
-        <Bell size={16} />
-        {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 px-1 bg-red-500 rounded-full text-[9px] text-white flex items-center justify-center">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
+      <button type="button" onClick={handleToggle} className="tg nt" aria-label="Notifikasi">
+        <Bell />
+        {unreadCount > 0 && <i />}
       </button>
 
       {open && (

@@ -6,6 +6,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { Skeleton } from '../../../components/skeleton';
 import type { RiwayatInventoryEvent } from '../../inventory/types/inventoryPemakai';
 import type { LaporanRiwayatProps } from '../types';
+import ScrollableTabBar from '../../../components/navigation/ScrollableTabBar';
 
 function formatWaktu(iso: string): string {
   const date = new Date(iso);
@@ -125,8 +126,11 @@ export default function RiwayatInventoryTab() {
         )}
       </div>
 
-      <ul className="flex items-center gap-1 mb-4 border-b border-slate-200 overflow-x-auto">
-        {([
+      <ScrollableTabBar
+        className="mb-4"
+        activeTab={riwayatFilter}
+        onChange={gantiRiwayatFilter}
+        tabs={([
           { key: 'semua', label: 'Semua' },
           { key: 'pinjam', label: RIWAYAT_FILTER_LABEL.pinjam },
           { key: 'kembali', label: RIWAYAT_FILTER_LABEL.kembali },
@@ -134,21 +138,8 @@ export default function RiwayatInventoryTab() {
           { key: 'mulai_perbaikan', label: RIWAYAT_FILTER_LABEL.mulai_perbaikan },
           { key: 'selesai_perbaikan', label: RIWAYAT_FILTER_LABEL.selesai_perbaikan },
           ...(isAdmin ? [{ key: 'dijual' as const, label: RIWAYAT_FILTER_LABEL.dijual }] : []),
-        ] as { key: RiwayatFilter; label: string }[]).map((t) => (
-          <li key={t.key} className="flex-shrink-0">
-            <button
-              onClick={() => gantiRiwayatFilter(t.key)}
-              className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap ${
-                riwayatFilter === t.key
-                  ? 'border-slate-900 text-slate-900'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              {t.label}
-            </button>
-          </li>
-        ))}
-      </ul>
+        ] as { key: RiwayatFilter; label: string }[])}
+      />
 
       <p className="text-xs text-slate-500 mb-4">
         Total {riwayatFilter === 'semua' ? 'Semua' : (RIWAYAT_FILTER_LABEL[riwayatFilter] ?? 'Riwayat')}: <span className="font-semibold text-slate-900">{riwayatTotal}</span> riwayat

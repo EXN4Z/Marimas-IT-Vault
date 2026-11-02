@@ -1,5 +1,6 @@
 import { isValidElement, useEffect, useRef, useState, type ReactNode, type ComponentType } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 
 // Tab bar horizontal yang bisa digeser sendiri di dalam boxnya (bukan
 // ndorong seluruh halaman ke samping kayak sebelumnya), lengkap dengan:
@@ -37,7 +38,7 @@ export default function ScrollableTabBar<T extends string>({
   onChange,
   className = '',
 }: ScrollableTabBarProps<T>) {
-  const scrollRef = useRef<HTMLUListElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
@@ -66,7 +67,7 @@ export default function ScrollableTabBar<T extends string>({
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const activeBtn = el.querySelector<HTMLButtonElement>(`[data-tab="${activeTab}"]`);
+    const activeBtn = el.querySelector<HTMLElement>(`[data-tab="${activeTab}"]`);
     activeBtn?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
     const id = setTimeout(updateScrollState, 300);
     return () => clearTimeout(id);
@@ -82,10 +83,10 @@ export default function ScrollableTabBar<T extends string>({
   return (
     <nav className={`relative ${className}`}>
       {canScrollLeft && (
-        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white dark:from-[#18181b] to-transparent z-10" />
+        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-slate-100 dark:from-[#27272a] to-transparent z-10" />
       )}
       {canScrollRight && (
-        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-[#18181b] to-transparent z-10" />
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-100 dark:from-[#27272a] to-transparent z-10" />
       )}
 
       {canScrollLeft && (
@@ -93,7 +94,7 @@ export default function ScrollableTabBar<T extends string>({
           type="button"
           onClick={() => scrollByAmount('left')}
           aria-label="Geser tab ke kiri"
-          className="absolute -left-1 top-1/2 -translate-y-1/2 -mt-1.5 z-20 w-6 h-6 rounded-full bg-white dark:bg-[#222226] border border-slate-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-700 transition"
+          className="absolute -left-1 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-[#ffffff] dark:bg-[#3f3f46] border border-slate-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-700 transition"
         >
           <ChevronLeft size={14} />
         </button>
@@ -103,54 +104,39 @@ export default function ScrollableTabBar<T extends string>({
           type="button"
           onClick={() => scrollByAmount('right')}
           aria-label="Geser tab ke kanan"
-          className="absolute -right-1 top-1/2 -translate-y-1/2 -mt-1.5 z-20 w-6 h-6 rounded-full bg-white dark:bg-[#222226] border border-slate-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-700 transition"
+          className="absolute -right-1 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-[#ffffff] dark:bg-[#3f3f46] border border-slate-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-700 transition"
         >
           <ChevronRight size={14} />
         </button>
       )}
 
-      <ul
-        ref={scrollRef}
-        className="flex items-center gap-6 border-b border-slate-200 overflow-x-auto scroll-smooth snap-x snap-proximity touch-pan-x"
-      >
-        {tabs.map((t) => {
-          // Elemen JSX yang udah jadi (mis. `<Users size={16} />`) harus dirender
-          // apa adanya. Selain itu dianggap referensi komponen (function ATAU
-          // objek forwardRef -- semua icon lucide-react itu forwardRef, jadi
-          // `typeof` doang gak cukup buat bedain) dan perlu di-render via JSX.
-          const iconIsElement = isValidElement(t.icon);
-          const IconComponent =
-            t.icon != null && !iconIsElement
-              ? (t.icon as ComponentType<{ size?: number | string; className?: string }>)
-              : null;
-          return (
-            <li key={t.key} className="shrink-0 snap-start">
-              <button
-                type="button"
-                data-tab={t.key}
-                onClick={() => onChange(t.key)}
-                className={`flex items-center gap-2 pb-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
-                  activeTab === t.key
-                    ? 'border-slate-900 text-slate-900 font-medium'
-                    : 'border-transparent text-slate-500 hover:text-slate-700'
-                }`}
-              >
+      <Tabs value={activeTab} onValueChange={(v) => onChange(v as T)}>
+        <TabsList
+          ref={scrollRef}
+          className="max-w-full justify-start overflow-x-auto scroll-smooth snap-x snap-proximity touch-pan-x"
+        >
+          {tabs.map((t) => {
+            // Elemen JSX yang udah jadi (mis. `<Users size={16} />`) dirender apa adanya. Selain itu dianggap
+            // referensi komponen (icon lucide-react itu forwardRef, jadi `typeof` saja tidak cukup).
+            const iconIsElement = isValidElement(t.icon);
+            const IconComponent =
+              t.icon != null && !iconIsElement
+                ? (t.icon as ComponentType<{ size?: number | string; className?: string }>)
+                : null;
+            return (
+              <TabsTrigger key={t.key} value={t.key} data-tab={t.key} className="snap-start">
                 {IconComponent ? <IconComponent size={16} /> : iconIsElement ? (t.icon as ReactNode) : null}
                 {t.label}
                 {t.badge != null && (
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      t.badgeClassName ?? 'bg-slate-100 text-slate-600'
-                    }`}
-                  >
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${t.badgeClassName ?? 'bg-slate-200 text-slate-600'}`}>
                     {t.badge}
                   </span>
                 )}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </Tabs>
     </nav>
   );
 }

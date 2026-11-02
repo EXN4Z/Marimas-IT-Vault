@@ -1,4 +1,4 @@
-import { useState, useRef, type ReactNode } from 'react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { usePage } from '@inertiajs/react';
 import { useAuth } from '../context/AuthContext';
 import { useAppNavigate } from '../hooks/useAppNavigate';
@@ -36,9 +36,29 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     window.location.href = '/login';
   };
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const MOBILE_Q = '(max-width:900px)'; // breakpoint 900px, BUKAN breakpoint lg Tailwind
+  const [panelOpen, setPanelOpen] = useState(true); // desktop: panel terbuka/tertutup (rail selalu ada)
+  const [mobileOpen, setMobileOpen] = useState(false); // mobile: drawer terbuka/tertutup
+  const [mounted, setMounted] = useState(false);
   const [dropdownOverrides, setDropdownOverrides] = useState<Record<string, boolean>>({});
   const contentScrollRef = useRef<HTMLDivElement>(null);
+  const isMobile = () => window.matchMedia(MOBILE_Q).matches;
+
+  // Animasi buka grup aktif satu kali saat load: render awal selalu tertutup, dua frame kemudian membuka.
+  useEffect(() => {
+    let r2 = 0;
+    const r1 = requestAnimationFrame(() => {
+      r2 = requestAnimationFrame(() => setMounted(true));
+    });
+    return () => {
+      cancelAnimationFrame(r1);
+      cancelAnimationFrame(r2);
+    };
+  }, []);
+
+  const onTogglePanel = () => (isMobile() ? setMobileOpen((v) => !v) : setPanelOpen((v) => !v));
+  const openPanel = () => (isMobile() ? setMobileOpen(true) : setPanelOpen(true));
+  const closeMobile = () => setMobileOpen(false);
 
   // [LAYOUT-LAMA] Urutan sidebar sama seperti versi lama: menu utama di-interleave
   // (Dashboard, Transaksi, Laporan, Master Data), lalu Audit Log (admin) dan Settings SELALU paling bawah.
@@ -72,6 +92,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   };
 
   const isDropdownOpen = (item: NavItem): boolean => {
+    if (!mounted) return false; // render awal selalu tertutup, lalu membuka dengan animasi
     const override = dropdownOverrides[item.label];
     if (override !== undefined) return override;
     return isParentActive(item);
@@ -106,6 +127,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     return currentTab === childTab;
   };
 
+  // Buka grup yang berisi child dengan path ini, supaya tidak menutup saat URL belum berpindah.
+  const openGroupOf = (path: string) => {
+    const group = visibleNavItems.find((i) => i.children?.some((c) => c.path === path));
+    if (group) setDropdownOverrides((prev) => ({ ...prev, [group.label]: true }));
+  };
+
+  // Klik grup di panel: toggle saja (tanpa navigasi). Klik item biasa: navigasi.
   const handleNavClick = (item: NavItem) => {
     if (!item.path) {
       if (item.children) {
@@ -117,12 +145,19 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       return;
     }
     onNavigate(item.path);
-    setSidebarOpen(false);
+    setMobileOpen(false);
+  };
+
+  // Klik ikon grup di rail: buka panel + buka grupnya, tanpa navigasi.
+  const onRailGroupClick = (item: NavItem) => {
+    openPanel();
+    setDropdownOverrides((prev) => ({ ...prev, [item.label]: true }));
   };
 
   const handleChildClick = (path: string) => {
     onNavigate(path);
-    setSidebarOpen(false);
+    openGroupOf(path);
+    setMobileOpen(false);
   };
 
   const handleLogout = async () => {
@@ -131,69 +166,62 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   const handleSearchResultClick = (path: string) => {
     onNavigate(path);
-    setSidebarOpen(false);
+    openGroupOf(path);
+    setMobileOpen(false);
   };
 
-  // [LAYOUT-LAMA] Judul halaman di top bar (diturunkan dari menu yang cocok dengan URL sekarang).
-  const derivedTitle = (() => {
+  // Breadcrumb top bar, diturunkan dari menu yang cocok dengan URL sekarang.
+  // child cocok -> group = label grup, current = label child; hanya prefix grup cocok / item tanpa children -> group = ''.
+  const crumb = (() => {
     for (const item of visibleNavItems) {
       if (item.children) {
         const kids = item.children.filter((c) => !c.roles || c.roles.includes(user?.role ?? ''));
         const match = kids.find((c, idx) => isChildActive(c, idx === 0));
-        if (match) return match.label;
-        if (matchesPrefix(pathname, item.matchPrefix)) return item.label;
+        if (match) return { group: item.label, current: match.label };
+        if (matchesPrefix(pathname, item.matchPrefix)) return { group: '', current: item.label };
         continue;
       }
-      if (matchesPrefix(pathname, item.matchPrefix)) return item.label;
-      if (item.path && item.path === pathname) return item.label;
+      if (matchesPrefix(pathname, item.matchPrefix)) return { group: '', current: item.label };
+      if (item.path && item.path === pathname) return { group: '', current: item.label };
     }
-    return '';
+    return { group: '', current: '' };
   })();
 
   const handleContentScroll = () => {};
 
   return (
     <NotificationsProvider>
-      <div className="h-screen bg-white flex overflow-hidden">
-        {sidebarOpen && (
-          <div
-            onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 bg-black/40 z-40 lg:hidden"
-          />
-        )}
-
+      <div className={`mv${panelOpen ? '' : ' collapsed'}`}>
         <Sidebar
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
+          mobileOpen={mobileOpen}
+          closeMobile={closeMobile}
           visibleNavItems={visibleNavItems}
           pathname={pathname}
-          search={search}
           isParentActive={isParentActive}
           isDropdownOpen={isDropdownOpen}
           isChildActive={isChildActive}
           handleNavClick={handleNavClick}
           handleChildClick={handleChildClick}
+          onRailGroupClick={onRailGroupClick}
           handleLogout={handleLogout}
         />
 
-        {/* [LAYOUT-LAMA] Kolom kanan: top bar sticky + panel konten melayang (bg-zinc-100 rounded-3xl) seperti versi lama */}
-        <div
-          ref={contentScrollRef}
-          onScroll={handleContentScroll}
-          className="flex-1 min-w-0 h-screen overflow-y-auto flex flex-col"
-        >
+        <div className="main" ref={contentScrollRef} onScroll={handleContentScroll}>
           <Header
-            title={derivedTitle}
-            onMenuClick={() => setSidebarOpen(true)}
+            group={crumb.group}
+            current={crumb.current}
+            onTogglePanel={onTogglePanel}
             navItems={visibleNavItems}
             onSearchResultClick={handleSearchResultClick}
           />
 
-          <main className="flex-1 p-4 md:p-8">
-            <div className="bg-zinc-100 rounded-3xl min-h-[calc(100vh-6.5rem)] p-4 md:p-8">
+          <main className="page">
+            <div className="sheet">
               <AuthSync />
               <FlashToaster />
-              {children}
+              <div key={pathname} className="pg">
+                {children}
+              </div>
             </div>
           </main>
         </div>

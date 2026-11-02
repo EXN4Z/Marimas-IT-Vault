@@ -21,7 +21,9 @@
     "dependencies": {
         "@inertiajs/core": "^3.8.0",
         "@inertiajs/react": "^3.8.0",
+        "@radix-ui/react-tabs": "^1.2.1",
         "@tanstack/react-query": "^5.104.4",
+        "clsx": "^2.1.1",
         "exceljs": "^4.4.0",
         "laravel-echo": "^2.6.1",
         "lucide-react": "^1.53.0",
@@ -30,6 +32,7 @@
         "react-dom": "^19.3.0",
         "react-hot-toast": "^2.6.1",
         "react-select": "^5.10.2",
-        "recharts": "^3.10.1"
+        "recharts": "^3.10.1",
+        "tailwind-merge": "^3.7.0"
     }
 }

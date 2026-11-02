@@ -3,7 +3,7 @@ import { Search } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { NavItem } from '../navigation';
 
-// [LAYOUT-LAMA] Kotak search seperti frontend lama. navItems = menu yang sudah difilter role (visibleNavItems),
+// Kotak pencarian menu di top bar (.search / .res di index.css, blok "MV SHELL"). navItems = menu yang sudah difilter role (visibleNavItems),
 // dan child dropdown ikut difilter per-role, jadi user tidak melihat halaman yang tidak bisa dia buka.
 interface SearchEntry {
   label: string;
@@ -40,16 +40,9 @@ export default function GlobalSearch({ navItems, onResultClick }: GlobalSearchPr
     return [{ key: item.label, label: item.label, icon: item.icon, path: item.path }];
   });
 
-  const filteredSearchEntries =
-    searchQuery.trim() === ''
-      ? searchEntries
-      : searchEntries.filter((entry) => {
-          const q = searchQuery.toLowerCase();
-          return (
-            entry.label.toLowerCase().includes(q) ||
-            (entry.parentLabel ? entry.parentLabel.toLowerCase().includes(q) : false)
-          );
-        });
+  // Pencocokan berdasarkan label menu (case-insensitive, includes); dropdown hanya tampil bila query tidak kosong.
+  const q = searchQuery.trim().toLowerCase();
+  const results = q === '' ? [] : searchEntries.filter((entry) => entry.label.toLowerCase().includes(q));
 
   // klik di luar kotak search (input + dropdown) menutup dropdown-nya
   useEffect(() => {
@@ -69,9 +62,12 @@ export default function GlobalSearch({ navItems, onResultClick }: GlobalSearchPr
   };
 
   return (
-    <div ref={searchBoxRef} className="flex items-center flex-1 max-w-md mx-6 relative">
-      <Search className="absolute left-3 w-4 h-4 text-slate-400" />
+    <div className="search" ref={searchBoxRef}>
+      <Search />
       <input
+        placeholder="Cari menu…"
+        autoComplete="off"
+        aria-label="Cari menu"
         value={searchQuery}
         onChange={(e) => {
           setSearchQuery(e.target.value);
@@ -79,34 +75,23 @@ export default function GlobalSearch({ navItems, onResultClick }: GlobalSearchPr
         }}
         onClick={() => setSearchOpen(true)}
         onFocus={() => setSearchOpen(true)}
-        placeholder="Cari sesuatu..."
-        className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-[#202024] border border-slate-200 dark:border-[#383842] rounded-lg text-sm transition focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-zinc-600 dark:focus:border-[#5c5c68]"
       />
-
-      {searchOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-lg max-h-80 overflow-y-auto z-40">
-          {filteredSearchEntries.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-slate-400">Halaman tidak ditemukan.</p>
-          ) : (
-            filteredSearchEntries.map((entry) => {
-              const EntryIcon = entry.icon;
-              return (
-                <button
-                  key={entry.key}
-                  onClick={() => handleResultClick(entry.path)}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-600 hover:bg-slate-100 transition"
-                >
-                  <EntryIcon size={16} className="text-slate-400 shrink-0" />
-                  <span className="flex-1 truncate">
-                    {entry.parentLabel && <span className="text-slate-400">{entry.parentLabel} / </span>}
-                    {entry.label}
-                  </span>
-                </button>
-              );
-            })
-          )}
-        </div>
-      )}
+      <div className={`res${searchOpen && searchQuery.trim() ? ' show' : ''}`}>
+        {results.length ? (
+          results.map((r) => {
+            const EntryIcon = r.icon;
+            return (
+              <button type="button" key={r.key} onClick={() => handleResultClick(r.path)}>
+                <EntryIcon />
+                {r.label}
+                <small>{r.parentLabel ?? ''}</small>
+              </button>
+            );
+          })
+        ) : (
+          <p>Menu tidak ditemukan</p>
+        )}
+      </div>
     </div>
   );
 }
