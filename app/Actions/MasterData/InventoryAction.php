@@ -121,9 +121,9 @@ class InventoryAction
     }
 
     /**
-     * Invariant: item yang MENEMPEL ke item lain (parent_id terisi) statusnya HARUS 'dipakai', dan yang
-     * berdiri sendiri/jadi induk (parent_id kosong) HARUS 'tersedia' -- apapun kategorinya, dan terlepas dari
-     * induknya lagi dipinjam atau tidak.
+     * Invariant: item yang MENEMPEL ke item lain (parent_id terisi) statusnya mengikuti pinjaman induknya
+     * ('dipakai' kalau induk sedang dipinjam, selain itu 'tersedia'), dan yang berdiri sendiri/jadi induk
+     * (parent_id kosong) HARUS 'tersedia' -- apapun kategorinya.
      */
     private function selaraskanStatusByParent(array &$validated, ?Inventory $inventory): void
     {
@@ -139,9 +139,9 @@ class InventoryAction
             return;
         }
 
-        // Baru DIPASANG ke induk (attach) -> paksa 'dipakai'
+        // Baru DIPASANG ke induk (attach) -> status mengikuti pinjaman induk
         if ($parentIdBaru && $parentIdBaru != $parentIdLama) {
-            $validated['status'] = 'dipakai';
+            $validated['status'] = $this->indukSedangDipinjam((int) $parentIdBaru) ? 'dipakai' : 'tersedia';
             return;
         }
 
@@ -151,9 +151,9 @@ class InventoryAction
             return;
         }
 
-        // MASIH menempel ke induk yang sama -> tetap 'dipakai'
+        // MASIH menempel ke induk yang sama -> status dihitung ulang mengikuti pinjaman induk
         if ($parentIdBaru) {
-            $validated['status'] = 'dipakai';
+            $validated['status'] = $this->indukSedangDipinjam((int) $parentIdBaru) ? 'dipakai' : 'tersedia';
             return;
         }
 
@@ -164,6 +164,15 @@ class InventoryAction
         } elseif (!$inventory) {
             $validated['status'] = 'tersedia';
         }
+    }
+
+    /** True kalau induk punya pemakaian aktif (disetujui & belum dikembalikan). */
+    private function indukSedangDipinjam(int $parentId): bool
+    {
+        return InventoryPemakai::where('inventory_id', $parentId)
+            ->where('status', 'disetujui')
+            ->whereNull('tanggal_pengembalian')
+            ->exists();
     }
 
     // ------------------------------------------------------------------ simpan / perbarui / hapus
