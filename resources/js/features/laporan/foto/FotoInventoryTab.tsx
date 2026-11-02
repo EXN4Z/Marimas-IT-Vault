@@ -422,7 +422,7 @@ function FotoDetailModal({ detail, onClose }: { detail: FotoDetail; onClose: () 
   const rows = detail.rows.filter((r) => r.value != null && String(r.value).trim() !== '');
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" onClick={onClose}>
       <div
         className="bg-white dark:bg-[#18181b] rounded-2xl shadow-2xl border border-slate-200/80 dark:border-zinc-800 w-full max-w-lg max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}

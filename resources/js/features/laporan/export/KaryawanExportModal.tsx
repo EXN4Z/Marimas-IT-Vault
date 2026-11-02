@@ -138,7 +138,7 @@ export default function KaryawanExportModal({ open, onClose, data }: Props) {
 
   return (
     <div
-      className="fixed inset-0 bg-slate-950/50 backdrop-blur-[2px] flex items-center justify-center z-[70] p-4 animate-[fadeIn_150ms_ease-out]"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4 animate-[fadeIn_150ms_ease-out]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget && !exporting) onClose();
       }}

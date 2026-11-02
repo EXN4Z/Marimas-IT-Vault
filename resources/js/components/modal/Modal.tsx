@@ -57,7 +57,7 @@ export default function Modal({
 
   return (
     <div
-      className="route-modal-backdrop fixed inset-0 z-[70] flex items-start sm:items-center justify-center bg-black/50 backdrop-blur-[2px] px-4 py-6 overflow-y-auto"
+      className="route-modal-backdrop fixed inset-0 z-[70] flex items-center justify-center bg-black/50 px-4 py-6 overflow-y-auto"
       onMouseDown={handleBackdropMouseDown}
       onClick={handleBackdropClick}
     >

@@ -543,7 +543,7 @@ interface ImportModalProps {
 
 function ImportModal({ importing, errors, fileInputRef, onFileSelected, onClose }: ImportModalProps) {
     return (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
             <div className="bg-white rounded-xl w-full max-w-md p-5 max-h-[90vh] overflow-y-auto">
                 <h2 className="text-base font-semibold text-gray-900 mb-1">Import Data Karyawan</h2>
                 <p className="text-sm text-gray-500 mb-4">

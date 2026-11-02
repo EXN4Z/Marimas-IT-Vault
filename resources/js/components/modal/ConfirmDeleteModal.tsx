@@ -42,7 +42,7 @@ export default function ConfirmDeleteModal({
 
   return (
     <div
-      className="fixed inset-0 bg-slate-950/50 backdrop-blur-[2px] z-[80] flex items-center justify-center p-4 animate-[fadeIn_150ms_ease-out]"
+      className="fixed inset-0 bg-black/50 z-[80] flex items-center justify-center p-4 animate-[fadeIn_150ms_ease-out]"
       {...backdrop}
       role="dialog"
       aria-modal="true"

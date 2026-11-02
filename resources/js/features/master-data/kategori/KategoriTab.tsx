@@ -309,7 +309,7 @@ export default function TabKategori() {
       {/* MODAL TAMBAH / EDIT */}
       {modalOpen && (
         <div
-          className="fixed inset-0 bg-slate-950/50 backdrop-blur-[2px] z-[70] flex items-center justify-center p-4 animate-[fadeIn_150ms_ease-out]"
+          className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 animate-[fadeIn_150ms_ease-out]"
           {...backdropModal}
         >
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md overflow-hidden transform transition-all animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">

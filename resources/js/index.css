@@ -1384,7 +1384,9 @@ html.dark .mv .av{background:#fff;color:#121214}
 .mv .me span{font-size:12px;color:var(--mut)}
 .mv .page{flex:1;padding:0 8px 8px}
 .mv .sheet{background:var(--page);border-radius:12px;min-height:calc(100vh - 64px);padding:12px}
-.mv .pg{animation:mvPg .22s ease-out both}
+/* Tanpa fill-mode (both/forwards): transform yang "tertahan" bikin .pg jadi containing block
+   untuk position:fixed, sehingga semua modal di dalamnya tidak center di viewport. */
+.mv .pg{animation:mvPg .22s ease-out}
 .mv .scrim{display:none}
 
 @media (max-width:900px){
