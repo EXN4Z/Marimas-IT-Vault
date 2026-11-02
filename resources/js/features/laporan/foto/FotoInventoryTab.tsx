@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Images, X, ChevronLeft, ChevronRight, HandCoins, Undo2, Wrench, Eye, Package, ImageOff, ZoomIn } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, HandCoins, Undo2, Wrench, Eye, Package, ImageOff, ZoomIn } from 'lucide-react';
 import Pagination from '../../../components/table/Pagination';
 import ScrollableTabBar, { type ScrollableTabItem } from '../../../components/navigation/ScrollableTabBar';
 import SearchInput from '../../../components/form/SearchInput';
@@ -14,7 +14,6 @@ import FotoZoomViewer from '../../../components/media/FotoZoomViewer';
 import { SkeletonTable } from '../../../components/skeleton/SkeletonTableRow';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/storage/' : '/storage/');
-const PER_PAGE = 10;
 
 interface DetailRow {
   label: string;

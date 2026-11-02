@@ -163,10 +163,6 @@ export default function TabKaryawan() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchInput]);
 
-    function openCreate() {
-        setFormModal({ user: null });
-    }
-
     function openEdit(user: User) {
         setFormModal({ user });
     }

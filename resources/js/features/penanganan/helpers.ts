@@ -21,6 +21,4 @@ export function initials(name?: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export type TabStatus = 'menunggu' | 'diperbaiki' | 'diperbaiki_selesai' | 'rusak_berat';
-
 export const ITEMS_PER_PAGE = 8;

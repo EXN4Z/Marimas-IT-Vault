@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 use NotificationChannels\WebPush\HasPushSubscriptions;
 use App\Models\MasterData\Departemen;
@@ -97,15 +96,6 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
-    // BARU: generate password default dari nama depan (kata pertama di
-    // 'name'), persis apa adanya, huruf besar/kecil tidak diubah.
-    // Contoh: "Febriyan Arbi" -> "Febriyan", "FEBRIYAN ARBI" -> "FEBRIYAN".
-    public static function generatePasswordFromName(string $name): string
-    {
-        $firstName = trim(explode(' ', trim($name))[0] ?? '');
-
-        return $firstName !== '' ? $firstName : Str::random(8);
-    }
     protected function casts(): array
     {
         return [

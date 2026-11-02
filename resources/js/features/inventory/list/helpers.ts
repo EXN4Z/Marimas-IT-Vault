@@ -47,9 +47,6 @@ export const STATUS_BAR_CLASS: Record<InventoryStatus, string> = {
   dijual: 'bg-[#A1A1AA] dark:bg-[#6B6B75]',
 };
 
-// Garis aksen kiri baris tabel dimatikan (tidak ada garis di baris status perbaikan).
-export const STATUS_AKSEN: Partial<Record<InventoryStatus, string>> = {};
-
 // [F4-INERTIA] Urutan tampil (status lalu kode) dan pagination 10 per halaman sekarang dijalankan server
 // (InventoryWebController), jadi STATUS_PRIORITY & ASET_PER_PAGE tidak dipakai lagi di client.
 

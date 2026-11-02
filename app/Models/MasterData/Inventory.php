@@ -102,11 +102,6 @@ class Inventory extends Model
         return $query->whereNull('parent_id');
     }
 
-    public function scopeMenempel($query)
-    {
-        return $query->whereNotNull('parent_id');
-    }
-
     // item induk tempat baris ini menempel (null = berdiri sendiri ATAU
     // baris ini sendiri adalah induk)
     public function parent()

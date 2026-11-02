@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import Select from '../../../components/form/Select';
 import { router } from '@inertiajs/react';
+import { toastFormErrors } from '../../../lib/toastErrors';
 import type { InventoryPenanganan } from '../types';
 import type { Inventory } from '../../inventory/types/inventory';
 import { formatJenisKerusakan } from '../../inventory/inventoryHelpers';
@@ -26,7 +27,6 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
   );
   const [catatan, setCatatan] = useState(penanganan.catatan || '');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
 
   const isRusakBerat = hasil === 'rusak_berat';
 
@@ -42,7 +42,6 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
 
   const handleSubmit = () => {
     setSubmitting(true);
-    setError('');
     // [F6-INERTIA] router.put ke /penanganan-inventory/{id}. Sukses -> toast dari flash server (FlashToaster); gagal -> pesan di modal.
     router.put(`/penanganan-inventory/${penanganan.id}`, {
       tanggal_selesai: tanggalSelesai,
@@ -54,8 +53,7 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
       preserveScroll: true,
       preserveState: true,
       onSuccess: () => onSuccess(),
-      onError: (errors) =>
-        setError(errors.biaya_komponen || errors.harga_jasa || String(Object.values(errors)[0] || 'Gagal menandai penanganan selesai.')),
+      onError: (errors) => toastFormErrors(errors, 'Gagal menandai penanganan selesai.'),
       onFinish: () => setSubmitting(false),
     });
   };
@@ -152,11 +150,6 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
           </div>
         </div>
 
-        {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
-            {error}
-          </p>
-        )}
         </div>
 
         {/* Footer */}

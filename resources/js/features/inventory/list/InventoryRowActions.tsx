@@ -116,7 +116,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
   // apapun kategorinya. Item yang berdiri sendiri (parent_id null) pakai
   // set aksi penuh (renderAksiInventory) -- boleh di-Serahkan/di-Terima
   // Kembali/Lapor Rusak langsung, tanpa lewat induk.
-  const renderAksi = (a: Inventory) =>
+  const renderAksi = (a: InventoryRow) =>
     a.parent_id ? renderAksiKelengkapan(a) : renderAksiInventory(a);
 
   // Dipakai bareng oleh tabel (desktop) & card (mobile) biar tombol aksinya
@@ -126,7 +126,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
   // 'tersedia' (item yang lagi mereka pakai dipindah ke card "Sedang Anda
   // Pakai" -- lihat myBorrowedItems), baris tabel buat karyawan/cabang cuma
   // punya aksi Detail.
-  const renderAksiInventory = (a: Inventory) => {
+  const renderAksiInventory = (a: InventoryRow) => {
     const akuPeminjamnya = userIdPemakai(a.pemakai_saat_ini) === user?.id;
     const bolehLihatDetail = isAdmin || a.status === 'tersedia' || akuPeminjamnya;
 

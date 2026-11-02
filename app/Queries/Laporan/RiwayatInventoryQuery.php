@@ -6,7 +6,6 @@ use App\Models\Transaksi\InventoryPemakai;
 use App\Models\Transaksi\InventoryPenanganan;
 use App\Models\Transaksi\InventoryWriteoff;
 use App\Models\User;
-use Illuminate\Http\Request;
 
 /**
  * [F7-INERTIA] Riwayat aktivitas inventory (pinjam/kembali/lapor_rusak/mulai_perbaikan/selesai_perbaikan/dijual), dipakai bareng oleh:
@@ -17,17 +16,6 @@ use Illuminate\Http\Request;
  */
 class RiwayatInventoryQuery
 {
-    /** Parameter query string API lama: page, per_page (alias limit), type, search. */
-    public static function dariRequest(Request $request): array
-    {
-        $page = max(1, (int) $request->query('page', 1));
-        $perPage = max(10, (int) $request->query('per_page', $request->query('limit', 10)));
-        $typeFilter = $request->query('type');
-        $search = trim((string) $request->query('search', ''));
-
-        return self::ambil($request->user(), $typeFilter, $search, $page, $perPage);
-    }
-
     /**
      * @return array{data: array, current_page: int, last_page: int, total: int, per_page: int}
      */

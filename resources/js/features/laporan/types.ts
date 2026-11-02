@@ -21,8 +21,6 @@ export interface LaporanExportData {
   pemakai: InventoryPemakai[];
 }
 
-export type FotoSub = 'inventory' | 'peminjaman' | 'pengembalian' | 'rusak';
-
 interface Halaman<T> {
   data: T[];
   current_page: number;

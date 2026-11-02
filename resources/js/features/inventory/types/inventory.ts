@@ -5,11 +5,6 @@ import type { InventoryPenanganan } from '../../penanganan/types';
 import type { InventoryPemakai } from './inventoryPemakai';
 
 export type InventoryStatus = 'tersedia' | 'dipakai' | 'menunggu_perbaikan' | 'diperbaiki' | 'rusak_berat' | 'dijual';
-// Struktur (induk/menempel) sekarang murni soal parent_id, independen dari
-// kategori -- lihat backend InventoryController::index(). 'induk' =
-// parent_id === null (boleh punya children, boleh juga berdiri sendiri
-// tanpa children). 'menempel' = parent_id !== null.
-type InventoryPosisi = 'induk' | 'menempel';
 
 export interface KategoriRef {
   id: number;
@@ -67,27 +62,6 @@ export interface Inventory {
     penyetuju?: { id: number; name: string } | null;
     created_at: string;
   } | null;
-}
-
-export interface InventoryFormValues {
-  kategori_id?: number | null;
-  parent_id?: number | null; // cuma valid kalau kategori-nya 'Kelengkapan', dan harus nunjuk ke barang_utama
-  nama?: string;
-  warna?: string;
-  serial_number?: string;
-  merk?: string;
-  type?: string;
-  jumlah?: number;
-  tanggal_garansi?: string;
-  perusahaan_id?: number | null;
-  keterangan?: string;
-  foto?: File | null;
-  supplier_id?: number | null;
-  tanggal_input?: string;
-  tanggal_invoice?: string;
-  no_surat_jalan?: string;
-  no_good_receive?: string;
-  hapus_foto?: boolean;
 }
 
 // [F4-INERTIA] Bentuk props tab Inventory dari server (MasterDataPageController -> InventoryWebController).

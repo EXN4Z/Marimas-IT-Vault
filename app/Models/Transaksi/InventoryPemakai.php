@@ -51,11 +51,6 @@ class InventoryPemakai extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function requestedBy()
-    {
-        return $this->belongsTo(User::class, 'requested_by_user_id');
-    }
-
     public function penanganan()
     {
         return $this->hasMany(InventoryPenanganan::class, 'inventory_pemakai_id');

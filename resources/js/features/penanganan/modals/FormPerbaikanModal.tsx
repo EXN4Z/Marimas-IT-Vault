@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Wrench } from 'lucide-react';
 import Select from '../../../components/form/Select';
 import { router } from '@inertiajs/react';
+import { toastFormErrors } from '../../../lib/toastErrors';
 import type { InventoryPenanganan } from '../types';
 import { formatJenisKerusakan } from '../../inventory/inventoryHelpers';
 import { todayIso } from '../helpers';
@@ -22,7 +23,6 @@ export default function FormPerbaikanModal({
   const [hargaJasa, setHargaJasa] = useState('');
   const [catatan, setCatatan] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
 
   const isRusakBerat = hasil === 'rusak_berat';
 
@@ -36,7 +36,6 @@ export default function FormPerbaikanModal({
 
   const handleSubmit = () => {
     setSubmitting(true);
-    setError('');
     // [F6-INERTIA] router.put ke /penanganan-inventory/{id}. Sukses -> toast dari flash server (FlashToaster) + modal ditutup parent;
     // gagal validasi -> pesan tampil di dalam modal ini.
     router.put(`/penanganan-inventory/${penanganan.id}`, {
@@ -49,8 +48,7 @@ export default function FormPerbaikanModal({
       preserveScroll: true,
       preserveState: true,
       onSuccess: () => onSuccess(),
-      onError: (errors) =>
-        setError(errors.biaya_komponen || errors.harga_jasa || String(Object.values(errors)[0] || 'Gagal menyimpan perbaikan.')),
+      onError: (errors) => toastFormErrors(errors, 'Gagal menyimpan perbaikan.'),
       onFinish: () => setSubmitting(false),
     });
   };
@@ -145,11 +143,6 @@ export default function FormPerbaikanModal({
             </div>
           </div>
 
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
-              {error}
-            </p>
-          )}
         </div>
 
         {/* Footer */}
