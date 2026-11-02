@@ -48,6 +48,26 @@ class Inventory extends Model
         'tanggal_rusak' => 'datetime',
     ];
 
+    /**
+     * tanggal_input & tanggal_invoice (tanggal pembelian) yang kosong otomatis diisi tanggal data ini dibuat:
+     * saat create = hari ini, saat edit (dikosongkan) = tanggal created_at record. Dashboard "Pertumbuhan
+     * inventory" menghitung per bulan dari tanggal_invoice, jadi tanpa ini item tanpa tanggal selalu
+     * dianggap "sebelum rentang" dan membuat grafik tidak mulai dari 0.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (self $inventory) {
+            $fallback = ($inventory->created_at ?? now())->toDateString();
+
+            if (empty($inventory->tanggal_input)) {
+                $inventory->tanggal_input = $fallback;
+            }
+            if (empty($inventory->tanggal_invoice)) {
+                $inventory->tanggal_invoice = $fallback;
+            }
+        });
+    }
+
     // ================= Relasi kategori =================
 
     public function kategori()
