@@ -1655,3 +1655,11 @@ html.dark .dd-kc { border-color: var(--dv-line); box-shadow: none; }
 .dd-nlist.is-fill > div { flex: 1; display: flex; flex-direction: column; }
 .dd-nlist.is-fill .dd-nt { flex: 1 1 0; height: auto; min-height: 60px; max-height: 92px; }
 /* ===== END DASHBOARD V3 ===== */
+
+/* ===== SKELETON LOADING =====
+   Warna balok mengikuti token tema baru (--dv-track), jadi otomatis cocok di dalam .dv / .pn / .dd-v4 (terang & gelap).
+   Di luar scope itu (mis. dropdown notifikasi) dipakai warna cadangan. Animasi mati kalau pengguna minta kurangi gerakan. */
+.sk { background: var(--dv-track, #ECE8F6); animation: sk-pulse 1.6s ease-in-out infinite; }
+html.dark .sk { background: var(--dv-track, #2A2A30); }
+@keyframes sk-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; } }

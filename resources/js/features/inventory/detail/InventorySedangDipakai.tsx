@@ -3,6 +3,7 @@ import StatusBadge from '../../../components/feedback/StatusBadge';
 import type { Inventory } from '../types/inventory';
 import type { InventoryPemakai } from '../types/inventoryPemakai';
 import { STATUS_STYLE, STATUS_LABEL } from '../list/helpers';
+import InventoryLaporStatus from '../list/InventoryLaporStatus';
 
 interface InventorySedangDipakaiProps {
   myBorrowedItems: Inventory[];
@@ -52,12 +53,7 @@ export default function InventorySedangDipakai({ myBorrowedItems, openDetail, se
                   </button>
                 </>
               )}
-              {(a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak_berat') && (
-                <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg cursor-default">
-                  <Wrench size={13} />
-                  Sudah Lapor
-                </span>
-              )}
+              {(a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak_berat') && <InventoryLaporStatus status={a.status} size="sm" />}
             </div>
           </div>
         ))}

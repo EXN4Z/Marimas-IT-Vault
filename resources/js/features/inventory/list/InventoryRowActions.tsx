@@ -3,6 +3,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { userIdPemakai } from '../inventoryHelpers';
 import type { Inventory } from '../types/inventory';
 import type { InventoryPemakai } from '../types/inventoryPemakai';
+import InventoryLaporStatus from './InventoryLaporStatus';
 
 interface InventoryRowActionsProps {
   a: Inventory;
@@ -71,15 +72,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
             <Wrench size={15} />
           </button>
         )}
-        {(a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak_berat') && (
-          <span
-            title="Laporan kerusakan sudah dikirim, menunggu/sedang ditangani"
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg cursor-default"
-          >
-            <Wrench size={14} />
-            Sudah Lapor
-          </span>
-        )}
+        {(a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak_berat') && <InventoryLaporStatus status={a.status} />}
         {/* BARU (3B): Lepas dari Induk — muncul kalau kelengkapan masih nempel (parent_id terisi).
             Kondisi a.parent_id pasti terisi di sini karena renderAksiKelengkapan hanya
             dipanggil dari renderAksi kalau a.parent_id truthy, tapi tetap dipakai
@@ -205,15 +198,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
             <Wrench size={15} />
           </button>
         )}
-        {(a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak_berat') && (
-          <span
-            title="Laporan kerusakan sudah dikirim, menunggu/sedang ditangani"
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg cursor-default"
-          >
-            <Wrench size={14} />
-            Sudah Lapor
-          </span>
-        )}
+        {(a.status === 'menunggu_perbaikan' || a.status === 'diperbaiki' || a.status === 'rusak_berat') && <InventoryLaporStatus status={a.status} />}
         <button
           onClick={() => {
             setEditingInventory(a);

@@ -1,8 +1,6 @@
 // Barrel export biar pemanggil cukup:
-//   import { Skeleton, SkeletonTable, SkeletonCardGrid } from '../shared/skeleton';
+//   import { Skeleton, SkeletonTable, SkeletonTableCard } from '../../components/skeleton';
 // tanpa perlu nunjuk file satu-satu di dalam folder ini.
 
 export { default as Skeleton } from './Skeleton';
-export { SkeletonTable, SkeletonListCard } from './SkeletonTableRow';
-export { SkeletonCardGrid } from './SkeletonCard';
-export { default as SkeletonChart, SkeletonDonutChart } from './SkeletonChart';
+export { SkeletonTable, SkeletonTableCard, SkeletonListCard } from './SkeletonTableRow';

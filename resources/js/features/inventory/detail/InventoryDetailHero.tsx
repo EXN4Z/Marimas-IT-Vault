@@ -1,4 +1,4 @@
-import { ImageOff, Link2 } from 'lucide-react';
+import { ImageOff } from 'lucide-react';
 import { namaPemakai } from '../inventoryHelpers';
 import type { Inventory } from '../types/inventory';
 import { STORAGE_BASE_URL } from '../list/helpers';
@@ -27,13 +27,6 @@ export default function InventoryDetailHero({ detail }: InventoryDetailHeroProps
               </div>
             )}
           </div>
-
-          {detail.parent_id && detail.parent && (
-            <p className="mt-2.5 text-xs dv-muted inline-flex items-center gap-1.5">
-              <Link2 size={13} className="shrink-0" />
-              <span className="truncate">Menempel ke {detail.parent.kode_inventory}</span>
-            </p>
-          )}
         </div>
 
         <div className="min-w-0 [&>.dv-row:first-child]:border-t-0 [&>.dv-row:first-child]:pt-0">
