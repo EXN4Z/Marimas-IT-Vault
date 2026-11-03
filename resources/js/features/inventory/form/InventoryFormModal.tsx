@@ -356,9 +356,6 @@ export default function InventoryFormModal({
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 animate-[fadeIn_150ms_ease-out]"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget && !processing) onClose();
-      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="inventory-form-title"

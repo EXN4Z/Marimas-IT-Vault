@@ -1,11 +1,11 @@
-import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 
 interface ModalProps {
   title: string;
   description?: string;
   children: ReactNode;
-  /** Dipanggil waktu modal ditutup (tombol X, klik backdrop, atau Esc). */
+  /** Dipanggil waktu modal ditutup (tombol X atau Esc; klik di luar modal tidak menutup). */
   onClose: () => void;
   maxWidthClassName?: string;
 }
@@ -22,11 +22,6 @@ export default function Modal({
   onClose,
   maxWidthClassName = 'max-w-xl',
 }: ModalProps) {
-  // BARU: fix bug "drag-select teks lalu kepeleset ke backdrop = modal ketutup".
-  // Klik dianggap "nutup modal" cuma kalau mousedown DAN mouseup dua-duanya
-  // kena backdrop-nya sendiri (bukan hasil drag yang start-nya dari dalam panel).
-  const mouseDownOnBackdrop = useRef(false);
-
   function handleClose() {
     onClose();
   }
@@ -44,22 +39,9 @@ export default function Modal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handleBackdropMouseDown(e: MouseEvent<HTMLDivElement>) {
-    mouseDownOnBackdrop.current = e.target === e.currentTarget;
-  }
-
-  function handleBackdropClick(e: MouseEvent<HTMLDivElement>) {
-    if (mouseDownOnBackdrop.current && e.target === e.currentTarget) {
-      handleClose();
-    }
-    mouseDownOnBackdrop.current = false;
-  }
-
   return (
     <div
       className="route-modal-backdrop fixed inset-0 z-[70] flex items-center justify-center bg-black/50 px-4 py-6 overflow-y-auto"
-      onMouseDown={handleBackdropMouseDown}
-      onClick={handleBackdropClick}
     >
       <div
         className={`route-modal-panel w-full ${maxWidthClassName} bg-white rounded-xl shadow-2xl my-auto`}

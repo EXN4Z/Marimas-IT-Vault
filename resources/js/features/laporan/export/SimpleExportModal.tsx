@@ -82,9 +82,6 @@ export default function SimpleExportModal<T>({ open, onClose, data, title, itemL
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4 animate-[fadeIn_150ms_ease-out]"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget && !exporting) onClose();
-      }}
     >
       <div className="bg-white dark:bg-[#18181b] rounded-2xl shadow-2xl border border-slate-200/80 dark:border-[#2c2c31] w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
         {/* Header */}

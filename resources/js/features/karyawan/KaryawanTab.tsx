@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type JSX } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import toast from 'react-hot-toast';
-import { Download, Upload, Plus, Eye, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Download, Upload, Plus, Eye, Pencil, Trash2, Loader2, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ScrollableTabBar from '../../components/navigation/ScrollableTabBar';
 import Pagination from '../../components/table/Pagination';
@@ -538,7 +538,18 @@ function ImportModal({ importing, errors, fileInputRef, onFileSelected, onClose 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
             <div className="bg-white rounded-xl w-full max-w-md p-5 max-h-[90vh] overflow-y-auto">
-                <h2 className="text-base font-semibold text-gray-900 mb-1">Import Data Karyawan</h2>
+                <div className="flex items-start justify-between gap-3 mb-1">
+                    <h2 className="text-base font-semibold text-gray-900">Import Data Karyawan</h2>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={importing}
+                        aria-label="Tutup"
+                        className="-mr-1.5 -mt-1 shrink-0 text-gray-400 hover:text-gray-700 p-1.5 rounded-lg hover:bg-gray-100 transition disabled:opacity-40"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
                 <p className="text-sm text-gray-500 mb-4">
                     Upload file Excel (.xlsx) berisi kolom NIK, Nama, Email, Phone, Departemen, dan
                     Tanggal Masuk. Karyawan baru akan otomatis dibuatkan akun dan passwordnya

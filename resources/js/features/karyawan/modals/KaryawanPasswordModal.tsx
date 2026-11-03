@@ -54,7 +54,6 @@ export default function KaryawanPasswordModal({ userId, userName, onClose }: Pro
   return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 animate-[fadeIn_150ms_ease-out]"
-      onClick={handleClose}
     >
       <div
         className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]"

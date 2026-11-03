@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import type { Inventory } from '../types/inventory';
 
 interface InventoryJualConfirmModalProps {
@@ -11,7 +12,18 @@ export default function InventoryJualConfirmModal({ jualTarget, setJualTarget, j
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] px-4">
       <div className="bg-white rounded-xl w-full max-w-sm p-5">
-        <h2 className="text-base font-semibold text-slate-900 mb-1">Tandai inventory sebagai dijual?</h2>
+        <div className="flex items-start justify-between gap-3 mb-1">
+          <h2 className="text-base font-semibold text-slate-900">Tandai inventory sebagai dijual?</h2>
+          <button
+            type="button"
+            onClick={() => setJualTarget(null)}
+            disabled={jualLoading}
+            aria-label="Tutup"
+            className="-mr-1.5 -mt-1 shrink-0 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-40"
+          >
+            <X size={18} />
+          </button>
+        </div>
         <p className="text-sm text-slate-500 mb-1">
           <span className="font-medium text-slate-700">{jualTarget.kode_inventory}</span> akan ditandai dengan status{' '}
           <span className="font-medium">Dijual</span> dan tidak bisa diserahkan/dipinjamkan lagi.

@@ -7,7 +7,6 @@ import ConfirmDeleteModal from '../../../components/modal/ConfirmDeleteModal';
 import Pagination from '../../../components/table/Pagination';
 import SearchInput from '../../../components/form/SearchInput';
 import { downloadStyledExcel } from '../../../lib/export/excelReport';
-import { useBackdropClose } from '../../../hooks/useBackdropClose';
 import { router, usePage } from '@inertiajs/react';
 import type { Supplier } from './types';
 
@@ -137,8 +136,6 @@ export default function TabSupplier() {
     if (submitting) return;
     setModalOpen(false);
   };
-
-  const backdropModal = useBackdropClose(closeModal);
 
   const handleSubmit = async () => {
     if (!formNama.trim()) {
@@ -356,7 +353,6 @@ export default function TabSupplier() {
       {modalOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 animate-[fadeIn_150ms_ease-out]"
-          {...backdropModal}
         >
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md overflow-hidden transform transition-all animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/60">
