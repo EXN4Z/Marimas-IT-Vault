@@ -46,7 +46,8 @@ function PertumbuhanChart({ rows }: { rows: TrenPembelianInventory[] }) {
   const [hover, setHover] = useState<number | null>(null);
   const active = hover !== null && hover <= last ? hover : last;
 
-  const vals = rows.map((r) => r.total ?? r.jumlah);
+  // nilai chart = unit yang dibeli di bulan itu (reset dari 0 tiap bulan), bukan total kumulatif
+  const vals = rows.map((r) => r.jumlah);
   const { lo, step } = skala(vals);
   const top = lo + step * 3;
   const y = (v: number) => Y_BASE - ((v - lo) / (top - lo)) * (Y_BASE - Y_TOP);
@@ -58,7 +59,7 @@ function PertumbuhanChart({ rows }: { rows: TrenPembelianInventory[] }) {
   const q = pts[active];
 
   // selisih pembelian bulan ini vs bulan sebelumnya (bukan total kumulatif)
-  const diff = active > 0 ? rows[active].jumlah - rows[active - 1].jumlah : null;
+  const diff = active > 0 ? vals[active] - vals[active - 1] : null;
   const deltaText = diff === null ? 'Data awal' : `${diff >= 0 ? '▲' : '▼'} ${Math.abs(diff)} Unit`;
   const deltaTurun = diff !== null && diff < 0;
   const namaBulan = `${rows[active].bulan}${rows[active].tahun ? ` ${rows[active].tahun}` : ''}`;
