@@ -54,7 +54,7 @@ class DashboardQuery
     /** Props dashboard ADMIN (lintas-perusahaan). Inventory = SEMUA item, termasuk kelengkapan. */
     public static function admin(User $user): array
     {
-        $list = Inventory::query()->get(['id', 'status', 'nama', 'tanggal_invoice', 'tanggal_garansi']);
+        $list = Inventory::query()->with('kategori:id,nama')->get(['id', 'status', 'nama', 'kategori_id', 'tanggal_invoice', 'tanggal_garansi']);
 
         $tersedia = $dipakai = $rusakBerat = $dijual = 0;
         $rusak = $dalamPenanganan = $garansiSegeraHabis = 0;
@@ -90,7 +90,8 @@ class DashboardQuery
                 if ($sisa >= 0 && $sisa <= $batas) $garansiSegeraHabis++;
             }
 
-            $nama = trim((string) $a->nama) ?: 'Tanpa Nama';
+            // dikelompokkan per kategori (mis. Printer, Modem), bukan per nama barang
+            $nama = trim((string) ($a->kategori?->nama)) ?: 'Tanpa Kategori';
             $perNama[$nama] = ($perNama[$nama] ?? 0) + 1;
 
             $label = self::STATUS_LABEL[$a->status] ?? $a->status;
