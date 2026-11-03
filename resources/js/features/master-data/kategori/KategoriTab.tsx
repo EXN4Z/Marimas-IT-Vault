@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Plus, Pencil, Trash2, X, Tags, AlertCircle, Download, Upload, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Tags, Download, Upload, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { toastFormErrors } from '../../../lib/toastErrors';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
 import ConfirmDeleteModal from '../../../components/modal/ConfirmDeleteModal';
 import Pagination from '../../../components/table/Pagination';
@@ -36,7 +37,6 @@ export default function TabKategori() {
 
   const [deleteTarget, setDeleteTarget] = useState<Kategori | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState('');
 
   const [currentPage, setCurrentPage] = useState(1);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -106,6 +106,7 @@ export default function TabKategori() {
   const handleSubmit = async () => {
     if (!formNama.trim()) {
       setFormError('Nama kategori tidak boleh kosong!');
+      toastFormErrors({ nama: 'Nama kategori tidak boleh kosong!' });
       return;
     }
     setSubmitting(true);
@@ -120,7 +121,7 @@ export default function TabKategori() {
         setModalOpen(false);
         if (!editing) setCurrentPage(1); // biar kategori baru langsung kelihatan
       },
-      onError: (errors: Record<string, string>) => setFormError(errors.nama || 'Gagal menyimpan kategori.'),
+      onError: (errors: Record<string, string>) => toast.error(errors.nama || 'Gagal menyimpan kategori.'),
       onFinish: () => setSubmitting(false),
     };
 
@@ -131,13 +132,15 @@ export default function TabKategori() {
   const handleDelete = () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    setDeleteError('');
-    // Sukses -> toast dari flash server. Gagal (masih dipakai Inventory) -> error bag "delete", tampil di modal.
+    // Sukses -> toast dari flash server. Gagal (masih dipakai Inventory) -> toast error + tutup modal.
     router.delete(`/master-data/kategori/${deleteTarget.id}`, {
       preserveScroll: true,
       preserveState: true,
       onSuccess: () => setDeleteTarget(null),
-      onError: (errors) => setDeleteError(errors.delete || 'Gagal menghapus kategori.'),
+      onError: (errors) => {
+        toast.error(errors.delete || 'Gagal menghapus kategori.');
+        setDeleteTarget(null);
+      },
       onFinish: () => setDeleting(false),
     });
   };
@@ -242,7 +245,6 @@ export default function TabKategori() {
                             <button
                               type="button"
                               onClick={() => {
-                                setDeleteError('');
                                 setDeleteTarget(item);
                               }}
                               title="Hapus"
@@ -277,7 +279,6 @@ export default function TabKategori() {
                       <button
                         type="button"
                         onClick={() => {
-                          setDeleteError('');
                           setDeleteTarget(item);
                         }}
                         title="Hapus"
@@ -358,13 +359,6 @@ export default function TabKategori() {
                 />
               </Field>
 
-              {formError && formNama.trim() && (
-                <div className="flex items-start gap-2.5 p-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl animate-[fadeIn_150ms_ease-out]">
-                  <AlertCircle size={15} className="shrink-0 mt-0.5 text-red-600" />
-                  <span>{formError}</span>
-                </div>
-              )}
-
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <ButtonCancel onClick={closeModal} disabled={submitting} />
                 <ButtonSubmit type="submit" loading={submitting} loadingLabel="Menyimpan...">
@@ -382,11 +376,9 @@ export default function TabKategori() {
         itemName={deleteTarget?.nama || ''}
         itemType="Kategori"
         loading={deleting}
-        errorMessage={deleteError}
         warningMessage="Pastikan tidak ada aset/inventory yang sedang terkait dengan kategori ini."
         onClose={() => {
           setDeleteTarget(null);
-          setDeleteError('');
         }}
         onConfirm={handleDelete}
       />

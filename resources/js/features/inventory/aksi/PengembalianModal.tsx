@@ -7,7 +7,7 @@ import type { InventoryPemakai } from '../types/inventoryPemakai';
 import type { Flash } from '../../../types/inertia';
 import { namaPemakai } from '../inventoryHelpers';
 import InventoryFotoUpload from '../form/InventoryFotoUpload';
-import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../../../components/form/FormControls';
+import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea, InlineError } from '../../../components/form/FormControls';
 import { toastFormErrors } from '../../../lib/toastErrors';
 
 interface InventoryPengembalianModalProps {
@@ -32,7 +32,6 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
   const [fotoPengembalian, setFotoPengembalian] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ kodeStruk?: string; foto?: string }>({});
-  const [serverError, setServerError] = useState('');
 
   const handleSubmit = () => {
     const newErrors: { kodeStruk?: string; foto?: string } = {};
@@ -51,9 +50,8 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
 
     setSubmitting(true);
     setErrors({});
-    setServerError('');
     // [F5-INERTIA] router.post + forceFormData (ada file foto). Sukses -> toast dari flash server (FlashToaster) + data struk
-    // pengembalian di flash.struk buat dicetak parent. Gagal validasi -> pesan tampil di dalam modal ini.
+    // pengembalian di flash.struk buat dicetak parent. Gagal validasi -> toast error.
     const data: Record<string, string | File[]> = {
       no_struk_penerimaan: kodeStruk.trim(),
       tanggal_pengembalian: tanggalPengembalian,
@@ -75,7 +73,6 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
           errors.foto_pengembalian ||
           Object.values(errors)[0] ||
           'Gagal memproses pengembalian.';
-        setServerError(msg);
         toast.error(msg);
       },
       onFinish: () => setSubmitting(false),
@@ -169,15 +166,9 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
               label="Foto Bukti Kondisi Inventory"
             />
             {errors.foto && (
-              <p className="mt-1.5 text-xs text-red-600 font-medium">{errors.foto}</p>
+              <InlineError>{errors.foto}</InlineError>
             )}
           </div>
-
-          {serverError && (
-            <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg p-3 animate-[fadeIn_150ms_ease-out]">
-              {serverError}
-            </p>
-          )}
         </div>
 
         {/* Footer */}

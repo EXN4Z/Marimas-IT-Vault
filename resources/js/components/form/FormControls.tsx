@@ -23,6 +23,22 @@ interface FieldProps {
   children: ReactNode;
 }
 
+// Pesan error validasi INLINE (di bawah kolom / area form). Satu-satunya style error inline di app ini supaya
+// tampilannya konsisten: dipakai <Field error>, error foto, "pilih minimal 1 kolom", dst.
+// Error dari server / aksi (simpan, hapus, import) pakai toast, bukan ini.
+export function InlineError({ children, className = '' }: { children?: ReactNode; className?: string }) {
+  if (!children) return null;
+  return (
+    <span
+      className={`flex items-center gap-1.5 mt-1.5 text-xs font-medium text-red-600 animate-[fadeIn_150ms_ease-out] ${className}`.trim()}
+      role="alert"
+    >
+      <AlertCircle size={13} className="shrink-0 text-red-500" />
+      {children}
+    </span>
+  );
+}
+
 // Label + error text pembungkus satu field dengan visual warning interaktif
 export function Field({ label, error, required, hint, className = '', children }: FieldProps) {
   return (
@@ -46,13 +62,7 @@ export function Field({ label, error, required, hint, className = '', children }
       {children}
 
       {error ? (
-        <span
-          className="flex items-center gap-1.5 mt-1.5 text-xs font-medium text-red-600 animate-[fadeIn_150ms_ease-out]"
-          role="alert"
-        >
-          <AlertCircle size={13} className="shrink-0 text-red-500" />
-          {error}
-        </span>
+        <InlineError>{error}</InlineError>
       ) : hint ? (
         <span className="block mt-1.5 text-xs text-slate-400">{hint}</span>
       ) : null}

@@ -44,7 +44,6 @@ export default function TabPerusahaan() {
 
   const [deleteTarget, setDeleteTarget] = useState<Perusahaan | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState('');
 
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -213,13 +212,15 @@ export default function TabPerusahaan() {
   const handleDelete = () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    setDeleteError('');
-    // Sukses -> toast dari flash server. Gagal (mis. masih ada relasi) -> error bag "delete", tampil di modal.
+    // Sukses -> toast dari flash server. Gagal (mis. masih ada relasi) -> toast error + tutup modal.
     router.delete(`/master-data/perusahaan/${deleteTarget.id}`, {
       preserveScroll: true,
       preserveState: true,
       onSuccess: () => setDeleteTarget(null),
-      onError: (errors) => setDeleteError(errors.delete || 'Gagal menghapus perusahaan.'),
+      onError: (errors) => {
+        toast.error(errors.delete || 'Gagal menghapus perusahaan.');
+        setDeleteTarget(null);
+      },
       onFinish: () => setDeleting(false),
     });
   };
@@ -349,7 +350,6 @@ export default function TabPerusahaan() {
                               type="button"
                               onClick={() => {
                                 setDeleteTarget(item);
-                                setDeleteError('');
                               }}
                               title="Hapus"
                               className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
@@ -385,7 +385,6 @@ export default function TabPerusahaan() {
                           type="button"
                           onClick={() => {
                             setDeleteTarget(item);
-                            setDeleteError('');
                           }}
                           title="Hapus"
                           className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
@@ -514,10 +513,8 @@ export default function TabPerusahaan() {
         itemName={deleteTarget?.nama || ''}
         itemType="Perusahaan"
         loading={deleting}
-        errorMessage={deleteError}
         onClose={() => {
           setDeleteTarget(null);
-          setDeleteError('');
         }}
         onConfirm={handleDelete}
       />

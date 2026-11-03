@@ -2,13 +2,12 @@ import type { Inventory } from '../types/inventory';
 
 interface InventoryJualConfirmModalProps {
   jualTarget: Inventory;
-  jualError: string;
   setJualTarget: React.Dispatch<React.SetStateAction<Inventory | null>>;
   jualLoading: boolean;
   confirmJual: () => void | Promise<void>;
 }
 
-export default function InventoryJualConfirmModal({ jualTarget, jualError, setJualTarget, jualLoading, confirmJual }: InventoryJualConfirmModalProps) {
+export default function InventoryJualConfirmModal({ jualTarget, setJualTarget, jualLoading, confirmJual }: InventoryJualConfirmModalProps) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] px-4">
       <div className="bg-white rounded-xl w-full max-w-sm p-5">
@@ -19,10 +18,6 @@ export default function InventoryJualConfirmModal({ jualTarget, jualError, setJu
         </p>
 
         <div className="mb-4" />
-
-        {jualError && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{jualError}</p>
-        )}
 
         <div className="flex justify-end gap-2">
           <button

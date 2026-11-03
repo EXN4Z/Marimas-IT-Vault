@@ -45,11 +45,17 @@ class LogActivity
             }
         }
 
+        // Audit Log cuma mencatat aksi yang BERHASIL. Request gagal (status >= 400, atau redirect balik membawa
+        // error validasi / aturan bisnis) tidak dicatat.
+        if ($this->tandaiGagal($request, $response)) {
+            return;
+        }
+
         AuditLog::create([
             'user_id' => $request->user()?->id,
             'method' => $request->method(),
             'endpoint' => $request->path(),
-            'deskripsi' => mb_strimwidth($this->buatDeskripsi($request), 0, 240, '…') . ($this->tandaiGagal($request, $response) ? ' (GAGAL)' : ''),
+            'deskripsi' => mb_strimwidth($this->buatDeskripsi($request), 0, 240, '…'),
             'ip_address' => $request->ip(),
         ]);
     }
@@ -165,6 +171,7 @@ class LogActivity
     }
 
     // Gagal = response error (>= 400, termasuk exception) atau redirect balik membawa error validasi/aturan bisnis.
+    // Request gagal TIDAK dicatat di Audit Log (lihat log()).
     protected function tandaiGagal(Request $request, $response): bool
     {
         if ($response && method_exists($response, 'getStatusCode') && $response->getStatusCode() >= 400) {

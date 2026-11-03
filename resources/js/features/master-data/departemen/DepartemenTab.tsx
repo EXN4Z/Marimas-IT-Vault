@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Plus, Pencil, Trash2, X, Upload, Download, Loader2, AlertCircle, Building2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Upload, Download, Loader2, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { toastFormErrors } from '../../../lib/toastErrors';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
 import ConfirmDeleteModal from '../../../components/modal/ConfirmDeleteModal';
 import Pagination from '../../../components/table/Pagination';
@@ -132,6 +133,7 @@ export default function TabDepartemen() {
   const handleSubmit = async () => {
     if (!formNama.trim()) {
       setFormError('Nama departemen tidak boleh kosong!');
+      toastFormErrors({ nama: 'Nama departemen tidak boleh kosong!' });
       return;
     }
     setSubmitting(true);
@@ -146,7 +148,7 @@ export default function TabDepartemen() {
         setModalOpen(false);
         if (!editing) setCurrentPage(1); // biar data baru langsung kelihatan
       },
-      onError: (errors: Record<string, string>) => setFormError(errors.nama || 'Gagal menyimpan departemen.'),
+      onError: (errors: Record<string, string>) => toast.error(errors.nama || 'Gagal menyimpan departemen.'),
       onFinish: () => setSubmitting(false),
     };
 
@@ -382,13 +384,6 @@ export default function TabDepartemen() {
                   error={!!formError && !formNama.trim()}
                 />
               </Field>
-
-              {formError && formNama.trim() && (
-                <div className="flex items-start gap-2.5 p-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl animate-[fadeIn_150ms_ease-out]">
-                  <AlertCircle size={15} className="shrink-0 mt-0.5 text-red-600" />
-                  <span>{formError}</span>
-                </div>
-              )}
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <ButtonCancel onClick={closeModal} disabled={submitting} />

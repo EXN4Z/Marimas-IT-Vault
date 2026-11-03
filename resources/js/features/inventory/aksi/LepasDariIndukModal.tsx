@@ -15,7 +15,6 @@ interface Props {
 export default function InventoryLepasDariIndukModal({ inventory, onClose, onSuccess }: Props) {
   const [keterangan, setKeterangan] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
 
   const indukLabel = inventory.parent
     ? `${inventory.parent.kode_inventory}${inventory.parent.nama ? ' — ' + inventory.parent.nama : ''}`
@@ -23,14 +22,12 @@ export default function InventoryLepasDariIndukModal({ inventory, onClose, onSuc
 
   const handleSubmit = () => {
     setSubmitting(true);
-    setError('');
     router.post(`/master-data/inventory/${inventory.id}/lepas-dari-induk`, { keterangan: keterangan.trim() || undefined }, {
       preserveScroll: true,
       preserveState: true,
       onSuccess: () => onSuccess(),
       onError: (errors) => {
         const msg = errors.lepas || Object.values(errors)[0] || 'Gagal melepas kelengkapan dari induk. Coba lagi.';
-        setError(msg);
         toast.error(msg);
       },
       onFinish: () => setSubmitting(false),
@@ -84,12 +81,6 @@ export default function InventoryLepasDariIndukModal({ inventory, onClose, onSuc
               placeholder="Tulis alasan melepas kelengkapan dari induk"
             />
           </Field>
-
-          {error && (
-            <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg p-3 animate-[fadeIn_150ms_ease-out]">
-              {error}
-            </p>
-          )}
         </div>
 
         {/* Footer */}

@@ -5,7 +5,7 @@ import { router } from '@inertiajs/react';
 import type { Inventory } from '../types/inventory';
 import InventoryFotoUpload from '../form/InventoryFotoUpload';
 import { JENIS_KERUSAKAN_OPTIONS } from '../inventoryHelpers';
-import { ButtonCancel, ButtonSubmit, Field, SelectField, Textarea } from '../../../components/form/FormControls';
+import { ButtonCancel, ButtonSubmit, Field, SelectField, Textarea, InlineError } from '../../../components/form/FormControls';
 import { toastFormErrors } from '../../../lib/toastErrors';
 
 interface Props {
@@ -20,7 +20,6 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
   const [fotoKerusakan, setFotoKerusakan] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ jenis_kerusakan?: string; keluhan?: string; foto?: string }>({});
-  const [serverError, setServerError] = useState('');
 
   const handleSubmit = () => {
     const newErrors: { jenis_kerusakan?: string; keluhan?: string; foto?: string } = {};
@@ -36,9 +35,8 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
 
     setSubmitting(true);
     setErrors({});
-    setServerError('');
     // [F6-INERTIA] router.post + forceFormData (1 file foto) ke /penanganan-inventory. Sukses -> toast dari flash server (FlashToaster);
-    // gagal validasi -> pesan tampil di dalam modal ini.
+    // gagal validasi -> toast error.
     router.post('/penanganan-inventory', {
       inventory_id: inventory.id,
       jenis_kerusakan: jenisKerusakan,
@@ -57,7 +55,6 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
           errors.inventory_id ||
           Object.values(errors)[0] ||
           'Gagal mengirim laporan. Coba lagi.';
-        setServerError(msg);
         toast.error(msg);
       },
       onFinish: () => setSubmitting(false),
@@ -139,15 +136,9 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
               label="Foto Bukti Kerusakan"
             />
             {errors.foto && (
-              <p className="mt-1 text-xs text-red-600 font-medium">{errors.foto}</p>
+              <InlineError>{errors.foto}</InlineError>
             )}
           </div>
-
-          {serverError && (
-            <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg p-3 animate-[fadeIn_150ms_ease-out]">
-              {serverError}
-            </p>
-          )}
         </div>
 
         {/* Footer */}

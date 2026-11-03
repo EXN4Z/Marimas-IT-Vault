@@ -32,7 +32,6 @@ interface InventoryDetailModalProps {
   deletingPemakaiId: number | null;
   setExpandedPemakaiId: React.Dispatch<React.SetStateAction<number | null>>;
   setPemakaiPage: React.Dispatch<React.SetStateAction<number>>;
-  historyActionError: string;
   penangananPage: number;
   expandedPenangananId: number | null;
   handleTerimaPenanganan: (id: number) => void | Promise<void>;
@@ -43,7 +42,7 @@ interface InventoryDetailModalProps {
   setPenangananPage: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export default function InventoryDetailModal({ closeDetail, detail, detailLoading, isAdmin, setSerahTerimaInventory, setPengembalianTarget, setPerbaikanInventoryTarget, setPasangIndukTarget, openJual, user, openDetail, setLepasTarget, pemakaiPage, expandedPemakaiId, handleDeletePemakai, deletingPemakaiId, setExpandedPemakaiId, setPemakaiPage, historyActionError, penangananPage, expandedPenangananId, handleTerimaPenanganan, terimaLoadingId, setPenangananSelesaiTarget, handleDeletePenanganan, setExpandedPenangananId, setPenangananPage }: InventoryDetailModalProps) {
+export default function InventoryDetailModal({ closeDetail, detail, detailLoading, isAdmin, setSerahTerimaInventory, setPengembalianTarget, setPerbaikanInventoryTarget, setPasangIndukTarget, openJual, user, openDetail, setLepasTarget, pemakaiPage, expandedPemakaiId, handleDeletePemakai, deletingPemakaiId, setExpandedPemakaiId, setPemakaiPage, penangananPage, expandedPenangananId, handleTerimaPenanganan, terimaLoadingId, setPenangananSelesaiTarget, handleDeletePenanganan, setExpandedPenangananId, setPenangananPage }: InventoryDetailModalProps) {
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 animate-[fadeIn_150ms_ease-out]"
@@ -209,12 +208,6 @@ export default function InventoryDetailModal({ closeDetail, detail, detailLoadin
                 setExpandedPemakaiId={setExpandedPemakaiId}
                 setPemakaiPage={setPemakaiPage}
               />
-
-              {historyActionError && (
-                <p className="text-xs dv-alert rounded-md px-3 py-2" style={{ border: '1px solid var(--dv-alert)' }}>
-                  {historyActionError}
-                </p>
-              )}
 
               {/* Riwayat perbaikan / penanganan */}
               <InventoryRiwayatPerbaikan

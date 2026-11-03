@@ -21,7 +21,6 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, mem
   const [parentId, setParentId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   // Kandidat induk = item berdiri sendiri, KECUALI item yang sedang dipasang ini (tidak boleh menempel ke dirinya sendiri).
   const kandidat = useMemo(() => indukOptions.filter((p) => p.id !== inventory.id), [indukOptions, inventory.id]);
@@ -42,14 +41,12 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, mem
       return;
     }
     setLoading(true);
-    setError('');
     router.post(`/master-data/inventory/${inventory.id}/pasang-ke-induk`, { parent_id: parentId }, {
       preserveScroll: true,
       preserveState: true,
       onSuccess: () => onSuccess(),
       onError: (errors) => {
         const msg = errors.pasang || Object.values(errors)[0] || 'Gagal memasang kelengkapan ke induk.';
-        setError(msg);
         toast.error(msg);
       },
       onFinish: () => setLoading(false),
@@ -150,12 +147,6 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, mem
               );
             })}
           </div>
-
-          {error && (
-            <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg p-3 animate-[fadeIn_150ms_ease-out]">
-              {error}
-            </p>
-          )}
         </div>
 
         {/* Footer */}

@@ -90,7 +90,6 @@ export default function PenangananInventory() {
   // Export & Import
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
-  const [importError, setImportError] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Papan menampilkan 4 kolom sekaligus; Export/Import tetap untuk admin (Export = laporan yang selesai diperbaiki).
@@ -154,7 +153,6 @@ export default function PenangananInventory() {
   };
 
   const handleTabChange = (tab: PenangananTab) => {
-    setImportError('');
     visitList({ tab, page: 1 });
   };
 
@@ -184,13 +182,12 @@ export default function PenangananInventory() {
     if (!file) return;
 
     setImportLoading(true);
-    setImportError('');
-    // Sukses -> toast dari flash server. Gagal -> pesan error inline (key "file").
+    // Sukses -> toast dari flash server. Gagal -> toast error (key "file").
     router.post('/penanganan-inventory/import', { file }, {
       forceFormData: true,
       preserveScroll: true,
       preserveState: true,
-      onError: (errors) => setImportError(String(errors.file || 'Gagal mengimport file')),
+      onError: (errors) => toast.error(String(errors.file || 'Gagal mengimport file')),
       onFinish: () => {
         setImportLoading(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -295,8 +292,6 @@ export default function PenangananInventory() {
           </div>
         )}
       </div>
-
-      {importError && <p className="pn-err">{importError}</p>}
 
       {view === 'tabel' && <ScrollableTabBar activeTab={activeTab} onChange={handleTabChange} tabs={tabs} />}
 

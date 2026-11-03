@@ -3,7 +3,7 @@ import { useForm } from '@inertiajs/react';
 import toast from 'react-hot-toast';
 import type { InventoryStatus } from '../types/inventory';
 import type { InventoryIndukOpsi, InventoryOpsi, InventoryRow } from '../types/inventory';
-import { ButtonCancel, ButtonSubmit, Field, SelectField, inputClass, inputErrorClass } from '../../../components/form/FormControls';
+import { ButtonCancel, ButtonSubmit, Field, SelectField, inputClass, inputErrorClass, InlineError } from '../../../components/form/FormControls';
 import { toastFormErrors } from '../../../lib/toastErrors';
 
 const KETERANGAN_MAX = 255;
@@ -737,7 +737,7 @@ export default function InventoryFormModal({
                   </button>
                 )}
               </label>
-              {fotoError && <span className="block mt-1 text-xs text-red-600 animate-[fadeIn_120ms_ease-out]">{fotoError}</span>}
+              {fotoError && <InlineError>{fotoError}</InlineError>}
               {/* BARU: indikator kecil biar admin sadar foto bakal beneran
                   dihapus pas disimpan (bukan cuma preview lokal yang hilang). */}
               {fotoDihapus && (

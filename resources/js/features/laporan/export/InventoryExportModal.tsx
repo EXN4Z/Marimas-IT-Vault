@@ -5,7 +5,7 @@ import { type Inventory } from '../../inventory/types/inventory';
 import { formatTanggalId, namaPemakai } from '../../inventory/inventoryHelpers';
 import { printRowsAsReport } from '../../../lib/export/printCsvReport';
 import { downloadStyledExcel } from '../../../lib/export/excelReport';
-import { ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
+import { ButtonCancel, ButtonSubmit, InlineError } from '../../../components/form/FormControls';
 
 const STATUS_LABEL: Record<Inventory['status'], string> = {
   tersedia: 'Tersedia',
@@ -289,9 +289,9 @@ export default function InventoryExportModal({ open, onClose, data }: Props) {
             </div>
 
             {checkedKeys.size === 0 && (
-              <p className="mt-1.5 text-xs text-red-600 font-medium">
+              <InlineError>
                 Pilih minimal 1 kolom data untuk diekspor.
-              </p>
+              </InlineError>
             )}
           </div>
         </div>

@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react';
 import Select from '../../../components/form/Select';
 import { router } from '@inertiajs/react';
 import { toastFormErrors } from '../../../lib/toastErrors';
+import { InlineError } from '../../../components/form/FormControls';
 import type { InventoryPenanganan } from '../types';
 import type { Inventory } from '../../inventory/types/inventory';
 import { formatJenisKerusakan } from '../../inventory/inventoryHelpers';
@@ -27,6 +28,11 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
   );
   const [catatan, setCatatan] = useState(penanganan.catatan || '');
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const clearError = (key: string) => {
+    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: '' }));
+  };
+  const errCls = (key: string) => (errors[key] ? ' !border-red-400 focus:!ring-red-400' : '');
 
   const isRusakBerat = hasil === 'rusak_berat';
 
@@ -35,12 +41,25 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
     // rusak berat = gak ada biaya perbaikan, kosongin biar gak ke-submit
     // nilai lama yang sempat diisi sebelum ganti pilihan
     if (value === 'rusak_berat') {
+      setErrors({});
       setBiayaKomponen('');
       setHargaJasa('');
     }
   };
 
   const handleSubmit = () => {
+    // sama dengan aturan server: biaya komponen & jasa wajib kalau hasilnya diperbaiki
+    if (!isRusakBerat) {
+      const clientErrors: Record<string, string> = {};
+      if (!biayaKomponen.trim()) clientErrors.biaya_komponen = 'Biaya komponen wajib diisi kalau hasilnya diperbaiki.';
+      if (!hargaJasa.trim()) clientErrors.harga_jasa = 'Biaya jasa wajib diisi kalau hasilnya diperbaiki.';
+      if (Object.keys(clientErrors).length > 0) {
+        setErrors(clientErrors);
+        toastFormErrors(clientErrors);
+        return;
+      }
+    }
+    setErrors({});
     setSubmitting(true);
     // [F6-INERTIA] router.put ke /penanganan-inventory/{id}. Sukses -> toast dari flash server (FlashToaster); gagal -> pesan di modal.
     router.put(`/penanganan-inventory/${penanganan.id}`, {
@@ -53,7 +72,10 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
       preserveScroll: true,
       preserveState: true,
       onSuccess: () => onSuccess(),
-      onError: (errors) => toastFormErrors(errors, 'Gagal menandai penanganan selesai.'),
+      onError: (serverErrors) => {
+        setErrors(serverErrors);
+        toastFormErrors(serverErrors, 'Gagal menandai penanganan selesai.');
+      },
       onFinish: () => setSubmitting(false),
     });
   };
@@ -65,7 +87,7 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white rounded-2xl shadow-xl ring-1 ring-slate-900/5 w-full max-w-sm max-h-[90vh] flex flex-col animate-[slideUp_180ms_ease-out]">
+      <div className="bg-white rounded-2xl shadow-xl ring-1 ring-slate-900/5 w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_180ms_ease-out]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <div>
@@ -97,9 +119,10 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
             <input
               type="date"
               value={tanggalSelesai}
-              onChange={(e) => setTanggalSelesai(e.target.value)}
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+              onChange={(e) => { setTanggalSelesai(e.target.value); clearError('tanggal_selesai'); }}
+              className={`w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900${errCls('tanggal_selesai')}`}
             />
+            <InlineError>{errors.tanggal_selesai}</InlineError>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -108,11 +131,12 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
                 type="number"
                 min={0}
                 value={biayaKomponen}
-                onChange={(e) => setBiayaKomponen(e.target.value)}
+                onChange={(e) => { setBiayaKomponen(e.target.value); clearError('biaya_komponen'); }}
                 placeholder={isRusakBerat ? '-' : 'Masukkan biaya komponen'}
                 disabled={isRusakBerat}
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                className={`w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed${errCls('biaya_komponen')}`}
               />
+              <InlineError>{errors.biaya_komponen}</InlineError>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Biaya Jasa</label>
@@ -120,11 +144,12 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
                 type="number"
                 min={0}
                 value={hargaJasa}
-                onChange={(e) => setHargaJasa(e.target.value)}
+                onChange={(e) => { setHargaJasa(e.target.value); clearError('harga_jasa'); }}
                 placeholder={isRusakBerat ? '-' : 'Masukkan biaya jasa'}
                 disabled={isRusakBerat}
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                className={`w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed${errCls('harga_jasa')}`}
               />
+              <InlineError>{errors.harga_jasa}</InlineError>
             </div>
           </div>
           <div>
@@ -142,11 +167,12 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
             <label className="block text-sm font-medium text-slate-700 mb-1">Catatan (opsional)</label>
             <textarea
               value={catatan}
-              onChange={(e) => setCatatan(e.target.value)}
+              onChange={(e) => { setCatatan(e.target.value); clearError('catatan'); }}
               rows={3}
               placeholder="Tulis catatan hasil penanganan"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
+              className={`w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none${errCls('catatan')}`}
             />
+            <InlineError>{errors.catatan}</InlineError>
           </div>
         </div>
 

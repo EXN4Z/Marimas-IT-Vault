@@ -120,7 +120,6 @@ export default function TabKaryawan() {
 
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
     const [deleting, setDeleting] = useState<boolean>(false);
-    const [deleteError, setDeleteError] = useState<string>('');
 
     // State import Excel karyawan
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -170,7 +169,6 @@ export default function TabKaryawan() {
     // Dari tombol "Hapus User" di dalam modal Edit: tutup form dulu, baru buka konfirmasi hapus.
     function requestDelete(user: User) {
         setFormModal(null);
-        setDeleteError('');
         setUserToDelete(user);
     }
 
@@ -178,14 +176,15 @@ export default function TabKaryawan() {
         if (!userToDelete) return;
 
         setDeleting(true);
-        setDeleteError('');
-        // Sukses -> toast dari flash server. Gagal (mis. masih punya pinjaman inventory) -> error bag "delete",
-        // tampil di dalam modal konfirmasi.
+        // Sukses -> toast dari flash server. Gagal (mis. masih punya pinjaman inventory) -> toast error + tutup modal.
         router.delete(`/master-data/karyawan/${userToDelete.id}`, {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => setUserToDelete(null),
-            onError: (errors) => setDeleteError(errors.delete || 'Gagal menghapus user. Coba lagi.'),
+            onError: (errors) => {
+                toast.error(errors.delete || 'Gagal menghapus user. Coba lagi.');
+                setUserToDelete(null);
+            },
             onFinish: () => setDeleting(false),
         });
     }
@@ -496,10 +495,8 @@ export default function TabKaryawan() {
                 itemType="Karyawan / User"
                 warningMessage="Akun login dan seluruh hak akses user ini akan dicabut secara permanen."
                 loading={deleting}
-                errorMessage={deleteError}
                 onClose={() => {
                     setUserToDelete(null);
-                    setDeleteError('');
                 }}
                 onConfirm={confirmDelete}
             />

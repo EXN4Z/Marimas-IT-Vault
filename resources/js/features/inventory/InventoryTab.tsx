@@ -107,20 +107,17 @@ export default function TabInventory() {
 
   const [perbaikanInventoryTarget, setPerbaikanInventoryTarget] = useState<Inventory | null>(null);
   const [penangananSelesaiTarget, setPenangananSelesaiTarget] = useState<{ inventory: Inventory; penanganan: InventoryPenanganan } | null>(null);
-  const [historyActionError, setHistoryActionError] = useState('');
 
   // Jual: inventory tersedia atau rusak_berat -- cuma konfirmasi, gak ada form.
   const [jualTarget, setJualTarget] = useState<Inventory | null>(null);
   const [jualLoading, setJualLoading] = useState(false);
-  const [jualError, setJualError] = useState('');
 
   // Lepas dari Induk (baris kelengkapan yang menempel & panel detail children) dan Pasang ke Induk (kebalikannya).
   const [lepasTarget, setLepasTarget] = useState<Inventory | null>(null);
   const [pasangIndukTarget, setPasangIndukTarget] = useState<Inventory | null>(null);
 
-  // Import Excel data inventory (bulk). Sukses -> toast dari flash server; gagal -> pesan error inline.
+  // Import Excel data inventory (bulk). Sukses -> toast dari flash server; gagal -> toast error (key "file").
   const [importLoading, setImportLoading] = useState(false);
-  const [importError, setImportError] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [terimaLoadingId, setTerimaLoadingId] = useState<number | null>(null);
@@ -287,7 +284,6 @@ export default function TabInventory() {
 
   function openJual(a: Inventory) {
     setJualTarget(a);
-    setJualError('');
   }
 
   // Jual: tandai inventory sebagai 'dijual', gak ada input tambahan.
@@ -295,7 +291,6 @@ export default function TabInventory() {
     if (!jualTarget) return;
 
     setJualLoading(true);
-    setJualError('');
     router.post(`/master-data/inventory/${jualTarget.id}/jual`, {}, {
       preserveScroll: true,
       preserveState: true,
@@ -303,7 +298,7 @@ export default function TabInventory() {
         setJualTarget(null);
         if (detailIdRef.current) segarkan();
       },
-      onError: (errors) => setJualError(errors.jual || 'Gagal menandai inventory sebagai terjual.'),
+      onError: (errors) => toast.error(errors.jual || 'Gagal menandai inventory sebagai terjual.'),
       onFinish: () => setJualLoading(false),
     });
   }
@@ -313,12 +308,11 @@ export default function TabInventory() {
     if (!file) return;
 
     setImportLoading(true);
-    setImportError('');
     router.post('/master-data/inventory/import', { file }, {
       forceFormData: true,
       preserveScroll: true,
       preserveState: true,
-      onError: (errors) => setImportError(String(errors.file || 'Gagal mengimport file')),
+      onError: (errors) => toast.error(String(errors.file || 'Gagal mengimport file')),
       onFinish: () => {
         setImportLoading(false);
         // reset biar bisa upload file yang sama lagi
@@ -348,39 +342,36 @@ export default function TabInventory() {
   // (hapus riwayat pemakaian [F5-INERTIA], terima/hapus penanganan [F6-INERTIA] = router.* ke route web, toast dari flash server)
 
   function handleTerimaPenanganan(id: number) {
-    setHistoryActionError('');
     setTerimaLoadingId(id);
-    // Sukses -> toast dari flash server; gagal -> error bag "terima" tampil di modal detail.
+    // Sukses -> toast dari flash server; gagal -> error bag "terima" -> toast.
     router.post(`/penanganan-inventory/${id}/terima`, {}, {
       preserveScroll: true,
       preserveState: true,
       onSuccess: () => segarkan(),
-      onError: (errors) => setHistoryActionError(errors.terima || 'Gagal menerima laporan penanganan.'),
+      onError: (errors) => toast.error(errors.terima || 'Gagal menerima laporan penanganan.'),
       onFinish: () => setTerimaLoadingId(null),
     });
   }
 
   function handleDeletePenanganan(id: number) {
     if (!confirm('Hapus riwayat penanganan ini?')) return;
-    setHistoryActionError('');
     router.delete(`/penanganan-inventory/${id}`, {
       preserveScroll: true,
       preserveState: true,
       onSuccess: () => segarkan(),
-      onError: (errors) => setHistoryActionError(String(Object.values(errors)[0] || 'Gagal menghapus riwayat penanganan.')),
+      onError: (errors) => toast.error(String(Object.values(errors)[0] || 'Gagal menghapus riwayat penanganan.')),
     });
   }
 
   function handleDeletePemakai(id: number) {
     if (!confirm('Hapus riwayat pemakaian ini?')) return;
-    setHistoryActionError('');
     setDeletingPemakaiId(id);
-    // Sukses -> toast dari flash server; gagal (mis. ada laporan perbaikan terkait) -> error bag "hapus" tampil di modal detail.
+    // Sukses -> toast dari flash server; gagal (mis. ada laporan perbaikan terkait) -> error bag "hapus" -> toast.
     router.delete(`/master-data/inventory-pemakai/${id}`, {
       preserveScroll: true,
       preserveState: true,
       onSuccess: () => segarkan(),
-      onError: (errors) => setHistoryActionError(errors.hapus || 'Gagal menghapus riwayat pemakaian.'),
+      onError: (errors) => toast.error(errors.hapus || 'Gagal menghapus riwayat pemakaian.'),
       onFinish: () => setDeletingPemakaiId(null),
     });
   }
@@ -436,8 +427,6 @@ export default function TabInventory() {
         setEditingInventory={setEditingInventory}
         setFormOpen={setFormOpen}
       />
-
-      {importError && <p className="text-sm mb-4 -mt-2 text-red-600">{importError}</p>}
 
       <div>
 
@@ -532,7 +521,6 @@ export default function TabInventory() {
       {jualTarget && (
         <InventoryJualConfirmModal
           jualTarget={jualTarget}
-          jualError={jualError}
           setJualTarget={setJualTarget}
           jualLoading={jualLoading}
           confirmJual={confirmJual}
@@ -571,7 +559,6 @@ export default function TabInventory() {
           deletingPemakaiId={deletingPemakaiId}
           setExpandedPemakaiId={setExpandedPemakaiId}
           setPemakaiPage={setPemakaiPage}
-          historyActionError={historyActionError}
           penangananPage={penangananPage}
           expandedPenangananId={expandedPenangananId}
           handleTerimaPenanganan={handleTerimaPenanganan}

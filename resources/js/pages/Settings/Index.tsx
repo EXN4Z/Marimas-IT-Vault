@@ -3,6 +3,7 @@ import { User as UserIcon, Mail, Phone, Save, Bell, BellOff, Lock, KeyRound } fr
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { usePushNotifications } from '../../features/notifications/hooks/usePushNotifications';
+import { InlineError } from '../../components/form/FormControls';
 
 const roleLabels: Record<string, string> = {
   admin: 'Admin',
@@ -22,7 +23,7 @@ function initials(name?: string): string {
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
-  return <p className="text-xs text-red-500 mt-1">{message}</p>;
+  return <InlineError>{message}</InlineError>;
 }
 
 // Update profil & ganti password: Inertia useForm -> PUT /settings/profile & /settings/password.

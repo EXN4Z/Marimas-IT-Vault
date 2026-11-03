@@ -9,7 +9,7 @@ import { requestJson } from '../../../lib/http';
 import type { InventoryPemakai, KaryawanUser } from '../types/inventoryPemakai';
 import type { Flash } from '../../../types/inertia';
 import InventoryFotoUpload from '../form/InventoryFotoUpload';
-import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea } from '../../../components/form/FormControls';
+import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea, InlineError } from '../../../components/form/FormControls';
 import { toastFormErrors } from '../../../lib/toastErrors';
 
 interface InventorySerahTerimaModalProps {
@@ -39,7 +39,6 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
   const [fotoPenerimaan, setFotoPenerimaan] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ penerima?: string; foto?: string }>({});
-  const [serverError, setServerError] = useState('');
 
   // Kelengkapan (tas, charger, dst) TIDAK bisa dipinjam sendiri lagi -- dia
   // wajib nempel & ikut status inventory induknya. Begitu inventory ini diserahkan,
@@ -105,12 +104,11 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
 
     setSubmitting(true);
     setErrors({});
-    setServerError('');
 
     // Cuma inventory utama yang diserahkan lewat sini -- kelengkapan yang masih 'tersedia' otomatis ikut diserahkan di
     // backend (satu struk & foto yang sama), gak perlu request terpisah dari sini lagi.
     // Sukses -> toast dari flash server (FlashToaster) + data struk di flash.struk buat dicetak parent. Gagal validasi ->
-    // pesan tampil di dalam modal ini.
+    // toast error.
     const data: Record<string, string | number | File[]> = {
       user_id: selected!.id,
       tanggal_penerimaan: tanggalPenerimaan,
@@ -137,7 +135,6 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
           errors.serah_terima ||
           Object.values(errors)[0] ||
           'Gagal mencatat serah-terima. Coba lagi.';
-        setServerError(msg);
         toast.error(msg);
       },
       onFinish: () => setSubmitting(false),
@@ -288,15 +285,9 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
               label="Foto Bukti Serah Terima"
             />
             {errors.foto && (
-              <p className="mt-1.5 text-xs text-red-600 font-medium">{errors.foto}</p>
+              <InlineError>{errors.foto}</InlineError>
             )}
           </div>
-
-          {serverError && (
-            <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg p-3 animate-[fadeIn_150ms_ease-out]">
-              {serverError}
-            </p>
-          )}
         </div>
 
         {/* Footer */}

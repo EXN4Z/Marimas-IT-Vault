@@ -5,7 +5,7 @@ import { type InventoryPenanganan } from '../types';
 import { formatTanggalId, namaPelaporPenanganan, formatRupiah, formatJenisKerusakan, formatDurasi } from '../../inventory/inventoryHelpers';
 import { printRowsAsReport } from '../../../lib/export/printCsvReport';
 import { downloadStyledExcel } from '../../../lib/export/excelReport';
-import { ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
+import { ButtonCancel, ButtonSubmit, InlineError } from '../../../components/form/FormControls';
 
 // Cuma dipakai buat 2 tab yang sudah "final": Berhasil Diperbaiki & Rusak
 // Berat (keduanya punya tanggal_selesai terisi) -- tab "Menunggu Terima" &
@@ -276,9 +276,9 @@ export default function InventoryPenangananExportModal({ open, onClose, data, ta
             </div>
 
             {checkedKeys.size === 0 && (
-              <p className="mt-1.5 text-xs text-red-600 font-medium">
+              <InlineError>
                 Pilih minimal 1 kolom data untuk diekspor.
-              </p>
+              </InlineError>
             )}
           </div>
         </div>
