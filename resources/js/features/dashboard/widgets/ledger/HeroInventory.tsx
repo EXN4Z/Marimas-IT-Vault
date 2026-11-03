@@ -59,6 +59,7 @@ function PertumbuhanChart({ rows }: { rows: TrenPembelianInventory[] }) {
 
   const diff = active > 0 ? vals[active] - vals[active - 1] : null;
   const deltaText = diff === null ? 'Data awal' : `${diff >= 0 ? '▲' : '▼'} ${Math.abs(diff)} Unit`;
+  const deltaTurun = diff !== null && diff < 0;
   const namaBulan = `${rows[active].bulan}${rows[active].tahun ? ` ${rows[active].tahun}` : ''}`;
 
   const BW = 110;
@@ -130,7 +131,7 @@ function PertumbuhanChart({ rows }: { rows: TrenPembelianInventory[] }) {
       <text x={bx + 12} y={by + 34} fontSize={14} fontWeight={700} style={{ fill: 'var(--dv-today-fg)' }}>
         {vals[active]} Unit
       </text>
-      <text x={bx + 12} y={by + 46} fontSize={9} style={{ fill: 'var(--dd-tip-delta)' }}>
+      <text x={bx + 12} y={by + 46} fontSize={9} style={{ fill: deltaTurun ? 'var(--dd-tip-down)' : 'var(--dd-tip-delta)' }}>
         {deltaText}
       </text>
 
@@ -148,6 +149,8 @@ export function HeroInventory({ total, tren = [], perMerek = [] }: { total: numb
   const rows = Array.isArray(tren) ? tren : [];
   const merek = Array.isArray(perMerek) ? perMerek : [];
   const bulanIni = rows[rows.length - 1];
+  const totalVals = rows.map((r) => r.total ?? r.jumlah);
+  const net = totalVals.length > 1 ? totalVals[totalVals.length - 1] - totalVals[totalVals.length - 2] : (bulanIni?.jumlah ?? 0);
   const terbanyak = merek[0];
   const tersedikit = merek.length > 1 ? merek[merek.length - 1] : null;
 
@@ -159,7 +162,7 @@ export function HeroInventory({ total, tren = [], perMerek = [] }: { total: numb
           Marimas IT Vault
         </div>
         <b className="dv-g dd-hv-big">{total}</b>
-        <b className={`dd-hv-chg ${bulanIni && bulanIni.jumlah > 0 ? '' : 'is-flat'}`}>{bulanIni && bulanIni.jumlah > 0 ? `▲ ${bulanIni.jumlah}` : '–'}</b>
+        <b className={`dd-hv-chg ${net > 0 ? '' : net < 0 ? 'is-down' : 'is-flat'}`}>{net > 0 ? `▲ ${net}` : net < 0 ? `▼ ${Math.abs(net)}` : '0'}</b>
         <span className="dd-hv-cap">Unit (Bulan Ini)</span>
         <div className="dd-hv-two">
           <div>

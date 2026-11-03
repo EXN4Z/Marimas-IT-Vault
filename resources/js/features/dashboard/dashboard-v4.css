@@ -7,10 +7,10 @@
   --dv-primary: #6d5bf6; --dv-on-primary: #fff; --dv-alert: #e11d2e;
   --dv-today-bg: #111; --dv-today-fg: #fff;
   --dd-card: #fff; --dd-chip: #f7f8fb; --dd-shadow: none;
-  --dd-green: #12b76a; --dd-green-ink: #12b76a; --dd-yellow: #f5b301; --dd-tip-delta: #34d399;
+  --dd-green: #12b76a; --dd-green-ink: #12b76a; --dd-yellow: #f5b301; --dd-tip-delta: #34d399; --dd-tip-down: #ff6b6b;
   font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 12px; line-height: 1.4;
 }
-html.dark .dv.dd-v4 { --dv-primary: #8b7cf8; --dv-on-primary: #fff; --dv-alert: #ff6b6b; --dd-tip-delta: #12b76a; }
+html.dark .dv.dd-v4 { --dv-primary: #8b7cf8; --dv-on-primary: #fff; --dv-alert: #ff6b6b; --dd-tip-delta: #12b76a; --dd-tip-down: #e5322d; }
 .dd-v4 .dv-g { font-family: inherit; }
 
 /* tata letak: kolom kiri fleksibel + kolom kanan 252px, jarak antar kartu 8px */
@@ -37,6 +37,7 @@ html.dark .dd-v4 .dd-card { border-color: var(--dv-line); }
 .dd-v4 .dd-hv-big { font-size: 34px; line-height: 1.1; margin-top: 14px; }
 .dd-v4 .dd-hv-chg { display: block; font-size: 18px; font-weight: 600; line-height: 1.2; margin-top: 8px; color: var(--dd-green); }
 .dd-v4 .dd-hv-chg.is-flat { color: var(--dv-muted); }
+.dd-v4 .dd-hv-chg.is-down { color: #f2453d; }
 .dd-v4 .dd-hv-cap { font-size: 11px; color: var(--dv-muted); margin-top: 2px; }
 .dd-v4 .dd-hv-two { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: 20px; }
 .dd-v4 .dd-hv-two small { font-size: 10px; white-space: nowrap; }
