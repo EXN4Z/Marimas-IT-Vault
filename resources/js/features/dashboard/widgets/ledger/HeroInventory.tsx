@@ -57,7 +57,8 @@ function PertumbuhanChart({ rows }: { rows: TrenPembelianInventory[] }) {
   const area = `${line} L${pts[last][0]} ${Y_BASE} L${pts[0][0]} ${Y_BASE} Z`;
   const q = pts[active];
 
-  const diff = active > 0 ? vals[active] - vals[active - 1] : null;
+  // selisih pembelian bulan ini vs bulan sebelumnya (bukan total kumulatif)
+  const diff = active > 0 ? rows[active].jumlah - rows[active - 1].jumlah : null;
   const deltaText = diff === null ? 'Data awal' : `${diff >= 0 ? '▲' : '▼'} ${Math.abs(diff)} Unit`;
   const deltaTurun = diff !== null && diff < 0;
   const namaBulan = `${rows[active].bulan}${rows[active].tahun ? ` ${rows[active].tahun}` : ''}`;
@@ -149,8 +150,8 @@ export function HeroInventory({ total, tren = [], perMerek = [] }: { total: numb
   const rows = Array.isArray(tren) ? tren : [];
   const merek = Array.isArray(perMerek) ? perMerek : [];
   const bulanIni = rows[rows.length - 1];
-  const totalVals = rows.map((r) => r.total ?? r.jumlah);
-  const net = totalVals.length > 1 ? totalVals[totalVals.length - 1] - totalVals[totalVals.length - 2] : (bulanIni?.jumlah ?? 0);
+  const bulanLalu = rows.length > 1 ? rows[rows.length - 2] : undefined;
+  const net = bulanIni ? bulanIni.jumlah - (bulanLalu?.jumlah ?? 0) : 0;
   const terbanyak = merek[0];
   const tersedikit = merek.length > 1 ? merek[merek.length - 1] : null;
 
