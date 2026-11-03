@@ -834,7 +834,10 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
 
     private function parseTanggal($value)
     {
-        if (empty($value)) return null;
+        // Anggap kosong juga kalau isinya placeholder seperti "-", "n/a", dst
+        if ($value === null || $this->namaBarangKosong((string) $value)) {
+            return null;
+        }
 
         if (is_numeric($value)) {
             return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)->format('Y-m-d');
@@ -846,7 +849,13 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
             $teks = preg_replace('/\b' . preg_quote($indo, '/') . '\b/i', $inggris, $teks);
         }
 
-        return \Carbon\Carbon::parse($teks)->format('Y-m-d');
+        // Kalau format tanggalnya tetap tidak dikenali, jangan gagalkan seluruh baris
+        try {
+            return \Carbon\Carbon::parse($teks)->format('Y-m-d');
+        } catch (\Exception $e) {
+            $this->errors[] = 'Tanggal "' . $value . '" tidak dapat dibaca, dikosongkan.';
+            return null;
+        }
     }
     
     public function getRowCount()
