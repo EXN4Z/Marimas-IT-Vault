@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import { useAppNavigate } from '../../../../hooks/useAppNavigate';
 import type { NotificationItem } from '../../types';
 import { formatWaktuSingkat } from '../aktivitas/aktivitas';
@@ -18,7 +18,7 @@ function ringkas(n: NotificationItem) {
     ? { teks: 'LAPOR RUSAK', cls: 'sy' }
     : d.hasil === 'rusak_berat'
       ? { teks: 'RUSAK BERAT', cls: 'sr' }
-      : { teks: 'BERHASIL DIPERBAIKI', cls: 'sg' };
+      : { teks: 'DIPERBAIKI', cls: 'sg' };
   return { kode: String(d.kode_inventory), tipe: d.inventory_nama ? String(d.inventory_nama) : '-', user: String(d.pelapor ?? '-').toUpperCase(), status };
 }
 
@@ -82,7 +82,7 @@ export function NotifikasiLedger({
     >
       <div
         className={`dd-nlist ${fill ? 'is-fill' : ''}`}
-        style={fill ? undefined : { height: pageSize * 66 }}
+        style={fill ? ({ '--np': pageSize } as CSSProperties) : { height: pageSize * 66 }}
         onTouchStart={(e) => {
           touchX.current = e.touches[0].clientX;
         }}
@@ -98,28 +98,41 @@ export function NotifikasiLedger({
         ) : (
           <div key={cur} className={dir === 1 ? 'dd-slide-r' : 'dd-slide-l'}>
             {list.map((n) => {
-              const r = v4 ? ringkas(n) : null;
-              return r ? (
-                <button key={n.id} type="button" className="dd-nt is-row" onClick={() => open(n)}>
-                  <span className="dd-nt-l">
-                    <b>
+              if (!v4) {
+                return (
+                  <button key={n.id} type="button" className="dd-nt" onClick={() => open(n)}>
+                    <span className="dd-nt-m">
                       {!n.read_at && <i className="dd-un" aria-label="Belum dibaca" />}
-                      {r.kode}
-                    </b>
-                    <small>{r.tipe}</small>
+                      {!n.read_at ? <b>{n.data?.message}</b> : n.data?.message}
+                    </span>
+                    <span className="dd-nt-d">{formatWaktuSingkat(n.created_at)}</span>
+                  </button>
+                );
+              }
+
+              // [DASHBOARD-V4] Semua baris memakai satu struktur yang sama: [dot] [judul + keterangan] [pelapor + status].
+              // Slot dot selalu ada (transparan kalau sudah dibaca) supaya teks tidak bergeser antar baris.
+              const r = ringkas(n);
+              const waktu = formatWaktuSingkat(n.created_at);
+              const title = r ? r.kode : (n.data?.message ?? 'Notifikasi baru');
+              const sub = r ? r.tipe : null;
+              const unreadRow = !n.read_at;
+              return (
+                <button key={n.id} type="button" className={`dd-nt is-row${unreadRow ? ' is-unread' : ''}${r ? '' : ' is-msg'}`} onClick={() => open(n)}>
+                  <span className="dd-nt-l">
+                    <i className="dd-un" aria-label={unreadRow ? 'Belum dibaca' : undefined} aria-hidden={unreadRow ? undefined : true} />
+                    <b title={title}>{title}</b>
+                    <small>
+                      {sub && <span className="dd-nt-s" title={sub}>{sub}</span>}
+                      <span className="dd-nt-w">{sub ? `\u00a0\u00b7 ${waktu}` : waktu}</span>
+                    </small>
                   </span>
-                  <span className="dd-nt-r">
-                    <b>{r.user}</b>
-                    <em className={r.status.cls}>{r.status.teks}</em>
-                  </span>
-                </button>
-              ) : (
-                <button key={n.id} type="button" className="dd-nt" onClick={() => open(n)}>
-                  <span className="dd-nt-m">
-                    {!n.read_at && <i className="dd-un" aria-label="Belum dibaca" />}
-                    {!n.read_at ? <b>{n.data?.message}</b> : n.data?.message}
-                  </span>
-                  <span className="dd-nt-d">{formatWaktuSingkat(n.created_at)}</span>
+                  {r && (
+                    <span className="dd-nt-r">
+                      <b title={r.user}>{r.user}</b>
+                      <em className={r.status.cls}>{r.status.teks}</em>
+                    </span>
+                  )}
                 </button>
               );
             })}
