@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Package, ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePage } from '@inertiajs/react';
-import type { InventoryPerMerek, TrenPembelianInventory, InventoryPerhatian, RingkasanInventory, AktivitasInventoryTerbaru, PemegangTeratas, DashboardAdminData } from './types';
+import type { InventoryPerMerek, TrenPembelianInventory, InventoryPerhatian, RingkasanInventory, AktivitasInventoryTerbaru, PemegangTeratas, DashboardAdminData, PembelianTitik } from './types';
 import { EmptyNote, DotBars, AktivitasRows, toneAktivitas, Pager, Panel, DashboardSkeleton, NotifikasiLedger } from './DashboardShared';
 import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { useSharedProps } from '../../hooks/useSharedProps';
@@ -29,14 +29,14 @@ export default function DashboardAdmin() {
     return <DashboardSkeleton variant="full" />;
   }
 
-  const { ringkasanInventory, trenPembelianInventory, inventoryPerhatian, inventoryPerMerek, aktivitasKalender, terbanyakDipegang } = analitik;
+  const { ringkasanInventory, trenPembelianInventory, pembelianMingguan, pembelianBulanan, inventoryPerhatian, inventoryPerMerek, aktivitasKalender, terbanyakDipegang } = analitik;
 
   return (
     <div className="dv dd-page dd-v4">
       <div className="dd-main">
         <div className="dd-mcol">
           {/* ═══ KOLOM KIRI · 1. HERO ═══ */}
-          <HeroInventory total={ringkasanInventory?.total ?? 0} tren={trenPembelianInventory} perMerek={inventoryPerMerek} />
+          <HeroInventory total={ringkasanInventory?.total ?? 0} tren={trenPembelianInventory} perMerek={inventoryPerMerek} mingguan={pembelianMingguan} bulanan={pembelianBulanan} />
           {/* ═══ KOLOM KIRI · 2. KPI ═══ */}
           <KpiDots ringkasan={ringkasanInventory} perhatian={inventoryPerhatian} />
           {/* ═══ KOLOM KIRI · 3. AKTIVITAS + KALENDER ═══ */}
@@ -72,7 +72,7 @@ const Y_BASE = 160; // garis dasar (grid paling bawah)
 function skala(vals: number[]) {
   const min = Math.min(...vals);
   const max = Math.max(...vals);
-  const pilihan = [5, 10, 20, 25, 50, 100, 200, 500, 1000];
+  const pilihan = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000]; // [CHART] 1 & 2 ditambah untuk chart mingguan/bulanan
   let step = pilihan[pilihan.length - 1];
   for (const s of pilihan) {
     if (Math.floor(min / s) * s + 3 * s >= max) {
@@ -98,7 +98,7 @@ function smooth(p: [number, number][]): string {
 }
 
 // Chart pertumbuhan inventory per bulan. Arahkan kursor (atau sentuh) untuk pindah bulan aktif; default = bulan terakhir.
-function PertumbuhanChart({ rows }: { rows: TrenPembelianInventory[] }) {
+function PertumbuhanChart({ rows, judulChart }: { rows: PembelianTitik[]; judulChart: string }) {
   const last = rows.length - 1;
   const [hover, setHover] = useState<number | null>(null);
   const active = hover !== null && hover <= last ? hover : last;
@@ -119,7 +119,7 @@ function PertumbuhanChart({ rows }: { rows: TrenPembelianInventory[] }) {
   const diff = active > 0 ? vals[active] - vals[active - 1] : null;
   const deltaText = diff === null ? 'Data awal' : `${diff >= 0 ? '▲' : '▼'} ${Math.abs(diff)} Unit`;
   const deltaTurun = diff !== null && diff < 0;
-  const namaBulan = `${rows[active].bulan}${rows[active].tahun ? ` ${rows[active].tahun}` : ''}`;
+  const namaBulan = rows[active].judul;
 
   const BW = 110;
   const bx = Math.min(Math.max(q[0] - BW / 2, 4), W - BW - 4);
@@ -145,7 +145,7 @@ function PertumbuhanChart({ rows }: { rows: TrenPembelianInventory[] }) {
       className="dd-lc"
       viewBox={`0 0 ${W} ${H}`}
       role="img"
-      aria-label={`Pertumbuhan inventory per bulan. ${namaBulan}: ${vals[active]} unit.`}
+      aria-label={judulChart + '. ' + namaBulan + ': ' + vals[active] + ' unit.'}
       onMouseMove={(e) => onMove(e.clientX, e.currentTarget)}
       onMouseLeave={() => setHover(null)}
       onTouchStart={(e) => onMove(e.touches[0].clientX, e.currentTarget)}
@@ -195,18 +195,49 @@ function PertumbuhanChart({ rows }: { rows: TrenPembelianInventory[] }) {
       </text>
 
       {rows.map((r, i) => (
-        <text key={r.bulan + i} x={pts[i][0]} y={H - 8} textAnchor="middle" fontSize={9} fontWeight={i === active ? 700 : 400} style={{ fill: i === active ? 'var(--dv-ink)' : 'var(--dv-muted)' }}>
-          {r.bulan}
+        <text key={r.label + i} x={pts[i][0]} y={H - 8} textAnchor="middle" fontSize={9} fontWeight={i === active ? 700 : 400} style={{ fill: i === active ? 'var(--dv-ink)' : 'var(--dv-muted)' }}>
+          {r.label}
         </text>
       ))}
     </svg>
   );
 }
 
+// [CHART] Pilihan rentang chart hero. 1 Minggu = Senin–Minggu (minggu ini), 1 Bulan = Minggu 1–4 (bulan ini),
+// keduanya dari tanggal_invoice (DashboardQuery::pembelianMingguan/pembelianBulanan).
+// 1 Tahun tetap memakai tren 12 bulan yang sudah ada (trenPembelianInventory).
+type Rentang = 'minggu' | 'bulan' | 'tahun';
+const RENTANG: { id: Rentang; teks: string; judul: string }[] = [
+  { id: 'minggu', teks: '1 Minggu', judul: 'Pembelian inventory minggu ini (Senin sampai Minggu)' },
+  { id: 'bulan', teks: '1 Bulan', judul: 'Pembelian inventory bulan ini (Minggu 1 sampai 4)' },
+  { id: 'tahun', teks: '1 Tahun', judul: 'Pertumbuhan inventory per bulan' },
+];
+
 // [DASHBOARD-V4] Kartu utama dashboard admin: total + perubahan bulan ini di kiri, chart pertumbuhan (hover) di kanan.
-function HeroInventory({ total, tren = [], perMerek = [] }: { total: number; tren?: TrenPembelianInventory[]; perMerek?: InventoryPerMerek[] }) {
+function HeroInventory({
+  total,
+  tren = [],
+  perMerek = [],
+  mingguan = [],
+  bulanan = [],
+}: {
+  total: number;
+  tren?: TrenPembelianInventory[];
+  perMerek?: InventoryPerMerek[];
+  mingguan?: PembelianTitik[];
+  bulanan?: PembelianTitik[];
+}) {
   const rows = Array.isArray(tren) ? tren : [];
   const merek = Array.isArray(perMerek) ? perMerek : [];
+  // [CHART] rentang aktif -> titik chart (semua dibentuk jadi PembelianTitik supaya satu komponen chart untuk ketiganya)
+  const [rentang, setRentang] = useState<Rentang>('tahun');
+  const titik: PembelianTitik[] =
+    rentang === 'minggu'
+      ? Array.isArray(mingguan) ? mingguan : []
+      : rentang === 'bulan'
+        ? Array.isArray(bulanan) ? bulanan : []
+        : rows.map((r) => ({ label: r.bulan, judul: r.bulan + (r.tahun ? ' ' + r.tahun : ''), jumlah: r.jumlah }));
+  const judulChart = RENTANG.find((r) => r.id === rentang)?.judul ?? '';
   const bulanIni = rows[rows.length - 1];
   const bulanLalu = rows.length > 1 ? rows[rows.length - 2] : undefined;
   const net = bulanIni ? bulanIni.jumlah - (bulanLalu?.jumlah ?? 0) : 0;
@@ -232,19 +263,14 @@ function HeroInventory({ total, tren = [], perMerek = [] }: { total: number; tre
       </div>
 
       <div className="dd-hv-r">
-        {/* Data harian/mingguan belum disediakan backend: hanya rentang 1 Tahun (12 bulan) yang aktif. */}
         <div className="dd-rng" role="group" aria-label="Rentang waktu">
-          <button type="button" disabled title="Belum tersedia">
-            1 Minggu
-          </button>
-          <button type="button" disabled title="Belum tersedia">
-            1 Bulan
-          </button>
-          <button type="button" className="is-on" aria-pressed="true">
-            1 Tahun
-          </button>
+          {RENTANG.map((r) => (
+            <button key={r.id} type="button" className={rentang === r.id ? 'is-on' : ''} aria-pressed={rentang === r.id} onClick={() => setRentang(r.id)}>
+              {r.teks}
+            </button>
+          ))}
         </div>
-        {rows.length === 0 ? <EmptyNote>Belum ada data inventory.</EmptyNote> : <PertumbuhanChart rows={rows} />}
+        {titik.length === 0 ? <EmptyNote>Belum ada data inventory.</EmptyNote> : <PertumbuhanChart key={rentang} rows={titik} judulChart={judulChart} />}
       </div>
     </section>
   );

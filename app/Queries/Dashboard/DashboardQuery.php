@@ -52,10 +52,77 @@ class DashboardQuery
         return $karyawan;
     }
 
+    /**
+     * [CHART] Pembelian inventory MINGGU INI (Senin–Minggu), dihitung dari tanggal_invoice (tanggal pembelian).
+     * 1 baris inventory = 1 unit (sama dengan tren 12 bulan). Baris tanpa tanggal_invoice tidak dihitung.
+     * Bentuk tiap titik: label (sumbu X), judul (tooltip), jumlah.
+     */
+    public static function pembelianMingguan(): array
+    {
+        $awal = Carbon::now()->startOfWeek(Carbon::MONDAY);
+        $akhir = $awal->copy()->endOfWeek(Carbon::SUNDAY);
+        $nama = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+        $singkat = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+
+        $perTanggal = [];
+        $hitung = Inventory::query()
+            ->whereBetween('tanggal_invoice', [$awal->toDateString(), $akhir->toDateString()])
+            ->selectRaw('tanggal_invoice as tgl, COUNT(*) as jumlah')
+            ->groupBy('tanggal_invoice')
+            ->pluck('jumlah', 'tgl');
+        foreach ($hitung as $tgl => $n) {
+            $perTanggal[substr((string) $tgl, 0, 10)] = (int) $n;
+        }
+
+        $rows = [];
+        for ($i = 0; $i < 7; $i++) {
+            $d = $awal->copy()->addDays($i);
+            $rows[] = [
+                'label' => $singkat[$i],
+                'judul' => $nama[$i] . ', ' . $d->day . ' ' . self::BULAN_ID[$d->month - 1],
+                'jumlah' => $perTanggal[$d->toDateString()] ?? 0,
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * [CHART] Pembelian inventory BULAN INI per minggu, dari tanggal_invoice. Selalu 4 titik:
+     * Minggu 1 = tgl 1–7, Minggu 2 = 8–14, Minggu 3 = 15–21, Minggu 4 = tgl 22 s/d akhir bulan (tgl 29–31 ikut Minggu 4).
+     */
+    public static function pembelianBulanan(): array
+    {
+        $awal = Carbon::now()->startOfMonth();
+        $akhir = $awal->copy()->endOfMonth();
+        $bln = self::BULAN_ID[$awal->month - 1];
+
+        $perMinggu = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
+        $tanggal = Inventory::query()
+            ->whereBetween('tanggal_invoice', [$awal->toDateString(), $akhir->toDateString()])
+            ->pluck('tanggal_invoice');
+        foreach ($tanggal as $t) {
+            $hari = Carbon::parse($t)->day;
+            $perMinggu[min(4, (int) ceil($hari / 7))]++;
+        }
+
+        $rentang = [1 => '1–7', 2 => '8–14', 3 => '15–21', 4 => '22–' . $awal->daysInMonth];
+        $rows = [];
+        foreach ($perMinggu as $no => $jumlah) {
+            $rows[] = [
+                'label' => 'Minggu ' . $no,
+                'judul' => 'Minggu ' . $no . ' · ' . $rentang[$no] . ' ' . $bln,
+                'jumlah' => $jumlah,
+            ];
+        }
+
+        return $rows;
+    }
+
     /** Props dashboard ADMIN (lintas-perusahaan). Inventory = SEMUA item, termasuk kelengkapan. */
     public static function admin(User $user): array
     {
-        $list = Inventory::query()->with('kategori:id,nama')->get(['id', 'status', 'nama', 'kategori_id', 'created_at', 'tanggal_garansi']);
+        $list = Inventory::query()->with('kategori:id,nama')->get(['id', 'status', 'nama', 'kategori_id', 'tanggal_invoice', 'tanggal_garansi']);
     
         $tersedia = $dipakai = $rusakBerat = $dijual = 0;
         $rusak = $dalamPenanganan = $garansiSegeraHabis = 0;
@@ -98,8 +165,8 @@ class DashboardQuery
             $label = self::STATUS_LABEL[$a->status] ?? $a->status;
             $perStatus[$label] = ($perStatus[$label] ?? 0) + 1;
     
-            if ($a->created_at) {
-                $tgl = Carbon::parse($a->created_at);
+            if ($a->tanggal_invoice) {
+                $tgl = Carbon::parse($a->tanggal_invoice);
                 $key = $tgl->format('Y-n');
                 if (isset($bulan[$key])) $bulan[$key]['jumlah']++;
                 elseif ($tgl->lt($awalRentang)) $sebelumRentang++;
@@ -134,6 +201,8 @@ class DashboardQuery
             'inventoryPerMerek' => $inventoryPerMerek,
             'inventoryPerhatian' => ['rusak' => $rusak, 'dalamPenanganan' => $dalamPenanganan, 'garansiSegeraHabis' => $garansiSegeraHabis],
             'trenPembelianInventory' => array_values($bulan),
+            'pembelianMingguan' => self::pembelianMingguan(),
+            'pembelianBulanan' => self::pembelianBulanan(),
             'statusInventoryDistribusi' => $statusDistribusi,
             'aktivitasKalender' => self::aktivitas($user),
             'departemen' => self::departemen()->all(),

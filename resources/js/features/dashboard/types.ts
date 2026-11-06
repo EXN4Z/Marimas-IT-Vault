@@ -43,6 +43,15 @@ export interface TrenPembelianInventory {
   total?: number; // total unit s/d akhir bulan itu (kumulatif) -> yang digambar di chart hero
 }
 
+// [CHART] Satu titik chart pembelian (hero dashboard admin) untuk rentang 1 Minggu / 1 Bulan, dari tanggal_invoice.
+//  - 1 Minggu: 7 titik, label "Sen".."Min", judul "Senin, 3 Nov"
+//  - 1 Bulan : 4 titik, label "Minggu 1".."Minggu 4", judul "Minggu 1 · 1–7 Nov"
+export interface PembelianTitik {
+  label: string; // sumbu X
+  judul: string; // judul tooltip
+  jumlah: number; // unit dibeli pada titik itu
+}
+
 // Distribusi jumlah inventory per status (tersedia/dipakai/dst) — dipakai
 // donut chart "Distribusi Status Inventory" di dashboard admin.
 export interface StatusInventoryDistribusi {
@@ -92,6 +101,8 @@ export interface DashboardAdminData {
   inventoryPerMerek: InventoryPerMerek[];
   inventoryPerhatian: InventoryPerhatian;
   trenPembelianInventory: TrenPembelianInventory[];
+  pembelianMingguan?: PembelianTitik[]; // [CHART] opsional: payload lama tetap aman
+  pembelianBulanan?: PembelianTitik[]; // [CHART] opsional: payload lama tetap aman
   statusInventoryDistribusi: StatusInventoryDistribusi[];
   aktivitasKalender: AktivitasInventoryTerbaru[];
   departemen: DepartemenDistribusi[];
