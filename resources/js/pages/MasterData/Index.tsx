@@ -90,7 +90,7 @@ export default function MasterData() {
   return (
     <div className="pn">
       <div className="mb-4">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-500">
           {isAdmin
             ? 'Kelola data inventory, kategori, departemen, supplier, data user, cabang, dan perusahaan yang dipakai di seluruh sistem.'
             : 'Lihat inventory yang tersedia atau lagi kamu pinjam.'}

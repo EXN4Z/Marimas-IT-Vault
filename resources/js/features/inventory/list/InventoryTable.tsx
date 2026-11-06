@@ -6,6 +6,7 @@ import Tooltip from '../../../components/feedback/Tooltip';
 import { namaPemakai } from '../inventoryHelpers';
 import type { Inventory } from '../types/inventory';
 import InventoryStatusPill from './InventoryStatusPill';
+import { pnCard, pnEmpty, pnTable } from '../../../components/ui/pn';
 
 interface InventoryTableProps {
   pageInventory: Inventory[];
@@ -19,16 +20,16 @@ interface InventoryTableProps {
   totalItems: number;
 }
 
-// [INVENTORY-V2] Tabel dalam kartu (.pn-card / .pn-table), gaya sama dengan halaman Penanganan.
+// [INVENTORY-V2] Tabel dalam kartu (pnCard / pnTable), gaya sama dengan halaman Penanganan.
 // Pagination memakai pembungkus aslinya (px-6 py-3 border-t); margin negatif hanya membatalkan padding kartu.
 export default function InventoryTable({ pageInventory, renderAksi, expandedInventoryId, setExpandedInventoryId, inventoryLastPage, inventoryPageClamped, setInventoryPage, totalItems }: InventoryTableProps) {
   return (
-    <div className="pn-card">
-      {pageInventory.length === 0 && <p className="pn-empty">Belum ada inventory.</p>}
+    <div className={pnCard}>
+      {pageInventory.length === 0 && <p className={pnEmpty}>Belum ada inventory.</p>}
 
       {pageInventory.length > 0 && (
-        <div className="hidden sm:block pn-scroll">
-          <table className="pn-table">
+        <div className="hidden sm:block overflow-x-auto">
+          <table className={pnTable}>
             <thead>
               <tr>
                 <th>Kode Inventory</th>
@@ -37,7 +38,7 @@ export default function InventoryTable({ pageInventory, renderAksi, expandedInve
                 <th className="text-center">Jumlah</th>
                 <th className="text-center">Status</th>
                 <th>Dipakai Oleh</th>
-                <th className="pn-r">Aksi</th>
+                <th className="text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -46,35 +47,35 @@ export default function InventoryTable({ pageInventory, renderAksi, expandedInve
                 const isChild = a.parent_id !== null;
                 return (
                   <tr key={a.id}>
-                    <td className="pn-kode pn-nowrap">{a.kode_inventory}</td>
+                    <td className="leading-[1.25] font-bold text-dv-ink whitespace-nowrap">{a.kode_inventory}</td>
                     <td style={{ maxWidth: 200 }}>
                       <Tooltip content={a.nama || '-'}>
-                        <p className="pn-strong pn-trunc-s">{a.nama || '-'}</p>
+                        <p className="font-bold text-dv-ink min-w-0 truncate">{a.nama || '-'}</p>
                       </Tooltip>
                       {/* Indikator "Menempel ke ..." untuk item yang parent_id-nya terisi -- data a.parent dari eager-load backend. */}
                       {isChild && a.parent && (
-                        <p className="pn-jenis flex items-center gap-1 mt-0.5">
+                        <p className="text-[11px] font-normal text-dv-muted flex items-center gap-1 mt-0.5">
                           <Link2 size={11} className="shrink-0" />
                           Menempel ke {a.parent.kode_inventory}
                         </p>
                       )}
                     </td>
-                    <td className="pn-nowrap text-center">
-                      <StatusBadge colorClass={'border border-slate-200 bg-slate-50 text-slate-700'}>
+                    <td className="whitespace-nowrap text-center">
+                      <StatusBadge colorClass={'border border-line-200 bg-surface-50 text-ink-700'}>
                         {a.kategori?.nama || '-'}
                       </StatusBadge>
                     </td>
-                    <td className="pn-nowrap text-center">{a.jumlah ?? 1}</td>
-                    <td className="pn-nowrap text-center">
+                    <td className="whitespace-nowrap text-center">{a.jumlah ?? 1}</td>
+                    <td className="whitespace-nowrap text-center">
                       <InventoryStatusPill status={a.status} />
                     </td>
                     <td style={{ maxWidth: 180 }}>
                       <Tooltip content={a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini)}>
-                        <p className="pn-trunc-s">{a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini) || '-'}</p>
+                        <p className="min-w-0 truncate">{a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini) || '-'}</p>
                       </Tooltip>
                     </td>
                     <td>
-                      <div className="pn-act">{renderAksi(a)}</div>
+                      <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">{renderAksi(a)}</div>
                     </td>
                   </tr>
                 );
@@ -98,34 +99,34 @@ export default function InventoryTable({ pageInventory, renderAksi, expandedInve
                   className="w-full flex items-start justify-between gap-2 text-left"
                 >
                   <div className="min-w-0">
-                    <p className="pn-kode">{a.kode_inventory}</p>
-                    <p className="text-xs text-slate-500 truncate">
+                    <p className="leading-[1.25] font-bold text-dv-ink">{a.kode_inventory}</p>
+                    <p className="text-xs text-ink-500 truncate">
                       {`${a.nama || '-'} · Jumlah: ${a.jumlah ?? 1}`}
                     </p>
                     {isChild && a.parent && (
-                      <p className="pn-jenis flex items-center gap-1 mt-0.5">
+                      <p className="text-[11px] font-normal text-dv-muted flex items-center gap-1 mt-0.5">
                         <Link2 size={11} className="shrink-0" />
                         Menempel ke {a.parent.kode_inventory}
                       </p>
                     )}
                     <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
                       <InventoryStatusPill status={a.status} small />
-                      <StatusBadge colorClass={'border border-slate-200 bg-slate-50 text-slate-700'} size="xs">
+                      <StatusBadge colorClass={'border border-line-200 bg-surface-50 text-ink-700'} size="xs">
                         {a.kategori?.nama || '-'}
                       </StatusBadge>
                     </div>
                   </div>
                   <ChevronDown
                     size={16}
-                    className={`text-slate-400 flex-shrink-0 mt-1 transition-transform ${expanded ? 'rotate-180' : ''}`}
+                    className={`text-ink-400 flex-shrink-0 mt-1 transition-transform ${expanded ? 'rotate-180' : ''}`}
                   />
                 </button>
 
                 {expanded && (
-                  <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-2">
-                    <p className="text-xs text-slate-500">
+                  <div className="mt-3 pt-3 border-t border-line-100 flex flex-col gap-2">
+                    <p className="text-xs text-ink-500">
                       Dipakai Oleh:{' '}
-                      <span className="text-slate-700 font-medium">
+                      <span className="text-ink-700 font-medium">
                         {a.status === 'dijual' ? '-' : namaPemakai(a.pemakai_saat_ini) || '-'}
                       </span>
                     </p>
@@ -140,7 +141,7 @@ export default function InventoryTable({ pageInventory, renderAksi, expandedInve
 
       {/* Pagination (komponen yang sekarang, tidak diubah) */}
       {pageInventory.length > 0 && inventoryLastPage > 1 && (
-        <div className="-mx-[18px] -mb-3 mt-1 px-6 py-3 border-t border-slate-100">
+        <div className="-mx-[18px] -mb-3 mt-1 px-6 py-3 border-t border-line-100">
           <Pagination
             currentPage={inventoryPageClamped}
             totalPages={inventoryLastPage}

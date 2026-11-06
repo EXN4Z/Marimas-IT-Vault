@@ -1,6 +1,7 @@
 import { Skeleton, SkeletonListCard } from '../../../components/skeleton';
+import { pnCard, pnTable } from '../../../components/ui/pn';
 
-// Skeleton halaman Penanganan, meniru layout baru (kelas .pn-* sama dengan PenangananPage):
+// Skeleton halaman Penanganan, meniru layout baru (utilitas yang sama dengan PenangananPage):
 // judul + deskripsi -> pil peringatan -> tab status -> filter -> teks total -> kartu tabel (desktop) / daftar card (mobile).
 // Halaman ini sekarang selalu tampil sebagai tabel (papan dihapus), jadi tidak ada skeleton kolom papan / KPI card lagi.
 const JUMLAH_KOLOM = 6;
@@ -9,7 +10,7 @@ export default function PenangananSkeleton() {
   return (
     <div className="pn space-y-6" aria-busy="true" aria-label="Memuat penanganan inventory">
       {/* Header */}
-      <div className="pn-head">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-2.5">
           <Skeleton className="h-7 w-60 max-w-full rounded-lg" />
           <Skeleton className="h-3.5 w-full max-w-[560px] rounded" />
@@ -38,14 +39,14 @@ export default function PenangananSkeleton() {
 
       {/* Kartu tabel */}
       <div className="space-y-4">
-        <div className="pn-card">
+        <div className={pnCard}>
           {/* Desktop */}
-          <div className="hidden sm:block pn-scroll">
-            <table className="pn-table">
+          <div className="hidden sm:block overflow-x-auto">
+            <table className={pnTable}>
               <thead>
                 <tr>
                   {Array.from({ length: JUMLAH_KOLOM }).map((_, i) => (
-                    <th key={i} className={i === JUMLAH_KOLOM - 1 ? 'pn-r' : undefined}>
+                    <th key={i} className={i === JUMLAH_KOLOM - 1 ? 'text-right' : undefined}>
                       <Skeleton className="h-2.5 w-14 rounded inline-block align-middle" />
                     </th>
                   ))}
@@ -54,9 +55,9 @@ export default function PenangananSkeleton() {
               <tbody>
                 {Array.from({ length: 6 }).map((_, r) => (
                   <tr key={r}>
-                    {/* Kolom pertama: lingkaran ikon + kode + jenis (pola .pn-aset) */}
+                    {/* Kolom pertama: lingkaran ikon + kode + jenis (pola ikon + kode + jenis di PenangananTabel) */}
                     <td>
-                      <div className="pn-aset">
+                      <div className="flex items-center gap-2.5">
                         <Skeleton className="w-[34px] h-[34px] rounded-full shrink-0" />
                         <div className="space-y-1.5">
                           <Skeleton className="h-3.5 w-24 rounded" />
@@ -70,7 +71,7 @@ export default function PenangananSkeleton() {
                       </td>
                     ))}
                     <td>
-                      <div className="pn-act">
+                      <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                         <Skeleton className="h-[30px] w-20 rounded-full" />
                       </div>
                     </td>

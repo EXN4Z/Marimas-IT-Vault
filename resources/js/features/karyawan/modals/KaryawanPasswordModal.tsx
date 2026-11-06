@@ -56,17 +56,17 @@ export default function KaryawanPasswordModal({ userId, userName, onClose }: Pro
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 animate-[fadeIn_150ms_ease-out]"
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]"
+        className="w-full max-w-md rounded-2xl bg-surface shadow-2xl border border-line-200-a80 overflow-hidden animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between p-6 pb-4 border-b border-slate-100">
+        <div className="flex items-start justify-between p-6 pb-4 border-b border-line-100">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-tint-blue-50 border border-edge-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0">
               <KeyRound size={22} className="text-blue-600" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-lg font-semibold text-slate-900 leading-tight">Ubah Password</h3>
-              <p className="text-xs text-slate-500 mt-0.5 truncate">Untuk {userName}</p>
+              <h3 className="text-lg font-semibold text-ink-900 leading-tight">Ubah Password</h3>
+              <p className="text-xs text-ink-500 mt-0.5 truncate">Untuk {userName}</p>
             </div>
           </div>
           <button
@@ -74,7 +74,7 @@ export default function KaryawanPasswordModal({ userId, userName, onClose }: Pro
             onClick={handleClose}
             disabled={processing}
             aria-label="Tutup"
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-40"
+            className="text-ink-400 hover:text-ink-600 p-1.5 rounded-lg hover:bg-hover-100 transition disabled:opacity-40"
           >
             <X size={18} />
           </button>
@@ -108,7 +108,7 @@ export default function KaryawanPasswordModal({ userId, userName, onClose }: Pro
             />
           </Field>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-line-100 mt-6">
             <ButtonCancel onClick={handleClose} disabled={processing} />
             <ButtonSubmit type="submit" loading={processing} loadingLabel="Menyimpan...">
               Simpan Password

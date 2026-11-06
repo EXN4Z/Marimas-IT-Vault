@@ -98,8 +98,8 @@ export default function Laporan() {
 
   if (!isStaff) {
     return (
-        <div className="bg-white rounded-xl p-8 shadow-sm border border-slate-200 text-center">
-          <p className="text-sm text-slate-500">Anda tidak punya akses ke halaman ini.</p>
+        <div className="bg-surface rounded-xl p-8 shadow-sm border border-line-200 text-center">
+          <p className="text-sm text-ink-500">Anda tidak punya akses ke halaman ini.</p>
         </div>
     );
   }
@@ -123,7 +123,7 @@ export default function Laporan() {
       />
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-500">
           {activeTab === 'export_data'
             ? 'Pilih modul data yang ingin diexport ke format Excel (.xlsx) atau dokumen PDF.'
             : activeTab === 'foto_inventory'
@@ -134,12 +134,12 @@ export default function Laporan() {
 
       {activeTab === 'export_data' ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
-            <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+          <div className="bg-surface rounded-xl p-6 shadow-sm border border-line-200 flex flex-col">
+            <div className="w-10 h-10 rounded-lg bg-surface-100 text-ink-700 flex items-center justify-center mb-4">
               <Boxes size={18} />
             </div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Inventory</h3>
-            <p className="text-xs text-slate-500 leading-relaxed flex-1">
+            <h3 className="text-sm font-semibold text-ink-900 mb-1">Data Inventory</h3>
+            <p className="text-xs text-ink-500 leading-relaxed flex-1">
               Export seluruh data inventory IT (kode, jenis, status, kelengkapan, dsb) sebagai Excel atau PDF — kolom bisa dipilih sendiri.
             </p>
 
@@ -148,7 +148,7 @@ export default function Laporan() {
                 type="button"
                 onClick={() => setExportInventoryOpen(true)}
                 disabled={inventoryLoading}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs disabled:opacity-40"
+                className="w-full flex items-center justify-center gap-2 bg-solid text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-solid-hover transition shadow-xs disabled:opacity-40"
               >
                 {inventoryLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 {inventoryLoading ? 'Memuat data...' : 'Export Excel'}
@@ -156,12 +156,12 @@ export default function Laporan() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
-            <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+          <div className="bg-surface rounded-xl p-6 shadow-sm border border-line-200 flex flex-col">
+            <div className="w-10 h-10 rounded-lg bg-surface-100 text-ink-700 flex items-center justify-center mb-4">
               <Users size={18} />
             </div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Karyawan</h3>
-            <p className="text-xs text-slate-500 leading-relaxed flex-1">
+            <h3 className="text-sm font-semibold text-ink-900 mb-1">Data Karyawan</h3>
+            <p className="text-xs text-ink-500 leading-relaxed flex-1">
               Export data karyawan (NIK, nama, departemen, tanggal masuk, dsb) sebagai Excel atau PDF — kolom bisa dipilih sendiri.
             </p>
 
@@ -170,7 +170,7 @@ export default function Laporan() {
                 type="button"
                 onClick={() => setExportKaryawanOpen(true)}
                 disabled={karyawanLoading}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs disabled:opacity-40"
+                className="w-full flex items-center justify-center gap-2 bg-solid text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-solid-hover transition shadow-xs disabled:opacity-40"
               >
                 {karyawanLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 {karyawanLoading ? 'Memuat data...' : 'Export Excel'}
@@ -178,12 +178,12 @@ export default function Laporan() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
-            <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+          <div className="bg-surface rounded-xl p-6 shadow-sm border border-line-200 flex flex-col">
+            <div className="w-10 h-10 rounded-lg bg-surface-100 text-ink-700 flex items-center justify-center mb-4">
               <Tags size={18} />
             </div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Kategori</h3>
-            <p className="text-xs text-slate-500 leading-relaxed flex-1">
+            <h3 className="text-sm font-semibold text-ink-900 mb-1">Data Kategori</h3>
+            <p className="text-xs text-ink-500 leading-relaxed flex-1">
               Export seluruh data kategori barang inventory sebagai Excel atau PDF.
             </p>
 
@@ -192,19 +192,19 @@ export default function Laporan() {
                 type="button"
                 onClick={() => setExportKategoriOpen(true)}
                 disabled={kategoriLoading}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs disabled:opacity-40"
+                className="w-full flex items-center justify-center gap-2 bg-solid text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-solid-hover transition shadow-xs disabled:opacity-40"
               >
                 {kategoriLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 {kategoriLoading ? 'Memuat data...' : 'Export Excel'}
               </button>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
-            <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+          <div className="bg-surface rounded-xl p-6 shadow-sm border border-line-200 flex flex-col">
+            <div className="w-10 h-10 rounded-lg bg-surface-100 text-ink-700 flex items-center justify-center mb-4">
               <Building2 size={18} />
             </div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Departemen</h3>
-            <p className="text-xs text-slate-500 leading-relaxed flex-1">
+            <h3 className="text-sm font-semibold text-ink-900 mb-1">Data Departemen</h3>
+            <p className="text-xs text-ink-500 leading-relaxed flex-1">
               Export seluruh data departemen sebagai Excel atau PDF.
             </p>
 
@@ -213,7 +213,7 @@ export default function Laporan() {
                 type="button"
                 onClick={() => setExportDepartemenOpen(true)}
                 disabled={departemenLoading}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs disabled:opacity-40"
+                className="w-full flex items-center justify-center gap-2 bg-solid text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-solid-hover transition shadow-xs disabled:opacity-40"
               >
                 {departemenLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 {departemenLoading ? 'Memuat data...' : 'Export Excel'}
@@ -221,12 +221,12 @@ export default function Laporan() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
-            <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+          <div className="bg-surface rounded-xl p-6 shadow-sm border border-line-200 flex flex-col">
+            <div className="w-10 h-10 rounded-lg bg-surface-100 text-ink-700 flex items-center justify-center mb-4">
               <Landmark size={18} />
             </div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Cabang</h3>
-            <p className="text-xs text-slate-500 leading-relaxed flex-1">
+            <h3 className="text-sm font-semibold text-ink-900 mb-1">Data Cabang</h3>
+            <p className="text-xs text-ink-500 leading-relaxed flex-1">
               Export seluruh data cabang (nama, alamat, telepon, link lokasi) sebagai Excel atau PDF.
             </p>
 
@@ -235,7 +235,7 @@ export default function Laporan() {
                 type="button"
                 onClick={() => setExportCabangOpen(true)}
                 disabled={cabangLoading}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs disabled:opacity-40"
+                className="w-full flex items-center justify-center gap-2 bg-solid text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-solid-hover transition shadow-xs disabled:opacity-40"
               >
                 {cabangLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 {cabangLoading ? 'Memuat data...' : 'Export Excel'}
@@ -243,12 +243,12 @@ export default function Laporan() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
-            <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+          <div className="bg-surface rounded-xl p-6 shadow-sm border border-line-200 flex flex-col">
+            <div className="w-10 h-10 rounded-lg bg-surface-100 text-ink-700 flex items-center justify-center mb-4">
               <Building2 size={18} />
             </div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Perusahaan</h3>
-            <p className="text-xs text-slate-500 leading-relaxed flex-1">
+            <h3 className="text-sm font-semibold text-ink-900 mb-1">Data Perusahaan</h3>
+            <p className="text-xs text-ink-500 leading-relaxed flex-1">
               Export seluruh data perusahaan (nama, alamat, telepon, link) sebagai Excel atau PDF.
             </p>
 
@@ -257,7 +257,7 @@ export default function Laporan() {
                 type="button"
                 onClick={() => setExportPerusahaanOpen(true)}
                 disabled={perusahaanLoading}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs disabled:opacity-40"
+                className="w-full flex items-center justify-center gap-2 bg-solid text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-solid-hover transition shadow-xs disabled:opacity-40"
               >
                 {perusahaanLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 {perusahaanLoading ? 'Memuat data...' : 'Export Excel'}
@@ -265,12 +265,12 @@ export default function Laporan() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
-            <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+          <div className="bg-surface rounded-xl p-6 shadow-sm border border-line-200 flex flex-col">
+            <div className="w-10 h-10 rounded-lg bg-surface-100 text-ink-700 flex items-center justify-center mb-4">
               <Truck size={18} />
             </div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Supplier</h3>
-            <p className="text-xs text-slate-500 leading-relaxed flex-1">
+            <h3 className="text-sm font-semibold text-ink-900 mb-1">Data Supplier</h3>
+            <p className="text-xs text-ink-500 leading-relaxed flex-1">
               Export seluruh data supplier (nama, alamat, telepon) sebagai Excel atau PDF.
             </p>
 
@@ -279,7 +279,7 @@ export default function Laporan() {
                 type="button"
                 onClick={() => setExportSupplierOpen(true)}
                 disabled={supplierLoading}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs disabled:opacity-40"
+                className="w-full flex items-center justify-center gap-2 bg-solid text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-solid-hover transition shadow-xs disabled:opacity-40"
               >
                 {supplierLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 {supplierLoading ? 'Memuat data...' : 'Export Excel'}
@@ -288,12 +288,12 @@ export default function Laporan() {
           </div>
 
           {isAdmin && (
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col">
-              <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+            <div className="bg-surface rounded-xl p-6 shadow-sm border border-line-200 flex flex-col">
+              <div className="w-10 h-10 rounded-lg bg-surface-100 text-ink-700 flex items-center justify-center mb-4">
                 <ClipboardList size={18} />
               </div>
-              <h3 className="text-sm font-semibold text-slate-900 mb-1">Data Pemakai Inventory</h3>
-              <p className="text-xs text-slate-500 leading-relaxed flex-1">
+              <h3 className="text-sm font-semibold text-ink-900 mb-1">Data Pemakai Inventory</h3>
+              <p className="text-xs text-ink-500 leading-relaxed flex-1">
                 Export riwayat serah-terima & pengembalian inventory (pemakai, status, struk, tanggal, dsb) sebagai Excel atau PDF — kolom bisa dipilih sendiri.
               </p>
 
@@ -302,7 +302,7 @@ export default function Laporan() {
                   type="button"
                   onClick={() => setExportPemakaiOpen(true)}
                   disabled={pemakaiLoading}
-                  className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs disabled:opacity-40"
+                  className="w-full flex items-center justify-center gap-2 bg-solid text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-solid-hover transition shadow-xs disabled:opacity-40"
                 >
                   {pemakaiLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                   {pemakaiLoading ? 'Memuat data...' : 'Export Excel'}

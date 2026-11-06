@@ -103,13 +103,13 @@ export default function NotificationDropdown() {
         // (left-4 right-4), jadi posisinya selalu aman & center apapun posisi
         // tombolnya. Di "sm" ke atas balik ke perilaku lama (absolute nempel
         // ke tombol, lebar tetap w-80).
-        <div className="fixed left-4 right-4 top-[4.5rem] sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 sm:max-w-[90vw] bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden flex flex-col max-h-[75vh] sm:max-h-none">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
-            <p className="text-sm font-semibold text-slate-900">Notifikasi</p>
+        <div className="fixed left-4 right-4 top-[4.5rem] sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 sm:max-w-[90vw] bg-surface rounded-xl shadow-xl border border-line-200 z-50 overflow-hidden flex flex-col max-h-[75vh] sm:max-h-none">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-line-100 flex-shrink-0">
+            <p className="text-sm font-semibold text-ink-900">Notifikasi</p>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllAsRead}
-                className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800 transition"
+                className="flex items-center gap-1 text-xs text-ink-500 hover:text-ink-800 transition"
               >
                 <CheckCheck size={13} />
                 Tandai semua dibaca
@@ -121,7 +121,7 @@ export default function NotificationDropdown() {
             {isLoading && items.length === 0 && (
               <div className="flex flex-col">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex items-start gap-2 px-4 py-3 border-b border-slate-50 last:border-0">
+                  <div key={i} className="flex items-start gap-2 px-4 py-3 border-b border-line-50 last:border-0">
                     <Skeleton className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" />
                     <div className="min-w-0 flex-1 space-y-1.5">
                       <Skeleton className="h-3.5 w-full rounded" />
@@ -133,23 +133,23 @@ export default function NotificationDropdown() {
             )}
 
             {!isLoading && items.length === 0 && (
-              <p className="text-sm text-slate-400 text-center py-8">Belum ada notifikasi.</p>
+              <p className="text-sm text-ink-400 text-center py-8">Belum ada notifikasi.</p>
             )}
 
             {items.map((n: AppNotification) => (
               <div
                 key={n.id}
                 onClick={() => handleNotificationClick(n)}
-                className={`flex items-start gap-2 px-4 py-3 border-b border-slate-50 last:border-0 cursor-pointer hover:bg-slate-50 transition ${
-                  n.read_at ? 'bg-white' : 'bg-slate-50'
+                className={`flex items-start gap-2 px-4 py-3 border-b border-line-50 last:border-0 cursor-pointer hover:bg-hover-50 transition ${
+                  n.read_at ? 'bg-surface' : 'bg-surface-50'
                 }`}
               >
                 <div className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${n.read_at ? 'bg-transparent' : 'bg-red-500'}`} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-slate-700 leading-snug">
+                  <p className="text-sm text-ink-700 leading-snug">
                     {n.data?.message ?? 'Notifikasi baru.'}
                   </p>
-                  <p className="text-xs text-slate-400 mt-0.5">{formatWaktu(n.created_at)}</p>
+                  <p className="text-xs text-ink-400 mt-0.5">{formatWaktu(n.created_at)}</p>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   {!n.read_at && (
@@ -159,7 +159,7 @@ export default function NotificationDropdown() {
                         handleMarkAsRead(n.id);
                       }}
                       title="Tandai dibaca"
-                      className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
+                      className="p-1.5 text-ink-400 hover:text-emerald-600 hover:bg-tint-emerald-50 rounded-lg transition"
                     >
                       <Check size={14} />
                     </button>
@@ -170,7 +170,7 @@ export default function NotificationDropdown() {
                       handleDelete(n.id);
                     }}
                     title="Hapus"
-                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                    className="p-1.5 text-ink-400 hover:text-tone-red-600 hover:bg-tint-red-hover-50 rounded-lg transition"
                   >
                     <Trash2 size={14} />
                   </button>

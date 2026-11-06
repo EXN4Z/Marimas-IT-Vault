@@ -104,68 +104,68 @@ export default function SettingsIndex() {
 
   return (
     <>
-      <p className="text-sm text-slate-500 mb-6">Kelola informasi akun kamu di sini.</p>
+      <p className="text-sm text-ink-500 mb-6">Kelola informasi akun kamu di sini.</p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* KARTU IDENTITAS */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col items-center text-center h-fit">
-          <div className="w-20 h-20 rounded-full bg-slate-900 text-white text-2xl font-bold flex items-center justify-center mb-4">
+        <div className="bg-surface rounded-xl p-6 shadow-sm border border-line-200 flex flex-col items-center text-center h-fit">
+          <div className="w-20 h-20 rounded-full bg-solid text-white text-2xl font-bold flex items-center justify-center mb-4">
             {initials(user?.name)}
           </div>
-          <p className="text-base font-semibold text-slate-900 break-words">{user?.name}</p>
-          <p className="text-sm text-slate-400 mb-3 break-all">{user?.email}</p>
+          <p className="text-base font-semibold text-ink-900 break-words">{user?.name}</p>
+          <p className="text-sm text-ink-400 mb-3 break-all">{user?.email}</p>
           {user?.role && (
-            <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
+            <span className="text-xs font-semibold text-ink-600 bg-surface-100 px-3 py-1 rounded-full dark:border dark:border-[#38383e]">
               {roleLabels[user.role] ?? user.role}
             </span>
           )}
         </div>
 
         {/* FORM PROFIL SAYA */}
-        <div className="lg:col-span-2 bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-          <h3 className="text-base font-semibold text-slate-900 mb-1">Profil Saya</h3>
-          <p className="text-sm text-slate-400 mb-5">Perbarui nama, email, dan nomor HP kamu.</p>
+        <div className="lg:col-span-2 bg-surface rounded-xl p-6 shadow-sm border border-line-200">
+          <h3 className="text-base font-semibold text-ink-900 mb-1">Profil Saya</h3>
+          <p className="text-sm text-ink-400 mb-5">Perbarui nama, email, dan nomor HP kamu.</p>
 
           <div className="flex flex-col gap-4">
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">Nama</label>
+              <label className="text-xs font-medium text-ink-500 mb-1 block">Nama</label>
               <div className="relative">
-                <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
                 <input
                   value={profile.data.name}
                   onChange={(e) => profile.setData('name', e.target.value)}
                   maxLength={255}
                   placeholder="Nama lengkap"
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  className="w-full pl-9 pr-4 py-2.5 bg-surface-50 border border-line-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
               <FieldError message={profile.errors.name} />
             </div>
 
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">Email</label>
+              <label className="text-xs font-medium text-ink-500 mb-1 block">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
                 <input
                   value={profile.data.email}
                   onChange={(e) => profile.setData('email', e.target.value)}
                   type="email"
                   placeholder="nama@email.com"
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  className="w-full pl-9 pr-4 py-2.5 bg-surface-50 border border-line-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
               <FieldError message={profile.errors.email} />
             </div>
 
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">No. HP</label>
+              <label className="text-xs font-medium text-ink-500 mb-1 block">No. HP</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
                 <input
                   value={profile.data.phone}
                   onChange={(e) => profile.setData('phone', e.target.value)}
                   placeholder="08xxxxxxxxxx"
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  className="w-full pl-9 pr-4 py-2.5 bg-surface-50 border border-line-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
               <FieldError message={profile.errors.phone} />
@@ -174,7 +174,7 @@ export default function SettingsIndex() {
             <button
               onClick={handleSubmit}
               disabled={profile.processing || !isDirty}
-              className="self-start flex items-center gap-2 bg-slate-900 text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-slate-800 active:scale-[0.97] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+              className="self-start flex items-center gap-2 bg-solid text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-solid-hover active:scale-[0.97] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
             >
               <Save size={16} />
               {profile.processing ? 'Menyimpan...' : 'Simpan Perubahan'}
@@ -183,69 +183,69 @@ export default function SettingsIndex() {
         </div>
 
         {/* FORM GANTI PASSWORD */}
-        <div className="lg:col-span-3 bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-          <h3 className="text-base font-semibold text-slate-900 mb-1">Ganti Password</h3>
-          <p className="text-sm text-slate-400 mb-5">
+        <div className="lg:col-span-3 bg-surface rounded-xl p-6 shadow-sm border border-line-200">
+          <h3 className="text-base font-semibold text-ink-900 mb-1">Ganti Password</h3>
+          <p className="text-sm text-ink-400 mb-5">
             Pastikan gunakan password yang kuat dan tidak dipakai di tempat lain.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">Password Saat Ini</label>
+              <label className="text-xs font-medium text-ink-500 mb-1 block">Password Saat Ini</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
                 <input
                   value={password.data.current_password}
                   onChange={(e) => password.setData('current_password', e.target.value)}
                   type="password"
                   autoComplete="current-password"
                   placeholder="Password sekarang"
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  className="w-full pl-9 pr-4 py-2.5 bg-surface-50 border border-line-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
               <FieldError message={password.errors.current_password} />
             </div>
 
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">Password Baru</label>
+              <label className="text-xs font-medium text-ink-500 mb-1 block">Password Baru</label>
               <div className="relative">
-                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
                 <input
                   value={password.data.password}
                   onChange={(e) => password.setData('password', e.target.value)}
                   type="password"
                   autoComplete="new-password"
                   placeholder="Minimal 8 karakter"
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  className="w-full pl-9 pr-4 py-2.5 bg-surface-50 border border-line-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
               <FieldError message={password.errors.password} />
             </div>
 
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">Konfirmasi Password Baru</label>
+              <label className="text-xs font-medium text-ink-500 mb-1 block">Konfirmasi Password Baru</label>
               <div className="relative">
-                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
                 <input
                   value={password.data.password_confirmation}
                   onChange={(e) => password.setData('password_confirmation', e.target.value)}
                   type="password"
                   autoComplete="new-password"
                   placeholder="Ulangi password baru"
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  className="w-full pl-9 pr-4 py-2.5 bg-surface-50 border border-line-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-slate-100">
-            <p className="text-xs text-slate-400 hidden sm:block">
+          <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-line-100">
+            <p className="text-xs text-ink-400 hidden sm:block">
               Kamu akan tetap login setelah password diganti.
             </p>
             <button
               onClick={handlePasswordSubmit}
               disabled={password.processing || !isPasswordDirty}
-              className="ml-auto flex items-center gap-2 bg-slate-900 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-slate-800 active:scale-[0.97] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+              className="ml-auto flex items-center gap-2 bg-solid text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-solid-hover active:scale-[0.97] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
             >
               {password.processing ? (
                 <Lock size={16} className="animate-pulse" />
@@ -258,15 +258,15 @@ export default function SettingsIndex() {
         </div>
 
         {/* NOTIFIKASI PUSH */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 h-fit lg:col-span-3">
+        <div className="bg-surface rounded-xl p-6 shadow-sm border border-line-200 h-fit lg:col-span-3">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 flex-shrink-0">
+              <div className="w-9 h-9 rounded-full bg-surface-100 flex items-center justify-center text-ink-600 flex-shrink-0 dark:border dark:border-[#38383e]">
                 {push.isSubscribed ? <Bell size={16} /> : <BellOff size={16} />}
               </div>
               <div>
-                <h3 className="text-base font-semibold text-slate-900">Notifikasi Push</h3>
-                <p className="text-sm text-slate-400 max-w-md">
+                <h3 className="text-base font-semibold text-ink-900">Notifikasi Push</h3>
+                <p className="text-sm text-ink-400 max-w-md">
                   Aktifkan supaya kamu tetap dapat notifikasi (misal laporan kerusakan inventory)
                   walau tab/browser lagi ketutup atau lagi di device lain.
                 </p>
@@ -276,7 +276,7 @@ export default function SettingsIndex() {
                   </p>
                 )}
                 {!push.isSupported && (
-                  <p className="text-xs text-slate-400 mt-1">Browser ini tidak mendukung push notification.</p>
+                  <p className="text-xs text-ink-400 mt-1">Browser ini tidak mendukung push notification.</p>
                 )}
               </div>
             </div>
@@ -288,8 +288,8 @@ export default function SettingsIndex() {
                 className={
                   'flex-shrink-0 text-sm font-semibold px-4 py-2.5 rounded-lg transition disabled:opacity-40 ' +
                   (push.isSubscribed
-                    ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    : 'bg-slate-900 text-white hover:bg-slate-800')
+                    ? 'bg-surface-100 text-ink-700 hover:bg-hover-200'
+                    : 'bg-solid text-white hover:bg-solid-hover')
                 }
               >
                 {push.loading ? 'Memproses...' : push.isSubscribed ? 'Matikan' : 'Aktifkan'}

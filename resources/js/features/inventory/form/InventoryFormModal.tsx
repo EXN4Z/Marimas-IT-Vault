@@ -34,8 +34,8 @@ const ACCEPTED_FOTO_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp
 // di sini cuma buat badge read-only pas edit.
 
 const STATUS_OPTIONS: { value: InventoryStatus; label: string; dot: string; ring: string }[] = [
-  { value: 'tersedia', label: 'Tersedia', dot: 'bg-emerald-500', ring: 'ring-emerald-100 border-emerald-400 bg-emerald-50/60' },
-  { value: 'dipakai', label: 'Dipakai', dot: 'bg-blue-500', ring: 'ring-blue-100 border-blue-400 bg-blue-50/60' },
+  { value: 'tersedia', label: 'Tersedia', dot: 'bg-emerald-500', ring: 'ring-emerald-100 border-emerald-400 bg-tint-emerald-50-a60' },
+  { value: 'dipakai', label: 'Dipakai', dot: 'bg-blue-500', ring: 'ring-blue-100 border-blue-400 bg-tint-blue-50-a60' },
 ];
 
 interface InventoryFormModalProps {
@@ -360,11 +360,11 @@ export default function InventoryFormModal({
       aria-modal="true"
       aria-labelledby="inventory-form-title"
     >
-      <div className="bg-white rounded-2xl shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5 w-full max-w-2xl max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
+      <div className="bg-surface rounded-2xl shadow-2xl shadow-slate-900/10 ring-1 ring-glow-slate-900-a5 w-full max-w-2xl max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line-100 shrink-0">
           <div>
-            <h3 id="inventory-form-title" className="text-lg font-semibold text-slate-900">
+            <h3 id="inventory-form-title" className="text-lg font-semibold text-ink-900">
               {inventory ? `Edit Inventory ${inventory.kode_inventory}` : 'Tambah Inventory'}
             </h3>
           </div>
@@ -373,7 +373,7 @@ export default function InventoryFormModal({
             onClick={onClose}
             disabled={processing}
             aria-label="Tutup"
-            className="group grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            className="group grid h-8 w-8 place-items-center rounded-full text-ink-400 hover:bg-hover-100 hover:text-ink-600 disabled:opacity-40 disabled:pointer-events-none transition-colors"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform duration-200 group-hover:rotate-90">
               <path d="M1 1L15 15M15 1L1 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -384,7 +384,7 @@ export default function InventoryFormModal({
         {/* Body */}
         <form id="inventory-form" onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto">
           {errorUmum && (
-            <p className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2.5 animate-[fadeIn_150ms_ease-out]" role="alert">
+            <p className="flex items-center gap-2 text-sm text-tone-red-700 bg-tint-red-50 border border-edge-red-100 rounded-lg px-3 py-2.5 animate-[fadeIn_150ms_ease-out]" role="alert">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
                 <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.4" />
                 <path d="M8 5v3.5M8 11h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -408,7 +408,7 @@ export default function InventoryFormModal({
             <div className="sm:col-span-2">
               <Field label="Kategori" required={!inventory} error={errors.kategori_id}>
                 {inventory ? (
-                  <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                  <div className="flex items-center gap-2 rounded-lg border border-line-200 bg-surface-50 px-3 py-2 text-sm text-ink-700">
                     <span className="font-medium">
                       {daftarKategori.find((k) => k.id === form.kategori_id)?.nama ?? (loadingKategori ? 'Memuat…' : '-')}
                     </span>
@@ -461,7 +461,7 @@ export default function InventoryFormModal({
                   {(() => {
                     const s = STATUS_OPTIONS.find((o) => o.value === form.status);
                     return (
-                      <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                      <div className="flex items-center gap-2 rounded-lg border border-line-200 bg-surface-50 px-3 py-2 text-sm text-ink-700">
                         <span className={`h-1.5 w-1.5 rounded-full ${s?.dot || 'bg-slate-400'}`} />
                         <span className="font-medium">{s?.label || form.status}</span>
                       </div>
@@ -511,7 +511,7 @@ export default function InventoryFormModal({
             <div className="sm:col-span-2" ref={inventoryFieldRef}>
               <Field label="Pasang ke Induk" error={errors.parent_id}>
                 {sudahPunyaChildren ? (
-                  <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  <div className="flex items-center gap-2 rounded-lg border border-edge-amber-200 bg-tint-amber-50 px-3 py-2 text-sm text-tone-amber-800">
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0">
                       <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.4" />
                       <path d="M8 5v3.5M8 11h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -521,7 +521,7 @@ export default function InventoryFormModal({
                 ) : (
                   <div className="relative">
                     <div className="relative">
-                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400">
                         <circle cx="7" cy="7" r="5.2" stroke="currentColor" strokeWidth="1.4" />
                         <path d="M14.5 14.5L11 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                       </svg>
@@ -537,15 +537,15 @@ export default function InventoryFormModal({
                       />
                     </div>
                     {inventoryTerpilih && !inventoryDropdownOpen && (
-                      <div className="mt-1.5 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm animate-[fadeIn_120ms_ease-out]">
-                        <span className="text-slate-700">
+                      <div className="mt-1.5 flex items-center justify-between rounded-lg border border-line-200 bg-surface-50 px-3 py-2 text-sm animate-[fadeIn_120ms_ease-out]">
+                        <span className="text-ink-700">
                           <span className="font-mono text-[13px]">{inventoryTerpilih.kode_inventory}</span>
-                          {inventoryTerpilih.nama && <span className="text-slate-400"> — {inventoryTerpilih.nama}</span>}
+                          {inventoryTerpilih.nama && <span className="text-ink-400"> — {inventoryTerpilih.nama}</span>}
                         </span>
                         <button
                           type="button"
                           onClick={() => pilihInventoryInduk(null)}
-                          className="text-slate-400 hover:text-slate-600 transition-colors"
+                          className="text-ink-400 hover:text-ink-600 transition-colors"
                           aria-label="Hapus pilihan inventory induk"
                         >
                           <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -555,7 +555,7 @@ export default function InventoryFormModal({
                       </div>
                     )}
                     {inventoryDropdownOpen && (
-                      <div className="absolute z-10 mt-1.5 w-full max-h-52 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg animate-[dropIn_120ms_ease-out]">
+                      <div className="absolute z-10 mt-1.5 w-full max-h-52 overflow-y-auto rounded-lg border border-line-200 bg-surface shadow-lg animate-[dropIn_120ms_ease-out]">
                         <button
                           type="button"
                           onClick={() => {
@@ -563,13 +563,13 @@ export default function InventoryFormModal({
                             setInventorySearch('');
                             setInventoryDropdownOpen(false);
                           }}
-                          className="block w-full px-3 py-2 text-left text-sm text-slate-400 hover:bg-slate-50 transition-colors border-b border-slate-100"
+                          className="block w-full px-3 py-2 text-left text-sm text-ink-400 hover:bg-hover-50 transition-colors border-b border-line-100"
                         >
                           Tanpa inventory induk
                         </button>
-                        {loadingRefs && <p className="px-3 py-2 text-sm text-slate-400">Memuat…</p>}
+                        {loadingRefs && <p className="px-3 py-2 text-sm text-ink-400">Memuat…</p>}
                         {!loadingRefs && inventoryFiltered.length === 0 && (
-                          <p className="px-3 py-2 text-sm text-slate-400">Tidak ada inventory yang cocok</p>
+                          <p className="px-3 py-2 text-sm text-ink-400">Tidak ada inventory yang cocok</p>
                         )}
                         {inventoryFiltered.map((a) => (
                           <button
@@ -580,12 +580,12 @@ export default function InventoryFormModal({
                               setInventorySearch('');
                               setInventoryDropdownOpen(false);
                             }}
-                            className={`block w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors ${
-                              form.parent_id === a.id ? 'bg-slate-50 text-slate-900' : 'text-slate-700'
+                            className={`block w-full px-3 py-2 text-left text-sm hover:bg-hover-50 transition-colors ${
+                              form.parent_id === a.id ? 'bg-surface-50 text-ink-900' : 'text-ink-700'
                             }`}
                           >
                             <span className="font-mono text-[13px]">{a.kode_inventory}</span>
-                            {a.nama && <span className="text-slate-400"> — {a.nama}</span>}
+                            {a.nama && <span className="text-ink-400"> — {a.nama}</span>}
                           </button>
                         ))}
                       </div>
@@ -685,7 +685,7 @@ export default function InventoryFormModal({
                     maxLength={KETERANGAN_MAX}
                     onChange={(e) => setField('keterangan', e.target.value)}
                   />
-                  <span className="pointer-events-none absolute bottom-2 right-2.5 text-[11px] text-slate-300">
+                  <span className="pointer-events-none absolute bottom-2 right-2.5 text-[11px] text-ink-300">
                     {(form.keterangan ?? '').length}/{KETERANGAN_MAX}
                   </span>
                 </div>
@@ -693,7 +693,7 @@ export default function InventoryFormModal({
             </div>
 
             <div className="sm:col-span-2">
-              <span className="block mb-1.5 text-sm font-medium text-slate-700">
+              <span className="block mb-1.5 text-sm font-medium text-ink-700">
                 Foto {inventory?.foto ? '(ganti, opsional)' : '(opsional)'}
               </span>
               <label
@@ -702,24 +702,24 @@ export default function InventoryFormModal({
                 onDragLeave={handleFotoDragLeave}
                 onDrop={handleFotoDrop}
                 className={`flex items-center gap-4 rounded-xl border border-dashed p-3 cursor-pointer transition-all duration-150 ${
-                  isDraggingFoto ? 'border-slate-900 bg-slate-900/[0.03] scale-[1.01]' : 'border-slate-300 hover:border-slate-400 bg-slate-50/50'
+                  isDraggingFoto ? 'border-slate-900 bg-slate-900/[0.03] scale-[1.01]' : 'border-slate-300 hover:border-slate-400 bg-surface-50-a50'
                 }`}
               >
                 <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="sr-only" onChange={handleFotoChange} />
                 {fotoPreview ? (
-                  <img src={fotoPreview} alt="Preview foto inventory" className="h-16 w-16 object-cover rounded-lg border border-slate-200 shrink-0 shadow-sm" />
+                  <img src={fotoPreview} alt="Preview foto inventory" className="h-16 w-16 object-cover rounded-lg border border-line-200 shrink-0 shadow-sm" />
                 ) : (
-                  <div className={`grid h-16 w-16 place-items-center rounded-lg bg-slate-100 text-slate-400 shrink-0 transition-transform duration-150 ${isDraggingFoto ? 'scale-110' : ''}`}>
+                  <div className={`grid h-16 w-16 place-items-center rounded-lg bg-surface-100 text-ink-400 shrink-0 transition-transform duration-150 ${isDraggingFoto ? 'scale-110' : ''}`}>
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                       <path d="M4 16l4.6-4.6a2 2 0 0 1 2.8 0L16 16M13 13l1.6-1.6a2 2 0 0 1 2.8 0L20 14M4 6h16v14H4V6z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
                 )}
                 <div className="text-sm flex-1">
-                  <p className="font-medium text-slate-700">
+                  <p className="font-medium text-ink-700">
                     {isDraggingFoto ? 'Lepas untuk unggah' : fotoPreview ? 'Ganti foto' : 'Unggah foto'}
                   </p>
-                  <p className="text-slate-400 text-xs mt-0.5">Klik atau seret file ke sini · PNG/JPG/WEBP · maks {MAX_FOTO_MB}MB</p>
+                  <p className="text-ink-400 text-xs mt-0.5">Klik atau seret file ke sini · PNG/JPG/WEBP · maks {MAX_FOTO_MB}MB</p>
                 </div>
                 {fotoPreview && (
                   <button
@@ -728,7 +728,7 @@ export default function InventoryFormModal({
                       e.preventDefault();
                       removeFoto();
                     }}
-                    className="text-xs text-red-600 hover:text-red-700 shrink-0 transition-colors"
+                    className="text-xs text-tone-red-600 hover:text-tone-red-700 shrink-0 transition-colors"
                   >
                     Hapus
                   </button>
@@ -738,7 +738,7 @@ export default function InventoryFormModal({
               {/* BARU: indikator kecil biar admin sadar foto bakal beneran
                   dihapus pas disimpan (bukan cuma preview lokal yang hilang). */}
               {fotoDihapus && (
-                <p className="mt-1 text-xs text-amber-600 animate-[fadeIn_120ms_ease-out]">
+                <p className="mt-1 text-xs text-tone-amber-600 animate-[fadeIn_120ms_ease-out]">
                   Foto akan dihapus saat perubahan disimpan.
                 </p>
               )}
@@ -747,7 +747,7 @@ export default function InventoryFormModal({
         </form>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 shrink-0">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-line-100 shrink-0">
           <ButtonCancel onClick={onClose} disabled={processing} />
           <ButtonSubmit type="submit" form="inventory-form" loading={processing} loadingLabel="Menyimpan...">
             {inventory ? 'Simpan Perubahan' : 'Tambah Inventory'}
@@ -778,19 +778,19 @@ function Section({
 }) {
   return (
     <div
-      className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 p-4 space-y-3.5 animate-[fadeInUp_260ms_ease-out_backwards]"
+      className="rounded-xl border border-line-200-a80 bg-surface-50-a50 p-4 space-y-3.5 animate-[fadeInUp_260ms_ease-out_backwards]"
       style={{ animationDelay: `${(index ?? 0) * 50}ms` }}
     >
       <div className="flex items-center gap-2.5 pb-2 border-b border-slate-200/60 dark:border-zinc-800/80">
         {icon && (
-          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-white dark:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700 text-slate-500 dark:text-zinc-400 shadow-xs">
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-surface border border-line-200-a80 text-ink-500 shadow-xs">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
               {icon}
             </svg>
           </span>
         )}
         <div>
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-200">{title}</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-ink-700">{title}</h4>
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">{children}</div>

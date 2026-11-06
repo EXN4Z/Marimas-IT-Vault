@@ -12,6 +12,7 @@ import type { InventoryPenanganan } from '../../penanganan/types';
 import { namaPemakai, namaPelaporPenanganan, formatTanggalWaktuId, formatJenisKerusakan } from '../../inventory/inventoryHelpers';
 import FotoZoomViewer from '../../../components/media/FotoZoomViewer';
 import { SkeletonTable } from '../../../components/skeleton/SkeletonTableRow';
+import { pnEmpty, pnTable } from '../../../components/ui/pn';
 
 const STORAGE_BASE_URL = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/storage/' : '/storage/');
 
@@ -122,7 +123,7 @@ export default function FotoInventoryTab() {
     <button
       onClick={onClick}
       title="Detail"
-      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink-600 hover:text-ink-900 hover:bg-hover-100 rounded-lg transition"
     >
       <Eye size={14} />
       Detail
@@ -131,7 +132,7 @@ export default function FotoInventoryTab() {
 
   // 1 baris: kode saja. Nama unit, merk, dll dipindah ke modal Detail.
   const inventoryLabel = (inventory?: { kode_inventory: string } | null) => (
-    <p className="font-medium text-slate-800">{inventory?.kode_inventory || '-'}</p>
+    <p className="font-medium text-ink-800">{inventory?.kode_inventory || '-'}</p>
   );
 
   const renderTable = () => {
@@ -140,8 +141,8 @@ export default function FotoInventoryTab() {
     if (activeTab === 'inventory') {
       if (inventory.loading) {
         return (
-          <div className="pn-scroll">
-            <table className="pn-table">
+          <div className="overflow-x-auto">
+            <table className={pnTable}>
               <tbody>
                 <SkeletonTable columns={4} rows={5} />
               </tbody>
@@ -152,29 +153,29 @@ export default function FotoInventoryTab() {
 
       if (inventory.entries.length === 0) {
         return (
-          <div className="pn-empty">
+          <div className={pnEmpty}>
             {inventory.search ? `Tidak ada hasil untuk "${inventory.search}".` : 'Belum ada foto barang yang diunggah.'}
           </div>
         );
       }
 
       return (
-        <div className="pn-scroll">
-          <table className="pn-table">
+        <div className="overflow-x-auto">
+          <table className={pnTable}>
             <thead>
               <tr>
                 <th>Inventory</th>
                 <th>Kategori</th>
                 <th>Tgl Input</th>
-                <th className="pn-r">Aksi</th>
+                <th className="text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {inventory.entries.map((item) => (
                 <tr key={item.id}>
                   <td className="whitespace-nowrap">{inventoryLabel(item)}</td>
-                  <td className="text-slate-600 whitespace-nowrap">{item.kategori?.nama || '-'}</td>
-                  <td className="text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(null, item.tanggal_input)}</td>
+                  <td className="text-ink-600 whitespace-nowrap">{item.kategori?.nama || '-'}</td>
+                  <td className="text-ink-600 whitespace-nowrap">{formatTanggalWaktuId(null, item.tanggal_input)}</td>
                   <td>
                     <div className="flex items-center justify-end">
                         {tombolDetail(() =>
@@ -213,8 +214,8 @@ export default function FotoInventoryTab() {
 
       if (state.loading) {
         return (
-          <div className="pn-scroll">
-            <table className="pn-table">
+          <div className="overflow-x-auto">
+            <table className={pnTable}>
               <tbody>
                 <SkeletonTable columns={5} rows={5} />
               </tbody>
@@ -225,22 +226,22 @@ export default function FotoInventoryTab() {
 
       if (state.entries.length === 0) {
         return (
-          <div className="pn-empty">
+          <div className={pnEmpty}>
             {state.search ? `Tidak ada hasil untuk "${state.search}".` : 'Belum ada foto bukti yang diunggah.'}
           </div>
         );
       }
 
       return (
-        <div className="pn-scroll">
-          <table className="pn-table">
+        <div className="overflow-x-auto">
+          <table className={pnTable}>
             <thead>
               <tr>
                 <th>Inventory</th>
                 <th>Pemakai</th>
                 <th>{tanggalLabel}</th>
                 <th>Jumlah Foto</th>
-                <th className="pn-r">Aksi</th>
+                <th className="text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -251,15 +252,15 @@ export default function FotoInventoryTab() {
                 return (
                   <tr key={e.id}>
                     <td className="whitespace-nowrap">{inventoryLabel(e.inventory)}</td>
-                    <td className="text-slate-600">
+                    <td className="text-ink-600">
                       <div className="max-w-[160px]">
                         <Tooltip content={namaPemakai({ user: e.user })}>
                           <p className="truncate">{namaPemakai({ user: e.user })}</p>
                         </Tooltip>
                       </div>
                     </td>
-                    <td className="text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(waktuAkurat, tanggal)}</td>
-                    <td className="text-slate-600 whitespace-nowrap">{foto?.length ?? 0} foto</td>
+                    <td className="text-ink-600 whitespace-nowrap">{formatTanggalWaktuId(waktuAkurat, tanggal)}</td>
+                    <td className="text-ink-600 whitespace-nowrap">{foto?.length ?? 0} foto</td>
                     <td>
                       <div className="flex items-center justify-end">
                           {tombolDetail(() =>
@@ -291,8 +292,8 @@ export default function FotoInventoryTab() {
     // ==== Tab Rusak ====
     if (rusak.loading) {
       return (
-        <div className="pn-scroll">
-          <table className="pn-table">
+        <div className="overflow-x-auto">
+          <table className={pnTable}>
             <tbody>
               <SkeletonTable columns={5} rows={5} />
             </tbody>
@@ -303,29 +304,29 @@ export default function FotoInventoryTab() {
 
     if (rusak.entries.length === 0) {
       return (
-        <div className="pn-empty">
+        <div className={pnEmpty}>
           {rusak.search ? `Tidak ada hasil untuk "${rusak.search}".` : 'Belum ada foto laporan kerusakan.'}
         </div>
       );
     }
 
     return (
-      <div className="pn-scroll">
-        <table className="pn-table">
+      <div className="overflow-x-auto">
+        <table className={pnTable}>
           <thead>
             <tr>
               <th>Inventory</th>
               <th>Pelapor</th>
               <th>Kerusakan</th>
               <th>Tgl Lapor</th>
-              <th className="pn-r">Aksi</th>
+              <th className="text-right">Aksi</th>
             </tr>
           </thead>
           <tbody>
             {rusak.entries.map((p) => (
               <tr key={p.id}>
                 <td className="whitespace-nowrap">{inventoryLabel(p.inventory)}</td>
-                <td className="text-slate-600">
+                <td className="text-ink-600">
                   <div className="max-w-[160px]">
                     <Tooltip content={namaPelaporPenanganan(p)}>
                       <p className="truncate">{namaPelaporPenanganan(p)}</p>
@@ -335,7 +336,7 @@ export default function FotoInventoryTab() {
                 <td className="font-medium whitespace-nowrap">
                   {formatJenisKerusakan(p.jenis_kerusakan)}
                 </td>
-                <td className="text-slate-600 whitespace-nowrap">{formatTanggalWaktuId(p.lapor_at, p.tanggal_lapor)}</td>
+                <td className="text-ink-600 whitespace-nowrap">{formatTanggalWaktuId(p.lapor_at, p.tanggal_lapor)}</td>
                 <td>
                   <div className="flex items-center justify-end">
                       {tombolDetail(() =>
@@ -369,9 +370,9 @@ export default function FotoInventoryTab() {
   const activeTabLabel = TABS.find((t) => t.key === activeTab)?.label ?? 'Foto';
 
   return (
-    // Kelas `pn` dibutuhkan: token --dv-line / --dv-surface (garis & header .pn-table) didefinisikan di .pn,
+    // Kelas `pn` dibutuhkan: token --dv-line / --dv-surface (garis & header pnTable) didefinisikan di .pn,
     // halaman Laporan tidak dibungkus .pn seperti Master Data / Penanganan, jadi tanpa ini garis tabel hilang.
-    <div className="pn bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+    <div className="pn bg-surface rounded-xl p-6 shadow-sm border border-line-200">
       <ScrollableTabBar className="mb-4" tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
 
       <SearchInput
@@ -381,8 +382,8 @@ export default function FotoInventoryTab() {
         className="mb-4"
       />
 
-      <p className="text-xs text-slate-500 mb-4">
-        Total {activeTabLabel}: <span className="font-semibold text-slate-900">{activeState.total}</span> foto
+      <p className="text-xs text-ink-500 mb-4">
+        Total {activeTabLabel}: <span className="font-semibold text-ink-900">{activeState.total}</span> foto
       </p>
 
       {renderTable()}
@@ -425,25 +426,25 @@ function FotoDetailModal({ detail, onClose }: { detail: FotoDetail; onClose: () 
   return (
     <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-white dark:bg-[#18181b] rounded-2xl shadow-2xl border border-slate-200/80 dark:border-zinc-800 w-full max-w-lg max-h-[92vh] overflow-y-auto"
+        className="bg-surface rounded-2xl shadow-2xl border border-line-200-a80 w-full max-w-lg max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
           <div className="min-w-0">
-            <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100 truncate">{detail.judul}</h3>
-            <p className="text-xs text-slate-400 dark:text-zinc-500">{detail.subjudul}</p>
+            <h3 className="text-base font-bold text-ink-900 truncate">{detail.judul}</h3>
+            <p className="text-xs text-ink-400">{detail.subjudul}</p>
           </div>
           <button
             onClick={onClose}
             title="Tutup"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-zinc-800 transition shrink-0"
+            className="p-1.5 rounded-lg text-ink-400 hover:text-ink-700 hover:bg-hover-100 transition shrink-0"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Slider foto */}
-        <div className="relative bg-slate-100 dark:bg-zinc-900 h-64 sm:h-80 flex items-center justify-center">
+        <div className="relative bg-surface-100 h-64 sm:h-80 flex items-center justify-center">
           {total > 0 ? (
             <button
               type="button"
@@ -463,7 +464,7 @@ function FotoDetailModal({ detail, onClose }: { detail: FotoDetail; onClose: () 
               </span>
             </button>
           ) : (
-            <div className="flex flex-col items-center text-slate-400 dark:text-zinc-500">
+            <div className="flex flex-col items-center text-ink-400">
               <ImageOff size={28} className="mb-1.5" />
               <p className="text-xs">Tidak ada foto</p>
             </div>
@@ -514,8 +515,8 @@ function FotoDetailModal({ detail, onClose }: { detail: FotoDetail; onClose: () 
         <dl className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-2 px-5 py-4 text-sm">
           {rows.map((r) => (
             <div key={r.label} className="contents">
-              <dt className="text-xs text-slate-400 dark:text-zinc-500 pt-0.5">{r.label}</dt>
-              <dd className="font-medium text-slate-800 dark:text-zinc-200 break-words">{r.value}</dd>
+              <dt className="text-xs text-ink-400 pt-0.5">{r.label}</dt>
+              <dd className="font-medium text-ink-800 break-words">{r.value}</dd>
             </div>
           ))}
         </dl>

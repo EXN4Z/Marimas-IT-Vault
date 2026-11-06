@@ -13,7 +13,7 @@ function TabsList({ className, ...props }: ComponentProps<typeof TabsPrimitive.L
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
-      className={cn('inline-flex h-10 items-center gap-1 rounded-lg bg-slate-100 p-1 text-slate-500', className)}
+      className={cn('inline-flex h-10 items-center gap-1 rounded-lg bg-surface-100 p-1 text-ink-500', className)}
       {...props}
     />
   );

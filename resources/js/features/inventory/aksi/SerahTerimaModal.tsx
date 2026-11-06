@@ -145,17 +145,17 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 animate-[fadeIn_150ms_ease-out]"
     >
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
+      <div className="bg-surface rounded-2xl shadow-2xl border border-line-200-a80 w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+        <div className="flex items-start justify-between px-6 py-4 border-b border-line-100 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-tint-blue-50 border border-edge-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0">
               <Send size={20} className="text-blue-600" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-900 leading-tight">Serah Terima Inventory</h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                <span className="font-mono font-medium text-slate-700">{inventory.kode_inventory}</span> · {inventory.nama || '-'}
+              <h3 className="text-base font-semibold text-ink-900 leading-tight">Serah Terima Inventory</h3>
+              <p className="text-xs text-ink-500 mt-0.5">
+                <span className="font-mono font-medium text-ink-700">{inventory.kode_inventory}</span> · {inventory.nama || '-'}
               </p>
             </div>
           </div>
@@ -164,7 +164,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
             onClick={onClose}
             disabled={submitting}
             aria-label="Tutup"
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-40"
+            className="text-ink-400 hover:text-ink-600 p-1.5 rounded-lg hover:bg-hover-100 transition disabled:opacity-40"
           >
             <X size={18} />
           </button>
@@ -178,7 +178,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
             required
           >
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
               <input
                 value={query}
                 onChange={(e) => {
@@ -190,15 +190,15 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
                 placeholder="Ketik nama atau NIK karyawan penerima"
                 className={`w-full pl-9 pr-8 py-2.5 border rounded-xl text-sm transition focus:outline-none focus:ring-2 ${
                   errors.penerima
-                    ? 'border-red-300 bg-red-50/30 text-red-900 focus:ring-red-400 focus:border-red-400'
-                    : 'border-slate-300 bg-white text-slate-900 focus:ring-slate-900 focus:border-slate-900'
+                    ? 'border-edge-red-300 bg-tint-red-50-a30 text-tone-red-900 focus:ring-red-400 focus:border-red-400'
+                    : 'border-slate-300 bg-surface text-ink-900 focus:ring-slate-900 focus:border-slate-900'
                 }`}
               />
               {selected && <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />}
 
               {!selected && query.trim() !== '' && (
-                <div className="absolute z-20 mt-1.5 w-full bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100">
-                  {searching && <p className="text-xs text-slate-400 px-3.5 py-3">Mencari data...</p>}
+                <div className="absolute z-20 mt-1.5 w-full bg-surface border border-line-200 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100">
+                  {searching && <p className="text-xs text-ink-400 px-3.5 py-3">Mencari data...</p>}
                   {!searching &&
                     results.map((u) => {
                       const noNik = !u.nik;
@@ -210,22 +210,22 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
                           type="button"
                           onClick={() => pick(u)}
                           disabled={disabled}
-                          className="w-full text-left text-sm px-3.5 py-2.5 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-between"
+                          className="w-full text-left text-sm px-3.5 py-2.5 hover:bg-hover-50 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-between"
                         >
                           <div>
-                            <p className="font-medium text-slate-900">{u.name}</p>
-                            {u.nik && <p className="text-xs text-slate-500 font-mono">NIK: {u.nik}</p>}
+                            <p className="font-medium text-ink-900">{u.name}</p>
+                            {u.nik && <p className="text-xs text-ink-500 font-mono">NIK: {u.nik}</p>}
                           </div>
                           {inactive ? (
-                            <span className="text-xs text-red-600 font-medium">Nonaktif</span>
+                            <span className="text-xs text-tone-red-600 font-medium">Nonaktif</span>
                           ) : noNik ? (
-                            <span className="text-xs text-amber-600 font-medium">Belum ada NIK</span>
+                            <span className="text-xs text-tone-amber-600 font-medium">Belum ada NIK</span>
                           ) : null}
                         </button>
                       );
                     })}
                   {!searching && results.length === 0 && (
-                    <p className="text-xs text-slate-400 px-3.5 py-3">
+                    <p className="text-xs text-ink-400 px-3.5 py-3">
                       Karyawan tidak ditemukan.
                     </p>
                   )}
@@ -252,15 +252,15 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
           </Field>
 
           {kelengkapanTersedia.length > 0 && (
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-              <p className="text-xs font-semibold text-slate-700 mb-1.5">
+            <div className="p-3 bg-surface-50 rounded-xl border border-line-100">
+              <p className="text-xs font-semibold text-ink-700 mb-1.5">
                 Kelengkapan Otomatis Ikut Terserah-Terima ({kelengkapanTersedia.length}):
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {kelengkapanTersedia.map((k) => (
                   <span
                     key={k.id}
-                    className="text-[11px] font-medium bg-white border border-slate-200 text-slate-700 px-2 py-0.5 rounded-md shadow-2xs"
+                    className="text-[11px] font-medium bg-surface border border-line-200 text-ink-700 px-2 py-0.5 rounded-md shadow-2xs"
                   >
                     {k.kode_inventory} · {k.nama}
                     {k.status !== 'tersedia' && k.status !== 'dipakai' ? ` (${String(k.status).replace(/_/g, ' ')})` : ''}
@@ -288,7 +288,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 shrink-0 bg-slate-50/60">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-line-100 shrink-0 bg-surface-50-a60">
           <ButtonCancel onClick={onClose} disabled={submitting} />
           <ButtonSubmit
             onClick={handleSubmit}

@@ -9,6 +9,7 @@ import SearchInput from '../../../components/form/SearchInput';
 import KategoriExportModal from '../../laporan/export/KategoriExportModal';
 import { router, usePage } from '@inertiajs/react';
 import type { Kategori } from './types';
+import { pnCard, pnEmpty, pnTable } from '../../../components/ui/pn';
 
 // Sekarang full CRUD -- beda dari sebelumnya (read-only 2 baris fix).
 // (REFACTOR KATEGORI BEBAS Fase 4: peringatan lama di sini -- yang bilang
@@ -145,14 +146,14 @@ export default function TabKategori() {
   return (
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-500">
           Kelola kategori aset dan inventory untuk pengelompokan jenis barang di seluruh sistem.
         </p>
         <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
           <button
             type="button"
             onClick={() => setShowExportModal(true)}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
+            className="flex items-center gap-2 bg-surface border border-line-200 text-ink-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-hover-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
           >
             <Download size={16} />
             Export Excel
@@ -168,7 +169,7 @@ export default function TabKategori() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={importLoading}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
+            className="flex items-center gap-2 bg-surface border border-line-200 text-ink-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-hover-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
           >
             {importLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
             Import Excel
@@ -176,7 +177,7 @@ export default function TabKategori() {
           <button
             type="button"
             onClick={openCreateModal}
-            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs dark:!bg-white dark:!text-slate-900 dark:hover:!bg-gray-100"
+            className="flex items-center gap-2 bg-solid text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-solid-hover disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs dark:!bg-white dark:!text-slate-900 dark:hover:!bg-gray-100"
           >
             <Plus size={16} />
             Tambah Kategori
@@ -193,29 +194,29 @@ export default function TabKategori() {
         />
       </div>
 
-      <p className="text-xs text-slate-500 mb-4">
-        Total Semua: <span className="font-semibold text-slate-900">{filteredItems.length}</span> kategori
+      <p className="text-xs text-ink-500 mb-4">
+        Total Semua: <span className="font-semibold text-ink-900">{filteredItems.length}</span> kategori
       </p>
 
-      <div className="pn-card">
+      <div className={pnCard}>
         {items.length === 0 && (
-          <p className="pn-empty">Belum ada data kategori.</p>
+          <p className={pnEmpty}>Belum ada data kategori.</p>
         )}
 
         {items.length > 0 && filteredItems.length === 0 && (
-          <p className="pn-empty">Kategori tidak ditemukan.</p>
+          <p className={pnEmpty}>Kategori tidak ditemukan.</p>
         )}
 
         {filteredItems.length > 0 && (
           <>
             {/* Desktop Table */}
-            <div className="hidden sm:block pn-scroll">
-              <table className="pn-table">
+            <div className="hidden sm:block overflow-x-auto">
+              <table className={pnTable}>
                 <thead>
                   <tr>
                     <th>Nama Kategori</th>
                     <th className="text-center">Jumlah Inventory</th>
-                    <th className="pn-r">Aksi</th>
+                    <th className="text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -225,7 +226,7 @@ export default function TabKategori() {
                         {item.nama}
                       </td>
                       <td className="text-center">
-                        <span className="text-slate-700 text-sm font-semibold">
+                        <span className="text-ink-700 text-sm font-semibold">
                           {item.inventory_count ?? 0}
                         </span>
                       </td>
@@ -235,7 +236,7 @@ export default function TabKategori() {
                               type="button"
                               onClick={() => openEditModal(item)}
                               title="Edit"
-                              className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                              className="p-2 text-ink-400 hover:text-ink-900 hover:bg-hover-100 rounded-lg transition"
                             >
                               <Pencil size={15} />
                             </button>
@@ -245,7 +246,7 @@ export default function TabKategori() {
                                 setDeleteTarget(item);
                               }}
                               title="Hapus"
-                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                              className="p-2 text-ink-400 hover:text-tone-red-600 hover:bg-tint-red-hover-50 rounded-lg transition"
                             >
                               <Trash2 size={15} />
                             </button>
@@ -262,14 +263,14 @@ export default function TabKategori() {
                 {paginatedItems.map((item) => (
                   <div key={item.id} className="p-4 flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-900 truncate">{item.nama}</p>
+                      <p className="text-sm font-medium text-ink-900 truncate">{item.nama}</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
                         onClick={() => openEditModal(item)}
                         title="Edit"
-                        className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                        className="p-1.5 text-ink-400 hover:text-ink-900 hover:bg-hover-100 rounded-lg transition"
                       >
                         <Pencil size={15} />
                       </button>
@@ -279,7 +280,7 @@ export default function TabKategori() {
                           setDeleteTarget(item);
                         }}
                         title="Hapus"
-                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                        className="p-1.5 text-ink-400 hover:text-tone-red-600 hover:bg-tint-red-hover-50 rounded-lg transition"
                       >
                         <Trash2 size={15} />
                       </button>
@@ -289,7 +290,7 @@ export default function TabKategori() {
             </div>
 
             {totalPages > 1 && (
-              <div className="-mx-[18px] -mb-3 mt-1 px-6 py-3 border-t border-slate-100">
+              <div className="-mx-[18px] -mb-3 mt-1 px-6 py-3 border-t border-line-100">
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
@@ -309,14 +310,14 @@ export default function TabKategori() {
         <div
           className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 animate-[fadeIn_150ms_ease-out]"
         >
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md overflow-hidden transform transition-all animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/60">
+          <div className="bg-surface rounded-2xl shadow-2xl border border-line-200-a80 w-full max-w-md overflow-hidden transform transition-all animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-line-100 bg-surface-50-a60">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-sm shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-solid text-white flex items-center justify-center shadow-sm shrink-0">
                   <Tags size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-slate-900">
+                  <h3 className="text-base font-semibold text-ink-900">
                     {editing ? 'Edit Kategori' : 'Tambah Kategori'}
                   </h3>
                 </div>
@@ -325,7 +326,7 @@ export default function TabKategori() {
                 type="button"
                 onClick={closeModal}
                 disabled={submitting}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-40"
+                className="text-ink-400 hover:text-ink-600 p-1.5 rounded-lg hover:bg-hover-100 transition disabled:opacity-40"
               >
                 <X size={18} />
               </button>
@@ -355,7 +356,7 @@ export default function TabKategori() {
                 />
               </Field>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-line-100">
                 <ButtonCancel onClick={closeModal} disabled={submitting} />
                 <ButtonSubmit type="submit" loading={submitting} loadingLabel="Menyimpan...">
                   {editing ? 'Simpan Perubahan' : 'Tambah Kategori'}

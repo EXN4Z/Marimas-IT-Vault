@@ -94,7 +94,7 @@ export default function ScrollableTabBar<T extends string>({
           type="button"
           onClick={() => scrollByAmount('left')}
           aria-label="Geser tab ke kiri"
-          className="absolute -left-1 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-[#ffffff] dark:bg-[#3f3f46] border border-slate-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-700 transition"
+          className="absolute -left-1 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-[#ffffff] dark:bg-[#3f3f46] border border-line-200 shadow-sm flex items-center justify-center text-ink-500 hover:text-ink-900 hover:bg-hover-50 transition"
         >
           <ChevronLeft size={14} />
         </button>
@@ -104,7 +104,7 @@ export default function ScrollableTabBar<T extends string>({
           type="button"
           onClick={() => scrollByAmount('right')}
           aria-label="Geser tab ke kanan"
-          className="absolute -right-1 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-[#ffffff] dark:bg-[#3f3f46] border border-slate-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-700 transition"
+          className="absolute -right-1 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-[#ffffff] dark:bg-[#3f3f46] border border-line-200 shadow-sm flex items-center justify-center text-ink-500 hover:text-ink-900 hover:bg-hover-50 transition"
         >
           <ChevronRight size={14} />
         </button>
@@ -128,7 +128,7 @@ export default function ScrollableTabBar<T extends string>({
                 {IconComponent ? <IconComponent size={16} /> : iconIsElement ? (t.icon as ReactNode) : null}
                 {t.label}
                 {t.badge != null && (
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${t.badgeClassName ?? 'bg-slate-200 text-slate-600'}`}>
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${t.badgeClassName ?? 'bg-surface-200 text-ink-600'}`}>
                     {t.badge}
                   </span>
                 )}

@@ -49,20 +49,20 @@ export default function KaryawanDetailModal({ user, onClose }: Props) {
       maxWidthClassName="max-w-2xl"
     >
       <div className="space-y-6">
-        <div className="flex items-center gap-4 pb-5 border-b border-slate-200 dark:border-zinc-800">
-          <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 flex items-center justify-center text-lg font-bold text-slate-800 dark:text-zinc-200 shrink-0">
+        <div className="flex items-center gap-4 pb-5 border-b border-line-200">
+          <div className="w-14 h-14 rounded-full bg-surface-100 border border-line-200 flex items-center justify-center text-lg font-bold text-ink-800 shrink-0 dark:border dark:border-[#38383e]">
             {initials(user.name)}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-zinc-100 leading-tight truncate">
+              <h3 className="text-base sm:text-lg font-bold text-ink-900 leading-tight truncate">
                 {user.name}
               </h3>
               <span
                 className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                   user.role === 'admin'
-                    ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-900/50'
-                    : 'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700'
+                    ? 'bg-tint-rose-50 text-tone-rose-700 border border-edge-rose-200'
+                    : 'bg-surface-100 text-ink-700 border border-line-200 dark:border dark:border-[#38383e]'
                 }`}
               >
                 <ShieldCheck size={12} />
@@ -71,15 +71,15 @@ export default function KaryawanDetailModal({ user, onClose }: Props) {
               <span
                 className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                   isAktif
-                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50'
-                    : 'bg-slate-100 text-slate-500 dark:bg-zinc-800 dark:text-zinc-400 border border-slate-200 dark:border-zinc-700'
+                    ? 'bg-tint-emerald-50 text-tone-emerald-700 border border-edge-emerald-200'
+                    : 'bg-surface-100 text-ink-500 border border-line-200 dark:border dark:border-[#38383e]'
                 }`}
               >
                 <CheckCircle2 size={12} />
                 {isAktif ? 'Akun Aktif' : 'Nonaktif'}
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 font-medium">
+            <p className="text-xs text-ink-500 mt-1 font-medium">
               {user.departemen?.nama || 'Tanpa Departemen'}
               {user.lokasi_kantor?.nama ? ` · ${user.lokasi_kantor.nama}` : ''}
             </p>
@@ -87,7 +87,7 @@ export default function KaryawanDetailModal({ user, onClose }: Props) {
         </div>
 
         <div>
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-2">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-ink-400 mb-2">
             Identitas & Kontak
           </h4>
           <div className="divide-y divide-slate-100 dark:divide-zinc-800/80">
@@ -100,7 +100,7 @@ export default function KaryawanDetailModal({ user, onClose }: Props) {
         </div>
 
         <div>
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-2">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-ink-400 mb-2">
             Penempatan Kerja
           </h4>
           <div className="divide-y divide-slate-100 dark:divide-zinc-800/80">
@@ -110,11 +110,11 @@ export default function KaryawanDetailModal({ user, onClose }: Props) {
           </div>
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-zinc-800">
+        <div className="flex justify-end pt-4 border-t border-line-100">
           <button
             type="button"
             onClick={onClose}
-            className="text-xs font-semibold px-5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-700 shadow-xs transition cursor-pointer active:scale-95"
+            className="text-xs font-semibold px-5 py-2.5 rounded-xl border border-line-200 bg-surface text-ink-700 hover:bg-hover-50 shadow-xs transition cursor-pointer active:scale-95"
           >
             Tutup
           </button>
@@ -127,8 +127,8 @@ export default function KaryawanDetailModal({ user, onClose }: Props) {
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center py-3 text-sm">
-      <span className="w-52 text-slate-500 dark:text-zinc-400 text-xs sm:text-sm font-medium shrink-0">{label}</span>
-      <span className="text-slate-900 dark:text-zinc-100 font-semibold break-words mt-0.5 sm:mt-0 flex-1">
+      <span className="w-52 text-ink-500 text-xs sm:text-sm font-medium shrink-0">{label}</span>
+      <span className="text-ink-900 font-semibold break-words mt-0.5 sm:mt-0 flex-1">
         {value || '-'}
       </span>
     </div>

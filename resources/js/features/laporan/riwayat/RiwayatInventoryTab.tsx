@@ -101,25 +101,25 @@ export default function RiwayatInventoryTab() {
   }, []);
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-      <h3 className="text-base font-semibold text-slate-900 mb-1">
+    <div className="bg-surface rounded-xl p-6 shadow-sm border border-line-200">
+      <h3 className="text-base font-semibold text-ink-900 mb-1">
         {isAdmin ? 'Riwayat Inventory' : 'Riwayat Aktivitas Saya'}
       </h3>
 
       <div className="relative mb-3 mt-2">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
         <input
           type="text"
           value={riwayatSearch}
           onChange={(e) => setRiwayatSearch(e.target.value)}
           placeholder="Cari kode inventory, merek/tipe, atau nama peminjam..."
-          className="w-full text-sm border border-slate-200 rounded-lg pl-9 pr-9 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+          className="w-full text-sm border border-line-200 rounded-lg pl-9 pr-9 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
         />
         {riwayatSearch && (
           <button
             onClick={() => setRiwayatSearch('')}
             aria-label="Hapus pencarian"
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-300 hover:text-ink-500"
           >
             <X size={15} />
           </button>
@@ -141,8 +141,8 @@ export default function RiwayatInventoryTab() {
         ] as { key: RiwayatFilter; label: string }[])}
       />
 
-      <p className="text-xs text-slate-500 mb-4">
-        Total {riwayatFilter === 'semua' ? 'Semua' : (RIWAYAT_FILTER_LABEL[riwayatFilter] ?? 'Riwayat')}: <span className="font-semibold text-slate-900">{riwayatTotal}</span> riwayat
+      <p className="text-xs text-ink-500 mb-4">
+        Total {riwayatFilter === 'semua' ? 'Semua' : (RIWAYAT_FILTER_LABEL[riwayatFilter] ?? 'Riwayat')}: <span className="font-semibold text-ink-900">{riwayatTotal}</span> riwayat
       </p>
 
       {riwayatInventoryLoading ? (
@@ -163,12 +163,12 @@ export default function RiwayatInventoryTab() {
           {riwayatInventory
             .map((ev, idx) => {
             const style: Record<RiwayatInventoryEvent['type'], { bg: string; icon: JSX.Element; label: string }> = {
-              pinjam: { bg: 'bg-amber-50 text-amber-600', icon: <HandCoins size={16} />, label: 'menerima' },
-              kembali: { bg: 'bg-emerald-50 text-emerald-600', icon: <Undo2 size={16} />, label: 'mengembalikan' },
-              lapor_rusak: { bg: 'bg-red-50 text-red-600', icon: <AlertTriangle size={16} />, label: 'melaporkan kerusakan' },
-              mulai_perbaikan: { bg: 'bg-orange-50 text-orange-600', icon: <PlayCircle size={16} />, label: 'mulai memperbaiki' },
-              selesai_perbaikan: { bg: 'bg-sky-50 text-sky-600', icon: <Wrench size={16} />, label: 'selesai memperbaiki' },
-              dijual: { bg: 'bg-purple-50 text-purple-600', icon: <Banknote size={16} />, label: 'menjual' },
+              pinjam: { bg: 'bg-tint-amber-50 text-tone-amber-600', icon: <HandCoins size={16} />, label: 'menerima' },
+              kembali: { bg: 'bg-tint-emerald-50 text-emerald-600', icon: <Undo2 size={16} />, label: 'mengembalikan' },
+              lapor_rusak: { bg: 'bg-tint-red-50 text-tone-red-600', icon: <AlertTriangle size={16} />, label: 'melaporkan kerusakan' },
+              mulai_perbaikan: { bg: 'bg-tint-orange-50 text-tone-orange-600', icon: <PlayCircle size={16} />, label: 'mulai memperbaiki' },
+              selesai_perbaikan: { bg: 'bg-tint-sky-50 text-tone-sky-600', icon: <Wrench size={16} />, label: 'selesai memperbaiki' },
+              dijual: { bg: 'bg-tint-purple-50 text-tone-purple-600', icon: <Banknote size={16} />, label: 'menjual' },
             };
             const s = style[ev.type];
             const kode = ev.inventory?.kode_inventory || '-';
@@ -178,7 +178,7 @@ export default function RiwayatInventoryTab() {
                   {s.icon}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm text-slate-800">
+                  <p className="text-sm text-ink-800">
                     {ev.nama ? (
                       <span className="font-medium">{ev.nama} </span>
                     ) : (ev.type === 'mulai_perbaikan' || ev.type === 'selesai_perbaikan') ? (
@@ -186,13 +186,13 @@ export default function RiwayatInventoryTab() {
                     ) : ''}
                     {s.label} <span className="font-medium">{kode}</span>
                   </p>
-                  <p className="text-xs text-slate-400">{formatWaktu(ev.waktu)}</p>
+                  <p className="text-xs text-ink-400">{formatWaktu(ev.waktu)}</p>
                 </div>
               </li>
             );
           })}
           {riwayatInventory.length === 0 && (
-            <p className="text-sm text-slate-400 text-center py-6">
+            <p className="text-sm text-ink-400 text-center py-6">
               {riwayatSearch
                 ? `Tidak ada hasil untuk "${riwayatSearch}".`
                 : riwayatFilter !== 'semua'

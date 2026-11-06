@@ -3,14 +3,14 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import Select, { type SelectOption } from './Select';
 
 export const inputClass =
-  'w-full rounded-xl border border-slate-300 dark:border-[#383842] bg-white dark:bg-[#222226] px-3.5 py-2.5 text-sm text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 shadow-sm outline-none transition-all duration-200 hover:border-slate-400 dark:hover:border-zinc-500 focus:border-slate-900 dark:focus:border-zinc-400 focus:ring-4 focus:ring-slate-900/[0.08] dark:focus:ring-zinc-600/20';
+  'w-full rounded-xl border border-slate-300 dark:border-[#383842] bg-surface px-3.5 py-2.5 text-sm text-ink-800 placeholder:text-ink-400 shadow-sm outline-none transition-all duration-200 hover:border-slate-400 dark:hover:border-zinc-500 focus:border-slate-900 dark:focus:border-zinc-400 focus:ring-4 focus:ring-slate-900/[0.08] dark:focus:ring-zinc-600/20';
 
 // `!` (important) dipakai di border-nya karena class ini SELALU digabung
 // bareng inputClass yang udah punya border-slate-300 unprefixed duluan.
 // Tanpa `!`, menang-kalahnya cuma soal urutan compile Tailwind (bukan urutan
 // class di JSX), jadi bordernya bisa kalah dan gak kelihatan merah.
 export const inputErrorClass =
-  '!border-red-400 bg-red-50/20 dark:bg-red-950/20 text-slate-900 dark:text-zinc-100 placeholder:text-red-300 focus:!border-red-500 focus:ring-4 focus:ring-red-500/15';
+  '!border-red-400 bg-red-50/20 dark:bg-red-950/20 text-ink-900 placeholder:text-red-300 focus:!border-red-500 focus:ring-4 focus:ring-red-500/15';
 
 const textareaClass = `${inputClass} resize-none`;
 
@@ -30,7 +30,7 @@ export function InlineError({ children, className = '' }: { children?: ReactNode
   if (!children) return null;
   return (
     <span
-      className={`flex items-center gap-1.5 mt-1.5 text-xs font-medium text-red-600 animate-[fadeIn_150ms_ease-out] ${className}`.trim()}
+      className={`flex items-center gap-1.5 mt-1.5 text-xs font-medium text-tone-red-600 animate-[fadeIn_150ms_ease-out] ${className}`.trim()}
       role="alert"
     >
       <AlertCircle size={13} className="shrink-0 text-red-500" />
@@ -44,7 +44,7 @@ export function Field({ label, error, required, hint, className = '', children }
   return (
     <label className={`block text-sm ${className}`}>
       <div className="flex items-center justify-between gap-2 mb-1.5">
-        <span className="font-medium text-slate-700 select-none flex items-center gap-1">
+        <span className="font-medium text-ink-700 select-none flex items-center gap-1">
           {label}
           {required && (
             <span className="text-red-500 font-semibold" title="Field ini wajib diisi">
@@ -64,7 +64,7 @@ export function Field({ label, error, required, hint, className = '', children }
       {error ? (
         <InlineError>{error}</InlineError>
       ) : hint ? (
-        <span className="block mt-1.5 text-xs text-slate-400">{hint}</span>
+        <span className="block mt-1.5 text-xs text-ink-400">{hint}</span>
       ) : null}
     </label>
   );
@@ -108,7 +108,7 @@ export function TextInput({
       autoFocus={autoFocus}
       min={min}
       max={max}
-      className={`${inputClass} disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400 ${
+      className={`${inputClass} disabled:cursor-not-allowed disabled:bg-surface-50 disabled:text-ink-400 ${
         error ? inputErrorClass : ''
       } ${className}`}
     />
@@ -144,7 +144,7 @@ export function Textarea({
       rows={rows}
       placeholder={placeholder}
       disabled={disabled}
-      className={`${textareaClass} disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400 ${
+      className={`${textareaClass} disabled:cursor-not-allowed disabled:bg-surface-50 disabled:text-ink-400 ${
         error ? inputErrorClass : ''
       } ${className}`}
     />
@@ -214,7 +214,7 @@ export function ButtonCancel({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="px-4 py-2.5 text-sm font-medium rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 transition-all duration-150 shadow-sm"
+      className="px-4 py-2.5 text-sm font-medium rounded-xl border border-line-200 text-ink-700 bg-surface hover:bg-hover-50 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 transition-all duration-150 shadow-sm"
     >
       {children}
     </button>
@@ -243,10 +243,10 @@ export function ButtonSubmit({
 }) {
   const toneClass =
     tone === 'danger'
-      ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500/20 shadow-red-500/20'
+      ? 'bg-red-600 hover:bg-red-700 focus:ring-glow-red-500-a20 shadow-red-500/20'
       : tone === 'success'
-      ? 'bg-emerald-600 hover:bg-emerald-700 focus:ring-emerald-500/20 shadow-emerald-500/20'
-      : 'bg-slate-900 hover:bg-slate-800 focus:ring-slate-900/20 shadow-slate-900/20';
+      ? 'bg-emerald-600 hover:bg-emerald-700 focus:ring-glow-emerald-500-a20 shadow-emerald-500/20'
+      : 'bg-solid hover:bg-solid-hover focus:ring-slate-900/20 shadow-slate-900/20';
 
   return (
     <button

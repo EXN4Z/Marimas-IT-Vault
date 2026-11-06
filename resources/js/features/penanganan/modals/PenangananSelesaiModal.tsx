@@ -84,14 +84,14 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 animate-[fadeIn_150ms_ease-out]"
     >
-      <div className="bg-white rounded-2xl shadow-xl ring-1 ring-slate-900/5 w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_180ms_ease-out]">
+      <div className="bg-surface rounded-2xl shadow-xl ring-1 ring-glow-slate-900-a5 w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_180ms_ease-out]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line-100 shrink-0">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-400">
               {inventory.kode_inventory} · {formatJenisKerusakan(penanganan.jenis_kerusakan)} — {penanganan.keluhan}
             </p>
-            <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-ink-900 flex items-center gap-2">
               <CheckCircle2 size={18} className="text-emerald-600" />
               Tandai Selesai
             </h3>
@@ -100,7 +100,7 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
             type="button"
             onClick={onClose}
             aria-label="Tutup"
-            className="grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+            className="grid h-8 w-8 place-items-center rounded-full text-ink-400 hover:bg-hover-100 hover:text-ink-600 transition-colors"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M1 1L15 15M15 1L1 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -112,7 +112,7 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
         <div className="px-6 py-5 overflow-y-auto">
         <div className="flex flex-col gap-3 mb-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Tanggal Selesai</label>
+            <label className="block text-sm font-medium text-ink-700 mb-1">Tanggal Selesai</label>
             <input
               type="date"
               value={tanggalSelesai}
@@ -123,7 +123,7 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Biaya Komponen</label>
+              <label className="block text-sm font-medium text-ink-700 mb-1">Biaya Komponen</label>
               <input
                 type="number"
                 min={0}
@@ -131,12 +131,12 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
                 onChange={(e) => { setBiayaKomponen(e.target.value); clearError('biaya_komponen'); }}
                 placeholder={isRusakBerat ? '-' : 'Masukkan biaya komponen'}
                 disabled={isRusakBerat}
-                className={`w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed${errCls('biaya_komponen')}`}
+                className={`w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-surface-100 disabled:text-ink-400 disabled:cursor-not-allowed${errCls('biaya_komponen')}`}
               />
               <InlineError>{errors.biaya_komponen}</InlineError>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Biaya Jasa</label>
+              <label className="block text-sm font-medium text-ink-700 mb-1">Biaya Jasa</label>
               <input
                 type="number"
                 min={0}
@@ -144,13 +144,13 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
                 onChange={(e) => { setHargaJasa(e.target.value); clearError('harga_jasa'); }}
                 placeholder={isRusakBerat ? '-' : 'Masukkan biaya jasa'}
                 disabled={isRusakBerat}
-                className={`w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed${errCls('harga_jasa')}`}
+                className={`w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:bg-surface-100 disabled:text-ink-400 disabled:cursor-not-allowed${errCls('harga_jasa')}`}
               />
               <InlineError>{errors.harga_jasa}</InlineError>
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Hasil</label>
+            <label className="block text-sm font-medium text-ink-700 mb-1">Hasil</label>
             <Select
               value={hasil}
               onChange={(v) => handleHasilChange(v as 'diperbaiki' | 'rusak_berat')}
@@ -161,7 +161,7 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Catatan (opsional)</label>
+            <label className="block text-sm font-medium text-ink-700 mb-1">Catatan (opsional)</label>
             <textarea
               value={catatan}
               onChange={(e) => { setCatatan(e.target.value); clearError('catatan'); }}
@@ -176,11 +176,11 @@ export default function InventoryPenangananSelesaiModal({ inventory, penanganan,
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 shrink-0">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-line-100 shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+            className="px-4 py-2 text-sm rounded-lg border border-line-200 text-ink-600 hover:bg-hover-50 transition-colors"
           >
             Batal
           </button>

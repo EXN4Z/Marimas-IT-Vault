@@ -174,7 +174,7 @@ function CustomOption(props: OptionProps<Option, false>) {
         <components.Option {...props}>
             <div className="flex items-center justify-between gap-2">
                 <span className="truncate">{data.label}</span>
-                {isSelected && <Check size={14} className="shrink-0 text-slate-900 dark:text-white" />}
+                {isSelected && <Check size={14} className="shrink-0 text-ink-900" />}
             </div>
         </components.Option>
     );

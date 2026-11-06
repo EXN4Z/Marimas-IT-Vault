@@ -15,7 +15,7 @@ export default function InventoryLaporStatus({ status, size = 'md' }: { status: 
       className={[
         'flex items-center gap-1.5 text-xs font-semibold rounded-lg cursor-default',
         size === 'sm' ? 'px-3 py-1.5' : 'px-3 py-2',
-        rusakBerat ? 'text-[#C4411F] bg-[#C4411F]/10 dark:text-[#ff8a65]' : 'text-slate-500 bg-slate-100',
+        rusakBerat ? 'text-[#C4411F] bg-[#C4411F]/10 dark:text-[#ff8a65]' : 'text-ink-500 bg-surface-100',
       ].join(' ')}
     >
       <Icon size={size === 'sm' ? 13 : 14} />

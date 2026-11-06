@@ -24,6 +24,7 @@ import PenangananFilterBar from './list/PenangananFilterBar';
 import FormPerbaikanModal from './modals/FormPerbaikanModal';
 import DetailPenangananModal from './modals/DetailPenangananModal';
 import TerimaLaporanModal from './modals/TerimaLaporanModal';
+import { pnCard } from '../../components/ui/pn';
 
 // [F6-INERTIA] Halaman Penanganan Inventory (tadinya usePenangananData: axios + polling + filter/pagination di klien). Sekarang:
 //  - data dari props server (PenangananInventoryPageController -> props.penanganan);
@@ -270,7 +271,7 @@ export default function PenangananInventory() {
       />
 
       <div className="flex items-center justify-between gap-4">
-        <p className={`pn-warn ${terlambat > 0 ? '' : 'is-ok'}`}>
+        <p className={`inline-flex items-center gap-1.5 self-start rounded-full bg-dv-alert/10 px-3 py-1.5 text-[12px] font-bold text-dv-alert [&.is-ok]:bg-dd-green/12 [&.is-ok]:text-dd-green-ink ${terlambat > 0 ? '' : 'is-ok'}`}>
           {terlambat > 0 && <AlertTriangle size={13} />}
           {terlambat > 0
             ? `${terlambat} laporan sudah lewat ${BATAS_TERLAMBAT_HARI} hari dan belum selesai.`
@@ -278,14 +279,14 @@ export default function PenangananInventory() {
         </p>
 
         {canImportExport && (
-          <div className="pn-head-act">
-            <button type="button" onClick={() => bukaExport(true)} className="dd-btn">
+          <div className="flex shrink-0 flex-wrap items-center gap-2.5">
+            <button type="button" onClick={() => bukaExport(true)} className="inline-flex items-center gap-1.5 rounded-full border border-transparent font-bold whitespace-nowrap shadow-dd h-[42px] px-5 text-[13px] bg-dd-card text-dv-ink hover:brightness-[.97] disabled:opacity-50 dark:border-dv-line dark:shadow-none">
               <Download size={15} />
               Export Excel
             </button>
 
             <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileSelected} className="hidden" />
-            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={importLoading} className="dd-btn">
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={importLoading} className="inline-flex items-center gap-1.5 rounded-full border border-transparent font-bold whitespace-nowrap shadow-dd h-[42px] px-5 text-[13px] bg-dd-card text-dv-ink hover:brightness-[.97] disabled:opacity-50 dark:border-dv-line dark:shadow-none">
               {importLoading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
               Import Excel
             </button>
@@ -304,8 +305,8 @@ export default function PenangananInventory() {
         onReset={handleResetFilter}
       />
 
-      <p className="text-xs text-slate-500 mb-4">
-        Total {TAB_LABEL[activeTab]}: <span className="font-semibold text-slate-900">{counts[activeTab]}</span>
+      <p className="text-xs text-ink-500 mb-4">
+        Total {TAB_LABEL[activeTab]}: <span className="font-semibold text-ink-900">{counts[activeTab]}</span>
       </p>
 
       {view === 'papan' ? (
@@ -321,7 +322,7 @@ export default function PenangananInventory() {
         />
       ) : (
         <div className={`space-y-4 transition-opacity ${listLoading ? 'opacity-60' : ''}`}>
-          <div className="pn-card">
+          <div className={pnCard}>
           <PenangananTabel
             rows={rows}
             tab={activeTab}

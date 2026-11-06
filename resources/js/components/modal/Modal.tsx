@@ -44,20 +44,20 @@ export default function Modal({
       className="route-modal-backdrop fixed inset-0 z-[70] flex items-center justify-center bg-black/50 px-4 py-6 overflow-y-auto"
     >
       <div
-        className={`route-modal-panel w-full ${maxWidthClassName} bg-white rounded-xl shadow-2xl my-auto`}
+        className={`route-modal-panel w-full ${maxWidthClassName} bg-surface rounded-xl shadow-2xl my-auto`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label={title}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-xl z-10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-edge-gray-100 sticky top-0 bg-surface rounded-t-xl z-10">
           <div>
-            <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-            {description && <p className="text-xs text-gray-500 mt-0.5">{description}</p>}
+            <h2 className="text-base font-semibold text-tone-gray-900">{title}</h2>
+            {description && <p className="text-xs text-tone-gray-500 mt-0.5">{description}</p>}
           </div>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-700 p-1.5 rounded-lg hover:bg-gray-100 transition"
+            className="text-tone-gray-400 hover:text-tone-gray-700 p-1.5 rounded-lg hover:bg-tint-gray-hover-100 transition"
             aria-label="Tutup"
           >
             <X size={18} />

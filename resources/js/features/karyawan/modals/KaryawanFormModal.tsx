@@ -49,9 +49,9 @@ function roleLabel(nama: string): string {
 }
 
 const sectionClass =
-  'rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 p-4 space-y-3.5';
+  'rounded-xl border border-line-200-a80 bg-surface-50-a50 p-4 space-y-3.5';
 const sectionTitleClass =
-  'flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400';
+  'flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink-500';
 
 // [F3-INERTIA] Form Tambah / Edit User sebagai modal overlay di tab Karyawan (gabungan Create.tsx + Edit.tsx lama).
 // Data baris dari props list (tidak ada request tambahan), pilihan dropdown dari props `karyawanOpsi`.
@@ -144,7 +144,7 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
           {/* Section 1: Identitas & Kontak */}
           <div className={sectionClass}>
             <div className={sectionTitleClass}>
-              <UserIcon size={14} className="text-slate-400 dark:text-zinc-500" />
+              <UserIcon size={14} className="text-ink-400" />
               <span>1. Identitas & Kontak</span>
             </div>
 
@@ -192,7 +192,7 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
           {/* Section 2: Keamanan Akun & Hak Akses */}
           <div className={sectionClass}>
             <div className={sectionTitleClass}>
-              <Lock size={14} className="text-slate-400 dark:text-zinc-500" />
+              <Lock size={14} className="text-ink-400" />
               <span>2. Keamanan Akun & Hak Akses</span>
             </div>
 
@@ -230,7 +230,7 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300 p-1 transition cursor-pointer"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-600 p-1 transition cursor-pointer"
                       title={showPassword ? 'Sembunyikan password' : 'Lihat password'}
                     >
                       {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -244,7 +244,7 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
           {/* Section 3: Penempatan Kerja & Organisasi */}
           <div className={sectionClass}>
             <div className={sectionTitleClass}>
-              <Building2 size={14} className="text-slate-400 dark:text-zinc-500" />
+              <Building2 size={14} className="text-ink-400" />
               <span>3. Penempatan Kerja & Organisasi</span>
             </div>
 
@@ -290,7 +290,7 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
             </div>
           </div>
 
-          <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800">
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-line-100">
             <div className="flex items-center gap-2">
               {user && (
                 <>
@@ -298,7 +298,7 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
                     type="button"
                     onClick={() => setShowSetPassword(true)}
                     disabled={processing}
-                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-blue-200 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition cursor-pointer disabled:opacity-50"
+                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-edge-blue-200 text-blue-600 dark:text-blue-400 hover:bg-tint-blue-50 transition cursor-pointer disabled:opacity-50"
                   >
                     <KeyRound size={14} />
                     Ubah Password
@@ -307,7 +307,7 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
                     type="button"
                     onClick={() => onDelete(user)}
                     disabled={processing}
-                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer disabled:opacity-50"
+                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-edge-red-200 text-tone-red-600 hover:bg-tint-red-hover-50 transition cursor-pointer disabled:opacity-50"
                   >
                     Hapus User
                   </button>
