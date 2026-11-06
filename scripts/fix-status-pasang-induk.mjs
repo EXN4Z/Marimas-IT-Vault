@@ -56,7 +56,7 @@ const HELPER = `    /** True kalau induk punya pemakaian aktif (disetujui & belu
     {
         return InventoryPemakai::where('inventory_id', $parentId)
             ->where('status', 'disetujui')
-            ->whereNull('tanggal_pengembalian')
+            ->whereNull('dikembalikan_at')
             ->exists();
     }
 

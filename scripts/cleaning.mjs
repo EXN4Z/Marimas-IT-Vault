@@ -331,7 +331,7 @@ const phpMethods = [
   { rel: 'app/Models/User.php', name: 'generatePasswordFromName', re: /^[ \t]*public static function generatePasswordFromName\s*\(/m, prune: ['Str'], why: 'User::generatePasswordFromName tidak dipanggil (password dibuat di KaryawanAction)' },
   { rel: 'app/Queries/Laporan/RiwayatInventoryQuery.php', name: 'dariRequest', re: /^[ \t]*public static function dariRequest\s*\(/m, prune: ['Request'], why: 'RiwayatInventoryQuery::dariRequest = sisa API lama, tidak ada pemanggil' },
   { rel: 'app/Models/MasterData/Inventory.php', name: 'menempel', re: /^[ \t]*public function scopeMenempel\s*\(/m, prune: [], callRe: /(->|::)menempel\s*\(/, why: 'scope Inventory::menempel() tidak dipakai' },
-  { rel: 'app/Models/Transaksi/InventoryPemakai.php', name: 'requestedBy', re: /^[ \t]*public function requestedBy\s*\(/m, prune: [], why: 'relasi InventoryPemakai::requestedBy tidak dipakai (kolom requested_by_user_id tetap diisi)' },
+  { rel: 'app/Models/Transaksi/InventoryPemakai.php', name: 'requestedBy', re: /^[ \t]*public function requestedBy\s*\(/m, prune: [], why: 'relasi InventoryPemakai::requestedBy tidak dipakai (kolom diserahkan_oleh tetap diisi)' },
 ];
 for (const r of phpMethods) {
   if (!exists(r.rel)) continue;

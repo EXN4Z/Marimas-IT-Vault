@@ -81,7 +81,7 @@ export default function InventoryDetailHero({ detail }: InventoryDetailHeroProps
           </div>
           <div className="text-right shrink-0">
             <p className="text-[11px] dv-band-sub">Sejak</p>
-            <p className="dv-g text-base font-semibold mt-0.5">{formatTanggalId(detail.pemakai_saat_ini.tanggal_penerimaan)}</p>
+            <p className="dv-g text-base font-semibold mt-0.5">{formatTanggalId(detail.pemakai_saat_ini.diterima_at)}</p>
           </div>
         </div>
       )}

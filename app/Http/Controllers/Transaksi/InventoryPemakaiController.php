@@ -23,7 +23,7 @@ class InventoryPemakaiController extends Controller
     }
 
     // POST /master-data/inventory/{inventory}/pemakai  (multipart: foto_penerimaan[])   -- admin-only
-    // Gagal -> error bag key "serah_terima" / user_id / foto_penerimaan(.n) / tanggal_penerimaan.
+    // Gagal -> error bag key "serah_terima" / user_id / foto_penerimaan(.n) / diterima_at.
     public function store(Request $request, Inventory $inventory): RedirectResponse
     {
         $pemakai = $this->pemakai->serahTerima($request, $inventory)->load('user', 'inventory');
@@ -41,7 +41,7 @@ class InventoryPemakaiController extends Controller
 
     // POST /master-data/inventory-pemakai/{inventoryPemakai}/kembalikan  (multipart: foto_pengembalian[])
     // Admin ATAU pemilik pemakaian (bukan admin-only) -- otorisasi dicek di sini, sama seperti versi API.
-    // Gagal -> error bag key status / no_struk_penerimaan / penanganan / foto_pengembalian(.n) / tanggal_pengembalian.
+    // Gagal -> error bag key status / nomor_penerimaan / penanganan / foto_pengembalian(.n) / dikembalikan_at.
     public function kembalikan(Request $request, InventoryPemakai $inventoryPemakai): RedirectResponse
     {
         $this->pemakai->pastikanBolehKembalikan($request->user(), $inventoryPemakai);

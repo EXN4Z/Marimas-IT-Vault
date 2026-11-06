@@ -28,7 +28,7 @@ return new class extends Migration
             $table->foreignId('requested_by_user_id')->nullable()->constrained('users')->nullOnDelete();
 
             $table->string('nomor_penerimaan')->nullable();
-            $table->string('no_struk_penerimaan')->nullable();
+            $table->string('nomor_penerimaan')->nullable();
             $table->date('tanggal_penerimaan')->nullable();
             $table->json('foto_penerimaan')->nullable();
             $table->dateTime('diterima_at')->nullable();
@@ -40,8 +40,6 @@ return new class extends Migration
             $table->json('foto_pengembalian')->nullable();
             $table->dateTime('dikembalikan_at')->nullable();
             $table->text('catatan_pengembalian')->nullable();
-
-            $table->text('catatan_penolakan')->nullable();
 
             $table->timestamps();
         });

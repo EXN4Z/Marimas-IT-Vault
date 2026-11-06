@@ -171,7 +171,7 @@ class InventoryAction
     {
         return InventoryPemakai::where('inventory_id', $parentId)
             ->where('status', 'disetujui')
-            ->whereNull('tanggal_pengembalian')
+            ->whereNull('dikembalikan_at')
             ->exists();
     }
 
@@ -250,7 +250,7 @@ class InventoryAction
 
         $pinjamanAktif = InventoryPemakai::whereIn('inventory_id', $idTerkait)
             ->whereIn('status', ['disetujui', 'pending'])
-            ->whereNull('tanggal_pengembalian')
+            ->whereNull('dikembalikan_at')
             ->exists();
 
         if ($pinjamanAktif) {
@@ -318,9 +318,8 @@ class InventoryAction
             // ke orang yang udah gak pegang item ini lagi.
             InventoryPemakai::where('inventory_id', $inventory->id)
                 ->where('status', 'disetujui')
-                ->whereNull('tanggal_pengembalian')
+                ->whereNull('dikembalikan_at')
                 ->update([
-                    'tanggal_pengembalian' => now(),
                     'dikembalikan_at' => now(),
                     'catatan_pengembalian' => 'Dikembalikan otomatis — barang dijual.',
                 ]);
@@ -375,7 +374,7 @@ class InventoryAction
         // foto cuma wajib kalau induknya beneran lagi dipinjam (baru di situ ada record InventoryPemakai)
         $pemakaiIndukAktif = InventoryPemakai::where('inventory_id', $parent->id)
             ->where('status', 'disetujui')
-            ->whereNull('tanggal_pengembalian')
+            ->whereNull('dikembalikan_at')
             ->first();
 
         $rules = ['catatan_penerimaan' => 'nullable|string'];
@@ -396,16 +395,15 @@ class InventoryAction
             ]);
 
             if ($pemakaiIndukAktif) {
-                $noStruk = $this->generateNoStrukRandom('inventory_pemakai', 'no_struk_penerimaan');
+                $noStruk = $this->generateNoStrukRandom('inventory_pemakai', 'nomor_penerimaan');
                 $fotoPaths = $this->simpanFotoBukti($request, 'foto_penerimaan', 'inventory-pemakai/penerimaan');
 
                 InventoryPemakai::create([
                     'inventory_id' => $inventory->id,
                     'user_id' => $pemakaiIndukAktif->user_id,
                     'status' => 'disetujui',
-                    'requested_by_user_id' => $request->user()?->id,
-                    'no_struk_penerimaan' => $noStruk,
-                    'tanggal_penerimaan' => now()->toDateString(),
+                    'diserahkan_oleh' => $request->user()?->id,
+                    'nomor_penerimaan' => $noStruk,
                     'diterima_at' => now(),
                     'catatan_penerimaan' => $validated['catatan_penerimaan']
                         ?? 'Dipasang susulan -- mengikuti barang utama yang sedang dipinjam.',
@@ -489,22 +487,21 @@ class InventoryAction
     {
         $pemakaiAktifInduk = InventoryPemakai::where('inventory_id', $inventory->parent_id)
             ->where('status', 'disetujui')
-            ->whereNull('tanggal_pengembalian')
-            ->latest('tanggal_penerimaan')
+            ->whereNull('dikembalikan_at')
+            ->latest('diterima_at')
             ->first();
 
         if (!$pemakaiAktifInduk) {
             return;
         }
 
-        $noStrukAnak = $this->generateNoStrukRandom('inventory_pemakai', 'no_struk_penerimaan');
+        $noStrukAnak = $this->generateNoStrukRandom('inventory_pemakai', 'nomor_penerimaan');
 
         InventoryPemakai::create([
             'inventory_id' => $inventory->id,
             'user_id' => $pemakaiAktifInduk->user_id,
             'status' => 'disetujui',
-            'no_struk_penerimaan' => $noStrukAnak,
-            'tanggal_penerimaan' => now()->toDateString(),
+            'nomor_penerimaan' => $noStrukAnak,
             'diterima_at' => now(),
             'catatan_penerimaan' => 'Ditambahkan & dipinjamkan otomatis -- menempel ke barang utama yang sedang dipakai.',
             'foto_penerimaan' => $pemakaiAktifInduk->foto_penerimaan,
@@ -519,9 +516,8 @@ class InventoryAction
     {
         InventoryPemakai::where('inventory_id', $inventory->id)
             ->where('status', 'disetujui')
-            ->whereNull('tanggal_pengembalian')
+            ->whereNull('dikembalikan_at')
             ->update([
-                'tanggal_pengembalian' => now(),
                 'dikembalikan_at' => now(),
                 'catatan_pengembalian' => $catatanPengembalian,
             ]);

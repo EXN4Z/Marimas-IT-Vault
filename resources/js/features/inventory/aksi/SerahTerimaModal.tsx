@@ -111,7 +111,7 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
     // toast error.
     const data: Record<string, string | number | File[]> = {
       user_id: selected!.id,
-      tanggal_penerimaan: tanggalPenerimaan,
+      diterima_at: tanggalPenerimaan,
       foto_penerimaan: fotoPenerimaan,
     };
     if (catatan.trim()) data.catatan_penerimaan = catatan.trim();

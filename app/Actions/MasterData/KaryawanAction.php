@@ -145,7 +145,7 @@ class KaryawanAction
 
     /**
      * Lempar ValidationException kalau user masih punya pinjaman inventory aktif
-     * (status disetujui/pending dan belum ada tanggal_pengembalian).
+     * (status disetujui/pending dan belum ada dikembalikan_at).
      * Default key `status` biar langsung muncul di field "Status Akun" di form edit.
      */
     private static function pastikanTanpaPinjamanAktif(User $user, string $aksi, string $kunciError = 'status'): void
@@ -153,7 +153,7 @@ class KaryawanAction
         $pinjaman = InventoryPemakai::with('inventory:id,kode_inventory')
             ->where('user_id', $user->id)
             ->whereIn('status', ['disetujui', 'pending'])
-            ->whereNull('tanggal_pengembalian')
+            ->whereNull('dikembalikan_at')
             ->get();
 
         if ($pinjaman->isEmpty()) {

@@ -18,16 +18,13 @@ export interface InventoryPemakai {
   user_id: number | null;
   user?: { id: number; name: string; role?: string; nik?: string | null; departemen?: { id: number; nama: string } | null } | null;
   status: InventoryPemakaiStatus;
-  requested_by_user_id: number | null;
+  diserahkan_oleh: number | null;
   nomor_penerimaan: string | null;
-  no_struk_penerimaan: string | null;
-  tanggal_penerimaan: string | null; // nullable — request pending belum ada tanggal penerimaan
+  diterima_at: string | null; // nullable — request pending belum ada tanggal penerimaan
   catatan_penerimaan: string | null;
   nomor_pengembalian: string | null;
-  no_struk_pengembalian: string | null;
-  tanggal_pengembalian: string | null;
+  dikembalikan_at: string | null;
   catatan_pengembalian: string | null;
-  catatan_penolakan: string | null;
   inventory?: Inventory; // keisi kalau di-load dari endpoint /inventory-pemakai/riwayat atau /inventory-pemakai
 }
 
@@ -37,8 +34,8 @@ export interface FotoPemakaiEntry {
   inventory?: { id: number; kode_inventory: string; nama: string | null; merk?: string | null; type?: string | null } | null;
   user_id: number | null;
   user?: { id: number; name: string } | null;
-  tanggal_penerimaan: string | null;
-  tanggal_pengembalian: string | null;
+  diterima_at: string | null;
+  dikembalikan_at: string | null;
   diterima_at: string | null;
   dikembalikan_at: string | null;
   foto_penerimaan: string[] | null;

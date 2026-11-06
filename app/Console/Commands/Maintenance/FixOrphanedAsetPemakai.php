@@ -9,7 +9,7 @@ use App\Models\Transaksi\InventoryPemakai;
 
 /**
  * Data lama (sebelum fix rusak_berat/jual auto-nutup loan) bisa nyisain
- * record inventory_pemakai berstatus 'disetujui' + tanggal_pengembalian null
+ * record inventory_pemakai berstatus 'disetujui' + dikembalikan_at null
  * padahal inventory-nya sendiri udah bukan 'dipakai' lagi.
  */
 #[Signature('app:fix-orphaned-aset-pemakai {--dry-run : Cuma tampilin yang bakal dibenerin, gak nyimpen perubahan}')]
@@ -22,7 +22,7 @@ class FixOrphanedAsetPemakai extends Command
 
         $orphans = InventoryPemakai::query()
             ->where('status', 'disetujui')
-            ->whereNull('tanggal_pengembalian')
+            ->whereNull('dikembalikan_at')
             ->whereHas('inventory', fn ($q) => $q->where('status', '!=', 'dipakai'))
             ->with('inventory')
             ->get();
@@ -43,7 +43,7 @@ class FixOrphanedAsetPemakai extends Command
 
         foreach ($orphans as $p) {
             $p->update([
-                'tanggal_pengembalian' => $p->tanggal_penerimaan ?? now(),
+                'dikembalikan_at' => $p->diterima_at ?? now(),
                 'dikembalikan_at' => now(),
                 'catatan_pengembalian' => $p->catatan_pengembalian
                     ?? 'Dikembalikan otomatis — perbaikan data lama (loan nyangkut, item sudah tidak berstatus dipakai).',

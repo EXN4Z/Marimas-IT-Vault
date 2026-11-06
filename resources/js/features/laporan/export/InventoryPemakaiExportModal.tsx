@@ -17,7 +17,7 @@ const STATUS_LABEL: Record<InventoryPemakai['status'], string> = {
 // & pengembalian) — ngikutin pola yang sama kayak InventoryExportModal:
 // key = identitas field, label = judul kolom di file export, defaultChecked
 // = dicentang otomatis pas modal dibuka, get = cara ambil nilainya dari 1
-// baris InventoryPemakai (lewat relasi inventory & user; requested_by_user_id
+// baris InventoryPemakai (lewat relasi inventory & user; diserahkan_oleh
 // belum punya objek relasi yang dikirim BE, jadi belum ada kolom buat itu).
 interface ExportColumn {
   key: string;
@@ -32,14 +32,13 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { key: 'pemakai', label: 'Pemakai', defaultChecked: true, get: (p) => p.user?.name || '-' },
   { key: 'status', label: 'Status', defaultChecked: true, get: (p) => STATUS_LABEL[p.status] },
   { key: 'nomor_penerimaan', label: 'Nomor Penerimaan', defaultChecked: false, get: (p) => p.nomor_penerimaan || '-' },
-  { key: 'no_struk_penerimaan', label: 'No. Struk Penerimaan', defaultChecked: true, get: (p) => p.no_struk_penerimaan || '-' },
-  { key: 'tanggal_penerimaan', label: 'Tanggal Penerimaan', defaultChecked: true, get: (p) => formatTanggalId(p.tanggal_penerimaan) },
+  { key: 'nomor_penerimaan', label: 'No. Struk Penerimaan', defaultChecked: true, get: (p) => p.nomor_penerimaan || '-' },
+  { key: 'diterima_at', label: 'Tanggal Penerimaan', defaultChecked: true, get: (p) => formatTanggalId(p.diterima_at) },
   { key: 'catatan_penerimaan', label: 'Catatan Penerimaan', defaultChecked: false, get: (p) => p.catatan_penerimaan || '-' },
   { key: 'nomor_pengembalian', label: 'Nomor Pengembalian', defaultChecked: false, get: (p) => p.nomor_pengembalian || '-' },
-  { key: 'no_struk_pengembalian', label: 'No. Struk Pengembalian', defaultChecked: true, get: (p) => p.no_struk_pengembalian || '-' },
-  { key: 'tanggal_pengembalian', label: 'Tanggal Pengembalian', defaultChecked: true, get: (p) => formatTanggalId(p.tanggal_pengembalian) },
+  { key: 'nomor_pengembalian', label: 'No. Struk Pengembalian', defaultChecked: true, get: (p) => p.nomor_pengembalian || '-' },
+  { key: 'dikembalikan_at', label: 'Tanggal Pengembalian', defaultChecked: true, get: (p) => formatTanggalId(p.dikembalikan_at) },
   { key: 'catatan_pengembalian', label: 'Catatan Pengembalian', defaultChecked: false, get: (p) => p.catatan_pengembalian || '-' },
-  { key: 'catatan_penolakan', label: 'Catatan Penolakan', defaultChecked: false, get: (p) => p.catatan_penolakan || '-' },
 ];
 
 type FileType = 'excel' | 'pdf';

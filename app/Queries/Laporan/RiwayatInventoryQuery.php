@@ -46,7 +46,7 @@ class RiwayatInventoryQuery
         }
 
         $pemakaiQuery
-            ->latest('tanggal_penerimaan')
+            ->latest('diterima_at')
             ->limit($ambil)
             ->get()
             ->each(function ($p) use (&$events) {
@@ -55,15 +55,15 @@ class RiwayatInventoryQuery
 
                 $events->push([
                     'type' => 'pinjam',
-                    'waktu' => $p->diterima_at ?? $p->tanggal_penerimaan,
+                    'waktu' => $p->diterima_at ?? $p->diterima_at,
                     'nama' => $nama,
                     'inventory' => $p->inventory,
                     'tipe_item' => $tipeItem,
                 ]);
-                if ($p->tanggal_pengembalian) {
+                if ($p->dikembalikan_at) {
                     $events->push([
                         'type' => 'kembali',
-                        'waktu' => $p->dikembalikan_at ?? $p->tanggal_pengembalian,
+                        'waktu' => $p->dikembalikan_at ?? $p->dikembalikan_at,
                         'nama' => $nama,
                         'inventory' => $p->inventory,
                         'tipe_item' => $tipeItem,

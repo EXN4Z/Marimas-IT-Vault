@@ -20,7 +20,7 @@ use Illuminate\Validation\ValidationException;
  * non-field dibalas response()->json(['message' => ...], 422); sekarang ValidationException supaya halaman web bisa
  * menampilkannya di dalam modal lewat error bag (API tetap membalas 422 dengan `message` yang sama).
  *
- * Kunci error untuk pelanggaran non-field: serah_terima, hapus (kembalikan sudah memakai status / no_struk_penerimaan /
+ * Kunci error untuk pelanggaran non-field: serah_terima, hapus (kembalikan sudah memakai status / nomor_penerimaan /
  * penanganan seperti sebelumnya).
  *
  * Otorisasi "admin ATAU pemilik" TIDAK di sini: dicek di controller lewat pastikanBolehKembalikan() (satu aturan,
@@ -77,7 +77,7 @@ class InventoryPemakaiAction
 
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'tanggal_penerimaan' => 'required|date',
+            'diterima_at' => 'required|date',
             'catatan_penerimaan' => 'nullable|string',
             'foto_penerimaan' => 'required|array|min:3|max:3',
             'foto_penerimaan.*' => 'image|mimes:jpg,jpeg,png,webp|max:1024',
@@ -89,7 +89,7 @@ class InventoryPemakaiAction
         ]);
 
         return DB::transaction(function () use ($inventory, $request, $validated) {
-            $noStruk = $this->generateNoStruk('STJ', 'inventory_pemakai', 'no_struk_penerimaan');
+            $noStruk = $this->generateNoStruk('STJ', 'inventory_pemakai', 'nomor_penerimaan');
 
             $fotoPaths = $this->simpanFotoBukti($request, 'foto_penerimaan', 'inventory-pemakai/penerimaan');
 
@@ -97,9 +97,8 @@ class InventoryPemakaiAction
                 'inventory_id' => $inventory->id,
                 'user_id' => $validated['user_id'],
                 'status' => 'disetujui',
-                'requested_by_user_id' => $request->user()?->id,
-                'no_struk_penerimaan' => $noStruk,
-                'tanggal_penerimaan' => $validated['tanggal_penerimaan'],
+                'diserahkan_oleh' => $request->user()?->id,
+                'nomor_penerimaan' => $noStruk,
                 'diterima_at' => now(),
                 'catatan_penerimaan' => $validated['catatan_penerimaan'] ?? null,
                 'foto_penerimaan' => $fotoPaths,
@@ -121,15 +120,14 @@ class InventoryPemakaiAction
                 ->whereDoesntHave('pemakaiSaatIni')
                 ->get()
                 ->each(function ($anak) use ($validated, $fotoPaths, $request) {
-                    $noStrukAnak = $this->generateNoStruk('STJ', 'inventory_pemakai', 'no_struk_penerimaan');
+                    $noStrukAnak = $this->generateNoStruk('STJ', 'inventory_pemakai', 'nomor_penerimaan');
 
                     InventoryPemakai::create([
                         'inventory_id' => $anak->id,
                         'user_id' => $validated['user_id'],
                         'status' => 'disetujui',
-                        'requested_by_user_id' => $request->user()?->id,
-                        'no_struk_penerimaan' => $noStrukAnak,
-                        'tanggal_penerimaan' => $validated['tanggal_penerimaan'],
+                        'diserahkan_oleh' => $request->user()?->id,
+                        'nomor_penerimaan' => $noStrukAnak,
                         'diterima_at' => now(),
                         'catatan_penerimaan' => 'Dipinjamkan otomatis -- mengikuti barang utama.',
                         'foto_penerimaan' => $fotoPaths,
@@ -159,8 +157,8 @@ class InventoryPemakaiAction
     {
         $pemakaiInduk = InventoryPemakai::where('inventory_id', $induk->id)
             ->where('status', 'disetujui')
-            ->whereNull('tanggal_pengembalian')
-            ->latest('tanggal_penerimaan')
+            ->whereNull('dikembalikan_at')
+            ->latest('diterima_at')
             ->first();
 
         if (!$pemakaiInduk) {
@@ -182,9 +180,8 @@ class InventoryPemakaiAction
                     'inventory_id' => $anak->id,
                     'user_id' => $pemakaiInduk->user_id,
                     'status' => 'disetujui',
-                    'requested_by_user_id' => auth()->id(),
-                    'no_struk_penerimaan' => $this->generateNoStruk('STJ', 'inventory_pemakai', 'no_struk_penerimaan'),
-                    'tanggal_penerimaan' => $pemakaiInduk->tanggal_penerimaan,
+                    'diserahkan_oleh' => auth()->id(),
+                    'nomor_penerimaan' => $this->generateNoStruk('STJ', 'inventory_pemakai', 'nomor_penerimaan'),
                     'diterima_at' => now(),
                     'catatan_penerimaan' => 'Disinkronkan otomatis -- mengikuti peminjam barang utama.',
                     'foto_penerimaan' => $pemakaiInduk->foto_penerimaan ?? [],
@@ -202,7 +199,7 @@ class InventoryPemakaiAction
     // ------------------------------------------------------------------ kembalikan
 
     /**
-     * Terima kembali item dari pemakai. Wajib sertain no_struk_penerimaan (struk asli pas serah-terima) sebagai bukti
+     * Terima kembali item dari pemakai. Wajib sertain nomor_penerimaan (struk asli pas serah-terima) sebagai bukti
      * pengembalian ini benar, dan foto_pengembalian (3 foto) sebagai bukti kondisi fisik item. Ditolak kalau masih ada
      * laporan penanganan/perbaikan yang belum selesai. Otorisasi (admin ATAU pemilik) dicek lewat
      * pastikanBolehKembalikan() di controller SEBELUM method ini dipanggil.
@@ -210,8 +207,8 @@ class InventoryPemakaiAction
     public function kembalikan(Request $request, InventoryPemakai $inventoryPemakai): InventoryPemakai
     {
         $validated = $request->validate([
-            'no_struk_penerimaan' => 'required|string',
-            'tanggal_pengembalian' => 'required|date',
+            'nomor_penerimaan' => 'required|string',
+            'dikembalikan_at' => 'required|date',
             'catatan_pengembalian' => 'nullable|string',
             'foto_pengembalian' => 'required|array|min:3|max:3',
             'foto_pengembalian.*' => 'image|mimes:jpg,jpeg,png,webp|max:1024',
@@ -228,9 +225,9 @@ class InventoryPemakaiAction
             ]);
         }
 
-        if ($validated['no_struk_penerimaan'] !== $inventoryPemakai->no_struk_penerimaan) {
+        if ($validated['nomor_penerimaan'] !== $inventoryPemakai->nomor_penerimaan) {
             throw ValidationException::withMessages([
-                'no_struk_penerimaan' => ['Nomor struk penerimaan tidak cocok. Pengembalian wajib menyertakan bukti serah-terima yang benar.'],
+                'nomor_penerimaan' => ['Nomor struk penerimaan tidak cocok. Pengembalian wajib menyertakan bukti serah-terima yang benar.'],
             ]);
         }
 
@@ -245,7 +242,7 @@ class InventoryPemakaiAction
         }
 
         DB::transaction(function () use ($inventoryPemakai, $request, $validated) {
-            $noStruk = $this->generateNoStruk('KBL', 'inventory_pemakai', 'no_struk_pengembalian');
+            $noStruk = $this->generateNoStruk('KBL', 'inventory_pemakai', 'nomor_pengembalian');
 
             // 'rusak_berat' cuma dikenal di status Barang Utama -- Kelengkapan cuma punya tersedia/dipakai/rusak, jadi
             // gak ada state permanen yang perlu di-guard buat Kelengkapan.
@@ -257,8 +254,7 @@ class InventoryPemakaiAction
             $fotoPaths = $this->simpanFotoBukti($request, 'foto_pengembalian', 'inventory-pemakai/pengembalian');
 
             $inventoryPemakai->update([
-                'no_struk_pengembalian' => $noStruk,
-                'tanggal_pengembalian' => $validated['tanggal_pengembalian'],
+                'nomor_pengembalian' => $noStruk,
                 'dikembalikan_at' => now(),
                 'catatan_pengembalian' => $validated['catatan_pengembalian'] ?? $catatanDefault,
                 'foto_pengembalian' => $fotoPaths,
@@ -271,24 +267,23 @@ class InventoryPemakaiAction
                 ->update(['status' => 'tersedia']);
 
             // Kelengkapan yang nempel (children dari item yang dikembalikan ini) ikut balik juga -- semua yang masih
-            // aktif dipinjam (disetujui, belum ada tanggal_pengembalian) ditutup bareng, pakai foto & tanggal
+            // aktif dipinjam (disetujui, belum ada dikembalikan_at) ditutup bareng, pakai foto & tanggal
             // pengembalian yang sama dengan induknya (satu kejadian serah-terima fisik). Kalau item ini berdiri
             // sendiri, query di bawah otomatis gak nemu apa-apa.
-            $noStrukIndukKembali = $inventoryPemakai->no_struk_pengembalian;
+            $noStrukIndukKembali = $inventoryPemakai->nomor_pengembalian;
             InventoryPemakai::whereIn('inventory_id', function ($q) use ($inventoryPemakai) {
                 $q->select('id')
                     ->from('inventory')
                     ->where('parent_id', $inventoryPemakai->inventory_id);
             })
                 ->where('status', 'disetujui')
-                ->whereNull('tanggal_pengembalian')
+                ->whereNull('dikembalikan_at')
                 ->get()
                 ->each(function ($anakPemakai) use ($validated, $fotoPaths, $noStrukIndukKembali) {
-                    $noStrukAnak = $this->generateNoStruk('KBL', 'inventory_pemakai', 'no_struk_pengembalian');
+                    $noStrukAnak = $this->generateNoStruk('KBL', 'inventory_pemakai', 'nomor_pengembalian');
 
                     $anakPemakai->update([
-                        'no_struk_pengembalian' => $noStrukAnak,
-                        'tanggal_pengembalian' => $validated['tanggal_pengembalian'],
+                        'nomor_pengembalian' => $noStrukAnak,
                         'dikembalikan_at' => now(),
                         'catatan_pengembalian' => 'Dikembalikan otomatis -- mengikuti barang utama (' . $noStrukIndukKembali . ').',
                         'foto_pengembalian' => $fotoPaths,
@@ -316,7 +311,7 @@ class InventoryPemakaiAction
             ]);
         }
 
-        $masihDipakai = $inventoryPemakai->status === 'disetujui' && !$inventoryPemakai->tanggal_pengembalian;
+        $masihDipakai = $inventoryPemakai->status === 'disetujui' && !$inventoryPemakai->dikembalikan_at;
 
         DB::transaction(function () use ($inventoryPemakai, $masihDipakai) {
             if ($masihDipakai) {
@@ -333,11 +328,10 @@ class InventoryPemakaiAction
                         ->where('parent_id', $inventoryPemakai->inventory_id);
                 })
                     ->where('status', 'disetujui')
-                    ->whereNull('tanggal_pengembalian')
+                    ->whereNull('dikembalikan_at')
                     ->get()
                     ->each(function ($anakPemakai) {
                         $anakPemakai->update([
-                            'tanggal_pengembalian' => now()->toDateString(),
                             'dikembalikan_at' => now(),
                             'catatan_pengembalian' => 'Dikembalikan otomatis -- riwayat pinjam barang utama dihapus.',
                         ]);
