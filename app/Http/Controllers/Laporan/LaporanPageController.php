@@ -55,7 +55,7 @@ class LaporanPageController extends Controller
     {
         return [
             'inventory' => InventoryQuery::batasiUntuk(InventoryQuery::dasar()->latest()->indukSendiri(), $request->user())->get()->all(),
-            'karyawan' => KaryawanQuery::filter(User::with('departemen', 'lokasiKantor', 'roleRef'))->latest()->get()->all(),
+            'karyawan' => KaryawanQuery::filter(User::with('departemen', 'cabang', 'roleRef'))->latest()->get()->all(),
             'kategori' => KategoriQuery::daftar(),
             'departemen' => DepartemenQuery::daftar(),
             'cabang' => CabangQuery::daftar(),

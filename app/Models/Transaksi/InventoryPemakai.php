@@ -14,27 +14,22 @@ class InventoryPemakai extends Model
         'inventory_id',
         'user_id',
         'status',
-        'requested_by_user_id',
+        'diserahkan_oleh',
         'nomor_penerimaan',
-        'no_struk_penerimaan',
-        'tanggal_penerimaan',
-        'foto_penerimaan',
+        'nomor_penerimaan',
         'diterima_at',
+        'foto_penerimaan',
         'catatan_penerimaan',
         'nomor_pengembalian',
-        'no_struk_pengembalian',
-        'tanggal_pengembalian',
+        'nomor_pengembalian',
         'foto_pengembalian',
         'dikembalikan_at',
         'catatan_pengembalian',
-        'catatan_penolakan',
     ];
 
     // *_at (datetime lengkap jam-menit-detik) — dipakai buat riwayat
     // aktivitas yang butuh waktu akurat. Beda sama tanggal_* (cuma tanggal).
     protected $casts = [
-        'tanggal_penerimaan' => 'date',
-        'tanggal_pengembalian' => 'date',
         'diterima_at' => 'datetime',
         'dikembalikan_at' => 'datetime',
         'foto_penerimaan' => 'array',

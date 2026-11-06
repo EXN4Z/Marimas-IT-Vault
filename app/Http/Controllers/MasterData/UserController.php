@@ -14,10 +14,10 @@ class UserController extends Controller
     {
         // [F3-INERTIA] Eager-load relasi role juga (frontend baca nama/warna role tanpa request tambahan).
         // Filter role/status/search dipakai bareng halaman web lewat KaryawanQuery.
-        // Role 'cabang' diperlakukan identik dengan 'user' -- tidak ada scoping khusus lokasi_kantor_id
+        // Role 'cabang' diperlakukan identik dengan 'user' -- tidak ada scoping khusus cabang_id
         // (lihat catatan di User::isAdmin(): akses cuma 2 tingkat, admin vs role lain).
         $query = KaryawanQuery::filter(
-            User::with('departemen', 'lokasiKantor', 'roleRef'),
+            User::with('departemen', 'cabang', 'roleRef'),
             $request->filled('role') ? (string) $request->role : null,
             $request->filled('status') ? (string) $request->status : null,
             $request->filled('search') ? (string) $request->search : null,

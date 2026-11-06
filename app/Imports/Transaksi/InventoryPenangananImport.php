@@ -162,10 +162,8 @@ class InventoryPenangananImport implements ToCollection
             $inventory->update(['status' => 'rusak_berat']);
 
             InventoryPemakai::where('inventory_id', $inventory->id)
-                ->where('status', 'disetujui')
-                ->whereNull('tanggal_pengembalian')
+                ->whereNull('dikembalikan_at')
                 ->update([
-                    'tanggal_pengembalian' => $tanggalSelesai,
                     'dikembalikan_at' => now(),
                     'catatan_pengembalian' => 'Dikembalikan otomatis — inventory dinyatakan rusak berat (import).',
                 ]);

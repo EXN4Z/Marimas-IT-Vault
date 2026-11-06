@@ -20,7 +20,7 @@ export interface Karyawan {
   email: string
   phone: string
   departemen: Departemen | null
-  lokasi_kantor: LokasiKantor | null
+  cabang: LokasiKantor | null
   perusahaan: Perusahaan | null
   tanggal_masuk: string
   role_id: number
@@ -34,7 +34,7 @@ export interface Karyawan {
 // Satu baris = Karyawan lengkap + id relasi (dipakai form Edit).
 export interface KaryawanRow extends Karyawan {
   departemen_id: number | null;
-  lokasi_kantor_id: number | null;
+  cabang_id: number | null;
   perusahaan_id: number | null;
 }
 

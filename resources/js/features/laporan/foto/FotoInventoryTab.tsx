@@ -207,7 +207,7 @@ export default function FotoInventoryTab() {
 
     if (activeTab === 'peminjaman' || activeTab === 'pengembalian') {
       const state = activeTab === 'peminjaman' ? peminjaman : pengembalian;
-      const tanggalKey = activeTab === 'peminjaman' ? 'tanggal_penerimaan' : 'tanggal_pengembalian';
+      const tanggalKey = activeTab === 'peminjaman' ? 'diterima_at' : 'dikembalikan_at';
       const waktuAkuratKey = activeTab === 'peminjaman' ? 'diterima_at' : 'dikembalikan_at';
       const fotoKey = activeTab === 'peminjaman' ? 'foto_penerimaan' : 'foto_pengembalian';
       const tanggalLabel = activeTab === 'peminjaman' ? 'Tgl Serah Terima' : 'Tgl Pengembalian';

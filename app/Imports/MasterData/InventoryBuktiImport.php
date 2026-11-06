@@ -207,7 +207,6 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
 
                     $infoBukti = [
                         'kode_inventory' => $row['kode_inventory'] ?? null,
-                        'no_bukti'       => $row['no_bukti'],
                         'tanggal'        => $this->parseTanggal($row['tanggal'] ?? null),
                         'perusahaan_id'  => $this->perusahaanIdDariSingkatan($row['perusahaan'] ?? null, $index + 1),
                         'nik'            => $row['nik'] ?? null,
@@ -524,32 +523,30 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
      * keduanya sama-sama baris tabel `inventory`, cukup 1 kolom
      * inventory_id, gak perlu lagi kolom aset_kelengkapan_id terpisah
      * seperti dulu). Sama seperti InventoryPemakaiController::store() --
-     * setiap InventoryPemakai WAJIB punya no_struk_penerimaan sendiri
+     * setiap InventoryPemakai WAJIB punya nomor_penerimaan sendiri
      * (unik per baris, di-generate ulang tiap panggilan), karena
-     * kembalikan() nanti mencocokkan input no_struk_penerimaan persis
+     * kembalikan() nanti mencocokkan input nomor_penerimaan persis
      * dengan kolom ini. Tanpa di-generate di sini, data hasil import
-     * punya no_struk_penerimaan = null, dan barang itu jadi TIDAK BISA
+     * punya nomor_penerimaan = null, dan barang itu jadi TIDAK BISA
      * PERNAH dikembalikan lewat endpoint kembalikan() (gak ada string
      * yang bisa cocok dengan null).
      *
      * 'diterima_at' SENGAJA tidak diisi now() -- beda dari store() yang
      * isi now() karena itu aksi live. Di sini datanya historis (dari
      * bukti serah-terima lama), jadi biarkan riwayat() fallback ke
-     * tanggal_penerimaan (lihat komentar fallback *_at di riwayat())
+     * diterima_at (lihat komentar fallback *_at di riwayat())
      * supaya pengurutan waktu di Riwayat Inventory tetap benar sesuai
      * tanggal transaksi asli, bukan tanggal import dijalankan.
      */
     private function buatInventoryPemakai(Inventory $item, User $penerimaUser, ?string $tanggalPenerimaan): void
     {
-        $noStruk = $this->generateNoStrukRandom('inventory_pemakai', 'no_struk_penerimaan');
+        $noStruk = $this->generateNoStrukRandom('inventory_pemakai', 'nomor_penerimaan');
 
         InventoryPemakai::create(array_merge([
             'inventory_id'        => $item->id,
             'user_id'             => $penerimaUser->id,
-            'status'              => 'disetujui',
-            'no_struk_penerimaan' => $noStruk,
-            'tanggal_penerimaan'  => $tanggalPenerimaan,
-            'diterima_at'         => $tanggalPenerimaan,
+            'nomor_penerimaan' => $noStruk,
+            'diterima_at'  => $tanggalPenerimaan,
         ], $this->timestampsDariTanggal($tanggalPenerimaan)));
     }
 

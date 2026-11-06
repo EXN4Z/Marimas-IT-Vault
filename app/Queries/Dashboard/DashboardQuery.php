@@ -218,8 +218,7 @@ class DashboardQuery
     {
         return DB::table('inventory_pemakai as ip')
             ->join('users as u', 'u.id', '=', 'ip.user_id')
-            ->where('ip.status', 'disetujui')
-            ->whereNull('ip.tanggal_pengembalian')
+            ->whereNull('ip.dikembalikan_at')
             ->select('u.id', 'u.name', DB::raw('COUNT(DISTINCT ip.inventory_id) as jumlah'))
             ->groupBy('u.id', 'u.name')
             ->orderByDesc('jumlah')
@@ -248,7 +247,7 @@ class DashboardQuery
                     'id' => $a->id,
                     'kode_inventory' => $a->kode_inventory,
                     'nama' => $a->nama,
-                    'sejak' => ($a->pemakaiSaatIni->diterima_at ?? $a->pemakaiSaatIni->tanggal_penerimaan)?->toIso8601String(),
+                    'sejak' => ($a->pemakaiSaatIni->diterima_at ?? $a->pemakaiSaatIni->diterima_at)?->toIso8601String(),
                 ];
             }
             if ($a->status === 'tersedia') $totalTersedia++;

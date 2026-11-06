@@ -33,7 +33,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { key: 'email', label: 'Email', defaultChecked: true, get: (k) => k.email },
   { key: 'phone', label: 'Telepon', defaultChecked: false, get: (k) => k.phone || '-' },
   { key: 'departemen', label: 'Departemen', defaultChecked: true, get: (k) => k.departemen?.nama || '-' },
-  { key: 'lokasi_kantor', label: 'Lokasi Kantor', defaultChecked: false, get: (k) => k.lokasi_kantor?.nama || '-' },
+  { key: 'cabang', label: 'Lokasi Kantor', defaultChecked: false, get: (k) => k.cabang?.nama || '-' },
   {
     key: 'tanggal_masuk',
     label: 'Tanggal Masuk',

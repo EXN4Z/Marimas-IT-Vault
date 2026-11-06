@@ -154,7 +154,7 @@ class KaryawanController extends Controller
     private static function queryDasar()
     {
         // roleRef WAJIB di-eager-load: accessor `role` (dipakai tabel & export) membacanya.
-        return User::with('departemen', 'lokasiKantor', 'perusahaan', 'roleRef');
+        return User::with('departemen', 'cabang', 'perusahaan', 'roleRef');
     }
 
     // [role (null = semua), search (null = kosong)] dari query string.

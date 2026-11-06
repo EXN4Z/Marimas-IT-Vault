@@ -53,8 +53,8 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
     // [F5-INERTIA] router.post + forceFormData (ada file foto). Sukses -> toast dari flash server (FlashToaster) + data struk
     // pengembalian di flash.struk buat dicetak parent. Gagal validasi -> toast error.
     const data: Record<string, string | File[]> = {
-      no_struk_penerimaan: kodeStruk.trim(),
-      tanggal_pengembalian: tanggalPengembalian,
+      nomor_penerimaan: kodeStruk.trim(),
+      dikembalikan_at: tanggalPengembalian,
       foto_pengembalian: fotoPengembalian,
     };
     if (catatan.trim()) data.catatan_pengembalian = catatan.trim();
@@ -69,7 +69,7 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
       },
       onError: (errors) => {
         const msg =
-          errors.no_struk_penerimaan ||
+          errors.nomor_penerimaan ||
           errors.foto_pengembalian ||
           Object.values(errors)[0] ||
           'Gagal memproses pengembalian.';

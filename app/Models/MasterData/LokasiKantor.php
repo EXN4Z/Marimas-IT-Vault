@@ -9,7 +9,7 @@ use App\Models\User;
 
 class LokasiKantor extends Model
 {
-    protected $table = 'lokasi_kantor';
+    protected $table = 'cabang';
 
     protected $fillable = [
         'nama',
@@ -20,18 +20,18 @@ class LokasiKantor extends Model
 
     public function karyawan(): HasMany
     {
-        return $this->hasMany(User::class, 'lokasi_kantor_id');
+        return $this->hasMany(User::class, 'cabang_id');
     }
 
     // Semua akun yang nunjuk ke lokasi ini, termasuk akun cabang sendiri.
     // Superset dari karyawan().
     public function users(): HasMany
     {
-        return $this->hasMany(User::class, 'lokasi_kantor_id');
+        return $this->hasMany(User::class, 'cabang_id');
     }
     public function akunCabang(): HasOne
     {
-        return $this->hasOne(User::class, 'lokasi_kantor_id')
+        return $this->hasOne(User::class, 'cabang_id')
             ->whereHas('roleRef', fn ($q) => $q->where('nama', 'cabang'));
     }
 }

@@ -18,7 +18,6 @@ class Inventory extends Model
         'warna',
         'serial_number',
         'jumlah',
-        'no_bukti',
         'tanggal',
         'nik',
         'penerima',
@@ -126,24 +125,15 @@ class Inventory extends Model
 
     public function pemakai()
     {
-        return $this->hasMany(InventoryPemakai::class, 'inventory_id')->latest('tanggal_penerimaan');
+        return $this->hasMany(InventoryPemakai::class, 'inventory_id')->latest('diterima_at');
     }
 
     public function pemakaiSaatIni()
     {
         return $this->hasOne(InventoryPemakai::class, 'inventory_id')
-            ->where('status', 'disetujui')
-            ->whereNull('tanggal_pengembalian')
-            ->latest('tanggal_penerimaan');
+            ->whereNull('dikembalikan_at')
+            ->latest('diterima_at');
     }
-
-    public function pemakaiPending()
-    {
-        return $this->hasMany(InventoryPemakai::class, 'inventory_id')
-            ->where('status', 'pending')
-            ->latest();
-    }
-
     // riwayat lengkap perbaikan/penanganan kerusakan (semua status, terbaru
     // dulu). REVISI Fase 2: dulu cuma dipakai buat item induk (barang
     // utama) lewat sini, item yang nempel ke induk (eks-kelengkapan) lewat

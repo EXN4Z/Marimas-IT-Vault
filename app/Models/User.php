@@ -34,7 +34,7 @@ class User extends Authenticatable
         // dipakai di KaryawanImport, InventoryBuktiImport, AuthController,
         // DummySeeder, dan UserFactory.
         'role',
-        'lokasi_kantor_id',
+        'cabang_id',
         // BARU (eks-pekerja): data karyawan sekarang nempel langsung di sini,
         // tidak ada lagi tabel/model Pekerja terpisah.
         'nik',
@@ -107,9 +107,9 @@ class User extends Authenticatable
     }
 
     // BARU: lokasi kantor yang diurus akun ini — cuma relevan buat role 'cabang'.
-    public function lokasiKantor()
+    public function cabang()
     {
-        return $this->belongsTo(LokasiKantor::class, 'lokasi_kantor_id');
+        return $this->belongsTo(LokasiKantor::class, 'cabang_id');
     }
 
     public function perusahaan() 

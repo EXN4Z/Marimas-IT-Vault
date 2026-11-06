@@ -81,7 +81,7 @@ export default function KaryawanDetailModal({ user, onClose }: Props) {
             </div>
             <p className="text-xs text-ink-500 mt-1 font-medium">
               {user.departemen?.nama || 'Tanpa Departemen'}
-              {user.lokasi_kantor?.nama ? ` · ${user.lokasi_kantor.nama}` : ''}
+              {user.cabang?.nama ? ` · ${user.cabang.nama}` : ''}
             </p>
           </div>
         </div>
@@ -106,7 +106,7 @@ export default function KaryawanDetailModal({ user, onClose }: Props) {
           <div className="divide-y divide-slate-100 dark:divide-zinc-800/80">
             <DetailRow label="Departemen" value={user.departemen?.nama} />
             <DetailRow label="Perusahaan" value={user.perusahaan?.nama} />
-            <DetailRow label="Cabang / Lokasi Kantor" value={user.lokasi_kantor?.nama} />
+            <DetailRow label="Cabang / Lokasi Kantor" value={user.cabang?.nama} />
           </div>
         </div>
 

@@ -28,7 +28,7 @@ interface FormFields {
   nik: string;
   departemen_id: string;
   perusahaan_id: string;
-  lokasi_kantor_id: string;
+  cabang_id: string;
   tanggal_masuk: string;
   status: 'aktif' | 'nonaktif'; // hanya dipakai mode Edit
 }
@@ -68,7 +68,7 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
     nik: user?.nik ?? '',
     departemen_id: user?.departemen_id ? String(user.departemen_id) : '',
     perusahaan_id: user?.perusahaan_id ? String(user.perusahaan_id) : '',
-    lokasi_kantor_id: user?.lokasi_kantor_id ? String(user.lokasi_kantor_id) : '',
+    cabang_id: user?.cabang_id ? String(user.cabang_id) : '',
     tanggal_masuk: user?.tanggal_masuk ?? '',
     status: user?.status === 'nonaktif' ? 'nonaktif' : 'aktif',
   });
@@ -116,7 +116,7 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
         nik: d.nik,
         departemen_id: d.departemen_id || null,
         perusahaan_id: d.perusahaan_id || null,
-        lokasi_kantor_id: d.lokasi_kantor_id || null,
+        cabang_id: d.cabang_id || null,
         tanggal_masuk: d.tanggal_masuk || null,
       };
       return isEdit ? { ...base, status: d.status } : { ...base, password: d.password };
@@ -259,12 +259,12 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
                 />
               </Field>
 
-              <Field label="Cabang / Lokasi Kantor" error={errors.lokasi_kantor_id}>
+              <Field label="Cabang / Lokasi Kantor" error={errors.cabang_id}>
                 <SearchableSelect
-                  value={data.lokasi_kantor_id}
-                  onChange={(v) => change('lokasi_kantor_id', v)}
+                  value={data.cabang_id}
+                  onChange={(v) => change('cabang_id', v)}
                   placeholder="Pilih kantor cabang..."
-                  error={!!errors.lokasi_kantor_id}
+                  error={!!errors.cabang_id}
                   options={opsi.cabang.map((c) => ({ value: String(c.id), label: c.nama }))}
                 />
               </Field>

@@ -26,7 +26,6 @@ class InventoryQuery
             'supplier',
             'parent:id,kode_inventory,nama',
             'pemakaiSaatIni.user.departemen',
-            'pemakaiPending.user.departemen',
             'penangananAktif',
             'writeoff.penyetuju:id,name',
         ]);
@@ -42,7 +41,6 @@ class InventoryQuery
             'parent',
             'children.supplier',
             'pemakaiSaatIni.user.departemen',
-            'pemakaiPending.user.departemen',
             'pemakai.user.departemen',
             'penanganan.pemakai.user:id,name',
             'penanganan.dilaporkanOleh:id,name',
@@ -67,9 +65,6 @@ class InventoryQuery
                 $q->where('status', 'tersedia')
                     ->orWhereHas('pemakaiSaatIni', function ($sub) use ($user) {
                         $sub->where('user_id', $user->id);
-                    })
-                    ->orWhereHas('pemakaiPending', function ($sub) use ($user) {
-                        $sub->where('user_id', $user->id);
                     });
             });
     }
@@ -88,8 +83,7 @@ class InventoryQuery
             return false;
         }
 
-        $terkaitUser = $inventory->pemakaiSaatIni()->where('user_id', $user->id)->exists()
-            || $inventory->pemakaiPending()->where('user_id', $user->id)->exists();
+        $terkaitUser = $inventory->pemakaiSaatIni()->where('user_id', $user->id)->exists();
 
         return $inventory->status === 'tersedia' || $terkaitUser;
     }

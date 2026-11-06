@@ -16,9 +16,9 @@ class StoreCabangRequest extends FormRequest
     {
         return [
             'nama' => 'required|string|max:150',
-            'alamat' => 'required|string|max:1000|unique:lokasi_kantor,alamat',
+            'alamat' => 'required|string|max:1000|unique:cabang,alamat',
             'telepon' => 'nullable|string|max:30',
-            'link' => 'nullable|string|max:255|unique:lokasi_kantor,link',
+            'link' => 'nullable|string|max:255|unique:cabang,link',
         ];
     }
 

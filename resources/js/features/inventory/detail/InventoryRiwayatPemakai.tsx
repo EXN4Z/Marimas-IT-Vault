@@ -41,12 +41,12 @@ export default function InventoryRiwayatPemakai({ detail, pemakaiPage, expandedP
                       <div className="min-w-0">
                         <b>{namaPemakai(p)}</b>{' '}
                         <span className="dv-muted dv-g">
-                          — {formatTanggalId(p.tanggal_penerimaan)}
-                          {p.tanggal_pengembalian ? ` s/d ${formatTanggalId(p.tanggal_pengembalian)}` : ' (sedang digunakan)'}
+                          — {formatTanggalId(p.diterima_at)}
+                          {p.dikembalikan_at ? ` s/d ${formatTanggalId(p.dikembalikan_at)}` : ' (sedang digunakan)'}
                         </span>
                       </div>
                       <div className="flex items-center gap-0.5 flex-shrink-0">
-                        {isAdmin && p.no_struk_penerimaan && (
+                        {isAdmin && p.nomor_penerimaan && (
                           <button
                             type="button"
                             onClick={() => handlePrintSerahTerima([{ inventory: detail, pemakai: p }])}
@@ -88,8 +88,8 @@ export default function InventoryRiwayatPemakai({ detail, pemakaiPage, expandedP
                         )}
                         {p.catatan_penerimaan && <p>Catatan terima: {p.catatan_penerimaan}</p>}
                         {p.catatan_pengembalian && <p>Catatan kembali: {p.catatan_pengembalian}</p>}
-                        {p.no_struk_penerimaan && <p>Struk terima: {p.no_struk_penerimaan}</p>}
-                        {p.no_struk_pengembalian && <p>Struk kembali: {p.no_struk_pengembalian}</p>}
+                        {p.nomor_penerimaan && <p>Struk terima: {p.nomor_penerimaan}</p>}
+                        {p.nomor_pengembalian && <p>Struk kembali: {p.nomor_pengembalian}</p>}
                       </div>
                     )}
                   </li>
