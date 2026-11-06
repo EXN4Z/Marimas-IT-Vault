@@ -34,7 +34,6 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-            $table->rememberToken();
 
             $table->string('phone')->nullable()->unique();
 
@@ -42,11 +41,10 @@ return new class extends Migration
                 ->constrained('roles')
                 ->restrictOnDelete();
 
-            // lokasi_kantor_id: cuma relevan buat akun role 'cabang',
-            // nunjuk lokasi kantor mana yang dia urus.
-            $table->foreignId('lokasi_kantor_id')
+            // cabang_id: cabang/lokasi kantor tempat user ditempatkan.
+            $table->foreignId('cabang_id')
                 ->nullable()
-                ->constrained('lokasi_kantor')
+                ->constrained('cabang')
                 ->nullOnDelete();
 
             // Data karyawan langsung di sini, tidak ada lagi
@@ -58,6 +56,11 @@ return new class extends Migration
             $table->date('tanggal_masuk')->nullable();
 
             $table->timestamps();
+
+            $table->foreignId('perusahaan_id')->nullable()
+                ->constrained('perusahaan')
+                ->nullOnDelete();
+            $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
         });
     }
 

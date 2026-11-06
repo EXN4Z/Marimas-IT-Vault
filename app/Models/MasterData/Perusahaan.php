@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\User;
 
 // Menu "Perusahaan" di Master Data -- struktur field sama persis kaya
-// LokasiKantor (menu "Cabang"), tapi sengaja belum dikasih relasi ke
-// tabel lain (beda dari LokasiKantor::karyawan()/users()).
+// Cabang (menu "Cabang"), tapi sengaja belum dikasih relasi ke
+// tabel lain (beda dari Cabang::karyawan()/users()).
 class Perusahaan extends Model
 {
     protected $table = 'perusahaan';

@@ -8,11 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('lokasi_kantor', function (Blueprint $table) {
+        Schema::create('cabang', function (Blueprint $table) {
             $table->id();
             $table->string('nama', 150);
-            $table->text('alamat')->nullable();
-            $table->string('link', 255)->nullable();
+            $table->text('alamat')->nullable()->unique();
+            $table->string('link', 255)->nullable()->unique();
             $table->string('telepon', 30)->nullable();
             $table->timestamps();
         });
@@ -20,6 +20,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('lokasi_kantor');
+        Schema::dropIfExists('cabang');
     }
 };

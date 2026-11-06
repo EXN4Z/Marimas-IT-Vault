@@ -2,13 +2,13 @@
 
 namespace App\Imports\MasterData;
 
-use App\Models\MasterData\LokasiKantor;
+use App\Models\MasterData\Cabang;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 
 /**
  * Import Excel data referensi Cabang / Lokasi Kantor (Master Data).
- * Mirror PerusahaanImport persis -- bedanya cuma target model (LokasiKantor,
+ * Mirror PerusahaanImport persis -- bedanya cuma target model (Cabang,
  * bukan Perusahaan). Lihat PerusahaanImport buat penjelasan lengkap tiap
  * bagian (deteksi header, filter baris footer hasil export, dst).
  *
@@ -68,7 +68,7 @@ class CabangImport implements ToCollection
             $link = trim((string) ($row['link'] ?? ''));
 
             try {
-                $cabang = LokasiKantor::where('nama', $nama)->first();
+                $cabang = Cabang::where('nama', $nama)->first();
 
                 if ($cabang) {
                     $cabang->update([
@@ -78,7 +78,7 @@ class CabangImport implements ToCollection
                     ]);
                     $this->updatedCount++;
                 } else {
-                    LokasiKantor::create([
+                    Cabang::create([
                         'nama'    => $nama,
                         'alamat'  => $alamat !== '' ? $alamat : null,
                         'telepon' => $telepon !== '' ? $telepon : null,

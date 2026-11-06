@@ -5,7 +5,7 @@ namespace App\Http\Controllers\MasterData;
 use App\Actions\Shared\ImportExcel;
 use App\Http\Controllers\Controller;
 use App\Imports\MasterData\CabangImport;
-use App\Models\MasterData\LokasiKantor;
+use App\Models\MasterData\Cabang;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +24,7 @@ class CabangController extends Controller
     {
         $validated = $request->validated();
 
-        LokasiKantor::create($validated);
+        Cabang::create($validated);
 
         return back()->with('success', 'Cabang baru berhasil ditambahkan.');
     }
@@ -32,7 +32,7 @@ class CabangController extends Controller
     // PUT /master-data/cabang/{id}
     public function update(UpdateCabangRequest $request, $id): RedirectResponse
     {
-        $cabang = LokasiKantor::findOrFail($id);
+        $cabang = Cabang::findOrFail($id);
 
         $validated = $request->validated();
 
@@ -45,7 +45,7 @@ class CabangController extends Controller
     // Gagal -> error bag key "delete" (ditampilkan di dalam modal konfirmasi hapus).
     public function destroy($id): RedirectResponse
     {
-        $cabang = LokasiKantor::withCount(['karyawan as pekerja_count'])->findOrFail($id);
+        $cabang = Cabang::withCount(['karyawan as pekerja_count'])->findOrFail($id);
 
         if ($cabang->pekerja_count > 0) {
             throw ValidationException::withMessages([

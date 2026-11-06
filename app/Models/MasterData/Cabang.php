@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Models\User;
 
-class LokasiKantor extends Model
+class Cabang extends Model
 {
     protected $table = 'cabang';
 

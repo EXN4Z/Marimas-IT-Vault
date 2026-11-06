@@ -24,19 +24,14 @@ return new class extends Migration
             $table->foreignId('inventory_id')->nullable()->constrained('inventory')->nullOnDelete();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
 
-            $table->enum('status', ['pending', 'disetujui', 'ditolak'])->default('disetujui');
-            $table->foreignId('requested_by_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('diserahkan_oleh')->nullable()->constrained('users')->nullOnDelete();
 
             $table->string('nomor_penerimaan')->nullable();
-            $table->string('nomor_penerimaan')->nullable();
-            $table->date('tanggal_penerimaan')->nullable();
             $table->json('foto_penerimaan')->nullable();
             $table->dateTime('diterima_at')->nullable();
             $table->text('catatan_penerimaan')->nullable();
 
             $table->string('nomor_pengembalian')->nullable();
-            $table->string('no_struk_pengembalian')->nullable();
-            $table->date('tanggal_pengembalian')->nullable();
             $table->json('foto_pengembalian')->nullable();
             $table->dateTime('dikembalikan_at')->nullable();
             $table->text('catatan_pengembalian')->nullable();

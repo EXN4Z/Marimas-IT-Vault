@@ -2,7 +2,7 @@
 
 namespace App\Queries\MasterData;
 
-use App\Models\MasterData\LokasiKantor;
+use App\Models\MasterData\Cabang;
 
 // Dipindah dari CabangController::daftar() -- isi query identik.
 // Data tab Cabang untuk props halaman Master Data (juga dipakai dropdown di Inventory, Karyawan, Laporan).
@@ -10,7 +10,7 @@ class CabangQuery
 {
     public static function daftar(): array
     {
-        return LokasiKantor::withCount(['karyawan as pekerja_count'])
+        return Cabang::withCount(['karyawan as pekerja_count'])
             ->with('akunCabang')
             ->get()
             ->map(fn ($item) => [

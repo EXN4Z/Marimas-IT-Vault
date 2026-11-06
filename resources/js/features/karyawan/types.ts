@@ -3,7 +3,7 @@ export interface Departemen {
   nama: string
 }
 
-export interface LokasiKantor {
+export interface Cabang {
   id: number
   nama: string
 }
@@ -20,7 +20,7 @@ export interface Karyawan {
   email: string
   phone: string
   departemen: Departemen | null
-  cabang: LokasiKantor | null
+  cabang: Cabang | null
   perusahaan: Perusahaan | null
   tanggal_masuk: string
   role_id: number
@@ -53,7 +53,7 @@ export interface KaryawanList {
 // Pilihan dropdown form Tambah/Edit user.
 export interface KaryawanOpsi {
   departemen: Departemen[];
-  cabang: LokasiKantor[];
+  cabang: Cabang[];
   perusahaan: Perusahaan[];
   roles: { id: number; nama: string }[];
 }

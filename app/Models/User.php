@@ -9,7 +9,7 @@ use Laravel\Sanctum\HasApiTokens;
 use NotificationChannels\WebPush\HasPushSubscriptions;
 use App\Models\MasterData\Departemen;
 use App\Models\MasterData\Role;
-use App\Models\MasterData\LokasiKantor;
+use App\Models\MasterData\Cabang;
 use App\Models\MasterData\Perusahaan;
 
 class User extends Authenticatable
@@ -46,7 +46,6 @@ class User extends Authenticatable
 
     protected $hidden = [
         'password',
-        'remember_token',
     ];
 
     // WAJIB: tanpa ini, field "role" hilang total dari hasil toArray()/
@@ -85,7 +84,12 @@ class User extends Authenticatable
 
         $this->attributes['role_id'] = $role->id;
     }
-    
+
+    public function getRememberTokenName()
+    {
+        return null;
+    }
+        
     // REVISI (hapus level & label): hak akses sekarang cuma 2 tingkat --
     // 'admin' (akses semua) vs role lain (semuanya setara, gak ada lagi
     // hierarki level antar role kayak 'karyawan'/'manajer'/'hr'/'cabang').
@@ -109,7 +113,7 @@ class User extends Authenticatable
     // BARU: lokasi kantor yang diurus akun ini — cuma relevan buat role 'cabang'.
     public function cabang()
     {
-        return $this->belongsTo(LokasiKantor::class, 'cabang_id');
+        return $this->belongsTo(Cabang::class, 'cabang_id');
     }
 
     public function perusahaan() 

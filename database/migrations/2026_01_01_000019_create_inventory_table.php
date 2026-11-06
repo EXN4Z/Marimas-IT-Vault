@@ -58,8 +58,6 @@ return new class extends Migration
             $table->string('serial_number')->nullable()->unique();
             $table->unsignedInteger('jumlah')->default(1);
 
-            $table->string('no_bukti')->nullable();
-
             $table->date('tanggal_garansi')->nullable();
             $table->date('tanggal_input')->nullable();
             $table->date('tanggal_invoice')->nullable();
