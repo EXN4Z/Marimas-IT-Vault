@@ -18,6 +18,7 @@ use App\Queries\Laporan\RiwayatInventoryQuery;
 class DashboardQuery
 {
     private const BULAN_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    private const HARI_ID = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
     private const STATUS_LABEL = [
         'tersedia' => 'Tersedia',
@@ -54,18 +55,18 @@ class DashboardQuery
     /** Props dashboard ADMIN (lintas-perusahaan). Inventory = SEMUA item, termasuk kelengkapan. */
     public static function admin(User $user): array
     {
-        $list = Inventory::query()->with('kategori:id,nama')->get(['id', 'status', 'nama', 'kategori_id', 'tanggal_invoice', 'tanggal_garansi']);
-
+        $list = Inventory::query()->with('kategori:id,nama')->get(['id', 'status', 'nama', 'kategori_id', 'created_at', 'tanggal_garansi']);
+    
         $tersedia = $dipakai = $rusakBerat = $dijual = 0;
         $rusak = $dalamPenanganan = $garansiSegeraHabis = 0;
         $perNama = [];
         $perStatus = [];
         $now = time();
         $batas = self::GARANSI_WARNING_HARI * 24 * 60 * 60;
-
+    
         // 12 bulan terakhir (termasuk bulan ini).
-        //  - jumlah = unit yang tanggal_invoice-nya jatuh di bulan itu
-        //  - total  = total unit s/d akhir bulan itu (kumulatif; unit sebelum rentang jadi titik awal; unit tanpa tanggal invoice tidak dihitung)
+        //  - jumlah = unit yang created_at-nya jatuh di bulan itu
+        //  - total  = total unit s/d akhir bulan itu (kumulatif; unit sebelum rentang jadi titik awal)
         $awalRentang = Carbon::now()->startOfMonth()->subMonthsNoOverflow(11);
         $sebelumRentang = 0;
         $bulan = [];
@@ -73,7 +74,7 @@ class DashboardQuery
             $d = Carbon::now()->startOfMonth()->subMonthsNoOverflow($i);
             $bulan[$d->format('Y-n')] = ['bulan' => self::BULAN_ID[$d->month - 1], 'tahun' => $d->year, 'jumlah' => 0, 'total' => 0];
         }
-
+    
         foreach ($list as $a) {
             switch ($a->status) {
                 case 'tersedia': $tersedia++; break;
@@ -81,48 +82,47 @@ class DashboardQuery
                 case 'rusak_berat': $rusakBerat++; break;
                 case 'dijual': $dijual++; break;
             }
-
+    
             if ($a->status === 'rusak_berat') $rusak++;
             if ($a->status === 'menunggu_perbaikan' || $a->status === 'diperbaiki') $dalamPenanganan++;
-
+    
             if ($a->tanggal_garansi) {
                 $sisa = Carbon::parse($a->tanggal_garansi)->getTimestamp() - $now;
                 if ($sisa >= 0 && $sisa <= $batas) $garansiSegeraHabis++;
             }
-
+    
             // dikelompokkan per kategori (mis. Printer, Modem), bukan per nama barang
             $nama = trim((string) ($a->kategori?->nama)) ?: 'Tanpa Kategori';
             $perNama[$nama] = ($perNama[$nama] ?? 0) + 1;
-
+    
             $label = self::STATUS_LABEL[$a->status] ?? $a->status;
             $perStatus[$label] = ($perStatus[$label] ?? 0) + 1;
-
-            if ($a->tanggal_invoice) {
-                $tgl = Carbon::parse($a->tanggal_invoice);
+    
+            if ($a->created_at) {
+                $tgl = Carbon::parse($a->created_at);
                 $key = $tgl->format('Y-n');
                 if (isset($bulan[$key])) $bulan[$key]['jumlah']++;
                 elseif ($tgl->lt($awalRentang)) $sebelumRentang++;
             }
-            // tanggal_invoice null = tanggal pembelian tidak diketahui -> tidak dihitung di grafik.
         }
-
+    
         $berjalan = $sebelumRentang;
         foreach ($bulan as $key => $row) {
             $berjalan += $row['jumlah'];
             $bulan[$key]['total'] = $berjalan;
         }
-
+    
         arsort($perNama); // urutan stabil: yang jumlahnya sama tetap urut kemunculan
         $inventoryPerMerek = [];
         foreach ($perNama as $nama => $jumlah) {
             $inventoryPerMerek[] = ['nama' => (string) $nama, 'jumlah' => $jumlah];
         }
-
+    
         $statusDistribusi = [];
         foreach (self::STATUS_LABEL as $label) {
             if (($perStatus[$label] ?? 0) > 0) $statusDistribusi[] = ['status' => $label, 'jumlah' => $perStatus[$label]];
         }
-
+    
         return [
             'ringkasanInventory' => [
                 'total' => $list->count(),
