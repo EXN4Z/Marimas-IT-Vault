@@ -47,7 +47,7 @@ return [
         'login' => 'Email/No HP/Nama',
         'role_id' => 'Role',
         'departemen_id' => 'Departemen',
-        'lokasi_kantor_id' => 'Cabang / lokasi kantor',
+        'cabang_id' => 'Cabang / lokasi kantor',
         'perusahaan_id' => 'Perusahaan',
         'supplier_id' => 'Supplier',
         'kategori_id' => 'Kategori',

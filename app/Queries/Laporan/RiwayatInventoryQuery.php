@@ -39,7 +39,7 @@ class RiwayatInventoryQuery
             'inventory:id,kode_inventory,nama,kategori_id,parent_id',
             'inventory.kategori:id,nama',
             'user:id,name',
-        ])->where('status', 'disetujui');
+        ]);
 
         if (!$isAdmin) {
             $milikUser($pemakaiQuery);

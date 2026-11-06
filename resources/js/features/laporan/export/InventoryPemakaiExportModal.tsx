@@ -7,11 +7,6 @@ import { printRowsAsReport } from '../../../lib/export/printCsvReport';
 import { downloadStyledExcel } from '../../../lib/export/excelReport';
 import { ButtonCancel, ButtonSubmit, InlineError } from '../../../components/form/FormControls';
 
-const STATUS_LABEL: Record<InventoryPemakai['status'], string> = {
-  pending: 'Pending',
-  disetujui: 'Disetujui',
-  ditolak: 'Ditolak',
-};
 
 // Daftar kolom yang bisa diekspor buat data pemakai inventory (serah-terima
 // & pengembalian) — ngikutin pola yang sama kayak InventoryExportModal:
@@ -30,7 +25,6 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { key: 'kode_inventory', label: 'Kode Inventory', defaultChecked: true, get: (p) => p.inventory?.kode_inventory || '-' },
   { key: 'nama_inventory', label: 'Nama Barang', defaultChecked: true, get: (p) => p.inventory?.nama || '-' },
   { key: 'pemakai', label: 'Pemakai', defaultChecked: true, get: (p) => p.user?.name || '-' },
-  { key: 'status', label: 'Status', defaultChecked: true, get: (p) => STATUS_LABEL[p.status] },
   { key: 'nomor_penerimaan', label: 'Nomor Penerimaan', defaultChecked: false, get: (p) => p.nomor_penerimaan || '-' },
   { key: 'nomor_penerimaan', label: 'No. Struk Penerimaan', defaultChecked: true, get: (p) => p.nomor_penerimaan || '-' },
   { key: 'diterima_at', label: 'Tanggal Penerimaan', defaultChecked: true, get: (p) => formatTanggalId(p.diterima_at) },

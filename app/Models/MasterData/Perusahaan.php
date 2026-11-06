@@ -26,6 +26,6 @@ class Perusahaan extends Model
     }
         public function users(): HasMany
     {
-        return $this->hasMany(User::class, 'lokasi_kantor_id');
+        return $this->hasMany(User::class, 'cabang_id');
     }
 }

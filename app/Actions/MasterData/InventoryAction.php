@@ -170,7 +170,6 @@ class InventoryAction
     private function indukSedangDipinjam(int $parentId): bool
     {
         return InventoryPemakai::where('inventory_id', $parentId)
-            ->where('status', 'disetujui')
             ->whereNull('dikembalikan_at')
             ->exists();
     }
@@ -249,7 +248,6 @@ class InventoryAction
         $idTerkait = $inventory->children()->pluck('id')->push($inventory->id);
 
         $pinjamanAktif = InventoryPemakai::whereIn('inventory_id', $idTerkait)
-            ->whereIn('status', ['disetujui', 'pending'])
             ->whereNull('dikembalikan_at')
             ->exists();
 
@@ -317,7 +315,6 @@ class InventoryAction
             // jaga-jaga: pemakaian yang masih "nyangkut" aktif ditutup paksa biar "Dipakai Oleh" tidak nunjuk
             // ke orang yang udah gak pegang item ini lagi.
             InventoryPemakai::where('inventory_id', $inventory->id)
-                ->where('status', 'disetujui')
                 ->whereNull('dikembalikan_at')
                 ->update([
                     'dikembalikan_at' => now(),
@@ -373,7 +370,6 @@ class InventoryAction
 
         // foto cuma wajib kalau induknya beneran lagi dipinjam (baru di situ ada record InventoryPemakai)
         $pemakaiIndukAktif = InventoryPemakai::where('inventory_id', $parent->id)
-            ->where('status', 'disetujui')
             ->whereNull('dikembalikan_at')
             ->first();
 
@@ -401,7 +397,6 @@ class InventoryAction
                 InventoryPemakai::create([
                     'inventory_id' => $inventory->id,
                     'user_id' => $pemakaiIndukAktif->user_id,
-                    'status' => 'disetujui',
                     'diserahkan_oleh' => $request->user()?->id,
                     'nomor_penerimaan' => $noStruk,
                     'diterima_at' => now(),
@@ -486,7 +481,6 @@ class InventoryAction
     private function ikutkanKelengkapanKePemakaianInduk(Inventory $inventory): void
     {
         $pemakaiAktifInduk = InventoryPemakai::where('inventory_id', $inventory->parent_id)
-            ->where('status', 'disetujui')
             ->whereNull('dikembalikan_at')
             ->latest('diterima_at')
             ->first();
@@ -500,7 +494,6 @@ class InventoryAction
         InventoryPemakai::create([
             'inventory_id' => $inventory->id,
             'user_id' => $pemakaiAktifInduk->user_id,
-            'status' => 'disetujui',
             'nomor_penerimaan' => $noStrukAnak,
             'diterima_at' => now(),
             'catatan_penerimaan' => 'Ditambahkan & dipinjamkan otomatis -- menempel ke barang utama yang sedang dipakai.',
@@ -515,7 +508,6 @@ class InventoryAction
     private function lepasKelengkapanDariPemakaianAktif(Inventory $inventory, string $catatanPengembalian): void
     {
         InventoryPemakai::where('inventory_id', $inventory->id)
-            ->where('status', 'disetujui')
             ->whereNull('dikembalikan_at')
             ->update([
                 'dikembalikan_at' => now(),

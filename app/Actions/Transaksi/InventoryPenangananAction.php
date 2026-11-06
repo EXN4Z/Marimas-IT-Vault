@@ -88,7 +88,6 @@ class InventoryPenangananAction
 
         // cek user emang lagi pegang item ini via pemakaian aktif (status disetujui, belum dikembalikan).
         $pemakai = InventoryPemakai::where('inventory_id', $validated['inventory_id'])
-            ->where('status', 'disetujui')
             ->whereNull('dikembalikan_at')
             ->where('user_id', $user->id)
             ->first();
@@ -226,16 +225,13 @@ class InventoryPenangananAction
                     // rusak berat = item gak dipakai siapa-siapa lagi. Tutup paksa record inventory_pemakai yang masih
                     // aktif (belum dikembalikan) biar "Dipakai Oleh" & riwayat peminjaman ikut konsisten.
                     InventoryPemakai::where('inventory_id', $inventoryPenanganan->inventory_id)
-                        ->where('status', 'disetujui')
                         ->whereNull('dikembalikan_at')
                         ->update([
-                            'dikembalikan_at' => now(),
                             'dikembalikan_at' => now(),
                             'catatan_pengembalian' => 'Dikembalikan otomatis — barang dinyatakan rusak berat.',
                         ]);
                 } else {
                     $masihDipakai = InventoryPemakai::where('inventory_id', $inventoryPenanganan->inventory_id)
-                        ->where('status', 'disetujui')
                         ->whereNull('dikembalikan_at')
                         ->exists();
 

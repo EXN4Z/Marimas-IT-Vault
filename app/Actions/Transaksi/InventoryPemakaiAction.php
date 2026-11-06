@@ -96,7 +96,6 @@ class InventoryPemakaiAction
             $pemakai = InventoryPemakai::create([
                 'inventory_id' => $inventory->id,
                 'user_id' => $validated['user_id'],
-                'status' => 'disetujui',
                 'diserahkan_oleh' => $request->user()?->id,
                 'nomor_penerimaan' => $noStruk,
                 'diterima_at' => now(),
@@ -125,7 +124,6 @@ class InventoryPemakaiAction
                     InventoryPemakai::create([
                         'inventory_id' => $anak->id,
                         'user_id' => $validated['user_id'],
-                        'status' => 'disetujui',
                         'diserahkan_oleh' => $request->user()?->id,
                         'nomor_penerimaan' => $noStrukAnak,
                         'diterima_at' => now(),
@@ -156,7 +154,6 @@ class InventoryPemakaiAction
     public function sinkronkanKelengkapan(Inventory $induk, bool $dryRun = false)
     {
         $pemakaiInduk = InventoryPemakai::where('inventory_id', $induk->id)
-            ->where('status', 'disetujui')
             ->whereNull('dikembalikan_at')
             ->latest('diterima_at')
             ->first();
@@ -179,7 +176,6 @@ class InventoryPemakaiAction
                 InventoryPemakai::create([
                     'inventory_id' => $anak->id,
                     'user_id' => $pemakaiInduk->user_id,
-                    'status' => 'disetujui',
                     'diserahkan_oleh' => auth()->id(),
                     'nomor_penerimaan' => $this->generateNoStruk('STJ', 'inventory_pemakai', 'nomor_penerimaan'),
                     'diterima_at' => now(),
@@ -219,9 +215,9 @@ class InventoryPemakaiAction
             'foto_pengembalian.*.max' => 'Maksimal size foto adalah 1MB',
         ]);
 
-        if ($inventoryPemakai->status !== 'disetujui') {
+        if ($inventoryPemakai->dikembalikan_at) {
             throw ValidationException::withMessages([
-                'status' => ['Data pemakaian ini bukan pemakaian aktif yang bisa dikembalikan.'],
+                'dikembalikan_at' => ['Pemakaian ini sudah dikembalikan sebelumnya.'],
             ]);
         }
 
@@ -276,7 +272,6 @@ class InventoryPemakaiAction
                     ->from('inventory')
                     ->where('parent_id', $inventoryPemakai->inventory_id);
             })
-                ->where('status', 'disetujui')
                 ->whereNull('dikembalikan_at')
                 ->get()
                 ->each(function ($anakPemakai) use ($validated, $fotoPaths, $noStrukIndukKembali) {
@@ -311,7 +306,7 @@ class InventoryPemakaiAction
             ]);
         }
 
-        $masihDipakai = $inventoryPemakai->status === 'disetujui' && !$inventoryPemakai->dikembalikan_at;
+        $masihDipakai = !$inventoryPemakai->dikembalikan_at;
 
         DB::transaction(function () use ($inventoryPemakai, $masihDipakai) {
             if ($masihDipakai) {
@@ -327,7 +322,6 @@ class InventoryPemakaiAction
                         ->from('inventory')
                         ->where('parent_id', $inventoryPemakai->inventory_id);
                 })
-                    ->where('status', 'disetujui')
                     ->whereNull('dikembalikan_at')
                     ->get()
                     ->each(function ($anakPemakai) {

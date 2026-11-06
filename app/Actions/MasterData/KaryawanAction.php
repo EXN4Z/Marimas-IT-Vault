@@ -29,7 +29,7 @@ class KaryawanAction
             'role_id' => 'required|integer|exists:roles,id',
             'nik' => 'required|string|unique:users,nik',
             'departemen_id' => 'nullable|exists:departemen,id',
-            'lokasi_kantor_id' => 'nullable|exists:lokasi_kantor,id',
+            'cabang_id' => 'nullable|exists:cabang,id',
             'tanggal_masuk' => 'nullable|date',
             'perusahaan_id' => 'nullable|exists:perusahaan,id',
             'status' => 'sometimes|in:aktif,nonaktif',
@@ -46,7 +46,7 @@ class KaryawanAction
             'nik' => 'required|string|unique:users,nik,' . $user->id,
             'departemen_id' => 'nullable|exists:departemen,id',
             'perusahaan_id' => 'nullable|exists:perusahaan,id',
-            'lokasi_kantor_id' => 'nullable|exists:lokasi_kantor,id',
+            'cabang_id' => 'nullable|exists:cabang,id',
             'tanggal_masuk' => 'nullable|date',
             'status' => 'sometimes|in:aktif,nonaktif',
         ];
@@ -73,7 +73,7 @@ class KaryawanAction
             'phone' => $validated['phone'] ?? null,
             'password' => Hash::make($validated['password']),
             'role_id' => $validated['role_id'],
-            'lokasi_kantor_id' => $validated['lokasi_kantor_id'] ?? null,
+            'cabang_id' => $validated['cabang_id'] ?? null,
             'nik' => $validated['nik'],
             'departemen_id' => $validated['departemen_id'] ?? null,
             'perusahaan_id' => $validated['perusahaan_id'] ?? null,
@@ -108,7 +108,7 @@ class KaryawanAction
             'email' => $validated['email'] ?? null,
             'phone' => $validated['phone'] ?? null,
             'role_id' => $validated['role_id'],
-            'lokasi_kantor_id' => $validated['lokasi_kantor_id'] ?? null,
+            'cabang_id' => $validated['cabang_id'] ?? null,
             'nik' => $validated['nik'],
             'departemen_id' => $validated['departemen_id'] ?? null,
             'perusahaan_id' => $validated['perusahaan_id'] ?? null,
@@ -152,7 +152,6 @@ class KaryawanAction
     {
         $pinjaman = InventoryPemakai::with('inventory:id,kode_inventory')
             ->where('user_id', $user->id)
-            ->whereIn('status', ['disetujui', 'pending'])
             ->whereNull('dikembalikan_at')
             ->get();
 

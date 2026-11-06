@@ -21,7 +21,6 @@ class FixOrphanedAsetPemakai extends Command
         $dryRun = $this->option('dry-run');
 
         $orphans = InventoryPemakai::query()
-            ->where('status', 'disetujui')
             ->whereNull('dikembalikan_at')
             ->whereHas('inventory', fn ($q) => $q->where('status', '!=', 'dipakai'))
             ->with('inventory')
@@ -43,7 +42,6 @@ class FixOrphanedAsetPemakai extends Command
 
         foreach ($orphans as $p) {
             $p->update([
-                'dikembalikan_at' => $p->diterima_at ?? now(),
                 'dikembalikan_at' => now(),
                 'catatan_pengembalian' => $p->catatan_pengembalian
                     ?? 'Dikembalikan otomatis — perbaikan data lama (loan nyangkut, item sudah tidak berstatus dipakai).',

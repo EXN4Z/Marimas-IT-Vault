@@ -1,6 +1,6 @@
 import type { Inventory } from './inventory';
 
-export type InventoryPemakaiStatus = 'pending' | 'disetujui' | 'ditolak';
+
 
 export interface KaryawanUser {
   id: number;
@@ -17,7 +17,6 @@ export interface InventoryPemakai {
   inventory_id: number;
   user_id: number | null;
   user?: { id: number; name: string; role?: string; nik?: string | null; departemen?: { id: number; nama: string } | null } | null;
-  status: InventoryPemakaiStatus;
   diserahkan_oleh: number | null;
   nomor_penerimaan: string | null;
   diterima_at: string | null; // nullable — request pending belum ada tanggal penerimaan
@@ -34,8 +33,6 @@ export interface FotoPemakaiEntry {
   inventory?: { id: number; kode_inventory: string; nama: string | null; merk?: string | null; type?: string | null } | null;
   user_id: number | null;
   user?: { id: number; name: string } | null;
-  diterima_at: string | null;
-  dikembalikan_at: string | null;
   diterima_at: string | null;
   dikembalikan_at: string | null;
   foto_penerimaan: string[] | null;

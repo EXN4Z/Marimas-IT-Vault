@@ -149,7 +149,6 @@ class DashboardQuery
     {
         return DB::table('inventory_pemakai as ip')
             ->join('users as u', 'u.id', '=', 'ip.user_id')
-            ->where('ip.status', 'disetujui')
             ->whereNull('ip.dikembalikan_at')
             ->select('u.id', 'u.name', DB::raw('COUNT(DISTINCT ip.inventory_id) as jumlah'))
             ->groupBy('u.id', 'u.name')

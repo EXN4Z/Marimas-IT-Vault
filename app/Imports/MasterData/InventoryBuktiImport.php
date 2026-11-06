@@ -207,7 +207,6 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
 
                     $infoBukti = [
                         'kode_inventory' => $row['kode_inventory'] ?? null,
-                        'no_bukti'       => $row['no_bukti'],
                         'tanggal'        => $this->parseTanggal($row['tanggal'] ?? null),
                         'perusahaan_id'  => $this->perusahaanIdDariSingkatan($row['perusahaan'] ?? null, $index + 1),
                         'nik'            => $row['nik'] ?? null,
@@ -546,7 +545,6 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
         InventoryPemakai::create(array_merge([
             'inventory_id'        => $item->id,
             'user_id'             => $penerimaUser->id,
-            'status'              => 'disetujui',
             'nomor_penerimaan' => $noStruk,
             'diterima_at'  => $tanggalPenerimaan,
         ], $this->timestampsDariTanggal($tanggalPenerimaan)));
