@@ -29,12 +29,12 @@ export const STATUS_LABEL: Record<InventoryStatus, string> = {
 };
 
 export const STATUS_STYLE: Record<InventoryStatus, string> = {
-  tersedia: 'bg-emerald-50 text-emerald-700',
-  dipakai: 'bg-amber-50 text-amber-700',
-  menunggu_perbaikan: 'bg-yellow-50 text-yellow-700',
-  diperbaiki: 'bg-orange-50 text-orange-700',
-  rusak_berat: 'bg-red-100 text-red-800',
-  dijual: 'bg-purple-50 text-purple-700',
+  tersedia: 'bg-tint-emerald-50 text-tone-emerald-700',
+  dipakai: 'bg-tint-amber-50 text-tone-amber-700',
+  menunggu_perbaikan: 'bg-tint-yellow-50 text-tone-yellow-700',
+  diperbaiki: 'bg-tint-orange-50 text-tone-orange-700',
+  rusak_berat: 'bg-tint-red-100 text-tone-red-800',
+  dijual: 'bg-tint-purple-50 text-tone-purple-700',
 };
 
 // Warna titik status (terang | gelap), palet sama dengan dashboard. Literal penuh supaya terbaca Tailwind.

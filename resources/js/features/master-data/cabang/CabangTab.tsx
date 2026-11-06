@@ -11,6 +11,7 @@ import Pagination from '../../../components/table/Pagination';
 import SearchInput from '../../../components/form/SearchInput';
 import { downloadStyledExcel } from '../../../lib/export/excelReport';
 import { toastFormErrors } from '../../../lib/toastErrors';
+import { pnCard, pnEmpty, pnTable } from '../../../components/ui/pn';
 
 // pagination client-side -- data cabang dimuat penuh sekali lewat
 // props.cabang dari server, tinggal dipotong per halaman di sini (sama pola yang
@@ -220,8 +221,8 @@ export default function TabCabang() {
 
   if (!isStaff) {
     return (
-        <div className="bg-white rounded-xl p-8 shadow-sm border border-slate-200 text-center">
-          <p className="text-sm text-slate-500">Anda tidak punya akses ke halaman ini.</p>
+        <div className="bg-surface rounded-xl p-8 shadow-sm border border-line-200 text-center">
+          <p className="text-sm text-ink-500">Anda tidak punya akses ke halaman ini.</p>
         </div>
     );
   }
@@ -229,7 +230,7 @@ export default function TabCabang() {
   return (
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-500">
           Kelola data cabang / kantor perusahaan beserta lokasi.
         </p>
         <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
@@ -237,7 +238,7 @@ export default function TabCabang() {
             type="button"
             onClick={handleExport}
             disabled={exporting}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
+            className="flex items-center gap-2 bg-surface border border-line-200 text-ink-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-hover-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
           >
             {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
             {exporting ? 'Mengexport...' : 'Export Excel'}
@@ -254,7 +255,7 @@ export default function TabCabang() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={importLoading}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
+            className="flex items-center gap-2 bg-surface border border-line-200 text-ink-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-hover-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
           >
             {importLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
             {importLoading ? 'Mengimport...' : 'Import Excel'}
@@ -263,7 +264,7 @@ export default function TabCabang() {
           <button
             type="button"
             onClick={openCreateModal}
-            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs flex-shrink-0 dark:!bg-white dark:!text-slate-900 dark:hover:!bg-gray-100"
+            className="flex items-center gap-2 bg-solid text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-solid-hover transition shadow-xs flex-shrink-0 dark:!bg-white dark:!text-slate-900 dark:hover:!bg-gray-100"
           >
             <Plus size={16} />
             Tambah Cabang
@@ -271,7 +272,7 @@ export default function TabCabang() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+      <div className="bg-surface rounded-xl p-6 shadow-sm border border-line-200">
         <div className="mb-4">
           <SearchInput
             value={search}
@@ -281,52 +282,52 @@ export default function TabCabang() {
           />
         </div>
 
-        <p className="text-xs text-slate-500 mb-4">
-          Total Semua: <span className="font-semibold text-slate-900">{filteredCabang.length}</span> cabang
+        <p className="text-xs text-ink-500 mb-4">
+          Total Semua: <span className="font-semibold text-ink-900">{filteredCabang.length}</span> cabang
         </p>
 
-        <div className="pn-card">
+        <div className={pnCard}>
           {cabangList.length === 0 && (
-            <p className="pn-empty">Belum ada data cabang.</p>
+            <p className={pnEmpty}>Belum ada data cabang.</p>
           )}
 
           {cabangList.length > 0 && filteredCabang.length === 0 && (
-            <p className="pn-empty">Cabang tidak ditemukan.</p>
+            <p className={pnEmpty}>Cabang tidak ditemukan.</p>
           )}
 
           {filteredCabang.length > 0 && (
             <>
               {/* Desktop Table */}
-              <div className="hidden sm:block pn-scroll">
-                <table className="pn-table">
+              <div className="hidden sm:block overflow-x-auto">
+                <table className={pnTable}>
                   <thead>
                     <tr>
                       <th>Nama</th>
                       <th>Alamat</th>
                       <th>Telepon</th>
                       <th>Lokasi</th>
-                      <th className="pn-r">Aksi</th>
+                      <th className="text-right">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedCabang.map((item) => (
                       <tr key={item.id}>
                         <td className="font-medium">{item.nama}</td>
-                        <td className="text-slate-600 max-w-[280px] truncate">{item.alamat || '-'}</td>
-                        <td className="text-slate-600 whitespace-nowrap">{item.telepon || '-'}</td>
+                        <td className="text-ink-600 max-w-[280px] truncate">{item.alamat || '-'}</td>
+                        <td className="text-ink-600 whitespace-nowrap">{item.telepon || '-'}</td>
                         <td className="whitespace-nowrap">
                           {item.link ? (
                             <a
                               href={item.link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-xs font-medium text-sky-600 hover:text-sky-700"
+                              className="inline-flex items-center gap-1.5 text-xs font-medium text-tone-sky-600 hover:text-tone-sky-700"
                             >
                               <Map size={13} />
                               Lihat Lokasi
                             </a>
                           ) : (
-                            <span className="text-slate-400">-</span>
+                            <span className="text-ink-400">-</span>
                           )}
                         </td>
                         <td>
@@ -335,7 +336,7 @@ export default function TabCabang() {
                               type="button"
                               onClick={() => openEditModal(item)}
                               title="Edit"
-                              className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                              className="p-2 text-ink-400 hover:text-ink-900 hover:bg-hover-100 rounded-lg transition"
                             >
                               <Pencil size={15} />
                             </button>
@@ -345,7 +346,7 @@ export default function TabCabang() {
                                 setDeleteTarget(item);
                               }}
                               title="Hapus"
-                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                              className="p-2 text-ink-400 hover:text-tone-red-600 hover:bg-tint-red-hover-50 rounded-lg transition"
                             >
                               <Trash2 size={15} />
                             </button>
@@ -363,14 +364,14 @@ export default function TabCabang() {
                   <div key={item.id} className="p-4 flex flex-col gap-2">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900 truncate">{item.nama}</p>
+                        <p className="text-sm font-semibold text-ink-900 truncate">{item.nama}</p>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           type="button"
                           onClick={() => openEditModal(item)}
                           title="Edit"
-                          className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                          className="p-1.5 text-ink-400 hover:text-ink-900 hover:bg-hover-100 rounded-lg transition"
                         >
                           <Pencil size={14} />
                         </button>
@@ -380,14 +381,14 @@ export default function TabCabang() {
                             setDeleteTarget(item);
                           }}
                           title="Hapus"
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                          className="p-1.5 text-ink-400 hover:text-tone-red-600 hover:bg-tint-red-hover-50 rounded-lg transition"
                         >
                           <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
                     {(item.alamat || item.telepon) && (
-                      <div className="text-xs text-slate-500 space-y-0.5">
+                      <div className="text-xs text-ink-500 space-y-0.5">
                         {item.alamat && <p className="truncate">{item.alamat}</p>}
                         {item.telepon && <p>{item.telepon}</p>}
                       </div>
@@ -397,7 +398,7 @@ export default function TabCabang() {
                         href={item.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs font-medium text-sky-600 hover:text-sky-700"
+                        className="inline-flex items-center gap-1.5 text-xs font-medium text-tone-sky-600 hover:text-tone-sky-700"
                       >
                         <Map size={13} />
                         Lihat Lokasi
@@ -408,7 +409,7 @@ export default function TabCabang() {
               </div>
 
               {totalPages > 1 && (
-                <div className="-mx-[18px] -mb-3 mt-1 px-6 py-3 border-t border-slate-100">
+                <div className="-mx-[18px] -mb-3 mt-1 px-6 py-3 border-t border-line-100">
                   <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
@@ -433,7 +434,7 @@ export default function TabCabang() {
         >
           <div className="flex flex-col gap-4">
             {formErrors._general && (
-              <p className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2.5 animate-[fadeIn_150ms_ease-out]" role="alert">
+              <p className="flex items-center gap-2 text-sm text-tone-red-700 bg-tint-red-50 border border-edge-red-100 rounded-lg px-3 py-2.5 animate-[fadeIn_150ms_ease-out]" role="alert">
                 {formErrors._general}
               </p>
             )}
@@ -489,7 +490,7 @@ export default function TabCabang() {
               />
             </Field>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-line-100">
               <ButtonCancel onClick={closeModal} disabled={submitting} />
               <ButtonSubmit onClick={handleSubmit} loading={submitting} loadingLabel="Menyimpan...">
                 {editing ? 'Simpan Perubahan' : 'Tambah Cabang'}

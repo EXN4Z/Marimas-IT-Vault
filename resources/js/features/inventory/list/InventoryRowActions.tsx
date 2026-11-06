@@ -48,7 +48,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
         <button
           onClick={() => openDetail(a.id)}
           title="Detail"
-          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+          className="p-2 text-ink-400 hover:text-ink-900 hover:bg-hover-100 rounded-lg transition"
         >
           <Eye size={15} />
         </button>
@@ -59,7 +59,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
         <button
           onClick={() => openDetail(a.id)}
           title="Detail"
-          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+          className="p-2 text-ink-400 hover:text-ink-900 hover:bg-hover-100 rounded-lg transition"
         >
           <Eye size={15} />
         </button>
@@ -81,7 +81,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
           <button
             onClick={() => setLepasTarget(a)}
             title="Lepas dari Induk"
-            className="p-2 text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition"
+            className="p-2 text-ink-600 bg-surface-100 rounded-lg hover:bg-hover-200 transition"
           >
             <Unlink size={15} />
           </button>
@@ -92,7 +92,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
             setFormOpen(true);
           }}
           title="Edit"
-          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+          className="p-2 text-ink-400 hover:text-ink-900 hover:bg-hover-100 rounded-lg transition"
         >
           <Pencil size={15} />
         </button>
@@ -103,7 +103,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
             setDeleteTarget(a);
           }}
           title="Hapus"
-          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+          className="p-2 text-ink-400 hover:text-tone-red-600 hover:bg-tint-red-hover-50 rounded-lg transition"
         >
           <Trash2 size={15} />
         </button>
@@ -137,7 +137,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
             <button
               onClick={() => openDetail(a.id)}
               title="Detail"
-              className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+              className="p-2 text-ink-400 hover:text-ink-900 hover:bg-hover-100 rounded-lg transition"
             >
               <Eye size={15} />
             </button>
@@ -152,7 +152,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
           <button
             onClick={() => openDetail(a.id)}
             title="Detail"
-            className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+            className="p-2 text-ink-400 hover:text-ink-900 hover:bg-hover-100 rounded-lg transition"
           >
             <Eye size={15} />
           </button>
@@ -167,7 +167,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
           <button
             onClick={() => setPasangIndukTarget(a)}
             title="Pasang ke Induk"
-            className="p-2 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition"
+            className="p-2 text-ink-700 bg-surface-100 rounded-lg hover:bg-hover-200 transition"
           >
             <Link2 size={15} />
           </button>
@@ -176,7 +176,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
           <button
             onClick={() => setSerahTerimaInventory(a)}
             title="Serahkan ke Karyawan"
-            className="p-2 text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition"
+            className="p-2 text-white bg-solid rounded-lg hover:bg-solid-hover transition"
           >
             <HandCoins size={15} />
           </button>
@@ -207,7 +207,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
             setFormOpen(true);
           }}
           title="Edit"
-          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+          className="p-2 text-ink-400 hover:text-ink-900 hover:bg-hover-100 rounded-lg transition"
         >
           <Pencil size={15} />
         </button>
@@ -218,7 +218,7 @@ export default function InventoryRowActions({ a, isAdmin, openDetail, setPerbaik
             setDeleteTarget(a);
           }}
           title="Hapus"
-          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+          className="p-2 text-ink-400 hover:text-tone-red-600 hover:bg-tint-red-hover-50 rounded-lg transition"
         >
           <Trash2 size={15} />
         </button>

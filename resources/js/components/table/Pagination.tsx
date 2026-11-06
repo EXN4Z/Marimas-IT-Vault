@@ -74,11 +74,11 @@ export default function Pagination({
         'text-center focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 
     return (
-        <div className={`pt-4 mt-2 border-t border-slate-100 ${className}`}>
+        <div className={`pt-4 mt-2 border-t border-line-100 ${className}`}>
             {/* Desktop / tablet / TV */}
             <div className="hidden sm:flex items-center justify-between gap-4 flex-wrap">
                 {totalItems !== undefined ? (
-                    <p className="text-xs text-slate-400 whitespace-nowrap">
+                    <p className="text-xs text-ink-400 whitespace-nowrap">
                         Halaman {currentPage} dari {totalPages}
                         {itemLabel ? ` · ${totalItems} total ${itemLabel}` : ''}
                     </p>
@@ -91,14 +91,14 @@ export default function Pagination({
                         type="button"
                         onClick={() => onPageChange(currentPage - 1)}
                         disabled={currentPage === 1}
-                        className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition"
+                        className="px-3 py-1.5 text-sm rounded-lg border border-line-200 text-ink-600 hover:bg-hover-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition"
                     >
                         Sebelumnya
                     </button>
 
                     {pageNumbers.map((p, idx) =>
                         p === 'ellipsis' ? (
-                            <span key={`ellipsis-${idx}`} className="px-2 text-sm text-slate-400">
+                            <span key={`ellipsis-${idx}`} className="px-2 text-sm text-ink-400">
                                 …
                             </span>
                         ) : (
@@ -109,8 +109,8 @@ export default function Pagination({
                                 aria-current={p === currentPage ? 'page' : undefined}
                                 className={`min-w-[2rem] px-3 py-1.5 text-sm rounded-lg transition-colors ${
                                     p === currentPage
-                                        ? 'bg-slate-900 text-white font-medium'
-                                        : 'text-slate-600 hover:bg-slate-50 border border-slate-200'
+                                        ? 'bg-solid text-white font-medium'
+                                        : 'text-ink-600 hover:bg-hover-50 border border-line-200'
                                 }`}
                             >
                                 {p}
@@ -122,13 +122,13 @@ export default function Pagination({
                         type="button"
                         onClick={() => onPageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
-                        className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition"
+                        className="px-3 py-1.5 text-sm rounded-lg border border-line-200 text-ink-600 hover:bg-hover-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition"
                     >
                         Selanjutnya
                     </button>
 
-                    <div className="flex items-center gap-1.5 ml-1 pl-2.5 border-l border-slate-200">
-                        <label htmlFor="pagination-jump-desktop" className="text-xs text-slate-400 whitespace-nowrap">
+                    <div className="flex items-center gap-1.5 ml-1 pl-2.5 border-l border-line-200">
+                        <label htmlFor="pagination-jump-desktop" className="text-xs text-ink-400 whitespace-nowrap">
                             Ke halaman
                         </label>
                         <input
@@ -141,7 +141,7 @@ export default function Pagination({
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={handleKeyDown}
                             onBlur={commitJump}
-                            className={`w-14 py-1.5 text-sm rounded-lg border border-slate-200 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 ${jumpInputClass}`}
+                            className={`w-14 py-1.5 text-sm rounded-lg border border-line-200 focus:ring-2 focus:ring-slate-900/10 focus:border-line-400 ${jumpInputClass}`}
                             aria-label={`Loncat ke halaman, dari ${totalPages} halaman`}
                         />
                     </div>
@@ -155,12 +155,12 @@ export default function Pagination({
                     onClick={() => onPageChange(currentPage - 1)}
                     disabled={currentPage === 1}
                     aria-label="Halaman sebelumnya"
-                    className="flex items-center justify-center w-10 h-10 shrink-0 rounded-full border border-slate-200 text-slate-600 active:bg-slate-100 disabled:opacity-30 disabled:active:bg-transparent transition"
+                    className="flex items-center justify-center w-10 h-10 shrink-0 rounded-full border border-line-200 text-ink-600 active:bg-surface-100 disabled:opacity-30 disabled:active:bg-transparent transition"
                 >
                     <ChevronLeft size={18} />
                 </button>
 
-                <div className="flex items-center gap-1.5 bg-slate-50 rounded-full px-3 py-2 border border-slate-200">
+                <div className="flex items-center gap-1.5 bg-surface-50 rounded-full px-3 py-2 border border-line-200">
                     <input
                         type="number"
                         min={1}
@@ -170,10 +170,10 @@ export default function Pagination({
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={handleKeyDown}
                         onBlur={commitJump}
-                        className={`w-8 bg-transparent text-sm font-semibold text-slate-900 ${jumpInputClass}`}
+                        className={`w-8 bg-transparent text-sm font-semibold text-ink-900 ${jumpInputClass}`}
                         aria-label={`Loncat ke halaman, dari ${totalPages} halaman`}
                     />
-                    <span className="text-sm text-slate-400 whitespace-nowrap">/ {totalPages}</span>
+                    <span className="text-sm text-ink-400 whitespace-nowrap">/ {totalPages}</span>
                 </div>
 
                 <button
@@ -181,7 +181,7 @@ export default function Pagination({
                     onClick={() => onPageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
                     aria-label="Halaman selanjutnya"
-                    className="flex items-center justify-center w-10 h-10 shrink-0 rounded-full border border-slate-200 text-slate-600 active:bg-slate-100 disabled:opacity-30 disabled:active:bg-transparent transition"
+                    className="flex items-center justify-center w-10 h-10 shrink-0 rounded-full border border-line-200 text-ink-600 active:bg-surface-100 disabled:opacity-30 disabled:active:bg-transparent transition"
                 >
                     <ChevronRight size={18} />
                 </button>

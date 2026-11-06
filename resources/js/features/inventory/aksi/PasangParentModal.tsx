@@ -57,17 +57,17 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, mem
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4 animate-[fadeIn_150ms_ease-out]"
     >
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
+      <div className="bg-surface rounded-2xl shadow-2xl border border-line-200-a80 w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+        <div className="flex items-start justify-between px-6 py-4 border-b border-line-100 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-tint-blue-50 border border-edge-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0">
               <Link2 size={20} className="text-blue-600" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-900 leading-tight">Pasang ke Induk</h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                <span className="font-mono font-medium text-slate-700">{inventory.kode_inventory}</span> · {inventory.nama || '-'}
+              <h3 className="text-base font-semibold text-ink-900 leading-tight">Pasang ke Induk</h3>
+              <p className="text-xs text-ink-500 mt-0.5">
+                <span className="font-mono font-medium text-ink-700">{inventory.kode_inventory}</span> · {inventory.nama || '-'}
               </p>
             </div>
           </div>
@@ -76,7 +76,7 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, mem
             onClick={onClose}
             disabled={loading}
             aria-label="Tutup"
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-40"
+            className="text-ink-400 hover:text-ink-600 p-1.5 rounded-lg hover:bg-hover-100 transition disabled:opacity-40"
           >
             <X size={18} />
           </button>
@@ -85,7 +85,7 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, mem
         {/* Body */}
         <div className="px-6 py-5 overflow-y-auto space-y-3">
           <div className="relative">
-            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
             <input
               type="text"
               value={search}
@@ -97,10 +97,10 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, mem
           </div>
 
           {selected && (
-            <div className="flex items-center justify-between gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3.5 py-2.5 text-xs">
+            <div className="flex items-center justify-between gap-2 bg-tint-blue-50 border border-edge-blue-100 rounded-xl px-3.5 py-2.5 text-xs">
               <div className="truncate">
-                <span className="text-slate-500">Unit Terpilih: </span>
-                <span className="font-semibold text-slate-900">{selected.kode_inventory} — {selected.nama || '-'}</span>
+                <span className="text-ink-500">Unit Terpilih: </span>
+                <span className="font-semibold text-ink-900">{selected.kode_inventory} — {selected.nama || '-'}</span>
               </div>
               <button
                 type="button"
@@ -112,9 +112,9 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, mem
             </div>
           )}
 
-          <div className="border border-slate-200 rounded-xl max-h-52 overflow-y-auto divide-y divide-slate-100">
+          <div className="border border-line-200 rounded-xl max-h-52 overflow-y-auto divide-y divide-slate-100">
             {filteredOptions.length === 0 && (
-              <p className="text-xs text-slate-400 text-center py-6">
+              <p className="text-xs text-ink-400 text-center py-6">
                 {memuatOpsi
                   ? 'Memuat daftar induk…'
                   : indukOptions.length === 0
@@ -130,12 +130,12 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, mem
                   key={p.id}
                   onClick={() => setParentId(p.id)}
                   className={`w-full flex items-center justify-between gap-2 text-left px-3.5 py-2.5 text-sm transition ${
-                    isSelected ? 'bg-slate-900 text-white' : 'hover:bg-slate-50 text-slate-700'
+                    isSelected ? 'bg-solid text-white' : 'hover:bg-hover-50 text-ink-700'
                   }`}
                 >
                   <span className="min-w-0">
                     <span className="block font-medium truncate">{p.kode_inventory}</span>
-                    <span className={`block text-xs truncate ${isSelected ? 'text-slate-300' : 'text-slate-400'}`}>
+                    <span className={`block text-xs truncate ${isSelected ? 'text-ink-300' : 'text-ink-400'}`}>
                       {p.nama || '-'}
                     </span>
                   </span>
@@ -147,7 +147,7 @@ export default function InventoryPasangIndukModal({ inventory, indukOptions, mem
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 shrink-0 bg-slate-50/60">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-line-100 shrink-0 bg-surface-50-a60">
           <ButtonCancel onClick={onClose} disabled={loading} />
           <ButtonSubmit
             onClick={handleSubmit}

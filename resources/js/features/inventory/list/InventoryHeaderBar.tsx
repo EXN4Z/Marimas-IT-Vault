@@ -13,11 +13,11 @@ interface InventoryHeaderBarProps {
   setFormOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-// [INVENTORY-V2] Gaya sama dengan halaman Penanganan (.pn-head, .dd-btn, .pn-cta di index.css).
+// [INVENTORY-V2] Gaya sama dengan halaman Penanganan (utilitas Tailwind; palet .pn di index.css).
 export default function InventoryHeaderBar({ setExportOpen, exportLoading = false, isAdmin, fileInputRef, handleFileSelected, importLoading, setEditingInventory, setFormOpen }: InventoryHeaderBarProps) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-ink-500">
         Kelola inventory IT — laptop, PC, monitor, printer, dan semua inventory perusahaan.
       </p>
       <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
@@ -26,7 +26,7 @@ export default function InventoryHeaderBar({ setExportOpen, exportLoading = fals
           type="button"
           onClick={() => setExportOpen(true)}
           disabled={exportLoading}
-          className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
+          className="flex items-center gap-2 bg-surface border border-line-200 text-ink-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-hover-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
         >
           {exportLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
           Export Excel
@@ -40,7 +40,7 @@ export default function InventoryHeaderBar({ setExportOpen, exportLoading = fals
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={importLoading}
-              className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
+              className="flex items-center gap-2 bg-surface border border-line-200 text-ink-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-hover-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
             >
               {importLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
               Import Excel
@@ -53,7 +53,7 @@ export default function InventoryHeaderBar({ setExportOpen, exportLoading = fals
                 setEditingInventory(null);
                 setFormOpen(true);
               }}
-              className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs dark:!bg-white dark:!text-slate-900 dark:hover:!bg-gray-100"
+              className="flex items-center gap-2 bg-solid text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-solid-hover transition shadow-xs dark:!bg-white dark:!text-slate-900 dark:hover:!bg-gray-100"
             >
               <Plus size={16} />
               Tambah Inventory

@@ -12,6 +12,7 @@ import KaryawanExportModal from '../laporan/export/KaryawanExportModal';
 import KaryawanFormModal from './modals/KaryawanFormModal';
 import KaryawanDetailModal from './modals/KaryawanDetailModal';
 import type { KaryawanList, KaryawanOpsi, KaryawanRow } from './types';
+import { pnCard, pnEmpty, pnTable } from '../../components/ui/pn';
 
 type TabKey = 'semua' | 'user' | 'admin';
 
@@ -32,7 +33,7 @@ function StatusBadge({ status, small = false }: { status?: string; small?: boole
     return (
         <span
             className={[
-                'inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 font-semibold text-slate-800 whitespace-nowrap',
+                'inline-flex items-center gap-1.5 rounded-full border border-line-200 bg-surface-50 font-semibold text-ink-800 whitespace-nowrap',
                 small ? 'text-[10px] px-2 py-0.5' : 'text-xs px-2.5 py-1',
             ].join(' ')}
         >
@@ -234,7 +235,7 @@ export default function TabKaryawan() {
     return (
         <>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-ink-500">
                     Kelola data user dan karyawan sistem, akun login, departemen, dan hak akses.
                 </p>
                 {isAdmin && (
@@ -243,7 +244,7 @@ export default function TabKaryawan() {
                             type="button"
                             onClick={openExport}
                             disabled={exportLoading}
-                            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
+                            className="flex items-center gap-2 bg-surface border border-line-200 text-ink-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-hover-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs"
                         >
                             {exportLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                             Export Excel
@@ -251,7 +252,7 @@ export default function TabKaryawan() {
                         <button
                             type="button"
                             onClick={() => setShowImportModal(true)}
-                            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 transition shadow-xs"
+                            className="flex items-center gap-2 bg-surface border border-line-200 text-ink-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-hover-50 transition shadow-xs"
                         >
                             <Upload size={16} />
                             Import Excel
@@ -259,7 +260,7 @@ export default function TabKaryawan() {
                         <button
                             type="button"
                             onClick={() => setFormModal({ user: null })}
-                            className="flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-xs dark:!bg-white dark:!text-slate-900 dark:hover:!bg-gray-100"
+                            className="flex items-center gap-2 bg-solid text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-solid-hover transition shadow-xs dark:!bg-white dark:!text-slate-900 dark:hover:!bg-gray-100"
                         >
                             <Plus size={16} />
                             Tambah User
@@ -269,9 +270,9 @@ export default function TabKaryawan() {
             </div>
 
             {importErrors.length > 0 && (
-                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm font-semibold text-red-800 mb-2">Import gagal untuk beberapa baris:</p>
-                    <ul className="text-xs text-red-700 list-disc list-inside space-y-1">
+                <div className="mb-4 p-4 bg-tint-red-50 border border-edge-red-200 rounded-lg">
+                    <p className="text-sm font-semibold text-tone-red-800 mb-2">Import gagal untuk beberapa baris:</p>
+                    <ul className="text-xs text-tone-red-700 list-disc list-inside space-y-1">
                         {importErrors.map((err, i) => (
                             <li key={i}>{err}</li>
                         ))}
@@ -280,7 +281,7 @@ export default function TabKaryawan() {
             )}
 
             {isAdmin && (
-                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                <div className="bg-surface border border-line-200 rounded-xl p-6 shadow-sm">
                     {/* Tab navigation role */}
                     <ScrollableTabBar
                         className="mb-4"
@@ -298,22 +299,22 @@ export default function TabKaryawan() {
                         />
                     </div>
 
-                    <p className="text-xs text-slate-500 mb-4">
-                        Total {activeTabLabel}: <span className="font-semibold text-slate-900">{totalUsers}</span> user
+                    <p className="text-xs text-ink-500 mb-4">
+                        Total {activeTabLabel}: <span className="font-semibold text-ink-900">{totalUsers}</span> user
                     </p>
 
-                    <div className="pn-card">
-                        {!list && <p className="pn-empty">Gagal memuat data. Coba lagi.</p>}
+                    <div className={pnCard}>
+                        {!list && <p className={pnEmpty}>Gagal memuat data. Coba lagi.</p>}
 
                         {list && users.length === 0 && (
-                            <p className="pn-empty">Tidak ada user yang cocok dengan pencarian / filter ini.</p>
+                            <p className={pnEmpty}>Tidak ada user yang cocok dengan pencarian / filter ini.</p>
                         )}
 
                         {list && users.length > 0 && (
                             <>
                                 {/* Desktop Table */}
-                                <div className={`hidden sm:block pn-scroll transition-opacity ${listLoading ? 'opacity-60' : ''}`}>
-                                    <table className="pn-table">
+                                <div className={`hidden sm:block overflow-x-auto transition-opacity ${listLoading ? 'opacity-60' : ''}`}>
+                                    <table className={pnTable}>
                                     <thead>
                                         <tr>
                                             <th>NIK</th>
@@ -322,26 +323,26 @@ export default function TabKaryawan() {
                                             <th>Departemen</th>
                                             <th className="text-center">Role</th>
                                             <th className="text-center">Status</th>
-                                            <th className="pn-r">Aksi</th>
+                                            <th className="text-right">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {users.map((user) => (
                                             <tr key={user.id}>
                                                 <td>
-                                                    <span className="pn-kode">{user.nik}</span>
+                                                    <span className="leading-[1.25] font-bold text-dv-ink">{user.nik}</span>
                                                 </td>
                                                 <td>
                                                     <div className="max-w-[200px]">
                                                         <Tooltip content={user.name}>
-                                                            <p className="pn-strong pn-trunc-s">{user.name}</p>
+                                                            <p className="font-bold text-dv-ink min-w-0 truncate">{user.name}</p>
                                                         </Tooltip>
                                                     </div>
                                                 </td>
                                                 <td>
                                                     <div className="max-w-[220px]">
                                                         <Tooltip content={user.email || '-'}>
-                                                            <p className="pn-trunc-s">{user.email || '-'}</p>
+                                                            <p className="min-w-0 truncate">{user.email || '-'}</p>
                                                         </Tooltip>
                                                     </div>
                                                 </td>
@@ -349,7 +350,7 @@ export default function TabKaryawan() {
                                                     {user.departemen?.nama || '-'}
                                                 </td>
                                                 <td className="text-center">
-                                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 font-semibold text-slate-800 whitespace-nowrap text-xs px-2.5 py-1">
+                                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-line-200 bg-surface-50 font-semibold text-ink-800 whitespace-nowrap text-xs px-2.5 py-1">
                                                         <span className={`w-1.5 h-1.5 rounded-full ${roleStyles[user.role ?? ''] || defaultRoleStyle}`} />
                                                         {roleLabels[user.role ?? ''] || user.role || '-'}
                                                     </span>
@@ -363,7 +364,7 @@ export default function TabKaryawan() {
                                                             type="button"
                                                             onClick={() => setDetailUser(user)}
                                                             title="Detail"
-                                                            className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                                                            className="p-2 text-ink-400 hover:text-ink-900 hover:bg-hover-100 rounded-lg transition"
                                                         >
                                                             <Eye size={15} />
                                                         </button>
@@ -373,7 +374,7 @@ export default function TabKaryawan() {
                                                                     type="button"
                                                                     onClick={() => openEdit(user)}
                                                                     title="Edit"
-                                                                    className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                                                                    className="p-2 text-ink-400 hover:text-ink-900 hover:bg-hover-100 rounded-lg transition"
                                                                 >
                                                                     <Pencil size={15} />
                                                                 </button>
@@ -381,7 +382,7 @@ export default function TabKaryawan() {
                                                                     type="button"
                                                                     onClick={() => requestDelete(user)}
                                                                     title="Hapus"
-                                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                                                                    className="p-2 text-ink-400 hover:text-tone-red-600 hover:bg-tint-red-hover-50 rounded-lg transition"
                                                                 >
                                                                     <Trash2 size={15} />
                                                                 </button>
@@ -401,12 +402,12 @@ export default function TabKaryawan() {
                                         <div key={user.id} className="p-4 flex flex-col gap-2.5">
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="flex items-center gap-2.5 min-w-0">
-                                                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-700 shrink-0">
+                                                    <div className="w-8 h-8 rounded-full bg-surface-100 flex items-center justify-center text-xs font-semibold text-ink-700 shrink-0 dark:border dark:border-[#38383e]">
                                                         {initials(user.name)}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <p className="text-sm font-semibold text-slate-900 truncate">{user.name}</p>
-                                                        <p className="text-xs text-slate-400 truncate">{user.nik || user.email || '-'}</p>
+                                                        <p className="text-sm font-semibold text-ink-900 truncate">{user.name}</p>
+                                                        <p className="text-xs text-ink-400 truncate">{user.nik || user.email || '-'}</p>
                                                     </div>
                                                 </div>
                                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${roleStyles[user.role ?? ''] || defaultRoleStyle}`}>
@@ -416,7 +417,7 @@ export default function TabKaryawan() {
                                             <div className="flex items-center justify-between pt-1">
                                                 <div className="flex items-center gap-2 min-w-0">
                                                     <StatusBadge status={user.status} small />
-                                                    <span className="text-xs text-slate-500 truncate">
+                                                    <span className="text-xs text-ink-500 truncate">
                                                         {user.departemen?.nama || 'Departemen belum diatur'}
                                                     </span>
                                                 </div>
@@ -425,7 +426,7 @@ export default function TabKaryawan() {
                                                         type="button"
                                                         onClick={() => setDetailUser(user)}
                                                         title="Detail"
-                                                        className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                                                        className="p-1.5 text-ink-400 hover:text-ink-900 hover:bg-hover-100 rounded-lg transition"
                                                     >
                                                         <Eye size={15} />
                                                     </button>
@@ -435,7 +436,7 @@ export default function TabKaryawan() {
                                                                 type="button"
                                                                 onClick={() => openEdit(user)}
                                                                 title="Edit"
-                                                                className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                                                                className="p-1.5 text-ink-400 hover:text-ink-900 hover:bg-hover-100 rounded-lg transition"
                                                             >
                                                                 <Pencil size={15} />
                                                             </button>
@@ -443,7 +444,7 @@ export default function TabKaryawan() {
                                                                 type="button"
                                                                 onClick={() => requestDelete(user)}
                                                                 title="Hapus"
-                                                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                                                                className="p-1.5 text-ink-400 hover:text-tone-red-600 hover:bg-tint-red-hover-50 rounded-lg transition"
                                                             >
                                                                 <Trash2 size={15} />
                                                             </button>
@@ -456,7 +457,7 @@ export default function TabKaryawan() {
                             </div>
 
                             {totalPages > 1 && (
-                                <div className="-mx-[18px] -mb-3 mt-1 px-6 py-3 border-t border-slate-100">
+                                <div className="-mx-[18px] -mb-3 mt-1 px-6 py-3 border-t border-line-100">
                                     <Pagination
                                         currentPage={currentPage}
                                         totalPages={totalPages}
@@ -537,30 +538,30 @@ interface ImportModalProps {
 function ImportModal({ importing, errors, fileInputRef, onFileSelected, onClose }: ImportModalProps) {
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
-            <div className="bg-white rounded-xl w-full max-w-md p-5 max-h-[90vh] overflow-y-auto">
+            <div className="bg-surface rounded-xl w-full max-w-md p-5 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-start justify-between gap-3 mb-1">
-                    <h2 className="text-base font-semibold text-gray-900">Import Data Karyawan</h2>
+                    <h2 className="text-base font-semibold text-tone-gray-900">Import Data Karyawan</h2>
                     <button
                         type="button"
                         onClick={onClose}
                         disabled={importing}
                         aria-label="Tutup"
-                        className="-mr-1.5 -mt-1 shrink-0 text-gray-400 hover:text-gray-700 p-1.5 rounded-lg hover:bg-gray-100 transition disabled:opacity-40"
+                        className="-mr-1.5 -mt-1 shrink-0 text-tone-gray-400 hover:text-tone-gray-700 p-1.5 rounded-lg hover:bg-tint-gray-hover-100 transition disabled:opacity-40"
                     >
                         <X size={18} />
                     </button>
                 </div>
-                <p className="text-sm text-gray-500 mb-4">
+                <p className="text-sm text-tone-gray-500 mb-4">
                     Upload file Excel (.xlsx) berisi kolom NIK, Nama, Email, Phone, Departemen, dan
                     Tanggal Masuk. Karyawan baru akan otomatis dibuatkan akun dan passwordnya
                     dikirim ke email masing-masing.
                 </p>
 
-                <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-lg py-8 cursor-pointer hover:bg-gray-50">
-                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-edge-gray-200 rounded-lg py-8 cursor-pointer hover:bg-tint-gray-hover-50">
+                    <svg className="w-6 h-6 text-tone-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-tone-gray-600">
                         {importing ? 'Mengupload & memproses...' : 'Klik untuk pilih file Excel'}
                     </span>
                     <input
@@ -574,7 +575,7 @@ function ImportModal({ importing, errors, fileInputRef, onFileSelected, onClose 
                 </label>
 
                 {errors.length > 0 && (
-                    <div className="mt-4 text-sm bg-red-50 text-red-700 rounded-lg p-3 max-h-40 overflow-y-auto">
+                    <div className="mt-4 text-sm bg-tint-red-50 text-tone-red-700 rounded-lg p-3 max-h-40 overflow-y-auto">
                         <p className="font-medium mb-1">Gagal import:</p>
                         <ul className="list-disc list-inside space-y-1">
                             {errors.map((e, i) => (
@@ -588,7 +589,7 @@ function ImportModal({ importing, errors, fileInputRef, onFileSelected, onClose 
                     <button
                         onClick={onClose}
                         disabled={importing}
-                        className="text-sm px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
+                        className="text-sm px-4 py-2 rounded-lg border border-edge-gray-200 hover:bg-tint-gray-hover-50 disabled:opacity-50"
                     >
                         Tutup
                     </button>

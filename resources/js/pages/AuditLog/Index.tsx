@@ -5,6 +5,7 @@ import ScrollableTabBar from '../../components/navigation/ScrollableTabBar';
 import Pagination from '../../components/table/Pagination';
 import { Skeleton } from '../../components/skeleton';
 import type { PaginatedAuditLog } from '../../features/audit-log/types';
+import { pnCard, pnEmpty } from '../../components/ui/pn';
 
 type TabKey = 'aktif' | 'trash';
 
@@ -17,11 +18,11 @@ interface Props {
 type VisitOptions = NonNullable<Parameters<typeof router.get>[2]>;
 
 const methodColors: Record<string, string> = {
-  GET: 'bg-slate-100 text-slate-600',
-  POST: 'bg-emerald-50 text-emerald-600',
-  PUT: 'bg-amber-50 text-amber-600',
-  PATCH: 'bg-amber-50 text-amber-600',
-  DELETE: 'bg-red-50 text-red-600',
+  GET: 'bg-surface-100 text-ink-600',
+  POST: 'bg-tint-emerald-50 text-emerald-600',
+  PUT: 'bg-tint-amber-50 text-tone-amber-600',
+  PATCH: 'bg-tint-amber-50 text-tone-amber-600',
+  DELETE: 'bg-tint-red-50 text-tone-red-600',
 };
 
 function formatWaktu(iso: string): string {
@@ -92,13 +93,13 @@ export default function AuditLogIndex({ tab, filters, logs: paginator }: Props) 
   return (
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-500">
           Riwayat aktivitas pengguna sistem. Log otomatis pindah ke trash setelah 24 jam, dan
           terhapus permanen setelah 7 hari di trash.
         </p>
         <button
           onClick={refresh}
-          className="flex items-center gap-2 bg-slate-100 text-slate-600 text-sm font-medium px-3 py-2 rounded-lg hover:bg-slate-200 transition flex-shrink-0"
+          className="flex items-center gap-2 bg-surface-100 text-ink-600 text-sm font-medium px-3 py-2 rounded-lg hover:bg-hover-200 transition flex-shrink-0"
         >
           <RefreshCw size={14} />
           Refresh
@@ -116,34 +117,34 @@ export default function AuditLogIndex({ tab, filters, logs: paginator }: Props) 
       />
 
       <div className="relative mb-4">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
         <input
           type="text"
           value={search}
           onChange={(e) => gantiSearch(e.target.value)}
           placeholder="Cari deskripsi, endpoint, IP, atau nama pengguna..."
-          className="w-full text-sm border border-slate-200 rounded-lg pl-9 pr-9 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+          className="w-full text-sm border border-line-200 rounded-lg pl-9 pr-9 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
         />
         {search && (
           <button
             onClick={() => gantiSearch('')}
             aria-label="Hapus pencarian"
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-300 hover:text-ink-500"
           >
             <X size={15} />
           </button>
         )}
       </div>
 
-      <p className="text-xs text-slate-500 mb-4">
-        Total {tab === 'aktif' ? 'Log Aktif' : 'Trash'}: <span className="font-semibold text-slate-900">{total}</span> log
+      <p className="text-xs text-ink-500 mb-4">
+        Total {tab === 'aktif' ? 'Log Aktif' : 'Trash'}: <span className="font-semibold text-ink-900">{total}</span> log
       </p>
 
-      <div className="pn-card">
+      <div className={pnCard}>
         {loading && (
           <div className="flex flex-col gap-1">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
+              <div key={i} className="flex items-center justify-between py-2.5 border-b border-line-100 last:border-0">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <Skeleton className="h-5 w-14 rounded-full shrink-0" />
                   <div className="min-w-0 flex-1 space-y-1.5">
@@ -158,7 +159,7 @@ export default function AuditLogIndex({ tab, filters, logs: paginator }: Props) 
         )}
 
         {!loading && logs.length === 0 && (
-          <p className="pn-empty">
+          <p className={pnEmpty}>
             {filters.search
               ? <>Tidak ada hasil untuk "{filters.search}".</>
               : tab === 'aktif' ? 'Belum ada aktivitas.' : 'Trash kosong.'}
@@ -170,31 +171,31 @@ export default function AuditLogIndex({ tab, filters, logs: paginator }: Props) 
             {logs.map((log) => (
               <div
                 key={log.id}
-                className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0"
+                className="flex items-center justify-between py-2.5 border-b border-line-100 last:border-0"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <span
                     className={
                       'text-[10px] font-semibold px-2 py-1 rounded-full flex-shrink-0 ' +
-                      (methodColors[log.method] || 'bg-slate-100 text-slate-600')
+                      (methodColors[log.method] || 'bg-surface-100 text-ink-600 dark:border dark:border-[#38383e]')
                     }
                   >
                     {log.method}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm text-slate-800 truncate">{log.deskripsi}</p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-sm text-ink-800 truncate">{log.deskripsi}</p>
+                    <p className="text-xs text-ink-400">
                       {log.user?.name ?? 'Guest'} · /{log.endpoint} · {log.ip_address ?? '-'}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0 ml-3">
                   {tab === 'aktif' ? (
-                    <ArrowDownCircle size={14} className="text-slate-300" />
+                    <ArrowDownCircle size={14} className="text-ink-300" />
                   ) : (
-                    <ArrowUpCircle size={14} className="text-slate-300" />
+                    <ArrowUpCircle size={14} className="text-ink-300" />
                   )}
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-ink-400">
                     {formatWaktu(tab === 'trash' ? log.deleted_at ?? log.created_at : log.created_at)}
                   </span>
                 </div>
@@ -204,7 +205,7 @@ export default function AuditLogIndex({ tab, filters, logs: paginator }: Props) 
         )}
 
         {!loading && logs.length > 0 && lastPage > 1 && (
-          <div className="-mx-[18px] -mb-3 mt-1 px-6 py-3 border-t border-slate-100">
+          <div className="-mx-[18px] -mb-3 mt-1 px-6 py-3 border-t border-line-100">
             <Pagination
               currentPage={page}
               totalPages={lastPage}

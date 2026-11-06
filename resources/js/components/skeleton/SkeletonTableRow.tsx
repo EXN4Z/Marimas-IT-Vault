@@ -1,7 +1,8 @@
 import Skeleton from './Skeleton';
+import { pnCard, pnTable } from '../ui/pn';
 
-// Baris skeleton buat tabel data gaya baru (.pn-table di dalam .pn-card). Padding sel & garis pemisah
-// datang dari .pn-table itu sendiri, jadi tinggi baris skeleton sama dengan baris asli dan tidak "loncat".
+// Baris skeleton buat tabel data gaya baru (pnTable di dalam pnCard, lihat components/ui/pn.ts). Padding sel & garis pemisah
+// datang dari pnTable itu sendiri, jadi tinggi baris skeleton sama dengan baris asli dan tidak "loncat".
 //
 // `columns` nentuin berapa <td> yang dibikin per baris -- samain sama jumlah kolom tabel asli
 // (termasuk kolom Aksi). `widths` opsional buat ngatur lebar tiap kolom.
@@ -40,12 +41,12 @@ export function SkeletonTable({ columns, rows = 5, widths }: SkeletonTableProps)
   );
 }
 
-// Tabel lengkap (kepala + isi) dalam kartu .pn-card, buat halaman yang seluruh tabelnya belum ada.
+// Tabel lengkap (kepala + isi) dalam kartu pnCard, buat halaman yang seluruh tabelnya belum ada.
 export function SkeletonTableCard({ headers, rows = 5 }: { headers: string[]; rows?: number }) {
   return (
-    <div className="pn-card" aria-busy="true">
-      <div className="pn-scroll">
-        <table className="pn-table">
+    <div className={pnCard} aria-busy="true">
+      <div className="overflow-x-auto">
+        <table className={pnTable}>
           <thead>
             <tr>
               {headers.map((h, i) => (

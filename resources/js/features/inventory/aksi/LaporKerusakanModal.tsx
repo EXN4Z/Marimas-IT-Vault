@@ -65,17 +65,17 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 animate-[fadeIn_150ms_ease-out]"
     >
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
+      <div className="bg-surface rounded-2xl shadow-2xl border border-line-200-a80 w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+        <div className="flex items-start justify-between px-6 py-4 border-b border-line-100 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-red-600 shadow-sm shrink-0">
-              <AlertTriangle size={20} className="text-red-600" />
+            <div className="w-10 h-10 rounded-xl bg-tint-red-50 border border-edge-red-100 flex items-center justify-center text-tone-red-600 shadow-sm shrink-0">
+              <AlertTriangle size={20} className="text-tone-red-600" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-900 leading-tight">Lapor Kerusakan</h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                <span className="font-mono font-medium text-slate-700">{inventory.kode_inventory}</span> · {inventory.nama || '-'}
+              <h3 className="text-base font-semibold text-ink-900 leading-tight">Lapor Kerusakan</h3>
+              <p className="text-xs text-ink-500 mt-0.5">
+                <span className="font-mono font-medium text-ink-700">{inventory.kode_inventory}</span> · {inventory.nama || '-'}
               </p>
             </div>
           </div>
@@ -84,7 +84,7 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
             onClick={onClose}
             disabled={submitting}
             aria-label="Tutup"
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-40"
+            className="text-ink-400 hover:text-ink-600 p-1.5 rounded-lg hover:bg-hover-100 transition disabled:opacity-40"
           >
             <X size={18} />
           </button>
@@ -139,7 +139,7 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 shrink-0 bg-slate-50/60">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-line-100 shrink-0 bg-surface-50-a60">
           <ButtonCancel onClick={onClose} disabled={submitting} />
           <ButtonSubmit onClick={handleSubmit} loading={submitting} tone="danger" loadingLabel="Mengirim...">
             Kirim Laporan

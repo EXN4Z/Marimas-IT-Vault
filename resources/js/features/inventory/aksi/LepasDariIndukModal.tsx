@@ -38,17 +38,17 @@ export default function InventoryLepasDariIndukModal({ inventory, onClose, onSuc
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 animate-[fadeIn_150ms_ease-out]"
     >
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
+      <div className="bg-surface rounded-2xl shadow-2xl border border-line-200-a80 w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+        <div className="flex items-start justify-between px-6 py-4 border-b border-line-100 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-sm shrink-0">
-              <Unlink size={20} className="text-amber-600" />
+            <div className="w-10 h-10 rounded-xl bg-tint-amber-50 border border-edge-amber-100 flex items-center justify-center text-tone-amber-600 shadow-sm shrink-0">
+              <Unlink size={20} className="text-tone-amber-600" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-900 leading-tight">Lepas dari Induk</h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                <span className="font-mono font-medium text-slate-700">{inventory.kode_inventory}</span> · {inventory.nama || '-'}
+              <h3 className="text-base font-semibold text-ink-900 leading-tight">Lepas dari Induk</h3>
+              <p className="text-xs text-ink-500 mt-0.5">
+                <span className="font-mono font-medium text-ink-700">{inventory.kode_inventory}</span> · {inventory.nama || '-'}
               </p>
             </div>
           </div>
@@ -57,7 +57,7 @@ export default function InventoryLepasDariIndukModal({ inventory, onClose, onSuc
             onClick={onClose}
             disabled={submitting}
             aria-label="Tutup"
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-40"
+            className="text-ink-400 hover:text-ink-600 p-1.5 rounded-lg hover:bg-hover-100 transition disabled:opacity-40"
           >
             <X size={18} />
           </button>
@@ -66,7 +66,7 @@ export default function InventoryLepasDariIndukModal({ inventory, onClose, onSuc
         {/* Body */}
         <div className="px-6 py-5 overflow-y-auto space-y-4">
           {/* Info induk */}
-          <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/50 rounded-xl p-3.5 text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
+          <div className="bg-tint-amber-50 border border-amber-200/80 dark:border-amber-800/50 rounded-xl p-3.5 text-xs text-tone-amber-900 leading-relaxed">
             Kelengkapan ini akan dilepas dari relasi <span className="font-semibold">{indukLabel}</span>. Setelah dilepas, item ini akan menjadi kelengkapan independen (tersedia).
           </div>
 
@@ -81,7 +81,7 @@ export default function InventoryLepasDariIndukModal({ inventory, onClose, onSuc
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 shrink-0 bg-slate-50/60">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-line-100 shrink-0 bg-surface-50-a60">
           <ButtonCancel onClick={onClose} disabled={submitting} />
           <ButtonSubmit
             onClick={handleSubmit}

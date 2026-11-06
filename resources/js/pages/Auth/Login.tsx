@@ -52,9 +52,9 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex bg-slate-50 dark:bg-[#121214] text-slate-900 dark:text-zinc-100 transition-colors">
+    <div className="min-h-screen flex bg-surface-50 text-ink-900 transition-colors">
       {/* LEFT PANEL: Modern Corporate Office Supply & Inventory Showcase */}
-      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-10 xl:p-14 overflow-hidden bg-slate-900">
+      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-10 xl:p-14 overflow-hidden bg-solid">
         {/* Full-bleed Inventory Supply Room Image */}
         <img
           src="/login-bg.jpg"
@@ -105,21 +105,21 @@ export default function Login() {
         <div className="w-full max-w-md">
           {/* Mobile Brand */}
           <div className="lg:hidden mb-6">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-ink-900">
               MARIMAS IT VAULT
             </h1>
-            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+            <p className="text-xs text-ink-500 mt-0.5">
               Sistem Pengelolaan Inventory Terpadu
             </p>
           </div>
 
           {/* Form Card Container */}
-          <div className="bg-white dark:bg-[#18181b] border border-slate-200/80 dark:border-[#27272a] shadow-xl dark:shadow-2xl rounded-2xl p-7 sm:p-9">
+          <div className="bg-surface border border-line-200-a80 shadow-xl dark:shadow-2xl rounded-2xl p-7 sm:p-9">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              <h2 className="text-2xl font-bold tracking-tight text-ink-900">
                 Selamat Datang
               </h2>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+              <p className="text-xs text-ink-500 mt-1">
                 Masukkan kredensial akun Anda untuk mengakses sistem.
               </p>
             </div>
@@ -127,11 +127,11 @@ export default function Login() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Login ID Input */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                <label className="block text-xs font-semibold text-ink-700 mb-1.5">
                   ID Pengguna / Email
                 </label>
                 <div className="relative">
-                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400">
                     <User size={16} />
                   </div>
                   <input
@@ -140,18 +140,18 @@ export default function Login() {
                     onChange={(e) => setLoginId(e.target.value)}
                     required
                     placeholder="Email, No. HP, atau Nama"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-700/80 rounded-xl text-sm text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition"
+                    className="w-full pl-10 pr-4 py-2.5 bg-surface-50 border border-line-200 rounded-xl text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition"
                   />
                 </div>
               </div>
 
               {/* Password Input with Visibility Toggle */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                <label className="block text-xs font-semibold text-ink-700 mb-1.5">
                   Kata Sandi
                 </label>
                 <div className="relative">
-                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400">
                     <Lock size={16} />
                   </div>
                   <input
@@ -160,13 +160,13 @@ export default function Login() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     placeholder="Masukkan password Anda"
-                    className="w-full pl-10 pr-11 py-2.5 bg-slate-50 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-700/80 rounded-xl text-sm text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition"
+                    className="w-full pl-10 pr-11 py-2.5 bg-surface-50 border border-line-200 rounded-xl text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 p-1 transition"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-600 p-1 transition"
                     aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -176,7 +176,7 @@ export default function Login() {
 
               {/* Error Message Alert */}
               {error && (
-                <div className="text-xs text-rose-600 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 rounded-xl px-3.5 py-2.5 animate-[fadeIn_150ms_ease-out]">
+                <div className="text-xs text-rose-600 dark:text-rose-300 bg-tint-rose-50 border border-edge-rose-200 rounded-xl px-3.5 py-2.5 animate-[fadeIn_150ms_ease-out]">
                   {error}
                 </div>
               )}
@@ -185,7 +185,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-sm font-semibold py-3 rounded-xl shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.99]"
+                className="w-full mt-2 flex items-center justify-center gap-2 bg-solid hover:bg-solid-hover text-white text-sm font-semibold py-3 rounded-xl shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.99]"
               >
                 {loading ? (
                   <>
@@ -204,10 +204,10 @@ export default function Login() {
             {/* DIVIDER */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200 dark:border-zinc-800" />
+                <div className="w-full border-t border-line-200" />
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-white dark:bg-[#18181b] px-2 text-slate-400 dark:text-zinc-500 uppercase tracking-wider text-[10px] font-medium">
+                <span className="bg-surface px-2 text-ink-400 uppercase tracking-wider text-[10px] font-medium">
                   Pilihan Tampilan
                 </span>
               </div>
@@ -215,17 +215,17 @@ export default function Login() {
 
             {/* TOMBOL GANTI TEMA TERANG / GELAP (Di bawah tombol login) */}
             <div>
-              <div className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800">
+              <div className="grid grid-cols-2 p-1 bg-surface-100 rounded-xl border border-line-200">
                 <button
                   type="button"
                   onClick={() => setTheme('light')}
                   className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-medium transition cursor-pointer ${
                     !isDark
-                      ? 'bg-white text-slate-900 shadow-sm font-semibold'
-                      : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-surface text-ink-900 shadow-sm font-semibold'
+                      : 'text-ink-500 hover:text-ink-900'
                   }`}
                 >
-                  <Sun size={14} className={!isDark ? 'text-amber-500' : 'text-slate-400'} />
+                  <Sun size={14} className={!isDark ? 'text-amber-500' : 'text-ink-400'} />
                   <span>Mode Terang</span>
                 </button>
                 <button
@@ -234,17 +234,17 @@ export default function Login() {
                   className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-medium transition cursor-pointer ${
                     isDark
                       ? 'bg-zinc-800 text-white shadow-sm font-semibold'
-                      : 'text-slate-500 hover:text-slate-900'
+                      : 'text-ink-500 hover:text-ink-900'
                   }`}
                 >
-                  <Moon size={14} className={isDark ? 'text-blue-400' : 'text-slate-400'} />
+                  <Moon size={14} className={isDark ? 'text-blue-400' : 'text-ink-400'} />
                   <span>Mode Gelap</span>
                 </button>
               </div>
             </div>
 
             {/* Security footnote */}
-            <p className="mt-6 text-center text-[11px] text-slate-400 dark:text-zinc-500 leading-normal">
+            <p className="mt-6 text-center text-[11px] text-ink-400 leading-normal">
               Akses terbatas hanya untuk staf & karyawan berwenang PT Marimas Putera Kencana.
             </p>
           </div>

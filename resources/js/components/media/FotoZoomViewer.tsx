@@ -33,7 +33,7 @@ export default function FotoZoomViewer({ src, alt, onClose }: { src: string; alt
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scale, onClose]);
 
-  const btn = 'h-9 w-9 grid place-items-center rounded-full bg-white/15 text-white hover:bg-white/25 transition disabled:opacity-40';
+  const btn = 'h-9 w-9 grid place-items-center rounded-full bg-white/15 text-white hover:bg-white/25 transition disabled:opacity-40 dark:bg-[rgba(28,28,32,0.85)] dark:hover:bg-[rgba(28,28,32,0.85)]';
 
   return (
     <div

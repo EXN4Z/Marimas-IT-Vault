@@ -38,7 +38,7 @@ export default function PenangananFilterBar({ search, setSearch, filterKerusakan
         <button
           type="button"
           onClick={onReset}
-          className="px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition inline-flex items-center gap-1.5 shrink-0 self-center"
+          className="px-3 py-2 text-xs font-medium text-ink-600 hover:text-ink-900 bg-surface-100 hover:bg-hover-200 rounded-lg transition inline-flex items-center gap-1.5 shrink-0 self-center"
         >
           <RotateCcw size={13} />
           Reset Filter

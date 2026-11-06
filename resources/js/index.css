@@ -86,10 +86,194 @@ html, body, #root, #app {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ===== ULTRA-CLEAN GRAPHITE DARK THEME ===== */
+/* ===== DARK MODE: TOKEN TEMA (menggantikan override `html.dark .bg-white {…!important}` dst.) =====
+   Cara kerja: tiap warna yang berubah di mode gelap adalah token `--color-*` (nilai terang di @theme, nilai gelap di html.dark).
+   Di komponen pakai kelas token biasa, tanpa `dark:` — mis. `bg-surface`, `text-ink-700`, `border-line-200`, `bg-tint-amber-50`.
+   Nama:  surface-* latar · hover-* latar saat hover · solid* tombol gelap · ink-* teks · line-* garis · tint-* latar status ·
+          tone-* teks status · edge-* garis status · glow-* ring status · -x… hex khusus · sufiks -aNN = dengan alpha NN%.
+   Nilai terang = palet Tailwind semula (var(--color-slate-50) dst.), jadi mode terang tidak berubah. ===== */
+@theme {
+  --color-surface: var(--color-white);
+  --color-surface-50: var(--color-slate-50);
+  --color-surface-50-a50: color-mix(in oklab, var(--color-slate-50) 50%, transparent);
+  --color-surface-50-a60: color-mix(in oklab, var(--color-slate-50) 60%, transparent);
+  --color-surface-50-a80: color-mix(in oklab, var(--color-slate-50) 80%, transparent);
+  --color-surface-100: var(--color-slate-100);
+  --color-surface-200: var(--color-slate-200);
+  --color-surface-200-a70: color-mix(in oklab, var(--color-slate-200) 70%, transparent);
+  --color-surface-xf7f8fc: #F7F8FC;
+  --color-hover-50: var(--color-slate-50);
+  --color-hover-100: var(--color-slate-100);
+  --color-hover-100-a70: color-mix(in oklab, var(--color-slate-100) 70%, transparent);
+  --color-hover-200: var(--color-slate-200);
+  --color-solid: var(--color-slate-900);
+  --color-solid-hover: var(--color-slate-800);
+  --color-ink-300: var(--color-slate-300);
+  --color-ink-400: var(--color-slate-400);
+  --color-ink-500: var(--color-slate-500);
+  --color-ink-600: var(--color-slate-600);
+  --color-ink-700: var(--color-slate-700);
+  --color-ink-800: var(--color-slate-800);
+  --color-ink-900: var(--color-slate-900);
+  --color-ink-x171633: #171633;
+  --color-ink-xa9a9c6: #A9A9C6;
+  --color-line-50: var(--color-slate-50);
+  --color-line-100: var(--color-slate-100);
+  --color-line-200: var(--color-slate-200);
+  --color-line-200-a50: color-mix(in oklab, var(--color-slate-200) 50%, transparent);
+  --color-line-200-a80: color-mix(in oklab, var(--color-slate-200) 80%, transparent);
+  --color-line-300: var(--color-slate-300);
+  --color-line-400: var(--color-slate-400);
+  --color-tint-amber-50: var(--color-amber-50);
+  --color-tint-amber-50-a70: color-mix(in oklab, var(--color-amber-50) 70%, transparent);
+  --color-tint-amber-600: var(--color-amber-600);
+  --color-tint-amber-hover-700: var(--color-amber-700);
+  --color-tint-blue-50: var(--color-blue-50);
+  --color-tint-blue-50-a60: color-mix(in oklab, var(--color-blue-50) 60%, transparent);
+  --color-tint-emerald-50: var(--color-emerald-50);
+  --color-tint-emerald-50-a60: color-mix(in oklab, var(--color-emerald-50) 60%, transparent);
+  --color-tint-gray-hover-50: var(--color-gray-50);
+  --color-tint-gray-hover-100: var(--color-gray-100);
+  --color-tint-orange-50: var(--color-orange-50);
+  --color-tint-purple-50: var(--color-purple-50);
+  --color-tint-red-50: var(--color-red-50);
+  --color-tint-red-50-a30: color-mix(in oklab, var(--color-red-50) 30%, transparent);
+  --color-tint-red-50-a60: color-mix(in oklab, var(--color-red-50) 60%, transparent);
+  --color-tint-red-100: var(--color-red-100);
+  --color-tint-red-hover-50: var(--color-red-50);
+  --color-tint-rose-50: var(--color-rose-50);
+  --color-tint-sky-50: var(--color-sky-50);
+  --color-tint-yellow-50: var(--color-yellow-50);
+  --color-tone-amber-600: var(--color-amber-600);
+  --color-tone-amber-700: var(--color-amber-700);
+  --color-tone-amber-800: var(--color-amber-800);
+  --color-tone-amber-900: var(--color-amber-900);
+  --color-tone-emerald-700: var(--color-emerald-700);
+  --color-tone-gray-400: var(--color-gray-400);
+  --color-tone-gray-500: var(--color-gray-500);
+  --color-tone-gray-600: var(--color-gray-600);
+  --color-tone-gray-700: var(--color-gray-700);
+  --color-tone-gray-900: var(--color-gray-900);
+  --color-tone-orange-600: var(--color-orange-600);
+  --color-tone-orange-700: var(--color-orange-700);
+  --color-tone-purple-600: var(--color-purple-600);
+  --color-tone-purple-700: var(--color-purple-700);
+  --color-tone-red-600: var(--color-red-600);
+  --color-tone-red-700: var(--color-red-700);
+  --color-tone-red-800: var(--color-red-800);
+  --color-tone-red-900: var(--color-red-900);
+  --color-tone-rose-700: var(--color-rose-700);
+  --color-tone-sky-600: var(--color-sky-600);
+  --color-tone-sky-700: var(--color-sky-700);
+  --color-tone-yellow-700: var(--color-yellow-700);
+  --color-edge-amber-100: var(--color-amber-100);
+  --color-edge-amber-200: var(--color-amber-200);
+  --color-edge-blue-100: var(--color-blue-100);
+  --color-edge-blue-200: var(--color-blue-200);
+  --color-edge-emerald-100: var(--color-emerald-100);
+  --color-edge-emerald-200: var(--color-emerald-200);
+  --color-edge-gray-100: var(--color-gray-100);
+  --color-edge-gray-200: var(--color-gray-200);
+  --color-edge-red-100: var(--color-red-100);
+  --color-edge-red-200: var(--color-red-200);
+  --color-edge-red-300: var(--color-red-300);
+  --color-edge-rose-200: var(--color-rose-200);
+  --color-glow-emerald-500-a20: color-mix(in oklab, var(--color-emerald-500) 20%, transparent);
+  --color-glow-red-500-a20: color-mix(in oklab, var(--color-red-500) 20%, transparent);
+  --color-glow-slate-900-a5: color-mix(in oklab, var(--color-slate-900) 5%, transparent);
+}
+
 html.dark {
   color-scheme: dark;
   background-color: #121214;
+  --color-surface: #18181b;
+  --color-surface-50: #1e1e22;
+  --color-surface-50-a50: #1e1e22;
+  --color-surface-50-a60: #1e1e22;
+  --color-surface-50-a80: #1e1e22;
+  --color-surface-100: #27272a;
+  --color-surface-200: #383840;
+  --color-surface-200-a70: #383840;
+  --color-surface-xf7f8fc: #1e1e22;
+  --color-hover-50: #26262b;
+  --color-hover-100: #27272a;
+  --color-hover-100-a70: #2a2a30;
+  --color-hover-200: #3f3f46;
+  --color-solid: #27272a;
+  --color-solid-hover: #3f3f46;
+  --color-ink-300: #cbd5e1;
+  --color-ink-400: #71717a;
+  --color-ink-500: #a1a1aa;
+  --color-ink-600: #d4d4d8;
+  --color-ink-700: #e4e4e7;
+  --color-ink-800: #f4f4f5;
+  --color-ink-900: #fafafa;
+  --color-ink-x171633: #fafafa;
+  --color-ink-xa9a9c6: #a1a1aa;
+  --color-line-50: #1e1e22;
+  --color-line-100: #232327;
+  --color-line-200: #2c2c31;
+  --color-line-200-a50: #2c2c31;
+  --color-line-200-a80: #2c2c31;
+  --color-line-300: #383842;
+  --color-line-400: #4b4b55;
+  --color-tint-amber-50: rgba(245, 158, 11, 0.16);
+  --color-tint-amber-50-a70: rgba(245, 158, 11, 0.16);
+  --color-tint-amber-600: #d97706;
+  --color-tint-amber-hover-700: #b45309;
+  --color-tint-blue-50: rgba(99, 102, 241, 0.12);
+  --color-tint-blue-50-a60: rgba(99, 102, 241, 0.12);
+  --color-tint-emerald-50: rgba(16, 185, 129, 0.12);
+  --color-tint-emerald-50-a60: rgba(6, 78, 59, 0.35);
+  --color-tint-gray-hover-50: #26262b;
+  --color-tint-gray-hover-100: #27272a;
+  --color-tint-orange-50: rgba(245, 158, 11, 0.16);
+  --color-tint-purple-50: rgba(168, 85, 247, 0.16);
+  --color-tint-red-50: rgba(244, 63, 94, 0.12);
+  --color-tint-red-50-a30: rgba(136, 19, 55, 0.3);
+  --color-tint-red-50-a60: rgba(136, 19, 55, 0.3);
+  --color-tint-red-100: rgba(244, 63, 94, 0.22);
+  --color-tint-red-hover-50: rgba(239, 68, 68, 0.12);
+  --color-tint-rose-50: rgba(136, 19, 55, 0.3);
+  --color-tint-sky-50: rgba(14, 165, 233, 0.16);
+  --color-tint-yellow-50: rgba(234, 179, 8, 0.16);
+  --color-tone-amber-600: #fb923c;
+  --color-tone-amber-700: #fb923c;
+  --color-tone-amber-800: #fed7aa;
+  --color-tone-amber-900: #fed7aa;
+  --color-tone-emerald-700: #34d399;
+  --color-tone-gray-400: #71717a;
+  --color-tone-gray-500: #a1a1aa;
+  --color-tone-gray-600: #d4d4d8;
+  --color-tone-gray-700: #e4e4e7;
+  --color-tone-gray-900: #fafafa;
+  --color-tone-orange-600: #fb923c;
+  --color-tone-orange-700: #fb923c;
+  --color-tone-purple-600: #c084fc;
+  --color-tone-purple-700: #c084fc;
+  --color-tone-red-600: #f87171;
+  --color-tone-red-700: #fb7185;
+  --color-tone-red-800: #fb7185;
+  --color-tone-red-900: #fb7185;
+  --color-tone-rose-700: #fb7185;
+  --color-tone-sky-600: #38bdf8;
+  --color-tone-sky-700: #38bdf8;
+  --color-tone-yellow-700: #facc15;
+  --color-edge-amber-100: rgba(255, 255, 255, 0.08);
+  --color-edge-amber-200: rgba(245, 158, 11, 0.35);
+  --color-edge-blue-100: rgba(255, 255, 255, 0.08);
+  --color-edge-blue-200: rgba(165, 180, 252, 0.35);
+  --color-edge-emerald-100: rgba(255, 255, 255, 0.08);
+  --color-edge-emerald-200: rgba(52, 211, 153, 0.35);
+  --color-edge-gray-100: #2c2c31;
+  --color-edge-gray-200: #2c2c31;
+  --color-edge-red-100: rgba(255, 255, 255, 0.08);
+  --color-edge-red-200: rgba(251, 113, 133, 0.35);
+  --color-edge-red-300: rgba(251, 113, 133, 0.35);
+  --color-edge-rose-200: rgba(251, 113, 133, 0.35);
+  --color-glow-emerald-500-a20: rgba(52, 211, 153, 0.3);
+  --color-glow-red-500-a20: rgba(251, 113, 133, 0.3);
+  --color-glow-slate-900-a5: #2c2c31;
 }
 
 html.dark body {
@@ -97,854 +281,28 @@ html.dark body {
   color: #f4f4f5;
 }
 
-/* Core Surfaces - Charcoal Graphite matched to reference image */
-html.dark .bg-white {
-  background-color: #18181b !important;
-  color: #f4f4f5;
-}
-
-html.dark .bg-slate-50,
-html.dark .bg-slate-50\/30,
-html.dark .bg-slate-50\/50,
-html.dark .bg-slate-50\/60,
-html.dark .bg-slate-50\/70,
-html.dark .bg-slate-50\/80,
-html.dark .bg-slate-50\/90 {
-  background-color: #1e1e22 !important;
-}
-
-html.dark .bg-zinc-100 {
-  background-color: #121214 !important;
-}
-
-html.dark .bg-slate-100,
-html.dark .bg-slate-100\/30,
-html.dark .bg-slate-100\/50,
-html.dark .bg-slate-100\/60,
-html.dark .bg-slate-100\/70,
-html.dark .bg-slate-100\/80,
-html.dark .bg-slate-100\/90 {
-  background-color: #27272a !important;
-  color: #f4f4f5;
-}
-
-html.dark .bg-slate-200,
-html.dark .bg-slate-200\/30,
-html.dark .bg-slate-200\/50,
-html.dark .bg-slate-200\/60,
-html.dark .bg-slate-200\/70,
-html.dark .bg-slate-200\/80,
-html.dark .bg-slate-200\/90 {
-  background-color: #383840 !important;
-}
-
-/* Tinted state backgrounds in dark mode: dark elevated surface with subtle hue */
-html.dark .bg-emerald-50,
-html.dark .bg-emerald-50\/60,
-html.dark .bg-emerald-50\/50,
-html.dark .bg-emerald-50\/40 {
-  background-color: rgba(6, 78, 59, 0.35) !important;
-}
-
-html.dark .bg-red-50,
-html.dark .bg-red-50\/60,
-html.dark .bg-red-50\/50,
-html.dark .bg-red-50\/40 {
-  background-color: rgba(136, 19, 55, 0.3) !important;
-}
-
-html.dark .bg-blue-50,
-html.dark .bg-blue-50\/60,
-html.dark .bg-blue-50\/50 {
-  background-color: rgba(30, 58, 138, 0.3) !important;
-}
-
-html.dark .bg-amber-50,
-html.dark .bg-amber-50\/60,
-html.dark .bg-amber-50\/50 {
-  background-color: rgba(120, 53, 15, 0.3) !important;
-}
-
-/* Hover styles for light utility classes in dark mode */
-html.dark .hover\:bg-slate-100:hover,
-html.dark .hover\:bg-slate-100\/70:hover,
-html.dark .hover\:bg-slate-100\/50:hover,
-html.dark .hover\:bg-slate-50:hover,
-html.dark .hover\:bg-slate-50\/70:hover,
-html.dark .hover\:bg-slate-50\/50:hover,
-html.dark .hover\:bg-slate-200:hover,
-html.dark .hover\:bg-slate-200\/60:hover {
-  background-color: #2a2a30 !important;
-  color: #f4f4f5 !important;
-}
-
-/* Explicit sidebar navigation reset: inactive items must be transparent */
-html.dark aside nav button:not(.bg-slate-900):not(.bg-slate-100) {
-  background-color: transparent !important;
-}
-
-html.dark aside nav button:not(.bg-slate-900):not(.bg-slate-100):hover {
-  background-color: #27272a !important;
-}
-
-/* Semi-transparent white backgrounds in dark mode: dark elevated surface */
-html.dark [class*="bg-white/"] {
-  background-color: rgba(28, 28, 32, 0.85) !important;
-}
-
-/* Typography */
-html.dark .text-slate-900 {
-  color: #fafafa !important;
-}
-
-html.dark .text-slate-800 {
-  color: #f4f4f5 !important;
-}
-
-html.dark .text-slate-700 {
-  color: #e4e4e7 !important;
-}
-
-html.dark .text-slate-600 {
-  color: #d4d4d8 !important;
-}
-
-html.dark .text-slate-500 {
-  color: #a1a1aa !important;
-}
-
-html.dark .text-slate-400 {
-  color: #71717a !important;
-}
-
-html.dark .text-slate-300 {
-  color: #cbd5e1 !important;
-}
-
-/* React-Select & custom dropdown elements: never solid white in dark mode */
-html.dark [class*="-control"],
-html.dark [class*="css-"][class*="-control"] {
-  background-color: #222226 !important;
-  border-color: #383842 !important;
-  color: #f4f4f5 !important;
-}
-
-html.dark [class*="-menu"],
-html.dark [class*="css-"][class*="-menu"] {
-  background-color: #1e1e22 !important;
-  border-color: #383842 !important;
-}
-
-html.dark [class*="-option"],
-html.dark [class*="css-"][class*="-option"] {
-  background-color: #1e1e22 !important;
-  color: #e4e4e7 !important;
-}
-
-html.dark [class*="-option"]:hover,
-html.dark [class*="-option"][class*="--is-focused"] {
-  background-color: #2a2a30 !important;
-  color: #ffffff !important;
-}
-
-html.dark [class*="-singleValue"],
-html.dark [class*="-SingleValue"] {
-  color: #f4f4f5 !important;
-}
-
-html.dark [class*="-Input"] input,
-html.dark [class*="-input"] input {
-  color: #f4f4f5 !important;
-}
-
-/* Crisp 1px Borders matching reference line */
-html.dark .border-slate-200,
-html.dark .border-slate-200\/80,
-html.dark .border-slate-200\/50 {
-  border-color: #2c2c31 !important;
-}
-
-html.dark .border-slate-100 {
-  border-color: #232327 !important;
-}
-
-html.dark .border-slate-50 {
-  border-color: #1e1e22 !important;
-}
-
-html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
-html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #2c2c31 !important;
-}
-
-/* Smooth Interactive Hovers */
-html.dark .hover\:bg-slate-50:hover,
-html.dark .hover\:bg-slate-50\/50:hover,
-html.dark .hover\:bg-slate-50\/60:hover {
-  background-color: #26262b !important;
-}
-
-html.dark .hover\:bg-slate-100:hover {
-  background-color: #27272a !important;
-}
-
-html.dark .hover\:bg-slate-200:hover {
-  background-color: #3f3f46 !important;
-}
-
-/* Form Controls & Inputs */
-html.dark input,
-html.dark select,
-html.dark textarea {
+/* Kontrol form: tak berlapis (unlayered) sehingga menang atas utilitas Tailwind tanpa !important. */
+html.dark :is(input, select, textarea) {
   color-scheme: dark;
 }
-
-html.dark input:not([type="checkbox"]):not([type="radio"]),
-html.dark select,
-html.dark textarea {
-  background-color: #18181b !important;
-  color: #f4f4f5 !important;
-  border-color: #2c2c31 !important;
+html.dark :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  background-color: #18181b;
+  color: #f4f4f5;
+  border-color: #2c2c31;
+}
+html.dark :is(input, textarea)::placeholder {
+  color: #71717a;
 }
 
-html.dark input::placeholder,
-html.dark textarea::placeholder {
-  color: #71717a !important;
+/* Elevasi gelap untuk kartu/modal/dropdown: bayangan pekat + garis tipis (Tailwind meng-inline shadow, jadi tak bisa lewat token). */
+html.dark :is(.shadow-sm, .shadow-md, .shadow-lg, .shadow-xl) {
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7), 0 0 0 1px #2c2c31;
 }
 
-/* ==============================================================
-   COLOR REMAPPING FOR DARK MODE:
-   Orange in light mode -> Luminous Celestial Sky Cyan / Golden Honey in dark mode!
-   ============================================================== */
-/* Amber / Orange (Menunggu Perbaikan / Laporan / Review): Warm vivid orange as in light mode */
-html.dark .bg-amber-50,
-html.dark .bg-amber-50\/60,
-html.dark .bg-amber-50\/70,
-html.dark .bg-orange-50 {
-  background-color: rgba(245, 158, 11, 0.16) !important;
-  color: #fbbf24 !important;
-}
-
-html.dark .bg-amber-100,
-html.dark .bg-orange-100 {
-  background-color: rgba(245, 158, 11, 0.25) !important;
-}
-
-html.dark .text-amber-700,
-html.dark .text-amber-600,
-html.dark .text-orange-700,
-html.dark .text-orange-600 {
-  color: #fb923c !important;
-}
-
-html.dark .text-amber-800,
-html.dark .text-amber-900,
-html.dark .text-orange-800,
-html.dark .text-orange-900 {
-  color: #fed7aa !important;
-}
-
-html.dark .border-amber-200,
-html.dark .border-amber-300,
-html.dark .border-orange-200,
-html.dark .border-orange-300 {
-  border-color: rgba(245, 158, 11, 0.35) !important;
-}
-
-html.dark .ring-amber-500\/20,
-html.dark .ring-orange-500\/20 {
-  --tw-ring-color: rgba(245, 158, 11, 0.3) !important;
-}
-
-/* Action buttons that were amber-600 */
-html.dark .bg-amber-600,
-html.dark .bg-orange-600 {
-  background-color: #d97706 !important;
-  color: #ffffff !important;
-}
-
-html.dark .hover\:bg-amber-700:hover,
-html.dark .hover\:bg-orange-700:hover {
-  background-color: #b45309 !important;
-}
-
-/* Green (Selesai): Vibrant Mint Neon */
-html.dark .bg-emerald-50,
-html.dark .bg-emerald-50\/70 {
-  background-color: rgba(16, 185, 129, 0.12) !important;
-}
-
-html.dark .bg-emerald-100 {
-  background-color: rgba(16, 185, 129, 0.22) !important;
-}
-
-html.dark .text-emerald-700 {
-  color: #34d399 !important;
-}
-
-html.dark .border-emerald-200,
-html.dark .border-emerald-300 {
-  border-color: rgba(52, 211, 153, 0.35) !important;
-}
-
-html.dark .ring-emerald-500\/20 {
-  --tw-ring-color: rgba(52, 211, 153, 0.3) !important;
-}
-
-/* Blue (Sedang Pengerjaan): Electric Indigo Violet */
-html.dark .bg-blue-50,
-html.dark .bg-blue-50\/60,
-html.dark .bg-blue-50\/70 {
-  background-color: rgba(99, 102, 241, 0.12) !important;
-}
-
-html.dark .bg-blue-100 {
-  background-color: rgba(99, 102, 241, 0.22) !important;
-}
-
-html.dark .text-blue-700,
-html.dark .text-blue-900 {
-  color: #a5b4fc !important;
-}
-
-html.dark .border-blue-200,
-html.dark .border-blue-300 {
-  border-color: rgba(165, 180, 252, 0.35) !important;
-}
-
-html.dark .ring-blue-500\/20 {
-  --tw-ring-color: rgba(165, 180, 252, 0.3) !important;
-}
-
-/* Red (Rusak Berat): Soft Coral Rose */
-html.dark .bg-red-50,
-html.dark .bg-red-50\/70 {
-  background-color: rgba(244, 63, 94, 0.12) !important;
-}
-
-html.dark .bg-red-100 {
-  background-color: rgba(244, 63, 94, 0.22) !important;
-}
-
-html.dark .text-red-700,
-html.dark .text-red-800 {
-  color: #fb7185 !important;
-}
-
-html.dark .border-red-200,
-html.dark .border-red-300 {
-  border-color: rgba(251, 113, 133, 0.35) !important;
-}
-
-html.dark .ring-red-500\/20 {
-  --tw-ring-color: rgba(251, 113, 133, 0.3) !important;
-}
-
-/* Indigo (Kategori Utama: e.g. Laptop & Komputer) */
-html.dark .bg-indigo-50,
-html.dark .bg-indigo-50\/60,
-html.dark .bg-indigo-50\/70 {
-  background-color: rgba(99, 102, 241, 0.16) !important;
-  color: #a5b4fc !important;
-}
-
-html.dark .bg-indigo-100 {
-  background-color: rgba(99, 102, 241, 0.25) !important;
-}
-
-html.dark .text-indigo-600,
-html.dark .text-indigo-700,
-html.dark .text-indigo-800 {
-  color: #a5b4fc !important;
-}
-
-html.dark .text-indigo-900 {
-  color: #e0e7ff !important;
-}
-
-html.dark .border-indigo-100,
-html.dark .border-indigo-200,
-html.dark .border-indigo-300 {
-  border-color: rgba(129, 140, 248, 0.35) !important;
-}
-
-html.dark .ring-indigo-500\/20 {
-  --tw-ring-color: rgba(129, 140, 248, 0.3) !important;
-}
-
-/* Sky (Kategori Child / Menempel & Selesai Perbaikan) */
-html.dark .bg-sky-50,
-html.dark .bg-sky-50\/60,
-html.dark .bg-sky-50\/70 {
-  background-color: rgba(14, 165, 233, 0.16) !important;
-  color: #38bdf8 !important;
-}
-
-html.dark .bg-sky-100 {
-  background-color: rgba(14, 165, 233, 0.25) !important;
-}
-
-html.dark .text-sky-600,
-html.dark .text-sky-700,
-html.dark .text-sky-800 {
-  color: #38bdf8 !important;
-}
-
-html.dark .text-sky-900 {
-  color: #e0f2fe !important;
-}
-
-html.dark .border-sky-100,
-html.dark .border-sky-200,
-html.dark .border-sky-300 {
-  border-color: rgba(56, 189, 248, 0.35) !important;
-}
-
-/* Purple & Violet (Status Dijual) */
-html.dark .bg-purple-50,
-html.dark .bg-purple-50\/60,
-html.dark .bg-purple-50\/70,
-html.dark .bg-violet-50,
-html.dark .bg-violet-50\/60,
-html.dark .bg-violet-50\/70 {
-  background-color: rgba(168, 85, 247, 0.16) !important;
-  color: #c084fc !important;
-}
-
-html.dark .bg-purple-100,
-html.dark .bg-violet-100 {
-  background-color: rgba(168, 85, 247, 0.25) !important;
-}
-
-html.dark .text-purple-600,
-html.dark .text-purple-700,
-html.dark .text-violet-600,
-html.dark .text-violet-700 {
-  color: #c084fc !important;
-}
-
-html.dark .border-purple-200,
-html.dark .border-violet-200 {
-  border-color: rgba(192, 132, 252, 0.35) !important;
-}
-
-/* Yellow (Status Menunggu Perbaikan) */
-html.dark .bg-yellow-50,
-html.dark .bg-yellow-50\/60,
-html.dark .bg-yellow-50\/70 {
-  background-color: rgba(234, 179, 8, 0.16) !important;
-  color: #facc15 !important;
-}
-
-html.dark .bg-yellow-100 {
-  background-color: rgba(234, 179, 8, 0.25) !important;
-}
-
-html.dark .text-yellow-600,
-html.dark .text-yellow-700,
-html.dark .text-yellow-800 {
-  color: #facc15 !important;
-}
-
-html.dark .border-yellow-200,
-html.dark .border-yellow-300 {
-  border-color: rgba(250, 204, 21, 0.35) !important;
-}
-
-/* Teal & Cyan (Role User & Tags) */
-html.dark .bg-teal-50,
-html.dark .bg-teal-50\/60,
-html.dark .bg-teal-50\/70,
-html.dark .bg-cyan-50,
-html.dark .bg-cyan-50\/60,
-html.dark .bg-cyan-50\/70 {
-  background-color: rgba(20, 184, 166, 0.16) !important;
-  color: #2dd4bf !important;
-}
-
-html.dark .bg-teal-100,
-html.dark .bg-cyan-100 {
-  background-color: rgba(20, 184, 166, 0.25) !important;
-}
-
-html.dark .text-teal-600,
-html.dark .text-teal-700,
-html.dark .text-cyan-600,
-html.dark .text-cyan-700 {
-  color: #2dd4bf !important;
-}
-
-html.dark .border-teal-200,
-html.dark .border-cyan-200 {
-  border-color: rgba(45, 212, 191, 0.35) !important;
-}
-
-/* Gray family surfaces & text in dark mode */
-html.dark .bg-gray-50,
-html.dark .bg-gray-50\/50 {
-  background-color: #1e1e22 !important;
-}
-
-html.dark .bg-gray-100 {
-  background-color: #27272a !important;
-  color: #f4f4f5 !important;
-}
-
-html.dark .bg-gray-200 {
-  background-color: #3f3f46 !important;
-}
-
-html.dark .border-gray-100,
-html.dark .border-gray-200 {
-  border-color: #2c2c31 !important;
-}
-
-html.dark .text-gray-900 {
-  color: #fafafa !important;
-}
-
-html.dark .text-gray-800 {
-  color: #f4f4f5 !important;
-}
-
-html.dark .text-gray-700 {
-  color: #e4e4e7 !important;
-}
-
-html.dark .text-gray-600 {
-  color: #d4d4d8 !important;
-}
-
-html.dark .text-gray-500 {
-  color: #a1a1aa !important;
-}
-
-html.dark .text-gray-400 {
-  color: #71717a !important;
-}
-
-html.dark .hover\:bg-gray-50:hover {
-  background-color: #26262b !important;
-}
-
-html.dark .hover\:bg-gray-100:hover {
-  background-color: #27272a !important;
-}
-
-html.dark .bg-black {
-  background-color: #27272a !important;
-  color: #fafafa !important;
-  border: 1px solid #3f3f46 !important;
-}
-
-html.dark .hover\:bg-gray-800:hover {
-  background-color: #3f3f46 !important;
-}
-
-/* Prevent white gradient fade in dark mode (ScrollableTabBar) */
-html.dark .from-white {
-  --tw-gradient-from: #18181b !important;
-  --tw-gradient-to: rgba(24, 24, 27, 0) !important;
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
-}
-
-/* Topbar Search Input: Distinct elevated surface and crisp visible border */
+/* Transisi input di header (aturan mode terang yang dulu terselip di blok dark) */
 header input[type="text"],
 header input {
   transition: all 0.2s ease-in-out;
-}
-
-html.dark header input,
-html.dark header [type="text"] {
-  background-color: #222226 !important;
-  border: 1px solid #383842 !important;
-  color: #f4f4f5 !important;
-}
-
-html.dark header input:focus,
-html.dark header [type="text"]:focus {
-  border-color: #5c5c68 !important;
-  background-color: #27272d !important;
-}
-
-/* Progress bar tracks in dark mode: dark gray surface with subtle gray border (abu-abu) */
-html.dark .w-full.h-2.rounded-full,
-html.dark .w-full.h-1\.5.rounded-full,
-html.dark .w-full.h-2\.5.rounded-full,
-html.dark .w-full.rounded-full.overflow-hidden,
-html.dark .bg-\[\#F0F1F7\],
-html.dark .bg-\[\#f0f1f7\] {
-  background-color: #222226 !important;
-  border: 1px solid #383842 !important;
-}
-
-/* Status indicator dots (Online / Live pulse): Vibrant Glowing Green in dark mode.
-   Hanya titik yang memang hijau -- titik status lain (mis. status inventory) memakai warnanya sendiri. */
-html.dark .w-1\.5.h-1\.5.rounded-full.bg-emerald-400,
-html.dark .w-1\.5.h-1\.5.rounded-full.bg-emerald-500,
-html.dark .w-2.h-2.rounded-full.bg-emerald-400,
-html.dark .w-2.h-2.rounded-full.bg-emerald-500,
-html.dark .w-2.h-2.rounded-full.bg-\[\#34A853\],
-html.dark .w-1\.5.h-1\.5.rounded-full.bg-\[\#34A853\],
-html.dark .w-1\.5.h-1\.5.rounded-full.dark\:bg-emerald-400,
-html.dark span.animate-pulse.rounded-full {
-  background-color: #22c55e !important;
-  border: none !important;
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.8) !important;
-}
-
-html.dark .bg-\[\#F7F8FC\],
-html.dark .bg-\[\#f7f8fc\] {
-  background-color: #1e1e22 !important;
-  border-color: #2c2c31 !important;
-}
-
-/* Category & Status pill badges in dark mode: subtle border matching theme, never bright white */
-html.dark span.rounded-full.bg-indigo-50,
-html.dark .rounded-full.bg-indigo-50 {
-  border: 1px solid rgba(129, 140, 248, 0.3) !important;
-}
-
-html.dark span.rounded-full.bg-sky-50,
-html.dark .rounded-full.bg-sky-50 {
-  border: 1px solid rgba(56, 189, 248, 0.3) !important;
-}
-
-html.dark span.rounded-full.bg-emerald-50,
-html.dark .rounded-full.bg-emerald-50 {
-  border: 1px solid rgba(52, 211, 153, 0.3) !important;
-}
-
-html.dark span.rounded-full.bg-amber-50,
-html.dark .rounded-full.bg-amber-50 {
-  border: 1px solid rgba(245, 158, 11, 0.35) !important;
-}
-
-html.dark span.rounded-full.bg-yellow-50,
-html.dark .rounded-full.bg-yellow-50 {
-  border: 1px solid rgba(250, 204, 21, 0.3) !important;
-}
-
-html.dark span.rounded-full.bg-orange-50,
-html.dark .rounded-full.bg-orange-50 {
-  border: 1px solid rgba(249, 115, 22, 0.3) !important;
-}
-
-html.dark span.rounded-full.bg-red-50,
-html.dark span.rounded-full.bg-red-100,
-html.dark .rounded-full.bg-red-50,
-html.dark .rounded-full.bg-red-100 {
-  border: 1px solid rgba(251, 113, 133, 0.3) !important;
-}
-
-html.dark span.rounded-full.bg-purple-50,
-html.dark .rounded-full.bg-purple-50 {
-  border: 1px solid rgba(192, 132, 252, 0.3) !important;
-}
-
-html.dark span.rounded-full.bg-teal-50,
-html.dark .rounded-full.bg-teal-50 {
-  border: 1px solid rgba(45, 212, 191, 0.3) !important;
-}
-
-html.dark span.rounded-full.bg-slate-100,
-html.dark .rounded-full.bg-slate-100 {
-  border: 1px solid #38383e !important;
-}
-
-/* Active tab badge in dark mode: clean monochrome white & black (putih & item, tanpa warna biru) */
-html.dark button[data-tab] span.bg-slate-900,
-html.dark button span.bg-slate-900,
-html.dark span.bg-slate-900.rounded-full {
-  background-color: #ffffff !important;
-  color: #121214 !important;
-  font-weight: 600 !important;
-  border: 1px solid #ffffff !important;
-}
-
-/* Sign Out & Destructive buttons in Dark Mode (no solid white or light-pink) */
-html.dark .hover\:bg-red-50:hover,
-html.dark .hover\:bg-red-100:hover,
-html.dark button.hover\:bg-red-50:hover,
-html.dark a.hover\:bg-red-50:hover {
-  background-color: rgba(239, 68, 68, 0.12) !important;
-  color: #f87171 !important;
-}
-
-html.dark .text-red-600 {
-  color: #f87171 !important;
-}
-
-/* Pure Black/Slate buttons in dark mode: Elevated dark card with clean border */
-html.dark .bg-slate-900 {
-  background-color: #27272a !important;
-  color: #fafafa !important;
-  border-color: #3f3f46 !important;
-}
-
-html.dark .hover\:bg-slate-900:hover,
-html.dark .hover\:bg-slate-800:hover {
-  background-color: #3f3f46 !important;
-}
-
-/* Modals & Dropdown shadows in Dark Mode */
-html.dark .shadow-xl,
-html.dark .shadow-lg,
-html.dark .shadow-md,
-html.dark .shadow-sm {
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7), 0 0 0 1px #2c2c31 !important;
-}
-
-html.dark .ring-1.ring-slate-900\/5 {
-  --tw-ring-color: #2c2c31 !important;
-}
-
-/* ==============================================================
-   DASHBOARD & ARBITRARY COLOR REMAPPINGS FOR DARK MODE:
-   Fixes dark text on dark surfaces, blinding white boxes, and harsh pastels
-   ============================================================== */
-html.dark [class*="text-[#171633]"],
-html.dark .text-\[\#171633\] {
-  color: #fafafa !important;
-}
-
-html.dark [class*="text-[#666687]"],
-html.dark .text-\[\#666687\] {
-  color: #d4d4d8 !important;
-}
-
-html.dark [class*="text-[#A9A9C6]"],
-html.dark .text-\[\#A9A9C6\] {
-  color: #a1a1aa !important;
-}
-
-html.dark [class*="bg-[#F7F8FC]"],
-html.dark .bg-\[\#F7F8FC\] {
-  background-color: #1e1e22 !important;
-  color: #f4f4f5 !important;
-  border-color: #2c2c31;
-}
-
-html.dark [class*="bg-[#F0F1F7]"],
-html.dark .bg-\[\#F0F1F7\] {
-  background-color: #27272a !important;
-}
-
-html.dark [class*="border-[#F0F1F7]"],
-html.dark .border-\[\#F0F1F7\] {
-  border-color: #2c2c31 !important;
-}
-
-html.dark [class*="bg-[#171633]"],
-html.dark .bg-\[\#171633\] {
-  background-color: #27272a !important;
-  color: #fafafa !important;
-  border: 1px solid #3f3f46;
-}
-
-/* DEGO Pastel Badges & Icon Containers in Dark Mode - Deep Luminous Glow */
-html.dark [class*="bg-[#EFEAFF]"],
-html.dark .bg-\[\#EFEAFF\] {
-  background-color: rgba(99, 102, 241, 0.16) !important;
-}
-html.dark [class*="text-[#5A32FA]"],
-html.dark .text-\[\#5A32FA\] {
-  color: #a5b4fc !important;
-}
-
-html.dark [class*="bg-[#E7F6EC]"],
-html.dark .bg-\[\#E7F6EC\] {
-  background-color: rgba(16, 185, 129, 0.16) !important;
-}
-html.dark [class*="text-[#34A853]"],
-html.dark .text-\[\#34A853\] {
-  color: #34d399 !important;
-}
-
-html.dark [class*="bg-[#FEF5E1]"],
-html.dark .bg-\[\#FEF5E1\] {
-  background-color: rgba(245, 158, 11, 0.16) !important;
-}
-html.dark [class*="text-[#F5A623]"],
-html.dark .text-\[\#F5A623\] {
-  color: #fbbf24 !important;
-}
-
-html.dark [class*="bg-[#FEF1E7]"],
-html.dark .bg-\[\#FEF1E7\] {
-  background-color: rgba(249, 115, 22, 0.16) !important;
-}
-html.dark [class*="text-[#F2994A]"],
-html.dark .text-\[\#F2994A\] {
-  color: #fb923c !important;
-}
-
-html.dark [class*="bg-[#FDECEB]"],
-html.dark .bg-\[\#FDECEB\] {
-  background-color: rgba(244, 63, 94, 0.16) !important;
-}
-html.dark [class*="text-[#F2453D]"],
-html.dark .text-\[\#F2453D\] {
-  color: #fb7185 !important;
-}
-
-html.dark [class*="bg-[#E8F1FD]"],
-html.dark .bg-\[\#E8F1FD\] {
-  background-color: rgba(56, 189, 248, 0.16) !important;
-}
-html.dark [class*="text-[#2F80ED]"],
-html.dark .text-\[\#2F80ED\] {
-  color: #38bdf8 !important;
-}
-
-html.dark .hover\:bg-\[\#F0F1F7\]:hover {
-  background-color: #27272a !important;
-}
-
-html.dark .hover\:bg-\[\#F7F8FC\]:hover {
-  background-color: #232327 !important;
-}
-
-
-/* ==============================================================
-   PATCH: kelas terang yang sebelumnya belum punya override dark mode
-   (green-50, rose-50, red-50/30, amber-50/80 + teks & border pasangannya)
-   ============================================================== */
-html.dark .bg-green-50,
-html.dark .bg-green-50\/60,
-html.dark .bg-green-50\/50 {
-  background-color: rgba(6, 78, 59, 0.35) !important;
-}
-
-html.dark .bg-rose-50,
-html.dark .bg-rose-50\/60,
-html.dark .bg-rose-50\/50,
-html.dark .bg-red-50\/30 {
-  background-color: rgba(136, 19, 55, 0.3) !important;
-}
-
-html.dark .bg-amber-50\/80 {
-  background-color: rgba(245, 158, 11, 0.16) !important;
-}
-
-html.dark .text-green-700 {
-  color: #34d399 !important;
-}
-
-html.dark .text-rose-700,
-html.dark .text-red-900 {
-  color: #fb7185 !important;
-}
-
-html.dark .border-rose-200 {
-  border-color: rgba(251, 113, 133, 0.35) !important;
-}
-
-html.dark .border-red-100,
-html.dark .border-blue-100,
-html.dark .border-emerald-100,
-html.dark .border-amber-100 {
-  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 /* >>> cursor-pointer (script-cursor.mjs) >>> */
@@ -1073,14 +431,6 @@ html.dark .dd-card { border: 1px solid var(--dv-line); }
 .dd-link:hover { text-decoration: underline; }
 .dd-pill { font-size: 12px; font-weight: 700; color: var(--dd-green-ink); border: 1.5px solid var(--dd-green); border-radius: 999px; padding: 5px 14px; white-space: nowrap; background: none; cursor: pointer; }
 .dd-pill:hover { background: color-mix(in srgb, var(--dd-green) 12%, transparent); }
-
-/* tombol */
-.dd-btn { height: 42px; padding: 0 20px; border-radius: 999px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; background: var(--dd-card); color: var(--dv-ink); box-shadow: var(--dd-shadow); border: 1px solid transparent; cursor: pointer; white-space: nowrap; }
-html.dark .dd-btn { border-color: var(--dv-line); box-shadow: none; }
-.dd-btn:hover { filter: brightness(.97); }
-.dd-btn-primary { background: var(--dv-primary); color: var(--dv-on-primary); }
-.dd-btn-primary:hover { filter: brightness(1.08); }
-.dd-btn-sm { height: 34px; padding: 0 14px; font-size: 12.5px; }
 
 /* header + banner */
 .dd-hero { display: grid; gap: 24px; align-items: center; }
@@ -1415,7 +765,7 @@ html.dark .mv aside.side nav button.rb.out:hover{background-color:var(--outbg)!i
 /* 2) `html.dark input:not([type=checkbox])...` memaksa background/warna/border input (!important) */
 html.dark .mv .top .search input{background-color:var(--bg)!important;color:var(--ink)!important;border-color:var(--line)!important}
 /* 3) Placeholder: pakai default browser seperti preview (Tailwind preflight mengubahnya) */
-.mv .search input::placeholder{color:revert;opacity:revert}
+html:not(.dark) .mv .search input::placeholder{color:revert;opacity:revert}
 /* 4) `:where(...):focus-visible{outline:none!important}` sudah ditangani dengan !important di aturan outline di atas */
 .mv .side button:focus-visible,.mv .tg:focus-visible,.mv .search input:focus-visible,.mv .res button:focus-visible{outline:2px solid var(--pri)!important;outline-offset:2px}
 
@@ -1445,11 +795,46 @@ html.dark .dv-modal {
 .dv-modal .dv-band { padding: 12px 16px; }
 .dv-modal .dv-icon-btn { width: 28px; height: 28px; }
 
-/* ===== PENANGANAN V2 (.pn-*) =====
-   Halaman Penanganan Inventory memakai palet yang sama dengan dashboard: kartu putih + aksen ungu / kuning / hijau (terang),
-   graphite netral (gelap). Token --dv-* / --dd-* disalin ke .pn karena halaman ini tidak dibungkus .dv.
-   Sengaja pakai kelas sendiri (bukan kelas warna Tailwind) supaya tidak kena override `html.dark .bg-white` dst.
-   Pagination (components/table/Pagination) TIDAK diubah. */
+/* ===== PALET DASHBOARD / PENANGANAN → UTILITAS TAILWIND =====
+   Variabel --dv-* / --dd-* / --pn-* tetap didefinisikan per area (.dv, .pn, .dv-modal; terang + gelap) di bawah.
+   Di komponen dipakai lewat utilitas: bg-dd-card, text-dv-ink, border-dv-line, bg-dv-alert/10, shadow-dd, …
+   `inline` = nilai dibaca di elemen pemakai, jadi otomatis mengikuti area (.pn/.dv) dan mode gelapnya. ===== */
+@theme inline {
+  --color-dv-ink: var(--dv-ink);
+  --color-dv-soft: var(--dv-soft);
+  --color-dv-muted: var(--dv-muted);
+  --color-dv-line: var(--dv-line);
+  --color-dv-track: var(--dv-track);
+  --color-dv-surface: var(--dv-surface);
+  --color-dv-primary: var(--dv-primary);
+  --color-dv-on-primary: var(--dv-on-primary);
+  --color-dv-alert: var(--dv-alert);
+  --color-dd-card: var(--dd-card);
+  --color-dd-green: var(--dd-green);
+  --color-dd-green-ink: var(--dd-green-ink);
+  --color-pn-btn-bg: var(--pn-btn-bg);
+  --color-pn-btn-fg: var(--pn-btn-fg);
+  --shadow-dd: var(--dd-shadow);
+}
+
+/* Skeleton: animate-sk (+ motion-reduce:animate-none) */
+@theme {
+  --animate-sk: sk-pulse 1.6s ease-in-out infinite;
+  @keyframes sk-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+}
+
+/* ===== PALET PENANGANAN / INVENTORY / MASTER DATA (.pn) =====
+   Halaman ini memakai palet yang sama dengan dashboard: kartu putih + aksen ungu / kuning / hijau (terang), graphite netral (gelap).
+   Token --dv-* / --dd-* disalin ke .pn karena halaman ini tidak dibungkus .dv. Komponennya sendiri memakai utilitas Tailwind
+   (lihat components/ui/pn.ts dan token di blok @theme di atas), bukan kelas .pn-*. */
 .pn {
   --dv-ink: #1D1A3B; --dv-soft: #4B4772; --dv-muted: #6F6B91;
   --dv-line: #E8E5F2; --dv-track: #ECE8F6; --dv-surface: #F6F4FB;
@@ -1468,104 +853,6 @@ html.dark .pn {
   --dd-green: #4CC77D; --dd-green-ink: #4CC77D; --dd-yellow: #F5B83D; --dd-yellow-ink: #F5B83D;
   --pn-tab-bg: #3A3A42; --pn-tab-fg: #FFFFFF; --pn-btn-bg: #F4F4F5; --pn-btn-fg: #17151F;
 }
-
-/* header */
-.pn-head { display: flex; flex-direction: column; gap: 16px; }
-@media (min-width: 640px) { .pn-head { flex-direction: row; align-items: center; justify-content: space-between; } }
-.pn-title { font-size: 26px; line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; color: var(--dv-ink); }
-.pn-sub { font-size: 13px; line-height: 1.5; color: var(--dv-muted); margin-top: 6px; max-width: 560px; }
-.pn-head-act { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex-shrink: 0; }
-.pn .dd-btn:disabled { opacity: .5; cursor: not-allowed; }
-.pn-warn { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 999px; color: var(--dv-alert); background: color-mix(in srgb, var(--dv-alert) 10%, transparent); }
-.pn-warn.is-ok { color: var(--dd-green-ink); background: color-mix(in srgb, var(--dd-green) 12%, transparent); }
-.pn-err { font-size: 13px; color: var(--dv-alert); }
-
-/* tab pill + pilihan tampilan */
-.pn-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.pn-tabs { display: flex; gap: 10px; flex-wrap: wrap; }
-.pn-tab { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 8px 0 16px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--dd-card); color: var(--dv-soft); box-shadow: var(--dd-shadow); border: 1px solid transparent; cursor: pointer; white-space: nowrap; transition: background .15s, color .15s; }
-html.dark .pn-tab { border-color: var(--dv-line); box-shadow: none; }
-.pn-tab:hover { color: var(--dv-ink); }
-.pn-tab.is-on { background: var(--pn-tab-bg); color: var(--pn-tab-fg); border-color: var(--pn-tab-bg); box-shadow: none; }
-.pn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.pn-tab.is-on .pn-dot { box-shadow: 0 0 0 2px var(--pn-tab-bg), 0 0 0 3.5px color-mix(in srgb, var(--pn-tab-fg) 25%, transparent); }
-.pn-count { min-width: 26px; height: 26px; padding: 0 8px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: var(--dd-chip); color: var(--dv-ink); }
-.pn-tab.is-on .pn-count { background: color-mix(in srgb, var(--pn-tab-fg) 12%, transparent); color: var(--pn-tab-fg); }
-.pn-seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--dd-card); box-shadow: var(--dd-shadow); border: 1px solid transparent; }
-html.dark .pn-seg { border-color: var(--dv-line); box-shadow: none; }
-.pn-seg button { height: 32px; padding: 0 16px; border-radius: 999px; font-size: 13px; font-weight: 700; text-transform: capitalize; color: var(--dv-soft); background: none; cursor: pointer; }
-.pn-seg button.is-on { background: var(--pn-btn-bg); color: var(--pn-btn-fg); }
-
-/* kartu tabel */
-.pn-card { background: var(--dd-card); border-radius: 20px; box-shadow: var(--dd-shadow); padding: 14px 18px 10px; min-width: 0; }
-html.dark .pn-card { border: 1px solid var(--dv-line); box-shadow: none; }
-.pn-scroll { overflow-x: auto; }
-.pn-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
-.pn-table th { text-align: left; font-size: 11px; font-weight: 700; color: var(--dv-muted); padding: 10px 12px; background: var(--dv-surface); white-space: nowrap; }
-.pn-table th.text-center { text-align: center; }
-.pn-table th:first-child { border-radius: 10px 0 0 10px; }
-.pn-table th:last-child { border-radius: 0 10px 10px 0; }
-.pn-table td { padding: 12px; border-bottom: 1px solid var(--dv-line); color: var(--dv-soft); vertical-align: middle; }
-.pn-table tbody tr:last-child td { border-bottom: 0; }
-.pn-table tbody tr:hover td { background: color-mix(in srgb, var(--dv-surface) 70%, transparent); }
-.pn-table tr.is-late td:first-child { box-shadow: inset 3px 0 0 var(--dv-alert); }
-.pn-aset { display: flex; align-items: center; gap: 10px; }
-.pn-ico { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); }
-.pn-kode { font-weight: 700; color: var(--dv-ink); line-height: 1.25; }
-.pn-jenis { font-size: 11px; font-weight: 400; color: var(--dv-muted); }
-.pn-strong { font-weight: 700; color: var(--dv-ink); }
-.pn-trunc { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pn-trunc-s { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.pn-nowrap { white-space: nowrap; }
-.pn-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; white-space: nowrap; }
-.pn-lama { display: flex; align-items: center; gap: 8px; }
-.pn-lama-t { width: 56px; height: 5px; border-radius: 999px; background: var(--dv-track); overflow: hidden; }
-.pn-lama-f { height: 100%; background: var(--dv-primary); }
-.pn-lama-n { font-size: 12px; font-weight: 700; color: var(--dv-soft); white-space: nowrap; }
-.pn-lama.is-late .pn-lama-f { background: var(--dv-alert); }
-.pn-lama.is-late .pn-lama-n { color: var(--dv-alert); }
-.pn-act { display: flex; align-items: center; justify-content: flex-end; gap: 6px; white-space: nowrap; }
-.pn-btn { height: 30px; padding: 0 14px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--dd-card); color: var(--dv-ink); border: 1px solid var(--dv-line); cursor: pointer; }
-.pn-btn:hover { border-color: var(--dv-muted); }
-.pn-btn-primary { background: var(--pn-btn-bg); color: var(--pn-btn-fg); border-color: var(--pn-btn-bg); }
-.pn-btn-primary:hover { border-color: var(--pn-btn-bg); opacity: .88; }
-.pn-empty { text-align: center; padding: 48px 16px; font-size: 13px; color: var(--dv-muted); border: 1px dashed var(--dv-line); border-radius: 14px; margin-bottom: 8px; }
-
-/* papan */
-.pn-board { display: grid; gap: 16px; align-items: start; grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 768px) { .pn-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 1280px) { .pn-board { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-.pn-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.pn-col-h { display: flex; align-items: baseline; gap: 8px; padding-bottom: 10px; border-bottom: 2px solid var(--c); }
-.pn-col-n { font-size: 28px; font-weight: 700; line-height: 1; color: var(--dv-ink); }
-.pn-col-t { font-size: 13px; font-weight: 700; color: var(--dv-ink); }
-.pn-col-s { margin-left: auto; font-size: 11px; color: var(--dv-muted); }
-.pn-bcard { background: var(--dd-card); border: 1px solid var(--dv-line); border-radius: 14px; font-size: 12px; color: var(--dv-soft); box-shadow: var(--dd-shadow); }
-html.dark .pn-bcard { box-shadow: none; }
-.pn-bcard.is-late { border-color: var(--dv-alert); }
-.pn-bcard.is-drag { cursor: grab; }
-.pn-bcard-in { padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
-.pn-bcard-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.pn-bcard-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 4px; }
-.pn-bcard-x { padding: 10px 12px; border-top: 1px solid var(--dv-line); display: flex; flex-direction: column; gap: 6px; }
-.pn-brow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 4px; border-bottom: 1px solid var(--dv-line); }
-.pn-brow > span:first-child { color: var(--dv-muted); }
-.pn-brow > span:last-child { text-align: right; }
-.pn-chev { width: 24px; height: 24px; flex-shrink: 0; display: grid; place-items: center; border-radius: 8px; border: 1px solid var(--dv-line); color: var(--dv-soft); background: none; cursor: pointer; }
-.pn-chev:hover { background: var(--dv-surface); }
-.pn-link { font-size: 12px; font-weight: 700; color: var(--dv-ink); background: none; cursor: pointer; text-align: left; }
-.pn-link:hover { text-decoration: underline; }
-.pn-drop { border: 1px dashed var(--dv-line); border-radius: 14px; padding: 12px; text-align: center; font-size: 12px; color: var(--dv-muted); }
-.pn-drop.is-on { border-color: var(--dv-muted); background: var(--dv-surface); color: var(--dv-ink); }
-/* ===== END PENANGANAN V2 ===== */
-
-/* ===== INVENTORY V2 (.pn-*) =====
-   Tambahan untuk halaman Inventory; token & kelas dasar (.pn, .pn-tab, .pn-card, .pn-table, ...) dari blok PENANGANAN V2. */
-.pn-cta { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 18px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--pn-btn-bg); color: var(--pn-btn-fg); box-shadow: var(--dd-shadow); cursor: pointer; white-space: nowrap; }
-.pn-cta:hover { opacity: .88; }
-html.dark .pn-cta { box-shadow: none; }
-.pn-table th.pn-r { text-align: right; }
-/* ===== END INVENTORY V2 ===== */
 
 /* ===== DASHBOARD V3 (admin): .dd-main .dd-hv .dd-kp .dd-pair .dd-mc .dd-hl .dd-pager =====
    Tata letak: kolom kiri (hero, KPI, aktivitas + kalender) dan kolom kanan (pemegang teratas, notifikasi).
@@ -1655,11 +942,3 @@ html.dark .dd-kc { border-color: var(--dv-line); box-shadow: none; }
 .dd-nlist.is-fill > div { flex: 1; display: flex; flex-direction: column; }
 .dd-nlist.is-fill .dd-nt { flex: 1 1 0; height: auto; min-height: 60px; max-height: 92px; }
 /* ===== END DASHBOARD V3 ===== */
-
-/* ===== SKELETON LOADING =====
-   Warna balok mengikuti token tema baru (--dv-track), jadi otomatis cocok di dalam .dv / .pn / .dd-v4 (terang & gelap).
-   Di luar scope itu (mis. dropdown notifikasi) dipakai warna cadangan. Animasi mati kalau pengguna minta kurangi gerakan. */
-.sk { background: var(--dv-track, #ECE8F6); animation: sk-pulse 1.6s ease-in-out infinite; }
-html.dark .sk { background: var(--dv-track, #2A2A30); }
-@keyframes sk-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-@media (prefers-reduced-motion: reduce) { .sk { animation: none; } }

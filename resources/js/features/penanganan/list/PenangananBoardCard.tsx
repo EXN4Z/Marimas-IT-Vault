@@ -33,9 +33,9 @@ interface Props {
 
 function Baris({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
-    <div className="pn-brow">
+    <div className="flex items-center justify-between gap-3 border-b border-dv-line pb-1 [&>span:first-child]:text-dv-muted [&>span:last-child]:text-right">
       <span>{label}</span>
-      <span className={bold ? 'pn-strong' : ''}>{value}</span>
+      <span className={bold ? 'font-bold text-dv-ink' : ''}>{value}</span>
     </div>
   );
 }
@@ -54,47 +54,47 @@ export default function PenangananBoardCard({ p, status, isAdmin, onDetail, onTe
     <div
       draggable={draggable}
       onDragStart={(e) => e.dataTransfer.setData('text/penanganan-id', String(p.id))}
-      className={`pn-bcard ${terlambat ? 'is-late' : ''} ${draggable ? 'is-drag' : ''}`}
+      className={`rounded-[14px] border border-dv-line bg-dd-card text-[12px] text-dv-soft shadow-dd dark:shadow-none [&.is-late]:border-dv-alert [&.is-drag]:cursor-grab ${terlambat ? 'is-late' : ''} ${draggable ? 'is-drag' : ''}`}
     >
-      <div className="pn-bcard-in">
-        <div className="pn-bcard-top">
-          <p className="pn-kode pn-trunc-s">
+      <div className="flex flex-col gap-[3px] px-3 py-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <p className="leading-[1.25] font-bold text-dv-ink min-w-0 truncate">
             {p.inventory?.kode_inventory || 'INV-UNKNOWN'}
-            <span className="pn-jenis"> · {formatJenisKerusakan(p.jenis_kerusakan)}</span>
+            <span className="text-[11px] font-normal text-dv-muted"> · {formatJenisKerusakan(p.jenis_kerusakan)}</span>
           </p>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-label={open ? 'Ciutkan' : 'Lebarkan'}
-            className="pn-chev"
+            className="grid size-6 shrink-0 place-items-center rounded-lg border border-dv-line text-dv-soft hover:bg-dv-surface"
           >
             <ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
           </button>
         </div>
-        <p className="pn-strong pn-trunc-s">{p.inventory?.nama || 'Nama unit tidak tertera'}</p>
-        <p className="pn-trunc-s">{p.keluhan}</p>
+        <p className="font-bold text-dv-ink min-w-0 truncate">{p.inventory?.nama || 'Nama unit tidak tertera'}</p>
+        <p className="min-w-0 truncate">{p.keluhan}</p>
 
-        <div className="pn-bcard-foot">
+        <div className="flex items-center justify-between gap-2 pt-1">
           {aktif ? (
-            <div className={`pn-lama ${terlambat ? 'is-late' : ''}`}>
-              <div className="pn-lama-t">
-                <div className="pn-lama-f" style={{ width: `${Math.min(100, Math.round((hari / BATAS_BAR_HARI) * 100))}%` }} />
+            <div className={`group/lama flex items-center gap-2 ${terlambat ? 'is-late' : ''}`}>
+              <div className="h-[5px] w-14 overflow-hidden rounded-full bg-dv-track">
+                <div className="h-full bg-dv-primary group-[.is-late]/lama:bg-dv-alert" style={{ width: `${Math.min(100, Math.round((hari / BATAS_BAR_HARI) * 100))}%` }} />
               </div>
-              <span className="pn-lama-n">{hari} hari</span>
+              <span className="text-[12px] font-bold whitespace-nowrap text-dv-soft group-[.is-late]/lama:text-dv-alert">{hari} hari</span>
             </div>
           ) : (
             // Nominal sengaja tidak tampil di card tertutup; muncul di dropdown.
-            <span className="pn-jenis">Selesai {formatTanggalId(p.tanggal_selesai)}</span>
+            <span className="text-[11px] font-normal text-dv-muted">Selesai {formatTanggalId(p.tanggal_selesai)}</span>
           )}
 
           {isAdmin && status === 'menunggu' && (
-            <button type="button" onClick={() => onTerima(p)} className="pn-link">
+            <button type="button" onClick={() => onTerima(p)} className="text-left text-[12px] font-bold text-dv-ink hover:underline">
               Terima laporan
             </button>
           )}
           {isAdmin && status === 'diperbaiki' && (
-            <button type="button" onClick={() => onSelesaikan(p)} className="pn-link">
+            <button type="button" onClick={() => onSelesaikan(p)} className="text-left text-[12px] font-bold text-dv-ink hover:underline">
               Selesaikan
             </button>
           )}
@@ -102,7 +102,7 @@ export default function PenangananBoardCard({ p, status, isAdmin, onDetail, onTe
       </div>
 
       {open && (
-        <div className="pn-bcard-x">
+        <div className="flex flex-col gap-1.5 border-t border-dv-line px-3 py-2.5">
           <Baris label="Pelapor" value={namaPelaporPenanganan(p)} />
           <Baris label="Tanggal lapor" value={formatTanggalWaktuId(p.lapor_at, p.tanggal_lapor)} />
           {p.tanggal_diterima && (
@@ -119,13 +119,13 @@ export default function PenangananBoardCard({ p, status, isAdmin, onDetail, onTe
           )}
           {p.no_struk && <Baris label="No. struk" value={p.no_struk} />}
 
-          <div className="pn-act">
+          <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
             {p.no_struk && (
-              <button type="button" onClick={() => onPrint(p)} className="pn-btn">
+              <button type="button" onClick={() => onPrint(p)} className="h-[30px] rounded-full border px-3.5 text-[12px] font-bold border-dv-line bg-dd-card text-dv-ink hover:border-dv-muted">
                 Cetak struk
               </button>
             )}
-            <button type="button" onClick={() => onDetail(p)} className="pn-btn pn-btn-primary">
+            <button type="button" onClick={() => onDetail(p)} className="h-[30px] rounded-full border px-3.5 text-[12px] font-bold border-pn-btn-bg bg-pn-btn-bg text-pn-btn-fg hover:border-pn-btn-bg hover:opacity-[.88]">
               Detail
             </button>
           </div>

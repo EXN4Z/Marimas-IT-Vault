@@ -6,7 +6,7 @@ export default function InventoryStatusPill({ status, small = false }: { status:
   return (
     <span
       className={[
-        'inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 font-semibold text-slate-800 whitespace-nowrap',
+        'inline-flex items-center gap-1.5 rounded-full border border-line-200 bg-surface-50 font-semibold text-ink-800 whitespace-nowrap',
         small ? 'text-[10px] px-2 py-0.5' : 'text-xs px-2.5 py-1',
       ].join(' ')}
     >

@@ -83,19 +83,19 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 animate-[fadeIn_150ms_ease-out]"
     >
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
+      <div className="bg-surface rounded-2xl shadow-2xl border border-line-200-a80 w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+        <div className="flex items-start justify-between px-6 py-4 border-b border-line-100 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-tint-emerald-50 border border-edge-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm shrink-0">
               <RotateCcw size={20} className="text-emerald-600" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-900 leading-tight">
+              <h3 className="text-base font-semibold text-ink-900 leading-tight">
                 {isAdmin ? 'Terima Kembali Inventory' : 'Kembalikan Inventory'}
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                <span className="font-mono font-medium text-slate-700">{inventory.kode_inventory}</span> · {inventory.nama || '-'}
+              <p className="text-xs text-ink-500 mt-0.5">
+                <span className="font-mono font-medium text-ink-700">{inventory.kode_inventory}</span> · {inventory.nama || '-'}
               </p>
             </div>
           </div>
@@ -104,7 +104,7 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
             onClick={onClose}
             disabled={submitting}
             aria-label="Tutup"
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-40"
+            className="text-ink-400 hover:text-ink-600 p-1.5 rounded-lg hover:bg-hover-100 transition disabled:opacity-40"
           >
             <X size={18} />
           </button>
@@ -112,12 +112,12 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
 
         {/* Body */}
         <div className="px-6 py-5 overflow-y-auto space-y-4">
-          <div className="bg-slate-50 border border-slate-100 rounded-xl px-3.5 py-3 text-sm flex items-center justify-between">
+          <div className="bg-surface-50 border border-line-100 rounded-xl px-3.5 py-3 text-sm flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">
+              <p className="text-xs text-ink-400 uppercase tracking-wider font-semibold">
                 {isAdmin ? 'Peminjam / Pemegang Unit' : 'Status Pengguna Saat Ini'}
               </p>
-              <p className="text-sm text-slate-900 font-semibold mt-0.5">{namaPemakai(pemakai)}</p>
+              <p className="text-sm text-ink-900 font-semibold mt-0.5">{namaPemakai(pemakai)}</p>
             </div>
           </div>
 
@@ -169,7 +169,7 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 shrink-0 bg-slate-50/60">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-line-100 shrink-0 bg-surface-50-a60">
           <ButtonCancel onClick={onClose} disabled={submitting} />
           <ButtonSubmit
             onClick={handleSubmit}

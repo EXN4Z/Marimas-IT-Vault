@@ -139,7 +139,7 @@ function DiTanganmu({ items, jumlah }: { items?: InventoryDipegang[]; jumlah: nu
                 <div className="text-sm mt-0.5">{it.nama ?? ''}</div>
                 {lama && <div className="dv-sub" style={{ margin: '4px 0 0' }}>{lama.teks}</div>}
               </div>
-              <button type="button" className="dd-btn dd-btn-sm" onClick={() => navigate('/master-data?tab=inventory')}>
+              <button type="button" className="inline-flex items-center gap-1.5 rounded-full border border-transparent font-bold whitespace-nowrap shadow-dd h-[34px] px-3.5 text-[12.5px] bg-dd-card text-dv-ink hover:brightness-[.97] disabled:opacity-50 dark:border-dv-line dark:shadow-none" onClick={() => navigate('/master-data?tab=inventory')}>
                 Lapor kerusakan
               </button>
             </div>
@@ -148,7 +148,7 @@ function DiTanganmu({ items, jumlah }: { items?: InventoryDipegang[]; jumlah: nu
       ) : jumlah > 0 ? (
         <div className="dd-hold">
           <div className="text-sm">Kamu memegang {jumlah} inventory.</div>
-          <button type="button" className="dd-btn dd-btn-sm" onClick={() => navigate('/master-data?tab=inventory')}>
+          <button type="button" className="inline-flex items-center gap-1.5 rounded-full border border-transparent font-bold whitespace-nowrap shadow-dd h-[34px] px-3.5 text-[12.5px] bg-dd-card text-dv-ink hover:brightness-[.97] disabled:opacity-50 dark:border-dv-line dark:shadow-none" onClick={() => navigate('/master-data?tab=inventory')}>
             Lihat inventory
           </button>
         </div>
@@ -239,7 +239,7 @@ function KalenderLedger({
           <button type="button" className="dd-pa" aria-label="Bulan berikutnya" onClick={() => geser(1)}>
             <ChevronRight size={16} />
           </button>
-          <button type="button" className="dd-btn dd-btn-sm" onClick={kembaliKeHariIni}>
+          <button type="button" className="inline-flex items-center gap-1.5 rounded-full border border-transparent font-bold whitespace-nowrap shadow-dd h-[34px] px-3.5 text-[12.5px] bg-dd-card text-dv-ink hover:brightness-[.97] disabled:opacity-50 dark:border-dv-line dark:shadow-none" onClick={kembaliKeHariIni}>
             Hari ini
           </button>
         </div>

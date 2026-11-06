@@ -34,9 +34,9 @@ export default function InventoryFotoUpload({ files, onChange, max = 3, min, lab
   return (
     <div>
       <div className="flex items-center justify-between gap-2 mb-1">
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-700">
           {label} <span className="text-red-500">*</span>
-          <span className="text-xs text-slate-400 font-normal">
+          <span className="text-xs text-ink-400 font-normal">
             {min !== undefined ? ` (minimal ${min} foto)` : ` (maks. ${max} foto)`}
           </span>
         </label>
@@ -46,7 +46,7 @@ export default function InventoryFotoUpload({ files, onChange, max = 3, min, lab
       </div>
       <div className="flex flex-wrap gap-2">
         {files.map((_, idx) => (
-          <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200 group flex-shrink-0">
+          <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-line-200 group flex-shrink-0">
             <img src={previews[idx]} alt={`foto-${idx}`} className="w-full h-full object-cover" />
             <button
               type="button"
@@ -62,7 +62,7 @@ export default function InventoryFotoUpload({ files, onChange, max = 3, min, lab
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="w-20 h-20 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-slate-400 hover:text-slate-500 transition flex-shrink-0"
+            className="w-20 h-20 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-ink-400 hover:border-slate-400 hover:text-ink-500 transition flex-shrink-0"
           >
             <Camera size={18} />
             <span className="text-[10px] mt-1">Tambah</span>

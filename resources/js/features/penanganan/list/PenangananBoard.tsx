@@ -33,7 +33,7 @@ export default function PenangananBoard({ board, isAdmin, loading, onDetail, onT
   };
 
   return (
-    <div className={`pn-board transition-opacity ${loading ? 'opacity-60' : ''}`}>
+    <div className={`grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-4 transition-opacity ${loading ? 'opacity-60' : ''}`}>
       {KOLOM.map((k) => {
         const { total, data } = board[k.key];
         const sisa = total - data.length;
@@ -42,18 +42,18 @@ export default function PenangananBoard({ board, isAdmin, loading, onDetail, onT
         return (
           <section
             key={k.key}
-            className="pn-col"
+            className="flex min-w-0 flex-col gap-2"
             onDragOver={dropzone ? (e) => { e.preventDefault(); setDropAktif(true); } : undefined}
             onDragLeave={dropzone ? () => setDropAktif(false) : undefined}
             onDrop={dropzone ? handleDrop : undefined}
           >
-            <div className="pn-col-h" style={{ ['--c' as string]: k.warna }}>
-              <span className="pn-col-n">{total}</span>
-              <h3 className="pn-col-t">{k.judul}</h3>
-              <span className="pn-col-s">{k.sub}</span>
+            <div className="flex items-baseline gap-2 border-b-2 border-b-(--c) pb-2.5" style={{ ['--c' as string]: k.warna }}>
+              <span className="text-[28px] leading-none font-bold text-dv-ink">{total}</span>
+              <h3 className="text-[13px] font-bold text-dv-ink">{k.judul}</h3>
+              <span className="ml-auto text-[11px] text-dv-muted">{k.sub}</span>
             </div>
 
-            {data.length === 0 && <div className="pn-drop">{k.kosong}</div>}
+            {data.length === 0 && <div className="rounded-[14px] border border-dashed border-dv-line p-3 text-center text-[12px] text-dv-muted [&.is-on]:border-dv-muted [&.is-on]:bg-dv-surface [&.is-on]:text-dv-ink">{k.kosong}</div>}
 
             {data.map((p) => (
               <PenangananBoardCard
@@ -69,11 +69,11 @@ export default function PenangananBoard({ board, isAdmin, loading, onDetail, onT
             ))}
 
             {dropzone && (
-              <div className={`pn-drop ${dropAktif ? 'is-on' : ''}`}>Seret laporan ke sini untuk menerima, atau pakai tombol Terima.</div>
+              <div className={`rounded-[14px] border border-dashed border-dv-line p-3 text-center text-[12px] text-dv-muted [&.is-on]:border-dv-muted [&.is-on]:bg-dv-surface [&.is-on]:text-dv-ink ${dropAktif ? 'is-on' : ''}`}>Seret laporan ke sini untuk menerima, atau pakai tombol Terima.</div>
             )}
 
             {sisa > 0 && (
-              <button type="button" onClick={() => onLihatSemua(k.key)} className="pn-link">
+              <button type="button" onClick={() => onLihatSemua(k.key)} className="text-left text-[12px] font-bold text-dv-ink hover:underline">
                 Lihat {sisa} laporan lainnya
               </button>
             )}

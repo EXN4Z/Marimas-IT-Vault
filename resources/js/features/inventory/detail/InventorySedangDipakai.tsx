@@ -15,14 +15,14 @@ interface InventorySedangDipakaiProps {
 export default function InventorySedangDipakai({ myBorrowedItems, openDetail, setPengembalianTarget, setPerbaikanInventoryTarget }: InventorySedangDipakaiProps) {
   return (
     <div className="mb-5">
-      <p className="text-sm font-semibold text-slate-900 mb-3">Sedang Anda Pakai</p>
+      <p className="text-sm font-semibold text-ink-900 mb-3">Sedang Anda Pakai</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {myBorrowedItems.map((a) => (
-          <div key={a.id} className="border border-slate-200 rounded-xl p-4 flex flex-col gap-2.5">
+          <div key={a.id} className="border border-line-200 rounded-xl p-4 flex flex-col gap-2.5">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-800 truncate">{a.kode_inventory}</p>
-                <p className="text-xs text-slate-500 truncate">{a.nama || '-'}</p>
+                <p className="text-sm font-semibold text-ink-800 truncate">{a.kode_inventory}</p>
+                <p className="text-xs text-ink-500 truncate">{a.nama || '-'}</p>
               </div>
               <StatusBadge colorClass={STATUS_STYLE[a.status]} className="shrink-0">
                 {STATUS_LABEL[a.status]}
@@ -31,7 +31,7 @@ export default function InventorySedangDipakai({ myBorrowedItems, openDetail, se
             <div className="flex items-center flex-wrap gap-2">
               <button
                 onClick={() => openDetail(a.id)}
-                className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition"
+                className="text-xs px-3 py-1.5 rounded-lg border border-line-200 hover:bg-hover-50 transition"
               >
                 Detail
               </button>

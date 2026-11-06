@@ -464,8 +464,8 @@ export default function TabInventory() {
         handleToggleKategori={handleToggleKategori}
       />
 
-      <p className="text-xs text-slate-500 mb-4">
-        Total {statusFilter === '' ? 'Semua' : (STATUS_LABEL[statusFilter] ?? 'Status')}: <span className="font-semibold text-slate-900">{totalInventory}</span> inventory
+      <p className="text-xs text-ink-500 mb-4">
+        Total {statusFilter === '' ? 'Semua' : (STATUS_LABEL[statusFilter] ?? 'Status')}: <span className="font-semibold text-ink-900">{totalInventory}</span> inventory
       </p>
 
       <div className={`transition-opacity ${listLoading ? 'opacity-60' : ''}`}>

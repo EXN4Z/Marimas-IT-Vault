@@ -211,7 +211,7 @@ function HeroInventory({ total, tren = [], perMerek = [] }: { total: number; tre
   const bulanLalu = rows.length > 1 ? rows[rows.length - 2] : undefined;
   const net = bulanIni ? bulanIni.jumlah - (bulanLalu?.jumlah ?? 0) : 0;
   const terbanyak = merek[0];
-  const tersedikit = merek.length > 1 ? merek[merek.length - 1] : null;
+  // const tersedikit = merek.length > 1 ? merek[merek.length - 1] : null;
 
   return (
     <section aria-label="Ringkasan inventory" className="dd-card dd-hv">
@@ -227,10 +227,6 @@ function HeroInventory({ total, tren = [], perMerek = [] }: { total: number; tre
           <div>
             <small>Unit Paling Banyak</small>
             <b title={terbanyak?.nama}>{terbanyak ? `${terbanyak.nama} : ${terbanyak.jumlah} Unit` : '-'}</b>
-          </div>
-          <div>
-            <small>Unit Paling Sedikit</small>
-            <b title={tersedikit?.nama}>{tersedikit ? `${tersedikit.nama} : ${tersedikit.jumlah} Unit` : '-'}</b>
           </div>
         </div>
       </div>
