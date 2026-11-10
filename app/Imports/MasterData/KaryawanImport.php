@@ -2,6 +2,7 @@
 
 namespace App\Imports\MasterData;
 
+use App\Models\MasterData\Cabang;
 use App\Models\MasterData\Departemen;
 use App\Models\User;
 use App\Notifications\PasswordAkunBaru;
@@ -84,6 +85,18 @@ class KaryawanImport implements ToCollection
                         $departemenId = Departemen::firstOrCreate(['nama' => $namaDepartemen])->id;
                     }
 
+                    // [KARYAWAN] Lokasi Kantor -> cabang_id. Cocok ke nama cabang (tanpa peduli huruf besar/kecil);
+                    // "-" atau kosong = tanpa cabang. Impor Cabang dulu sebelum impor User.
+                    $cabangId = null;
+                    $namaCabang = trim((string) ($row['lokasi_kantor'] ?? $row['cabang'] ?? ''));
+                    if ($namaCabang !== '' && !in_array(strtolower($namaCabang), self::NILAI_PLACEHOLDER_TANGGAL_KOSONG, true)) {
+                        $cabangId = Cabang::whereRaw('LOWER(nama) = ?', [strtolower($namaCabang)])->value('id');
+                        if ($cabangId === null) {
+                            $this->errors[] = "Baris ke-{$index}: Lokasi Kantor \"{$namaCabang}\" belum ada di data Cabang, dilewati.";
+                            return;
+                        }
+                    }
+
                     // Cek duplikat: kalau NIK ATAU email sudah ada di database,
                     // baris ini di-skip (tidak dibuat, tidak diupdate).
                     if (User::where('nik', $nik)->exists()) {
@@ -106,8 +119,9 @@ class KaryawanImport implements ToCollection
                         'nik'           => $nik,
                         'name'          => $row['nama'] ?? null,
                         'email'         => $email,
-                        'phone'         => $row['phone'] ?? null,
+                        'phone'         => $this->bersihkanTelepon($row['phone'] ?? $row['telepon'] ?? null),
                         'departemen_id' => $departemenId,
+                        'cabang_id'     => $cabangId,
                         'tanggal_masuk' => $this->parseTanggal($row['tanggal_masuk'] ?? null),
                         'role'          => strtolower(trim($row['role'] ?? '')) === 'admin' ? 'admin' : 'user',
                         'password'      => $passwordPlain,
@@ -152,6 +166,13 @@ class KaryawanImport implements ToCollection
         }
 
         return null;
+    }
+
+    // [KARYAWAN] "-", "n/a", kosong -> null (users.phone UNIQUE, jadi placeholder tidak boleh tersimpan)
+    private function bersihkanTelepon($nilai): ?string
+    {
+        $t = trim((string) $nilai);
+        return ($t === '' || in_array(strtolower($t), self::NILAI_PLACEHOLDER_TANGGAL_KOSONG, true)) ? null : $t;
     }
 
     private function normalisasiHeader(string $header): string

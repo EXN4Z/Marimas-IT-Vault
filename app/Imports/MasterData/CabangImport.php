@@ -67,6 +67,12 @@ class CabangImport implements ToCollection
             $telepon = trim((string) ($row['telepon'] ?? ''));
             $link = trim((string) ($row['link'] ?? ''));
 
+            // "-" = placeholder kosong dari export; alamat & link UNIQUE, jadi "-" tidak boleh disimpan
+            $kosong = ['-', '--', '---', 'n/a', 'na', '.', 'kosong'];
+            if (in_array(strtolower($alamat), $kosong, true)) $alamat = '';
+            if (in_array(strtolower($telepon), $kosong, true)) $telepon = '';
+            if (in_array(strtolower($link), $kosong, true)) $link = '';            
+
             try {
                 $cabang = Cabang::where('nama', $nama)->first();
 

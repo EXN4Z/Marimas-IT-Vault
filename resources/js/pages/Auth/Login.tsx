@@ -13,6 +13,8 @@ import {
 import { useTheme } from '../../context/ThemeContext';
 import toast from 'react-hot-toast';
 
+const THEME_ANIMATION_LOGIN = 1700;
+
 export default function Login() {
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
@@ -218,26 +220,26 @@ export default function Login() {
               <div className="grid grid-cols-2 p-1 bg-surface-100 rounded-xl border border-line-200">
                 <button
                   type="button"
-                  onClick={() => setTheme('light')}
+                  onClick={(e) => setTheme('light', e.currentTarget, THEME_ANIMATION_LOGIN)}
                   className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-medium transition cursor-pointer ${
                     !isDark
                       ? 'bg-surface text-ink-900 shadow-sm font-semibold'
                       : 'text-ink-500 hover:text-ink-900'
                   }`}
                 >
-                  <Sun size={14} className={!isDark ? 'text-amber-500' : 'text-ink-400'} />
+                  <Sun size={14} />
                   <span>Mode Terang</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setTheme('dark')}
+                  onClick={(e) => setTheme('dark', e.currentTarget, THEME_ANIMATION_LOGIN)}
                   className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-medium transition cursor-pointer ${
                     isDark
                       ? 'bg-zinc-800 text-white shadow-sm font-semibold'
                       : 'text-ink-500 hover:text-ink-900'
                   }`}
                 >
-                  <Moon size={14} className={isDark ? 'text-blue-400' : 'text-ink-400'} />
+                  <Moon size={14} />
                   <span>Mode Gelap</span>
                 </button>
               </div>

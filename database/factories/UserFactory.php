@@ -26,10 +26,8 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
+            'email' => fake()->unique()->safeEmail(),            
             'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
             // Eksplisit, bukan ngandelin DEFAULT di level database --
             // lewat mutator setRoleAttribute() di User::class, jadi tetap
             // ke-resolve ke role_id yang benar.

@@ -48,7 +48,12 @@ export default function Header({ group, current, onTogglePanel, navItems, onSear
       </div>
       <GlobalSearch navItems={navItems} onResultClick={onSearchResultClick} />
       <div className="acts">
-        <button type="button" className="tg" aria-label="Ganti tema" onClick={toggleTheme}>
+        <button
+          type="button"
+          className="tg"
+          aria-label="Ganti tema"
+          onClick={(e) => toggleTheme(e.currentTarget)}
+        >
           {isDark ? <Sun /> : <Moon />}
         </button>
         <NotificationDropdown />
