@@ -33,6 +33,14 @@ function messageForStatus(status?: number): string {
   return 'Permintaan gagal diproses. Coba lagi.';
 }
 
+// Log ke Console (F12) hanya saat dev lokal. Di production tidak ada yang dicetak.
+// Validasi server (422) di Network tampil sebagai POST 302 -> GET 200 karena Inertia memakai redirect back;
+// log di sini yang memperlihatkan isi errornya.
+function logDev(label: string, ...detail: unknown[]): void {
+  if (!import.meta.env.DEV) return;
+  console.error(`[Marimas] ${label}`, ...detail);
+}
+
 let installed = false;
 
 export function installGlobalErrorHandlers(): void {
@@ -41,19 +49,22 @@ export function installGlobalErrorHandlers(): void {
 
   router.on('httpException', (event) => {
     event.preventDefault(); // cegah modal HTML mentah
-    if (suppressed > 0) return;
     const status = (event.detail as { response?: { status?: number } }).response?.status;
+    logDev(`HTTP ${status ?? '?'} dari server`, event.detail);
+    if (suppressed > 0) return;
     toast.error(messageForStatus(status), { id: 'http-error' });
   });
 
   router.on('networkError', (event) => {
     event.preventDefault();
+    logDev('Network error (server tidak terjangkau)', event.detail);
     if (suppressed > 0) return;
     toast.error('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', { id: 'network-error' });
   });
 
   // Error dari server yang bukan milik field tertentu (kunci "server", lihat bootstrap/app.php).
   router.on('error', (event) => {
+    logDev('Validasi/error dari server', event.detail.errors);
     const msg = (event.detail.errors as Record<string, string>).server;
     if (msg) toast.error(msg, { id: 'server-error' });
   });

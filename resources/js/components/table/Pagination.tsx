@@ -93,7 +93,7 @@ export default function Pagination({
                         disabled={currentPage === 1}
                         className="px-3 py-1.5 text-sm rounded-lg border border-line-200 text-ink-600 hover:bg-hover-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition"
                     >
-                        Sebelumnya
+                        <ChevronLeft size={16} />
                     </button>
 
                     {pageNumbers.map((p, idx) =>
@@ -124,7 +124,7 @@ export default function Pagination({
                         disabled={currentPage === totalPages}
                         className="px-3 py-1.5 text-sm rounded-lg border border-line-200 text-ink-600 hover:bg-hover-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition"
                     >
-                        Selanjutnya
+                        <ChevronRight size={16} />
                     </button>
 
                     <div className="flex items-center gap-1.5 ml-1 pl-2.5 border-l border-line-200">
