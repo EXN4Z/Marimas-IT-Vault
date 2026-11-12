@@ -401,7 +401,39 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
      *   Serah Terima yang punya info itu.
      * - `no_bukti`, `nik`, `penerima`, dst dibiarkan null -- memang gak
      *   ada datanya di format ini.
+     * 
+     * 
      */
+
+    private function statusDariLabel(?string $label): string
+    {
+        $kunci = $this->normalisasiHeader((string) $label); // "Menunggu Perbaikan" -> menunggu_perbaikan
+
+        return match ($kunci) {
+            'dipakai'                            => 'dipakai',
+            'menunggu_perbaikan'                 => 'menunggu_perbaikan',
+            'diperbaiki', 'sedang_diperbaiki'    => 'diperbaiki',
+            'rusak_berat'                        => 'rusak_berat',
+            'dijual'                             => 'dijual',
+            default                              => 'tersedia',
+        };
+    }
+
+    private function cariPemakaiDariNama(string $nama, int $nomorBaris): ?User
+    {
+        $cocok = User::whereRaw('LOWER(name) = ?', [strtolower(trim($nama))])->get();
+
+        if ($cocok->count() === 1) {
+            return $cocok->first();
+        }
+
+        $this->errors[] = $cocok->isEmpty()
+            ? 'Baris data ke-' . $nomorBaris . ': pemakai "' . $nama . '" tidak ditemukan di data user.'
+            : 'Baris data ke-' . $nomorBaris . ': pemakai "' . $nama . '" cocok dengan ' . $cocok->count() . ' user (nama kembar), dilewati.';
+
+        return null;
+    }
+
     private function procesBarisFlat(Collection $dataRows, array $headers): void
     {
         foreach ($dataRows as $index => $rawRow) {
@@ -436,11 +468,28 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
                         $supplierId = Supplier::firstOrCreate(['nama' => $namaSupplier])->id;
                     }
 
+                    $statusFile = $this->statusDariLabel($row['status'] ?? null);
+                    $namaPemakai = $this->nilaiAtauNull($row['pemakai_saat_ini'] ?? null);
                     $kodeInventory = trim((string) ($row['kode_inventory'] ?? ''));
                     $tanggalInput = $this->parseTanggal($row['tanggal_input'] ?? null);
                     $tanggalInvoice = $this->parseTanggal($row['tanggal_invoice'] ?? $row['tanggal_pembelian'] ?? null);
 
-                    Inventory::create([
+                    $pemakai = null;
+                    if ($statusFile === 'dipakai') {
+                        if ($namaPemakai !== null) {
+                            $pemakai = $this->cariPemakaiDariNama($namaPemakai, $index + 1);
+                        } else {
+                            $this->errors[] = 'Baris data ke-' . ($index + 1) . ': status "Dipakai" tapi kolom "Pemakai Saat Ini" kosong, status diubah jadi Tersedia.';
+                        }
+
+                        // status "dipakai" tanpa pemakai valid = data tidak konsisten
+                        if ($pemakai === null) {
+                            $statusFile = 'tersedia';
+                        }
+                    }
+
+
+                    $inventory = Inventory::create([
                         'kode_inventory'    => $kodeInventory !== '' ? $kodeInventory : null,
                         'nama'              => trim($namaBarang),
                         'kategori_id'       => $this->kategoriIdOtomatis(
@@ -457,11 +506,15 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
                         'keterangan'        => $row['keterangan'] ?? null,
                         'serial_number'     => $this->nilaiAtauNull($row['serial_number'] ?? null),
                         'warna'             => $this->nilaiAtauNull($row['warna'] ?? null),
-                        'status'            => 'tersedia',
+                        'status'            => $statusFile,
                         'perusahaan_id'     => $this->perusahaanIdDariSingkatan($row['perusahaan'] ?? null, $index + 1),
-                        'tanggal_input'       => $tanggalInput,
-                        'tanggal_invoice'     => $tanggalInvoice,
+                        'tanggal_input'     => $tanggalInput,
+                        'tanggal_invoice'   => $tanggalInvoice,
                     ]);
+
+                    if ($pemakai) {
+                        $this->buatInventoryPemakai($inventory, $pemakai, $tanggalInput);
+                    }
 
                     $this->rowCount++;
                 });

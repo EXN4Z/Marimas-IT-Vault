@@ -65,6 +65,12 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { key: 'keterangan', label: 'Keterangan', defaultChecked: false, get: (a) => a.keterangan || '-' },
 ];
 
+const byKodeInventory = (a: Inventory, b: Inventory) =>
+  (a.kode_inventory ?? '').localeCompare(b.kode_inventory ?? '', undefined, {
+    numeric: true,
+    sensitivity: 'base',
+  });
+
 type FileType = 'excel' | 'pdf';
 
 interface Props {
@@ -119,7 +125,8 @@ export default function InventoryExportModal({ open, onClose, data }: Props) {
     setExporting(true);
     try {
       const headers = selectedColumns.map((c) => c.label);
-      const rows = data.map((a) => selectedColumns.map((c) => c.get(a)));
+      const sortedData = [...data].sort(byKodeInventory); // salinan, supaya data dari parent tidak ikut berubah
+      const rows = sortedData.map((a) => selectedColumns.map((c) => c.get(a)));
       const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       // Kalau kolom "Status" dicentang, index-nya dikirim ke builder Excel
       // biar sel status itu diwarnai badge (hijau/merah/kuning) otomatis.
