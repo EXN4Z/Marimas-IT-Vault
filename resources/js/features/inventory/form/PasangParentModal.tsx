@@ -1,0 +1,164 @@
+import { useMemo, useState } from 'react';
+import { X, Link2, Search, Check } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { router } from '@inertiajs/react';
+import type { Inventory } from '../types/inventory';
+import type { InventoryIndukOpsi } from '../types/inventory';
+import { ButtonCancel, ButtonSubmit, inputClass } from '../../../components/form/FormControls';
+
+interface Props {
+  inventory: Inventory;
+  /** [F4-INERTIA] Kandidat induk dari props server (dimuat saat modal dibuka). */
+  indukOptions: InventoryIndukOpsi[];
+  /** true selama kandidat induk belum sampai dari server. */
+  memuatOpsi?: boolean;
+  onClose: () => void;
+  /** Sukses -> toast dari flash server; parent cukup menutup modal. */
+  onSuccess: () => void;
+}
+
+export default function InventoryPasangIndukModal({ inventory, indukOptions, memuatOpsi = false, onClose, onSuccess }: Props) {
+  const [parentId, setParentId] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Kandidat induk = item berdiri sendiri, KECUALI item yang sedang dipasang ini (tidak boleh menempel ke dirinya sendiri).
+  const kandidat = useMemo(() => indukOptions.filter((p) => p.id !== inventory.id), [indukOptions, inventory.id]);
+
+  const filteredOptions = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return kandidat;
+    return kandidat.filter(
+      (p) => p.kode_inventory.toLowerCase().includes(q) || (p.nama || '').toLowerCase().includes(q)
+    );
+  }, [kandidat, search]);
+
+  const selected = kandidat.find((p) => p.id === parentId) || null;
+
+  const handleSubmit = () => {
+    if (!parentId) {
+      toast.error('Pilih salah satu unit induk terlebih dahulu.');
+      return;
+    }
+    setLoading(true);
+    router.post(`/master-data/inventory/${inventory.id}/pasang-ke-induk`, { parent_id: parentId }, {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => onSuccess(),
+      onError: (errors) => {
+        const msg = errors.pasang || Object.values(errors)[0] || 'Gagal memasang kelengkapan ke induk.';
+        toast.error(msg);
+      },
+      onFinish: () => setLoading(false),
+    });
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4 animate-[fadeIn_150ms_ease-out]"
+    >
+      <div className="bg-surface rounded-2xl shadow-2xl border border-line-200-a80 w-full max-w-md max-h-[90vh] flex flex-col animate-[slideUp_200ms_cubic-bezier(0.16,1,0.3,1)]">
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 py-4 border-b border-line-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-tint-blue-50 border border-edge-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0">
+              <Link2 size={20} className="text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-ink-900 leading-tight">Pasang ke Induk</h3>
+              <p className="text-xs text-ink-500 mt-0.5">
+                <span className="font-mono font-medium text-ink-700">{inventory.kode_inventory}</span> · {inventory.nama || '-'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            aria-label="Tutup"
+            className="text-ink-400 hover:text-ink-600 p-1.5 rounded-lg hover:bg-hover-100 transition disabled:opacity-40"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 overflow-y-auto space-y-3">
+          <div className="relative">
+            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari kode inventory atau nama..."
+              className={`${inputClass} pl-9`}
+              autoFocus
+            />
+          </div>
+
+          {selected && (
+            <div className="flex items-center justify-between gap-2 bg-tint-blue-50 border border-edge-blue-100 rounded-xl px-3.5 py-2.5 text-xs">
+              <div className="truncate">
+                <span className="text-ink-500">Unit Terpilih: </span>
+                <span className="font-semibold text-ink-900">{selected.kode_inventory} — {selected.nama || '-'}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setParentId(null)}
+                className="text-xs font-semibold text-blue-600 hover:text-blue-800 shrink-0"
+              >
+                Ganti
+              </button>
+            </div>
+          )}
+
+          <div className="border border-line-200 rounded-xl max-h-52 overflow-y-auto divide-y divide-slate-100">
+            {filteredOptions.length === 0 && (
+              <p className="text-xs text-ink-400 text-center py-6">
+                {memuatOpsi
+                  ? 'Memuat daftar induk…'
+                  : indukOptions.length === 0
+                  ? 'Belum ada item yang bisa dipilih jadi induk.'
+                  : 'Tidak ada item yang cocok dengan pencarian.'}
+              </p>
+            )}
+            {filteredOptions.map((p) => {
+              const isSelected = p.id === parentId;
+              return (
+                <button
+                  type="button"
+                  key={p.id}
+                  onClick={() => setParentId(p.id)}
+                  className={`w-full flex items-center justify-between gap-2 text-left px-3.5 py-2.5 text-sm transition ${
+                    isSelected ? 'bg-solid text-white' : 'hover:bg-hover-50 text-ink-700'
+                  }`}
+                >
+                  <span className="min-w-0">
+                    <span className="block font-medium truncate">{p.kode_inventory}</span>
+                    <span className={`block text-xs truncate ${isSelected ? 'text-ink-300' : 'text-ink-400'}`}>
+                      {p.nama || '-'}
+                    </span>
+                  </span>
+                  {isSelected && <Check size={16} className="shrink-0 text-emerald-400" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-line-100 shrink-0 bg-surface-50-a60">
+          <ButtonCancel onClick={onClose} disabled={loading} />
+          <ButtonSubmit
+            onClick={handleSubmit}
+            disabled={!parentId || loading}
+            loading={loading}
+            loadingLabel="Memasang..."
+          >
+            Pasangkan
+          </ButtonSubmit>
+        </div>
+      </div>
+    </div>
+  );
+}

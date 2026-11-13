@@ -51,12 +51,18 @@ class LogActivity
             return;
         }
 
+        // Data yang di-soft-delete selama request ini (kalau ada) -> dasar tombol "Pulihkan" di Audit Log.
+        $subjek = \App\Support\AuditSubject::dariRequest();
+
         AuditLog::create([
             'user_id' => $request->user()?->id,
             'method' => $request->method(),
             'endpoint' => $request->path(),
             'deskripsi' => mb_strimwidth($this->buatDeskripsi($request), 0, 240, '…'),
             'ip_address' => $request->ip(),
+            'subject_type' => $subjek['type'] ?? null,
+            'subject_id' => $subjek['id'] ?? null,
+            'meta' => $subjek['meta'] ?? null,
         ]);
     }
 
@@ -65,6 +71,11 @@ class LogActivity
         $nama = $request->user()?->name ?? 'Guest';
         $method = $request->method();
         $path = $request->path();
+
+        // Aksi yang menulis deskripsinya sendiri (mis. pemulihan data dari Audit Log).
+        if ($tulisan = $request->attributes->get('audit_deskripsi')) {
+            return (string) $tulisan;
+        }
 
         $khusus = $this->deskripsiInventaris($request, $nama);
         if ($khusus !== null) {

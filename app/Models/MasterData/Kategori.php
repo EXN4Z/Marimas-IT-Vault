@@ -2,6 +2,7 @@
 
 namespace App\Models\MasterData;
 
+use App\Support\Concerns\DapatDipulihkan;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -18,6 +19,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Kategori extends Model
 {
+    use DapatDipulihkan;
+
     protected $table = 'kategori';
 
     protected $fillable = [

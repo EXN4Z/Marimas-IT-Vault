@@ -2,11 +2,14 @@
 
 namespace App\Models\Transaksi;
 
+use App\Support\Concerns\DapatDipulihkan;
 use App\Models\MasterData\Inventory;
 use Illuminate\Database\Eloquent\Model;
 
 class InventoryPenanganan extends Model
 {
+    use DapatDipulihkan;
+
     protected $table = 'inventory_penanganan';
 
     protected $fillable = [

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { router } from '@inertiajs/react';
-import { ScrollText, Trash2, ArrowDownCircle, ArrowUpCircle, RefreshCw, Search, X } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { ScrollText, Trash2, ArrowDownCircle, ArrowUpCircle, RefreshCw, Search, X, RotateCcw } from 'lucide-react';
 import ScrollableTabBar from '../../components/navigation/ScrollableTabBar';
 import Pagination from '../../components/table/Pagination';
 import { Skeleton } from '../../components/skeleton';
-import type { PaginatedAuditLog } from '../../features/audit-log/types';
+import type { AuditLog, PaginatedAuditLog } from '../../features/audit-log/types';
 import { pnCard, pnEmpty } from '../../components/ui/pn';
 
 type TabKey = 'aktif' | 'trash';
@@ -40,6 +41,7 @@ function formatWaktu(iso: string): string {
 export default function AuditLogIndex({ tab, filters, logs: paginator }: Props) {
   const [search, setSearch] = useState(filters.search);
   const [loading, setLoading] = useState(false);
+  const [memulihkanId, setMemulihkanId] = useState<number | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const logs = paginator.data;
@@ -86,6 +88,18 @@ export default function AuditLogIndex({ tab, filters, logs: paginator }: Props) 
     visit({ tab, search: filters.search, page: target }, { replace: false, preserveScroll: true });
   }
 
+  // Pulihkan data yang dihapus (soft delete). Sukses -> toast dari flash server (FlashToaster);
+  // gagal -> error bag "pulihkan" (mis. data induknya masih terhapus) -> toast error.
+  function pulihkan(log: AuditLog) {
+    setMemulihkanId(log.id);
+    router.post('/audit-log/' + log.id + '/pulihkan', {}, {
+      preserveScroll: true,
+      preserveState: true,
+      onError: (errors) => toast.error(String(errors.pulihkan || 'Gagal memulihkan data.')),
+      onFinish: () => setMemulihkanId(null),
+    });
+  }
+
   function refresh() {
     router.reload({ only: ['logs'], ...loadingHandlers });
   }
@@ -95,7 +109,8 @@ export default function AuditLogIndex({ tab, filters, logs: paginator }: Props) 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
         <p className="text-sm text-ink-500">
           Riwayat aktivitas pengguna sistem. Log otomatis pindah ke trash setelah 24 jam, dan
-          terhapus permanen setelah 7 hari di trash.
+          terhapus permanen setelah 7 hari di trash. Log penghapusan data yang masih bisa dipulihkan
+          disimpan lebih lama (180 hari).
         </p>
         <button
           onClick={refresh}
@@ -190,6 +205,23 @@ export default function AuditLogIndex({ tab, filters, logs: paginator }: Props) 
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                  {log.subject_type && log.subject_id && (
+                    log.dipulihkan_at ? (
+                      <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-tint-emerald-50 text-emerald-600">
+                        Dipulihkan
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => pulihkan(log)}
+                        disabled={memulihkanId === log.id}
+                        className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg bg-surface-100 text-ink-600 hover:bg-hover-200 transition disabled:opacity-50"
+                      >
+                        <RotateCcw size={12} />
+                        Pulihkan
+                      </button>
+                    )
+                  )}
                   {tab === 'aktif' ? (
                     <ArrowDownCircle size={14} className="text-ink-300" />
                   ) : (

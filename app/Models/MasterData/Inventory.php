@@ -2,6 +2,7 @@
 
 namespace App\Models\MasterData;
 
+use App\Support\Concerns\DapatDipulihkan;
 use App\Models\Transaksi\InventoryPemakai;
 use App\Models\Transaksi\InventoryPenanganan;
 use App\Models\Transaksi\InventoryWriteoff;
@@ -9,6 +10,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Inventory extends Model
 {
+    use DapatDipulihkan;
+
     protected $table = 'inventory';
 
     protected $fillable = [

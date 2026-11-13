@@ -274,6 +274,12 @@ class InventoryAction
         } else {
             // Query builder gak lewat selaraskanStatusByParent(), jadi status disamakan manual biar invariant
             // "parent_id null => status tersedia" tetap konsisten. Aman: guard (1) memastikan anak tidak dipinjam.
+            // Simpan anak-anaknya ke Audit Log (meta) supaya saat item ini dipulihkan, kelengkapannya bisa dipasang lagi.
+            \App\Support\AuditSubject::meta([
+                'anak' => $inventory->children()->get(['id', 'status'])
+                    ->map(fn ($anak) => ['id' => $anak->id, 'status' => $anak->status])
+                    ->all(),
+            ]);
             $inventory->children()->update(['parent_id' => null, 'status' => 'tersedia']);
         }
 

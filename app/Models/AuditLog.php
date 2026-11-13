@@ -17,10 +17,20 @@ class AuditLog extends Model
         'endpoint',
         'deskripsi',
         'ip_address',
+        'subject_type',
+        'subject_id',
+        'meta',
+        'dipulihkan_at',
+        'dipulihkan_oleh',
+    ];
+
+    protected $casts = [
+        'meta' => 'array',
+        'dipulihkan_at' => 'datetime',
     ];
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 }

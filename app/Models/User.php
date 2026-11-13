@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Concerns\DapatDipulihkan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -14,6 +15,8 @@ use App\Models\MasterData\Perusahaan;
 
 class User extends Authenticatable
 {
+    use DapatDipulihkan;
+
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable, HasPushSubscriptions;
 

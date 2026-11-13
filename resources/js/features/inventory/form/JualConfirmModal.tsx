@@ -1,0 +1,53 @@
+import { X } from 'lucide-react';
+import type { Inventory } from '../types/inventory';
+
+interface InventoryJualConfirmModalProps {
+  jualTarget: Inventory;
+  setJualTarget: React.Dispatch<React.SetStateAction<Inventory | null>>;
+  jualLoading: boolean;
+  confirmJual: () => void | Promise<void>;
+}
+
+export default function InventoryJualConfirmModal({ jualTarget, setJualTarget, jualLoading, confirmJual }: InventoryJualConfirmModalProps) {
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] px-4">
+      <div className="bg-surface rounded-xl w-full max-w-sm p-5">
+        <div className="flex items-start justify-between gap-3 mb-1">
+          <h2 className="text-base font-semibold text-ink-900">Tandai inventory sebagai dijual?</h2>
+          <button
+            type="button"
+            onClick={() => setJualTarget(null)}
+            disabled={jualLoading}
+            aria-label="Tutup"
+            className="-mr-1.5 -mt-1 shrink-0 text-ink-400 hover:text-ink-600 p-1.5 rounded-lg hover:bg-hover-100 transition disabled:opacity-40"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <p className="text-sm text-ink-500 mb-1">
+          <span className="font-medium text-ink-700">{jualTarget.kode_inventory}</span> akan ditandai dengan status{' '}
+          <span className="font-medium">Dijual</span> dan tidak bisa diserahkan/dipinjamkan lagi.
+        </p>
+
+        <div className="mb-4" />
+
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => setJualTarget(null)}
+            disabled={jualLoading}
+            className="text-sm px-4 py-2 rounded-lg border border-line-200 hover:bg-hover-50 disabled:opacity-50"
+          >
+            Batal
+          </button>
+          <button
+            onClick={confirmJual}
+            disabled={jualLoading}
+            className="text-sm px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+          >
+            {jualLoading ? 'Menyimpan...' : 'Ya, Dijual'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -35,6 +35,7 @@ class DashboardQuery
     public static function departemen()
     {
         $query = User::join('departemen', 'users.departemen_id', '=', 'departemen.id')
+            ->whereNull('departemen.deleted_at')
             ->select(
                 'departemen.nama as departemen',
                 DB::raw('COUNT(users.id) as jumlah')
@@ -219,6 +220,8 @@ class DashboardQuery
         return DB::table('inventory_pemakai as ip')
             ->join('users as u', 'u.id', '=', 'ip.user_id')
             ->whereNull('ip.dikembalikan_at')
+            ->whereNull('ip.deleted_at')
+            ->whereNull('u.deleted_at')
             ->select('u.id', 'u.name', DB::raw('COUNT(DISTINCT ip.inventory_id) as jumlah'))
             ->groupBy('u.id', 'u.name')
             ->orderByDesc('jumlah')

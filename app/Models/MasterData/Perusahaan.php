@@ -2,6 +2,7 @@
 
 namespace App\Models\MasterData;
 
+use App\Support\Concerns\DapatDipulihkan;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\User;
@@ -11,6 +12,8 @@ use App\Models\User;
 // tabel lain (beda dari Cabang::karyawan()/users()).
 class Perusahaan extends Model
 {
+    use DapatDipulihkan;
+
     protected $table = 'perusahaan';
 
     protected $fillable = [
