@@ -10,7 +10,7 @@ use App\Models\MasterData\Supplier;
 use App\Models\Transaksi\InventoryPemakai;
 use App\Models\User;
 use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithCalculatedFormulas; 
+use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -43,6 +43,18 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
 
     private array $perusahaanIdCache = [];
 
+    /**
+     * Daftar kode_inventory yang sudah ada di database (huruf kecil), dimuat
+     * SEKALI di awal lewat kodeSudahAda() -- bukan query per baris. Kode yang
+     * baru berhasil diimport di file ini juga ditambahkan ke sini, supaya kode
+     * kembar di dalam file yang sama gak masuk dua kali.
+     */
+    private array $kodeSudahAda = [];
+    private bool $kodeSudahAdaDimuat = false;
+
+    /** Jumlah baris format flat yang dilewati karena kode_inventory sudah ada. */
+    private int $jumlahDilewati = 0;
+
     private const PETA_KATEGORI_KEYWORDS = [
         'Baterai'         => ['baterai', 'battery', 'lithium'],
         'Bag'             => ['backpack', 'slingbag', 'tas '],
@@ -65,6 +77,7 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
     ];
 
     private array $kategoriIdCache = [];
+
     /**
      * REVISI (refactor kategori bebas): dulu di sini ada 2 konstanta nama
      * kategori ("Barang Utama"/"Kelengkapan") yang dipakai buat nge-lookup
@@ -86,6 +99,11 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
      */
     private const NAMA_KATEGORI_FALLBACK_IMPORT = 'Belum Dikategorikan';
 
+    private const PETA_PERUSAHAAN_SINGKATAN = [
+        'MPK' => 'PT. Marimas Putera Kencana',
+        'UTH' => 'PT. Ulam Tiba Halim',
+    ];
+
     /**
      * Nomor kolom "Nama Barang N" yang dianggap BARANG UTAMA. Semua kolom
      * "Nama Barang" dengan nomor lain (2, 3, dst) otomatis dianggap
@@ -96,11 +114,6 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
      * konsisten: kolom pertama = barang utama, kolom berikutnya = barang
      * yang menyertai/melengkapi barang utama itu.
      */
-    private const PETA_PERUSAHAAN_SINGKATAN = [
-    'MPK' => 'PT. Marimas Putera Kencana',
-    'UTH' => 'PT. Ulam Tiba Halim',
-    ];
-
     private const NOMOR_KOLOM_ASET_UTAMA = 1;
 
     private const WARNA_KEYWORDS = [
@@ -130,7 +143,26 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
      */
     private ?int $kategoriIdFallbackCache = null;
 
+    /**
+     * Titik masuk dari Maatwebsite Excel. Pekerjaan sebenarnya ada di
+     * prosesSemua(); di sini hanya ditambah RINGKASAN HASIL ke
+     * storage/logs/laravel.log supaya kelihatan berapa baris yang masuk,
+     * berapa yang dilewati, dan apa saja error-nya -- walaupun controller
+     * tidak menampilkannya di layar.
+     */
     public function collection(Collection $rows)
+    {
+        $this->prosesSemua($rows);
+
+        Log::info('IMPORT selesai', [
+            'ditambahkan'             => $this->rowCount,
+            'dilewati_kode_sudah_ada' => $this->jumlahDilewati,
+            'jumlah_error'            => count($this->errors),
+            'errors'                  => $this->errors,
+        ]);
+    }
+
+    private function prosesSemua(Collection $rows): void
     {
         $indexHeader = $this->cariBarisHeader($rows);
 
@@ -147,6 +179,8 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
 
         $nomorBarang = $this->cariNomorBarang($headers);
         $dataRows = $rows->slice($indexHeader + 1);
+
+        Log::info('IMPORT: jumlah baris data = ' . $dataRows->count());
 
         // Format lama (Bukti Serah Terima) -- ada kolom "Nama Barang 1",
         // "Nama Barang 2", dst.
@@ -378,62 +412,32 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
      * pengelompokan "Nama Barang 1/2/3" kayak format Bukti Serah Terima.
      * Semua baris dianggap BARANG UTAMA (gak ada kelengkapan terpisah),
      * sesuai struktur file "Data Inventory" (Kode Inventory, Kategori,
-     * Merk, Type, Warna, Nama, Serial Number, Keterangan, Jumlah, Tanggal
-     * Garansi, Supplier, Tanggal Invoice, No Invoice / Surat Jalan, No Good
-     * Receive, Tanggal Input, Perusahaan).
+     * Merk, Type, Warna, Nama, Serial Number, Keterangan, Jumlah, Status,
+     * Pemakai Saat Ini, Tanggal Garansi, Supplier, Tanggal Pembelian, Tanggal
+     * Input, Perusahaan, dst).
      *
-     * CATATAN ASUMSI PEMETAAN (sesuaikan kalau ternyata beda):
-     * - Kolom "Kode Inventory" dipakai APA ADANYA ke field `kode_inventory`
-     *   (gak di-generate ulang seperti biasanya).
-     * - Kolom "Kategori" (isinya "Charger", "Proyektor", dst) TIDAK dipakai
-     *   sebagai kategori_id sistem -- semua baris format ini otomatis
-     *   kategori_id = Barang Utama, karena "Kategori" di file ini
-     *   sebenarnya lebih ke jenis/nama barang, bukan Barang Utama/
-     *   Kelengkapan.
-     * - Kolom "Merk", "Type", "Tanggal Garansi", "No Invoice / Surat
-     *   Jalan", "No Good Receive" DIABAIKAN -- gak ada kolom yang cocok
-     *   di tabel `inventory` untuk field-field ini.
-     * - "Serial Number" & "Warna" diambil LANGSUNG dari kolomnya
-     *   masing-masing (BUKAN di-parse dari teks Keterangan seperti format
-     *   lama), karena file ini sudah punya kolom sendiri buat itu.
-     * - `status` di-hardcode 'tersedia' -- file ini gak punya info siapa
-     *   pemakainya (gak ada kolom NIK/Penerima), beda dari format Bukti
-     *   Serah Terima yang punya info itu.
+     * ATURAN PEMETAAN:
+     * - "Kode Inventory" dipakai APA ADANYA ke field `kode_inventory`.
+     *   Kalau kode itu SUDAH ADA di database (atau sudah diimport di file
+     *   yang sama), barisnya DILEWATI -- jadi file yang sama bisa diupload
+     *   ulang dan hanya baris dengan kode baru yang masuk. Baris tanpa kode
+     *   tidak bisa dicek dan selalu diimport.
+     * - "Kategori" dipakai sebagai nama kategori; kalau kosong, ditebak dari
+     *   merk/type/nama (lihat kategoriIdOtomatis()).
+     * - "Status" dibaca lewat statusDariLabel() (kosong/tidak dikenali =
+     *   'tersedia'). Kalau statusnya "Dipakai", kolom "Pemakai Saat Ini"
+     *   WAJIB diisi dan harus cocok dengan tepat 1 user (nama, tidak peduli
+     *   huruf besar/kecil) -- user TIDAK dibuat otomatis. Kalau pemakai
+     *   kosong / tidak ditemukan / nama kembar, baris itu TIDAK ditambahkan
+     *   dan alasannya dicatat di getErrors(). Kalau cocok, dibuatkan baris
+     *   inventory_pemakai.
+     * - "Serial Number" & "Warna" diambil LANGSUNG dari kolomnya masing-masing
+     *   (BUKAN di-parse dari teks Keterangan seperti format lama).
+     * - "Tanggal Garansi", "No. Surat Jalan", "No. Good Receive" DIABAIKAN --
+     *   tidak diisi oleh import ini.
      * - `no_bukti`, `nik`, `penerima`, dst dibiarkan null -- memang gak
      *   ada datanya di format ini.
-     * 
-     * 
      */
-
-    private function statusDariLabel(?string $label): string
-    {
-        $kunci = $this->normalisasiHeader((string) $label); // "Menunggu Perbaikan" -> menunggu_perbaikan
-
-        return match ($kunci) {
-            'dipakai'                            => 'dipakai',
-            'menunggu_perbaikan'                 => 'menunggu_perbaikan',
-            'diperbaiki', 'sedang_diperbaiki'    => 'diperbaiki',
-            'rusak_berat'                        => 'rusak_berat',
-            'dijual'                             => 'dijual',
-            default                              => 'tersedia',
-        };
-    }
-
-    private function cariPemakaiDariNama(string $nama, int $nomorBaris): ?User
-    {
-        $cocok = User::whereRaw('LOWER(name) = ?', [strtolower(trim($nama))])->get();
-
-        if ($cocok->count() === 1) {
-            return $cocok->first();
-        }
-
-        $this->errors[] = $cocok->isEmpty()
-            ? 'Baris data ke-' . $nomorBaris . ': pemakai "' . $nama . '" tidak ditemukan di data user.'
-            : 'Baris data ke-' . $nomorBaris . ': pemakai "' . $nama . '" cocok dengan ' . $cocok->count() . ' user (nama kembar), dilewati.';
-
-        return null;
-    }
-
     private function procesBarisFlat(Collection $dataRows, array $headers): void
     {
         foreach ($dataRows as $index => $rawRow) {
@@ -454,11 +458,43 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
                         array_pad($rowArray, count($headers), null)
                     );
 
+                    // Kode sudah ada di database -> baris ini dilewati
+                    $kodeInventory = trim((string) ($row['kode_inventory'] ?? ''));
+
+                    if ($kodeInventory !== '' && $this->kodeSudahAda($kodeInventory)) {
+                        $this->jumlahDilewati++;
+                        return;
+                    }
+
                     $namaBarang = $row[self::KOLOM_NAMA_FLAT] ?? null;
 
                     if ($this->namaBarangKosong($namaBarang)) {
                         $this->errors[] = 'Baris data ke-' . ($index + 1) . ': kolom "Nama" kosong, baris dilewati.';
                         return;
+                    }
+
+                    // Status dipakai -> pemakai wajib ada. Dicek SEBELUM ada
+                    // yang dibuat, supaya baris yang gagal tidak meninggalkan
+                    // data setengah jadi.
+                    $statusFile = $this->statusDariLabel($row['status'] ?? null);
+                    $pemakai = null;
+
+                    if ($statusFile === 'dipakai') {
+                        $namaPemakai = $this->nilaiAtauNull($row['pemakai_saat_ini'] ?? null);
+                        $labelBaris = 'Baris data ke-' . ($index + 1)
+                            . ' (' . ($kodeInventory !== '' ? $kodeInventory : trim($namaBarang)) . ')';
+
+                        if ($namaPemakai === null) {
+                            $this->errors[] = $labelBaris . ' tidak ditambahkan: status "Dipakai" tapi kolom "Pemakai Saat Ini" kosong.';
+                            return;
+                        }
+
+                        [$pemakai, $alasan] = $this->cariPemakaiDariNama($namaPemakai);
+
+                        if ($pemakai === null) {
+                            $this->errors[] = $labelBaris . ' tidak ditambahkan: ' . $alasan . '.';
+                            return;
+                        }
                     }
 
                     $namaSupplier = $this->nilaiAtauNull($row['supplier'] ?? null);
@@ -468,26 +504,8 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
                         $supplierId = Supplier::firstOrCreate(['nama' => $namaSupplier])->id;
                     }
 
-                    $statusFile = $this->statusDariLabel($row['status'] ?? null);
-                    $namaPemakai = $this->nilaiAtauNull($row['pemakai_saat_ini'] ?? null);
-                    $kodeInventory = trim((string) ($row['kode_inventory'] ?? ''));
                     $tanggalInput = $this->parseTanggal($row['tanggal_input'] ?? null);
                     $tanggalInvoice = $this->parseTanggal($row['tanggal_invoice'] ?? $row['tanggal_pembelian'] ?? null);
-
-                    $pemakai = null;
-                    if ($statusFile === 'dipakai') {
-                        if ($namaPemakai !== null) {
-                            $pemakai = $this->cariPemakaiDariNama($namaPemakai, $index + 1);
-                        } else {
-                            $this->errors[] = 'Baris data ke-' . ($index + 1) . ': status "Dipakai" tapi kolom "Pemakai Saat Ini" kosong, status diubah jadi Tersedia.';
-                        }
-
-                        // status "dipakai" tanpa pemakai valid = data tidak konsisten
-                        if ($pemakai === null) {
-                            $statusFile = 'tersedia';
-                        }
-                    }
-
 
                     $inventory = Inventory::create([
                         'kode_inventory'    => $kodeInventory !== '' ? $kodeInventory : null,
@@ -516,12 +534,87 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
                         $this->buatInventoryPemakai($inventory, $pemakai, $tanggalInput);
                     }
 
+                    // Tandai kode ini sudah dipakai, supaya kode kembar di file
+                    // yang sama tidak masuk dua kali
+                    if ($kodeInventory !== '') {
+                        $this->tandaiKodeAda($kodeInventory);
+                    }
+
                     $this->rowCount++;
                 });
             } catch (\Exception $e) {
                 $this->errors[] = 'Baris data ke-' . ($index + 1) . ': ' . $e->getMessage();
             }
         }
+    }
+
+    /**
+     * Ubah isi kolom "Status" (label hasil export, mis. "Dipakai",
+     * "Menunggu Perbaikan") jadi nilai enum status. Kosong / tidak
+     * dikenali -> 'tersedia'.
+     */
+    private function statusDariLabel(?string $label): string
+    {
+        $kunci = $this->normalisasiHeader((string) $label); // "Menunggu Perbaikan" -> menunggu_perbaikan
+
+        return match ($kunci) {
+            'dipakai'                         => 'dipakai',
+            'menunggu_perbaikan'              => 'menunggu_perbaikan',
+            'diperbaiki', 'sedang_diperbaiki' => 'diperbaiki',
+            'rusak_berat'                     => 'rusak_berat',
+            'dijual'                          => 'dijual',
+            default                           => 'tersedia',
+        };
+    }
+
+    /**
+     * Cari 1 user dari nama (case-insensitive). User TIDAK dibuat otomatis.
+     * Return [User|null, alasan|null]: null + alasan kalau tidak ada user
+     * dengan nama itu, atau namanya cocok dengan lebih dari 1 user.
+     */
+    private function cariPemakaiDariNama(string $nama): array
+    {
+        $cocok = User::whereRaw('LOWER(name) = ?', [strtolower(trim($nama))])->get();
+
+        if ($cocok->count() === 1) {
+            return [$cocok->first(), null];
+        }
+
+        return [
+            null,
+            $cocok->isEmpty()
+                ? 'pemakai "' . $nama . '" tidak ada di data user'
+                : 'pemakai "' . $nama . '" cocok dengan ' . $cocok->count() . ' user (nama kembar)',
+        ];
+    }
+
+    /**
+     * True kalau kode inventory sudah ada di database atau sudah diimport di
+     * file yang sedang diproses. Semua kode dimuat sekali saja di awal.
+     * Kalau model Inventory memakai SoftDeletes dan kode barang yang sudah
+     * dihapus juga dianggap "sudah ada", ganti Inventory:: di bawah jadi
+     * Inventory::withTrashed()->.
+     */
+    private function kodeSudahAda(string $kode): bool
+    {
+        if (!$this->kodeSudahAdaDimuat) {
+            Inventory::whereNotNull('kode_inventory')
+                ->pluck('kode_inventory')
+                ->each(function ($k) {
+                    $this->kodeSudahAda[strtolower(trim((string) $k))] = true;
+                });
+
+            $this->kodeSudahAdaDimuat = true;
+
+            Log::info('IMPORT: kode di database dimuat = ' . count($this->kodeSudahAda));
+        }
+
+        return isset($this->kodeSudahAda[strtolower($kode)]);
+    }
+
+    private function tandaiKodeAda(string $kode): void
+    {
+        $this->kodeSudahAda[strtolower($kode)] = true;
     }
 
     /**
@@ -565,7 +658,7 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
             'serial_number'     => $hasilParse['serial_number'],
             'keterangan'        => $keterangan,
             'supplier_id'       => $supplierId,
-            'perusahaan_id'        => $infoBukti['perusahaan_id'] ?? null,
+            'perusahaan_id'     => $infoBukti['perusahaan_id'] ?? null,
             'status'            => $indukInventory->status,
         ], $this->timestampsDariTanggal($infoBukti['tanggal'] ?? null)));
     }
@@ -596,10 +689,10 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
         $noStruk = $this->generateNoStrukRandom('inventory_pemakai', 'nomor_penerimaan');
 
         InventoryPemakai::create(array_merge([
-            'inventory_id'        => $item->id,
-            'user_id'             => $penerimaUser->id,
+            'inventory_id'     => $item->id,
+            'user_id'          => $penerimaUser->id,
             'nomor_penerimaan' => $noStruk,
-            'diterima_at'  => $tanggalPenerimaan,
+            'diterima_at'      => $tanggalPenerimaan,
         ], $this->timestampsDariTanggal($tanggalPenerimaan)));
     }
 
@@ -654,6 +747,7 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
 
         return $this->kategoriIdCache[$nama];
     }
+
     /**
      * Ambil id kategori fallback (NAMA_KATEGORI_FALLBACK_IMPORT), bikin
      * kalau belum ada (firstOrCreate -- BEDA dari firstOrFail versi lama
@@ -700,21 +794,8 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
         ];
     }
 
-    /**
-     * True kalau isi kolom "Nama Barang N" harus dianggap TIDAK ADA data
-     * beneran -- baik karena benar-benar kosong (null/''), maupun karena
-     * cuma placeholder yang lazim dipakai di Excel sumber buat nandain
-     * "sel ini sengaja gak diisi" (mis. "-"). Tanpa ini, nilai seperti "-"
-     * lolos empty() check (string "-" itu non-empty di PHP) dan kepakai
-     * apa adanya sebagai `nama` baris Inventory (barang utama maupun
-     * kelengkapan), sehingga muncul barang dengan nama literal "-". Dipakai
-     * juga buat kolom lain di format flat (Serial Number, Warna) lewat
-     * nilaiAtauNull().
-     */
-
     private function kategoriIdOtomatis(?string $kategoriExcel, ?string $merk, ?string $type, ?string $nama): int
     {
-
         $kategoriExcelTrim = trim((string) $kategoriExcel);
 
         if (!$this->namaBarangKosong($kategoriExcelTrim)) {
@@ -738,6 +819,17 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
         return $this->kategoriIdFallback();
     }
 
+    /**
+     * True kalau isi kolom "Nama Barang N" harus dianggap TIDAK ADA data
+     * beneran -- baik karena benar-benar kosong (null/''), maupun karena
+     * cuma placeholder yang lazim dipakai di Excel sumber buat nandain
+     * "sel ini sengaja gak diisi" (mis. "-"). Tanpa ini, nilai seperti "-"
+     * lolos empty() check (string "-" itu non-empty di PHP) dan kepakai
+     * apa adanya sebagai `nama` baris Inventory (barang utama maupun
+     * kelengkapan), sehingga muncul barang dengan nama literal "-". Dipakai
+     * juga buat kolom lain di format flat (Serial Number, Warna) lewat
+     * nilaiAtauNull().
+     */
     private function namaBarangKosong(?string $nama): bool
     {
         if (empty($nama)) {
@@ -907,12 +999,23 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
             return null;
         }
     }
-    
+
     public function getRowCount()
     {
         return $this->rowCount;
     }
 
+    public function getJumlahDilewati(): int
+    {
+        return $this->jumlahDilewati;
+    }
+
+    /**
+     * Daftar peringatan/error. Kalau ada baris yang dilewati karena
+     * kode_inventory sudah ada, satu baris ringkasan ditaruh paling atas:
+     * berapa baris yang ditambahkan dan berapa yang dilewati (bukan satu
+     * pesan per baris, supaya daftar tidak penuh).
+     */
     public function getErrors()
     {
         return $this->errors;
