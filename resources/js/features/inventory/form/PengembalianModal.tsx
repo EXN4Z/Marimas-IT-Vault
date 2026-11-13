@@ -8,7 +8,6 @@ import type { Flash } from '../../../types/inertia';
 import { namaPemakai } from '../inventoryHelpers';
 import InventoryFotoUpload from './InventoryFotoUpload';
 import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea, InlineError } from '../../../components/form/FormControls';
-import { toastFormErrors } from '../../../lib/toastErrors';
 
 interface InventoryPengembalianModalProps {
   inventory: Inventory;
@@ -39,12 +38,11 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
       newErrors.kodeStruk = 'Kode struk penerimaan fisik wajib diisi sebagai bukti sah.';
     }
     if (fotoPengembalian.length < MIN_FOTO) {
-      newErrors.foto = `Wajib melampirkan minimal ${MIN_FOTO} foto kondisi unit saat ini (saat ini: ${fotoPengembalian.length} foto).`;
+      newErrors.foto = `Wajib mengisi ${MIN_FOTO} foto`;
     }
-
+    
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      toastFormErrors(newErrors);
       return;
     }
 
@@ -68,12 +66,14 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
         onSuccess(struk?.tipe === 'pengembalian' ? struk.pemakai : pemakai);
       },
       onError: (errors) => {
-        const msg =
-          errors.nomor_penerimaan ||
-          errors.foto_pengembalian ||
-          Object.values(errors)[0] ||
-          'Gagal memproses pengembalian.';
-        toast.error(msg);
+        const next: { kodeStruk?: string; foto?: string } = {};
+        if (errors.nomor_penerimaan) next.kodeStruk = errors.nomor_penerimaan;
+        if (errors.foto_pengembalian) next.foto = errors.foto_pengembalian;
+        if (Object.keys(next).length > 0) {
+          setErrors(next);
+        } else {
+          toast.error(Object.values(errors)[0] || 'Gagal memproses pengembalian.');
+        }
       },
       onFinish: () => setSubmitting(false),
     });

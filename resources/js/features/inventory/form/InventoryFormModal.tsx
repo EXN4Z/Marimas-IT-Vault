@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from '@inertiajs/react';
-import toast from 'react-hot-toast';
 import type { InventoryStatus } from '../types/inventory';
 import type { InventoryIndukOpsi, InventoryOpsi, InventoryRow } from '../types/inventory';
 import { ButtonCancel, ButtonSubmit, Field, SelectField, inputClass, inputErrorClass, InlineError } from '../../../components/form/FormControls';
-import { toastFormErrors } from '../../../lib/toastErrors';
 
 const KETERANGAN_MAX = 255;
 const MAX_FOTO_MB = 4;
@@ -323,7 +321,6 @@ export default function InventoryFormModal({
     const hasErrors = Object.keys(next).length > 0;
     if (hasErrors) {
       formHook.setError(next as Partial<Record<keyof FormState, string>>);
-      toastFormErrors(next);
     }
     return !hasErrors;
   }
@@ -343,15 +340,11 @@ export default function InventoryFormModal({
       forceFormData: true,
       preserveScroll: true,
       preserveState: true,
-      // Sukses -> toast dari flash server (FlashToaster).
+      // Sukses -> toast dari flash server (FlashToaster). Error validasi tampil inline / di kotak errorUmum.
       onSuccess: () => onSaved(),
-      // Pesan error validasi pertama dari server ikut tampil sebagai toast (selain di field).
-      onError: (errs: Record<string, string>) => {
-        toast.error(Object.values(errs)[0] || 'Gagal menyimpan inventory. Periksa kembali isian Anda.');
-      },
     });
   }
-
+  
   // ================= Render =================
   return (
     <div

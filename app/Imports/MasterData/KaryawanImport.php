@@ -78,10 +78,10 @@ class KaryawanImport implements ToCollection
                         $this->errors[] = "Baris ke-{$index}: email kosong, tidak bisa kirim password, dilewati.";
                         return;
                     }
-
-                    $departemenId = null;
+        
                     $namaDepartemen = trim((string) ($row['departemen'] ?? ''));
-                    if ($namaDepartemen !== '') {
+                    $departemenId = null;
+                    if ($namaDepartemen !== '' && !in_array(strtolower($namaDepartemen), self::NILAI_PLACEHOLDER_TANGGAL_KOSONG, true)) {
                         $departemenId = Departemen::firstOrCreate(['nama' => $namaDepartemen])->id;
                     }
 

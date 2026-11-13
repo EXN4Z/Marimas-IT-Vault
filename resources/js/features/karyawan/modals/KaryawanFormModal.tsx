@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
 import { useForm } from '@inertiajs/react';
-import toast from 'react-hot-toast';
 import { User as UserIcon, Lock, Building2, Eye, EyeOff, KeyRound } from 'lucide-react';
 import Modal from '../../../components/modal/Modal';
 import Select from '../../../components/form/Select';
@@ -8,7 +7,6 @@ import SearchableSelect from '../../../components/form/SearchableSelect';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
 import KaryawanPasswordModal from './KaryawanPasswordModal';
 import type { KaryawanOpsi, KaryawanRow } from '../types';
-import { toastFormErrors } from '../../../lib/toastErrors';
 
 interface Props {
   /** null = mode Tambah, baris user = mode Edit. */
@@ -102,7 +100,6 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
 
     if (Object.keys(clientErrors).length > 0) {
       setError(clientErrors);
-      toastFormErrors(clientErrors);
       return;
     }
 
@@ -125,12 +122,8 @@ export default function KaryawanFormModal({ user, opsi, onClose, onDelete }: Pro
     const options = {
       preserveScroll: true,
       preserveState: true,
-      // Sukses -> toast dari flash server (FlashToaster).
+      // Sukses -> toast dari flash server (FlashToaster). Error validasi tampil inline di field.
       onSuccess: () => onClose(),
-      // Pesan spesifik dari server (mis. masih ada pinjaman inventory) ikut ditampilkan sebagai toast.
-      onError: (errs: Record<string, string>) => {
-        toast.error(errs.status || String(Object.values(errs)[0] || 'Ada data yang belum sesuai dengan format server.'));
-      },
     };
 
     if (user) put(`/master-data/karyawan/${user.id}`, options);

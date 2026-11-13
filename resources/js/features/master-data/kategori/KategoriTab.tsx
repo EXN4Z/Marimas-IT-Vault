@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Plus, Pencil, Trash2, X, Tags, Download, Upload, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { toastFormErrors } from '../../../lib/toastErrors';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
 import ConfirmDeleteModal from '../../../components/modal/ConfirmDeleteModal';
 import Pagination from '../../../components/table/Pagination';
@@ -104,7 +103,6 @@ export default function TabKategori() {
   const handleSubmit = async () => {
     if (!formNama.trim()) {
       setFormError('Nama kategori tidak boleh kosong!');
-      toastFormErrors({ nama: 'Nama kategori tidak boleh kosong!' });
       return;
     }
     setSubmitting(true);

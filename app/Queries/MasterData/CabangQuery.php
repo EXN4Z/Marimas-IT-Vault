@@ -12,6 +12,7 @@ class CabangQuery
     {
         return Cabang::withCount(['karyawan as pekerja_count'])
             ->with('akunCabang')
+            ->orderBY('nama')
             ->get()
             ->map(fn ($item) => [
                 'id' => $item->id,

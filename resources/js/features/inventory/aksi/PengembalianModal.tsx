@@ -39,7 +39,7 @@ export default function InventoryPengembalianModal({ inventory, pemakai, isAdmin
       newErrors.kodeStruk = 'Kode struk penerimaan fisik wajib diisi sebagai bukti sah.';
     }
     if (fotoPengembalian.length < MIN_FOTO) {
-      newErrors.foto = `Wajib melampirkan minimal ${MIN_FOTO} foto kondisi unit saat ini (saat ini: ${fotoPengembalian.length} foto).`;
+      newErrors.foto = `Wajib melampirkan minimal ${MIN_FOTO}`;
     }
 
     if (Object.keys(newErrors).length > 0) {

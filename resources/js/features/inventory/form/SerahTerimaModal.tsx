@@ -10,7 +10,6 @@ import type { InventoryPemakai, KaryawanUser } from '../types/inventoryPemakai';
 import type { Flash } from '../../../types/inertia';
 import InventoryFotoUpload from './InventoryFotoUpload';
 import { ButtonCancel, ButtonSubmit, Field, TextInput, Textarea, InlineError } from '../../../components/form/FormControls';
-import { toastFormErrors } from '../../../lib/toastErrors';
 
 interface InventorySerahTerimaModalProps {
   inventory: Inventory; // inventory utama yang mau diserahkan (mis. laptop) -- diklik dari tabel/detail
@@ -98,7 +97,6 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      toastFormErrors(newErrors);
       return;
     }
 
@@ -129,13 +127,14 @@ export default function InventorySerahTerimaModal({ inventory, onClose, onSucces
         onSuccess(results);
       },
       onError: (errors) => {
-        const msg =
-          errors.user_id ||
-          errors.foto_penerimaan ||
-          errors.serah_terima ||
-          Object.values(errors)[0] ||
-          'Gagal mencatat serah-terima. Coba lagi.';
-        toast.error(msg);
+        const next: { penerima?: string; foto?: string } = {};
+        if (errors.user_id) next.penerima = errors.user_id;
+        if (errors.foto_penerimaan) next.foto = errors.foto_penerimaan;
+        if (Object.keys(next).length > 0) {
+          setErrors(next);
+        } else {
+          toast.error(errors.serah_terima || Object.values(errors)[0] || 'Gagal mencatat serah-terima. Coba lagi.');
+        }
       },
       onFinish: () => setSubmitting(false),
     });

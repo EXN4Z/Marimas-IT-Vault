@@ -6,7 +6,6 @@ import type { Inventory } from '../types/inventory';
 import InventoryFotoUpload from './InventoryFotoUpload';
 import { JENIS_KERUSAKAN_OPTIONS } from '../inventoryHelpers';
 import { ButtonCancel, ButtonSubmit, Field, SelectField, Textarea, InlineError } from '../../../components/form/FormControls';
-import { toastFormErrors } from '../../../lib/toastErrors';
 
 interface Props {
   inventory: Inventory;
@@ -29,7 +28,6 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      toastFormErrors(newErrors);
       return;
     }
 
@@ -48,14 +46,15 @@ export default function InventoryLaporKerusakanModal({ inventory, onClose, onSuc
       preserveState: true,
       onSuccess: () => onSuccess(),
       onError: (errors) => {
-        const msg =
-          errors.jenis_kerusakan ||
-          errors.foto ||
-          errors.lapor ||
-          errors.inventory_id ||
-          Object.values(errors)[0] ||
-          'Gagal mengirim laporan. Coba lagi.';
-        toast.error(msg);
+        const next: { jenis_kerusakan?: string; keluhan?: string; foto?: string } = {};
+        if (errors.jenis_kerusakan) next.jenis_kerusakan = errors.jenis_kerusakan;
+        if (errors.keluhan) next.keluhan = errors.keluhan;
+        if (errors.foto) next.foto = errors.foto;
+        if (Object.keys(next).length > 0) {
+          setErrors(next);
+        } else {
+          toast.error(errors.lapor || errors.inventory_id || Object.values(errors)[0] || 'Gagal mengirim laporan. Coba lagi.');
+        }
       },
       onFinish: () => setSubmitting(false),
     });

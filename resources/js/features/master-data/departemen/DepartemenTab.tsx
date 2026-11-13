@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Plus, Pencil, Trash2, X, Upload, Download, Loader2, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { toastFormErrors } from '../../../lib/toastErrors';
 import { Field, TextInput, ButtonCancel, ButtonSubmit } from '../../../components/form/FormControls';
 import ConfirmDeleteModal from '../../../components/modal/ConfirmDeleteModal';
 import Pagination from '../../../components/table/Pagination';
@@ -131,7 +130,6 @@ export default function TabDepartemen() {
   const handleSubmit = async () => {
     if (!formNama.trim()) {
       setFormError('Nama departemen tidak boleh kosong!');
-      toastFormErrors({ nama: 'Nama departemen tidak boleh kosong!' });
       return;
     }
     setSubmitting(true);
