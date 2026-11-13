@@ -223,7 +223,7 @@ class InventoryPemakaiAction
 
         if ($validated['nomor_penerimaan'] !== $inventoryPemakai->nomor_penerimaan) {
             throw ValidationException::withMessages([
-                'nomor_penerimaan' => ['Nomor struk penerimaan tidak cocok. Pengembalian wajib menyertakan bukti serah-terima yang benar.'],
+                'nomor_penerimaan' => ['Nomor struk penerimaan tidak sesuai.'],
             ]);
         }
 
