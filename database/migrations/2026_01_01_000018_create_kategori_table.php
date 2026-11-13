@@ -19,21 +19,6 @@ use Illuminate\Support\Facades\Schema;
  */
 return new class extends Migration
 {
-    private const KATEGORI = [
-        'Bag',
-        'Baterai',
-        'Case',
-        'Charger',
-        'Docking',
-        'Drawing Pad',
-        'Hdd External',
-        'Laptop',
-        'Modem',
-        'Pointer',
-        'Proyektor',
-        'Scanner Barcode',
-        'Speaker',
-    ];
 
     public function up(): void
     {
@@ -42,14 +27,6 @@ return new class extends Migration
             $table->string('nama');
             $table->timestamps();
         });
-
-        foreach (self::KATEGORI as $nama) {
-            DB::table('kategori')->insert([
-                'nama'       => $nama,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
     }
 
     public function down(): void
