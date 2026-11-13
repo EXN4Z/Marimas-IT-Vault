@@ -48,12 +48,29 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
      * SEKALI di awal lewat kodeSudahAda() -- bukan query per baris. Kode yang
      * baru berhasil diimport di file ini juga ditambahkan ke sini, supaya kode
      * kembar di dalam file yang sama gak masuk dua kali.
+     *
+     * Hanya berisi baris AKTIF (yang belum dihapus). Kode milik baris yang
+     * sudah dihapus (soft delete) sengaja TIDAK ada di sini -- baris itu
+     * nanti dipulihkan (restore) oleh procesBarisFlat(), jadi nomor kode
+     * yang "bolong" terisi lagi.
      */
     private array $kodeSudahAda = [];
     private bool $kodeSudahAdaDimuat = false;
 
-    /** Jumlah baris format flat yang dilewati karena kode_inventory sudah ada. */
+    /**
+     * REVISI: daftar serial_number yang sudah ada di database (apa adanya,
+     * hanya di-trim -- unique index Postgres case-sensitive), dimuat SEKALI
+     * lewat serialSudahAda(). Dipakai supaya baris dengan serial yang sudah
+     * ada dilewati, bukan nabrak constraint inventory_serial_number_unique.
+     */
+    private array $serialSudahAda = [];
+    private bool $serialSudahAdaDimuat = false;
+
+    /** Jumlah baris format flat yang dilewati karena kode_inventory / serial sudah ada. */
     private int $jumlahDilewati = 0;
+
+    /** REVISI: jumlah baris format flat yang dipulihkan dari data terhapus (soft delete). */
+    private int $jumlahDipulihkan = 0;
 
     private const PETA_KATEGORI_KEYWORDS = [
         'Baterai'         => ['baterai', 'battery', 'lithium'],
@@ -156,7 +173,8 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
 
         Log::info('IMPORT selesai', [
             'ditambahkan'             => $this->rowCount,
-            'dilewati_kode_sudah_ada' => $this->jumlahDilewati,
+            'dipulihkan_dari_hapus'   => $this->jumlahDipulihkan,
+            'dilewati_sudah_ada'      => $this->jumlahDilewati,
             'jumlah_error'            => count($this->errors),
             'errors'                  => $this->errors,
         ]);
@@ -207,6 +225,9 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
      * sama buat semua barang di baris itu. Logic-nya SAMA PERSIS seperti
      * sebelum ditambahkannya format flat -- cuma dipindah ke method sendiri
      * biar collection() bisa cabang ke 2 format tanpa isinya campur aduk.
+     *
+     * (Method ini TIDAK diubah di revisi ini -- cek duplikat kode/serial
+     * dan restore data terhapus hanya dipasang di format flat.)
      */
     private function procesBarisBuktiSerahTerima(Collection $dataRows, array $headers, array $nomorBarang): void
     {
@@ -417,11 +438,19 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
      * Input, Perusahaan, dst).
      *
      * ATURAN PEMETAAN:
-     * - "Kode Inventory" dipakai APA ADANYA ke field `kode_inventory`.
-     *   Kalau kode itu SUDAH ADA di database (atau sudah diimport di file
-     *   yang sama), barisnya DILEWATI -- jadi file yang sama bisa diupload
-     *   ulang dan hanya baris dengan kode baru yang masuk. Baris tanpa kode
-     *   tidak bisa dicek dan selalu diimport.
+     * - "Kode Inventory" dipakai APA ADANYA ke field `kode_inventory`
+     *   (WAJIB ada di $fillable model Inventory).
+     *   Kalau kode itu SUDAH ADA di database (baris aktif) atau sudah
+     *   diimport di file yang sama, barisnya DILEWATI -- jadi file yang
+     *   sama bisa diupload ulang dan hanya baris dengan kode baru yang
+     *   masuk. Baris tanpa kode tidak bisa dicek dan selalu diimport.
+     * - REVISI (tambal nomor): kalau kode itu cocok dengan baris yang sudah
+     *   DIHAPUS (soft delete), baris lama itu DIPULIHKAN (restore) lalu
+     *   isinya diperbarui dari Excel -- jadi nomor kode yang "bolong"
+     *   (mis. IT-26-00004) terisi lagi, dan gak nabrak unique index.
+     * - REVISI: kalau "Serial Number" sudah dipakai baris aktif lain,
+     *   baris dilewati (dicatat di getErrors()), bukan nabrak constraint
+     *   inventory_serial_number_unique.
      * - "Kategori" dipakai sebagai nama kategori; kalau kosong, ditebak dari
      *   merk/type/nama (lihat kategoriIdOtomatis()).
      * - "Status" dibaca lewat statusDariLabel() (kosong/tidak dikenali =
@@ -458,7 +487,7 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
                         array_pad($rowArray, count($headers), null)
                     );
 
-                    // Kode sudah ada di database -> baris ini dilewati
+                    // Kode sudah ada (baris aktif) di database -> baris ini dilewati
                     $kodeInventory = trim((string) ($row['kode_inventory'] ?? ''));
 
                     if ($kodeInventory !== '' && $this->kodeSudahAda($kodeInventory)) {
@@ -470,6 +499,19 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
 
                     if ($this->namaBarangKosong($namaBarang)) {
                         $this->errors[] = 'Baris data ke-' . ($index + 1) . ': kolom "Nama" kosong, baris dilewati.';
+                        return;
+                    }
+
+                    // Serial sudah dipakai baris aktif lain -> dilewati
+                    // (dicek setelah kode, jadi baris yang kodenya sudah ada
+                    // tidak ikut memenuhi daftar error).
+                    $serialFile = $this->nilaiAtauNull($row['serial_number'] ?? null);
+
+                    if ($serialFile !== null && $this->serialSudahAda($serialFile)) {
+                        $this->jumlahDilewati++;
+                        $this->errors[] = 'Baris data ke-' . ($index + 1)
+                            . ' (' . ($kodeInventory !== '' ? $kodeInventory : trim($namaBarang)) . ')'
+                            . ' dilewati: serial number "' . $serialFile . '" sudah dipakai data lain.';
                         return;
                     }
 
@@ -507,7 +549,7 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
                     $tanggalInput = $this->parseTanggal($row['tanggal_input'] ?? null);
                     $tanggalInvoice = $this->parseTanggal($row['tanggal_invoice'] ?? $row['tanggal_pembelian'] ?? null);
 
-                    $inventory = Inventory::create([
+                    $data = [
                         'kode_inventory'    => $kodeInventory !== '' ? $kodeInventory : null,
                         'nama'              => trim($namaBarang),
                         'kategori_id'       => $this->kategoriIdOtomatis(
@@ -522,22 +564,52 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
                         'supplier_id'       => $supplierId,
                         'jumlah'            => $row['jumlah'] ?? null,
                         'keterangan'        => $row['keterangan'] ?? null,
-                        'serial_number'     => $this->nilaiAtauNull($row['serial_number'] ?? null),
+                        'serial_number'     => $serialFile,
                         'warna'             => $this->nilaiAtauNull($row['warna'] ?? null),
                         'status'            => $statusFile,
                         'perusahaan_id'     => $this->perusahaanIdDariSingkatan($row['perusahaan'] ?? null, $index + 1),
                         'tanggal_input'     => $tanggalInput,
                         'tanggal_invoice'   => $tanggalInvoice,
-                    ]);
+                    ];
 
-                    if ($pemakai) {
-                        $this->buatInventoryPemakai($inventory, $pemakai, $tanggalInput);
+                    // Kode ini milik baris yang sudah dihapus? -> pulihkan
+                    // barisnya (nomor kode "bolong" terisi lagi), bukan
+                    // insert baru yang pasti nabrak unique kode_inventory.
+                    $terhapus = $this->cariTerhapusDariKode($kodeInventory);
+                    $dipulihkan = false;
+
+                    if ($terhapus) {
+                        $terhapus->restore();
+                        $terhapus->update($data);
+                        $inventory = $terhapus;
+                        $dipulihkan = true;
+                    } else {
+                        $inventory = Inventory::create($data);
                     }
 
-                    // Tandai kode ini sudah dipakai, supaya kode kembar di file
-                    // yang sama tidak masuk dua kali
+                    // Baris pemakai: kalau baris dipulihkan dan pemakai aktif
+                    // yang sama sudah tercatat, jangan dobel.
+                    if ($pemakai) {
+                        $sudahTercatat = $dipulihkan
+                            && $inventory->pemakaiSaatIni()->where('user_id', $pemakai->id)->exists();
+
+                        if (!$sudahTercatat) {
+                            $this->buatInventoryPemakai($inventory, $pemakai, $tanggalInput);
+                        }
+                    }
+
+                    // Tandai kode & serial ini sudah dipakai, supaya baris
+                    // kembar di file yang sama tidak masuk dua kali
                     if ($kodeInventory !== '') {
                         $this->tandaiKodeAda($kodeInventory);
+                    }
+
+                    if ($serialFile !== null) {
+                        $this->tandaiSerialAda($serialFile);
+                    }
+
+                    if ($dipulihkan) {
+                        $this->jumlahDipulihkan++;
                     }
 
                     $this->rowCount++;
@@ -589,11 +661,15 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
     }
 
     /**
-     * True kalau kode inventory sudah ada di database atau sudah diimport di
-     * file yang sedang diproses. Semua kode dimuat sekali saja di awal.
-     * Kalau model Inventory memakai SoftDeletes dan kode barang yang sudah
-     * dihapus juga dianggap "sudah ada", ganti Inventory:: di bawah jadi
-     * Inventory::withTrashed()->.
+     * True kalau kode inventory sudah ada di database (baris AKTIF) atau
+     * sudah diimport di file yang sedang diproses. Semua kode dimuat sekali
+     * saja di awal.
+     *
+     * Baris yang sudah dihapus (soft delete) SENGAJA tidak dihitung "sudah
+     * ada" di sini -- barisnya dipulihkan lewat cariTerhapusDariKode()
+     * supaya nomor kode yang bolong terisi lagi. Jangan ganti Inventory::
+     * di bawah jadi Inventory::withTrashed() kalau mau fitur tambal nomor
+     * tetap jalan.
      */
     private function kodeSudahAda(string $kode): bool
     {
@@ -615,6 +691,51 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
     private function tandaiKodeAda(string $kode): void
     {
         $this->kodeSudahAda[strtolower($kode)] = true;
+    }
+
+    /**
+     * True kalau serial_number sudah dipakai baris aktif di database atau
+     * sudah diimport di file yang sedang diproses. Dimuat sekali di awal.
+     * Pencocokan persis (hanya di-trim, TANPA lowercase) karena unique index
+     * Postgres juga case-sensitive.
+     */
+    private function serialSudahAda(string $serial): bool
+    {
+        if (!$this->serialSudahAdaDimuat) {
+            Inventory::whereNotNull('serial_number')
+                ->pluck('serial_number')
+                ->each(function ($s) {
+                    $this->serialSudahAda[trim((string) $s)] = true;
+                });
+
+            $this->serialSudahAdaDimuat = true;
+
+            Log::info('IMPORT: serial di database dimuat = ' . count($this->serialSudahAda));
+        }
+
+        return isset($this->serialSudahAda[trim($serial)]);
+    }
+
+    private function tandaiSerialAda(string $serial): void
+    {
+        $this->serialSudahAda[trim($serial)] = true;
+    }
+
+    /**
+     * Cari baris Inventory yang SUDAH DIHAPUS (soft delete) dengan kode
+     * ini. Return null kalau kodenya kosong, tidak ada baris terhapus
+     * dengan kode itu, atau model Inventory tidak mendukung restore()
+     * (bukan soft delete -- hard delete tidak meninggalkan baris, jadi
+     * tidak ada yang perlu dipulihkan dan kode langsung bisa dipakai
+     * insert baru).
+     */
+    private function cariTerhapusDariKode(string $kode): ?Inventory
+    {
+        if ($kode === '' || !method_exists(Inventory::class, 'restore')) {
+            return null;
+        }
+
+        return Inventory::onlyTrashed()->where('kode_inventory', $kode)->first();
     }
 
     /**
@@ -1010,11 +1131,15 @@ class InventoryBuktiImport implements ToCollection, WithCalculatedFormulas
         return $this->jumlahDilewati;
     }
 
+    public function getJumlahDipulihkan(): int
+    {
+        return $this->jumlahDipulihkan;
+    }
+
     /**
-     * Daftar peringatan/error. Kalau ada baris yang dilewati karena
-     * kode_inventory sudah ada, satu baris ringkasan ditaruh paling atas:
-     * berapa baris yang ditambahkan dan berapa yang dilewati (bukan satu
-     * pesan per baris, supaya daftar tidak penuh).
+     * Daftar peringatan/error. Baris yang dilewati karena kode_inventory /
+     * serial_number sudah ada tercatat di sini (serial) atau dihitung di
+     * getJumlahDilewati() (kode).
      */
     public function getErrors()
     {
